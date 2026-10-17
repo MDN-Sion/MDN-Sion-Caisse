@@ -126,6 +126,27 @@
       animation: rotation 0.8s linear infinite;
     }
 
+    .message-erreur {
+      display: none;
+
+      width: 100%;
+
+      margin-top: 24px;
+      padding: 14px 16px;
+
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
+
+      background: rgba(0, 0, 0, 0.18);
+
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .message-erreur.visible {
+      display: block;
+    }
+
     @keyframes rotation {
       to {
         transform: rotate(360deg);
@@ -150,17 +171,140 @@
 
     <h1>MDN Sion</h1>
 
-    <p>
-      Application de gestion du Marché de Noël de Sion
+    <p id="texteChargement">
+      Connexion sécurisée à l'application…
     </p>
 
     <div
+      id="spinner"
       class="spinner"
       role="status"
       aria-label="Chargement de l'application"
     ></div>
 
+    <div
+      id="messageErreur"
+      class="message-erreur"
+      role="alert"
+    ></div>
+
   </main>
+
+
+  <!-- ======================================================
+       BIBLIOTHEQUE SUPABASE
+       ====================================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+  ></script>
+
+
+  <!-- ======================================================
+       CONFIGURATION MDN SION
+       ====================================================== -->
+
+  <script src="js/config.js"></script>
+
+
+  <!-- ======================================================
+       CLIENT SUPABASE DE L'APPLICATION
+       ====================================================== -->
+
+  <script src="js/supabase.js"></script>
+
+
+  <!-- ======================================================
+       TEST TECHNIQUE DU SOCLE
+       ====================================================== -->
+
+  <script>
+    "use strict";
+
+    (async function () {
+
+      const texteChargement =
+        document.getElementById("texteChargement");
+
+      const spinner =
+        document.getElementById("spinner");
+
+      const messageErreur =
+        document.getElementById("messageErreur");
+
+
+      function afficherErreur(message) {
+
+        spinner.style.display = "none";
+
+        texteChargement.textContent =
+          "Impossible d'initialiser l'application.";
+
+        messageErreur.textContent = message;
+        messageErreur.classList.add("visible");
+      }
+
+
+      try {
+
+        if (!window.MDN_SUPABASE) {
+          throw new Error(
+            "Le client Supabase MDN n'est pas disponible."
+          );
+        }
+
+
+        const {
+          data,
+          error
+        } = await window.MDN_SUPABASE.auth.getSession();
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (data.session) {
+
+          texteChargement.textContent =
+            "Connexion à Supabase réussie. Session utilisateur détectée.";
+
+        } else {
+
+          texteChargement.textContent =
+            "Connexion à Supabase réussie. Aucune session utilisateur active.";
+
+        }
+
+
+        spinner.style.display = "none";
+
+
+        console.info(
+          "[MDN Sion] Test Supabase réussi.",
+          {
+            sessionActive: Boolean(data.session)
+          }
+        );
+
+
+      } catch (erreur) {
+
+        console.error(
+          "[MDN Sion] Erreur d'initialisation :",
+          erreur
+        );
+
+        afficherErreur(
+          erreur?.message ||
+          "Une erreur inconnue est survenue."
+        );
+
+      }
+
+    })();
+  </script>
 
 </body>
 </html>
