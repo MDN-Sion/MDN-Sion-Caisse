@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#8B0000">
+
+  <meta
+    name="description"
+    content="Application de gestion du Marché de Noël de Sion"
+  >
+
+  <title>MDN Sion</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding:
+        max(20px, env(safe-area-inset-top))
+        max(20px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom))
+        max(20px, env(safe-area-inset-left));
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      color: #ffffff;
+    }
+
+    .chargement {
+      width: min(100%, 420px);
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      text-align: center;
+    }
+
+    .embleme {
+      width: 88px;
+      height: 88px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 24px;
+
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      border-radius: 24px;
+
+      background: rgba(255, 255, 255, 0.10);
+
+      font-size: 42px;
+
+      box-shadow:
+        0 14px 35px rgba(0, 0, 0, 0.18);
+    }
+
+    h1 {
+      margin: 0;
+
+      font-size: clamp(28px, 7vw, 42px);
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    p {
+      margin: 10px 0 0;
+
+      font-size: clamp(14px, 3.8vw, 17px);
+      line-height: 1.5;
+
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+
+      margin-top: 30px;
+
+      border: 4px solid rgba(255, 255, 255, 0.25);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+
+      animation: rotation 0.8s linear infinite;
+    }
+
+    @keyframes rotation {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner {
+        animation-duration: 1.8s;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="chargement" aria-live="polite">
+
+    <div class="embleme" aria-hidden="true">
+      ❄
+    </div>
+
+    <h1>MDN Sion</h1>
+
+    <p>
+      Application de gestion du Marché de Noël de Sion
+    </p>
+
+    <div
+      class="spinner"
+      role="status"
+      aria-label="Chargement de l'application"
+    ></div>
+
+  </main>
+
+</body>
+</html>
