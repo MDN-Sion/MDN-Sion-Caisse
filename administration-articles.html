@@ -592,6 +592,207 @@
       }
     }
 
+
+    .modale-fond {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,.48);
+    }
+
+    .modale-fond[hidden] { display: none; }
+
+    .modale {
+      width: min(760px, 100%);
+      max-height: min(90dvh, 850px);
+      overflow: auto;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    .modale-entete {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #e4e4e4;
+      background: #fff;
+    }
+
+    .modale-entete h3 {
+      margin: 0;
+      color: #8b0000;
+      font-size: 22px;
+    }
+
+    .fermer-modale {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 10px;
+      background: #f1f1f1;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .formulaire-article { padding: 20px; }
+
+    .grille-formulaire {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .champ { min-width: 0; }
+    .champ-large { grid-column: 1 / -1; }
+
+    .champ label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #444;
+    }
+
+    .champ input,
+    .champ select,
+    .champ textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #d6d6d6;
+      border-radius: 10px;
+      background: #fff;
+      color: #222;
+      outline: none;
+    }
+
+    .champ textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .champ input:focus,
+    .champ select:focus,
+    .champ textarea:focus {
+      border-color: #a90000;
+      box-shadow: 0 0 0 3px rgba(169,0,0,.08);
+    }
+
+    .ligne-interrupteur {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 9px 11px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+
+    .ligne-interrupteur input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      accent-color: #9b0000;
+    }
+
+    .ligne-interrupteur label {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .info-edition {
+      padding: 11px 13px;
+      border-radius: 10px;
+      background: #f7f7f7;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .message-formulaire {
+      margin-top: 16px;
+      padding: 11px 13px;
+      border-radius: 10px;
+      background: #fff3f3;
+      color: #8b0000;
+      font-weight: 650;
+    }
+
+    .message-formulaire[hidden] { display: none; }
+
+    .actions-formulaire {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    .bouton-secondaire {
+      min-height: 44px;
+      padding: 9px 16px;
+      border: 1px solid #d4d4d4;
+      border-radius: 10px;
+      background: #fff;
+      color: #444;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .bouton-enregistrer {
+      min-height: 44px;
+      padding: 9px 18px;
+      border: 0;
+      border-radius: 10px;
+      background: #9b0000;
+      color: #fff;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .bouton-enregistrer:disabled,
+    .bouton-secondaire:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 650px) {
+      .modale-fond {
+        align-items: flex-end;
+        padding: 0;
+      }
+
+      .modale {
+        width: 100%;
+        max-height: 94dvh;
+        border-radius: 18px 18px 0 0;
+      }
+
+      .grille-formulaire {
+        grid-template-columns: 1fr;
+      }
+
+      .champ-large { grid-column: auto; }
+
+      .actions-formulaire {
+        position: sticky;
+        bottom: 0;
+        margin: 18px -20px -20px;
+        padding: 14px 20px max(14px, env(safe-area-inset-bottom));
+        background: #fff;
+      }
+    }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -683,10 +884,91 @@
     </section>
 
     <p class="note-version">
-      Première étape : consultation du catalogue. L’ajout et la modification seront branchés à l’étape suivante.
+      Les administrateurs peuvent ajouter et modifier les articles et tarifs. La gestion des photos sera branchée à l’étape suivante.
     </p>
 
   </main>
+
+
+  <div id="fondModaleArticle" class="modale-fond" hidden>
+    <section class="modale" role="dialog" aria-modal="true" aria-labelledby="titreModaleArticle">
+      <div class="modale-entete">
+        <h3 id="titreModaleArticle">Nouvel article</h3>
+        <button id="fermerModaleArticle" class="fermer-modale" type="button" aria-label="Fermer">✕</button>
+      </div>
+
+      <form id="formulaireArticle" class="formulaire-article">
+        <div class="grille-formulaire">
+
+          <div class="champ champ-large">
+            <label for="champNom">Nom de l’article *</label>
+            <input id="champNom" type="text" maxlength="160" required>
+          </div>
+
+          <div class="champ">
+            <label for="champBeneficiaire">Bénéficiaire *</label>
+            <select id="champBeneficiaire" required>
+              <option value="mdn">MDN</option>
+              <option value="fondation">Fondation</option>
+            </select>
+          </div>
+
+          <div class="champ">
+            <label for="champCategorie">Catégorie *</label>
+            <select id="champCategorie" required></select>
+          </div>
+
+          <div class="champ">
+            <label for="champPrix">Tarif CHF *</label>
+            <input id="champPrix" type="number" min="0" step="0.05" inputmode="decimal" required>
+          </div>
+
+          <div class="champ">
+            <label for="champOrdre">Ordre d’affichage</label>
+            <input id="champOrdre" type="number" min="0" step="1" inputmode="numeric">
+          </div>
+
+          <div class="champ">
+            <label for="champSeuil">Seuil d’alerte stock</label>
+            <input id="champSeuil" type="number" min="0" step="1" inputmode="numeric">
+          </div>
+
+          <div class="champ">
+            <label>Gestion du stock</label>
+            <div class="ligne-interrupteur">
+              <input id="champGestionStock" type="checkbox">
+              <label for="champGestionStock">Stock géré pour cet article</label>
+            </div>
+          </div>
+
+          <div class="champ">
+            <label>État</label>
+            <div class="ligne-interrupteur">
+              <input id="champActif" type="checkbox">
+              <label for="champActif">Article actif</label>
+            </div>
+          </div>
+
+          <div class="champ champ-large">
+            <label for="champDescription">Description</label>
+            <textarea id="champDescription" maxlength="1000"></textarea>
+          </div>
+
+          <div class="champ champ-large">
+            <div id="infoEditionFormulaire" class="info-edition"></div>
+          </div>
+
+        </div>
+
+        <div id="messageFormulaire" class="message-formulaire" hidden></div>
+
+        <div class="actions-formulaire">
+          <button id="annulerFormulaire" class="bouton-secondaire" type="button">Annuler</button>
+          <button id="enregistrerArticle" class="bouton-enregistrer" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </section>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
@@ -713,11 +995,31 @@
       const zoneListe = document.getElementById("zoneListe");
       const etatVide = document.getElementById("etatVide");
       const zoneErreur = document.getElementById("zoneErreur");
+      const fondModaleArticle = document.getElementById("fondModaleArticle");
+      const titreModaleArticle = document.getElementById("titreModaleArticle");
+      const fermerModaleArticle = document.getElementById("fermerModaleArticle");
+      const formulaireArticle = document.getElementById("formulaireArticle");
+      const champNom = document.getElementById("champNom");
+      const champBeneficiaire = document.getElementById("champBeneficiaire");
+      const champCategorie = document.getElementById("champCategorie");
+      const champPrix = document.getElementById("champPrix");
+      const champOrdre = document.getElementById("champOrdre");
+      const champSeuil = document.getElementById("champSeuil");
+      const champGestionStock = document.getElementById("champGestionStock");
+      const champActif = document.getElementById("champActif");
+      const champDescription = document.getElementById("champDescription");
+      const infoEditionFormulaire = document.getElementById("infoEditionFormulaire");
+      const messageFormulaire = document.getElementById("messageFormulaire");
+      const annulerFormulaire = document.getElementById("annulerFormulaire");
+      const enregistrerArticle = document.getElementById("enregistrerArticle");
+
 
       let clientSupabase = null;
       let editionCourante = null;
       let articles = [];
       let filtreActif = "tous";
+      let categoriesDisponibles = [];
+      let articleEnModification = null;
 
 
       function masquerChargement() {
@@ -1008,6 +1310,10 @@
           categories = data || [];
         }
 
+        categoriesDisponibles = categories
+          .filter(function (categorie) { return categorie.actif === true; })
+          .sort(function (a, b) { return Number(a.ordre_affichage || 0) - Number(b.ordre_affichage || 0); });
+
 
         const articlesParId = new Map(
           (referentiel || []).map(function (article) {
@@ -1098,6 +1404,76 @@
       });
 
 
+      function remplirCategories(categorieSelectionnee) {
+        champCategorie.innerHTML = "";
+
+        categoriesDisponibles.forEach(function (categorie) {
+          const option = document.createElement("option");
+          option.value = categorie.id;
+          option.textContent = categorie.nom;
+          option.selected = categorie.id === categorieSelectionnee;
+          champCategorie.appendChild(option);
+        });
+      }
+
+
+      function afficherMessageFormulaire(message) {
+        messageFormulaire.textContent = message;
+        messageFormulaire.hidden = false;
+      }
+
+
+      function masquerMessageFormulaire() {
+        messageFormulaire.hidden = true;
+        messageFormulaire.textContent = "";
+      }
+
+
+      function ouvrirModaleArticle(article) {
+        masquerMessageFormulaire();
+        articleEnModification = article || null;
+
+        remplirCategories(article ? article.categorieId : null);
+
+        titreModaleArticle.textContent =
+          article ? "Modifier l’article" : "Nouvel article";
+
+        champNom.value = article ? article.nom : "";
+        champBeneficiaire.value = article ? article.beneficiaire : "mdn";
+        champPrix.value = article ? article.prix.toFixed(2) : "";
+        champOrdre.value = article ? article.ordreAffichage : ((articles.length + 1) * 10);
+        champSeuil.value = article ? article.seuilStock : 0;
+        champGestionStock.checked = article ? article.gestionStock : true;
+        champActif.checked = article ? article.actif : true;
+        champDescription.value = article ? article.description : "";
+
+        infoEditionFormulaire.textContent =
+          "Tarif configuré pour : " +
+          (editionCourante?.nom || "l’édition active") +
+          ". La gestion de la photo sera ajoutée à l’étape suivante.";
+
+        fondModaleArticle.hidden = false;
+        document.body.style.overflow = "hidden";
+
+        setTimeout(function () {
+          champNom.focus();
+        }, 0);
+      }
+
+
+      function fermerModale() {
+        if (enregistrerArticle.disabled) {
+          return;
+        }
+
+        fondModaleArticle.hidden = true;
+        document.body.style.overflow = "";
+        articleEnModification = null;
+        formulaireArticle.reset();
+        masquerMessageFormulaire();
+      }
+
+
       zoneListe.addEventListener("click", function (evenement) {
         const bouton = evenement.target.closest("[data-action='modifier']");
 
@@ -1109,27 +1485,184 @@
           return element.articleId === bouton.dataset.articleId;
         });
 
-        if (!article) {
-          return;
+        if (article) {
+          ouvrirModaleArticle(article);
         }
-
-        /*
-         * Le bouton est volontairement déjà présent pour valider
-         * la liste et le responsive. Le formulaire complet sera
-         * branché à l'étape suivante.
-         */
-        window.alert(
-          "Modification de « " +
-          article.nom +
-          " » : le formulaire sera activé à l’étape suivante."
-        );
       });
 
 
       boutonNouvelArticle.addEventListener("click", function () {
-        window.alert(
-          "Le formulaire « Nouvel article » sera activé à l’étape suivante."
-        );
+        ouvrirModaleArticle(null);
+      });
+
+
+      fermerModaleArticle.addEventListener("click", fermerModale);
+      annulerFormulaire.addEventListener("click", fermerModale);
+
+      fondModaleArticle.addEventListener("click", function (evenement) {
+        if (evenement.target === fondModaleArticle) {
+          fermerModale();
+        }
+      });
+
+      document.addEventListener("keydown", function (evenement) {
+        if (evenement.key === "Escape" && !fondModaleArticle.hidden) {
+          fermerModale();
+        }
+      });
+
+
+      formulaireArticle.addEventListener("submit", async function (evenement) {
+        evenement.preventDefault();
+        masquerMessageFormulaire();
+
+        const nom = champNom.value.trim();
+        const beneficiaire = champBeneficiaire.value;
+        const categorieId = champCategorie.value;
+        const prix = Number(champPrix.value);
+        const ordreAffichage = Number(champOrdre.value || 0);
+        const seuilStock = Number(champSeuil.value || 0);
+        const gestionStock = champGestionStock.checked;
+        const actif = champActif.checked;
+        const description = champDescription.value.trim() || null;
+
+        if (!nom) {
+          afficherMessageFormulaire("Le nom de l’article est obligatoire.");
+          return;
+        }
+
+        if (!categorieId) {
+          afficherMessageFormulaire("La catégorie est obligatoire.");
+          return;
+        }
+
+        if (!Number.isFinite(prix) || prix < 0) {
+          afficherMessageFormulaire("Le tarif doit être un montant valide supérieur ou égal à 0.");
+          return;
+        }
+
+        if (!Number.isInteger(ordreAffichage) || ordreAffichage < 0) {
+          afficherMessageFormulaire("L’ordre d’affichage doit être un entier supérieur ou égal à 0.");
+          return;
+        }
+
+        if (!Number.isInteger(seuilStock) || seuilStock < 0) {
+          afficherMessageFormulaire("Le seuil de stock doit être un entier supérieur ou égal à 0.");
+          return;
+        }
+
+        enregistrerArticle.disabled = true;
+        annulerFormulaire.disabled = true;
+        fermerModaleArticle.disabled = true;
+        enregistrerArticle.textContent = "Enregistrement…";
+
+        try {
+          if (articleEnModification) {
+
+            const { error: erreurReferentiel } =
+              await clientSupabase
+                .from("referentiel_articles")
+                .update({
+                  nom: nom,
+                  description: description,
+                  beneficiaire: beneficiaire,
+                  categorie_id: categorieId,
+                  actif: actif,
+                  updated_at: new Date().toISOString()
+                })
+                .eq("id", articleEnModification.articleId);
+
+            if (erreurReferentiel) {
+              throw erreurReferentiel;
+            }
+
+            const { error: erreurTarif } =
+              await clientSupabase
+                .from("edition_articles")
+                .update({
+                  prix: prix,
+                  gestion_stock: gestionStock,
+                  seuil_stock: seuilStock,
+                  actif: actif,
+                  ordre_affichage: ordreAffichage,
+                  updated_at: new Date().toISOString()
+                })
+                .eq("id", articleEnModification.editionArticleId)
+                .eq("edition_id", editionCourante.id);
+
+            if (erreurTarif) {
+              throw erreurTarif;
+            }
+
+          } else {
+
+            const { data: nouvelArticle, error: erreurReferentiel } =
+              await clientSupabase
+                .from("referentiel_articles")
+                .insert({
+                  nom: nom,
+                  description: description,
+                  beneficiaire: beneficiaire,
+                  categorie_id: categorieId,
+                  actif: actif
+                })
+                .select("id")
+                .single();
+
+            if (erreurReferentiel) {
+              throw erreurReferentiel;
+            }
+
+            const { error: erreurTarif } =
+              await clientSupabase
+                .from("edition_articles")
+                .insert({
+                  edition_id: editionCourante.id,
+                  article_id: nouvelArticle.id,
+                  prix: prix,
+                  gestion_stock: gestionStock,
+                  seuil_stock: seuilStock,
+                  actif: actif,
+                  ordre_affichage: ordreAffichage
+                });
+
+            if (erreurTarif) {
+              /*
+               * On ne supprime volontairement pas le référentiel
+               * créé si la seconde écriture échoue. Cela évite
+               * toute suppression automatique de données.
+               * L'erreur est affichée et pourra être corrigée.
+               */
+              throw erreurTarif;
+            }
+          }
+
+          fondModaleArticle.hidden = true;
+          document.body.style.overflow = "";
+          articleEnModification = null;
+
+          await chargerCatalogue();
+
+        } catch (erreur) {
+          console.error("[MDN Sion] Enregistrement article impossible :", erreur);
+
+          let message =
+            erreur?.message ||
+            "Impossible d’enregistrer l’article.";
+
+          if (String(message).toLowerCase().includes("duplicate")) {
+            message =
+              "Un article portant déjà ce nom existe pour ce bénéficiaire.";
+          }
+
+          afficherMessageFormulaire(message);
+
+        } finally {
+          enregistrerArticle.disabled = false;
+          annulerFormulaire.disabled = false;
+          fermerModaleArticle.disabled = false;
+          enregistrerArticle.textContent = "Enregistrer";
+        }
       });
 
 
