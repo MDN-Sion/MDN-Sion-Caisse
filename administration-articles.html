@@ -1453,6 +1453,9 @@
               categorieId: article.categorie_id,
               categorie: categorie ? categorie.nom : null,
               photoPath: article.photo_path || null,
+              photoUrl: article.photo_path
+                ? clientSupabase.storage.from("articles").getPublicUrl(article.photo_path).data.publicUrl
+                : null,
               prix: Number(tarif.prix || 0),
               gestionStock: tarif.gestion_stock === true,
               seuilStock: Number(tarif.seuil_stock || 0),
@@ -1562,13 +1565,13 @@
 
         afficherApercuPhoto(urlExistante);
 
-        choisirPhoto.textContent = urlExistante ? "Remplacer la photo" : "Ajouter une photo";
+        choisirPhoto.textContent = urlExistante ? "Modifier la photo" : "Ajouter une photo";
         supprimerPhoto.hidden = !urlExistante;
       }
 
 
-      async function appliquerPhotoArticle(articleId, nomArticle, anciennePhotoUrl) {
-        let nouvellePhotoUrl = anciennePhotoUrl || null;
+      async function appliquerPhotoArticle(articleId, nomArticle, ancienPhotoPath) {
+        let nouveauPhotoPath = ancienPhotoPath || null;
 
         if (fichierPhotoSelectionne) {
           const extension = extensionPhoto(fichierPhotoSelectionne);
@@ -1590,18 +1593,11 @@
             throw erreurUpload;
           }
 
-          const { data: urlPublique } =
-            clientSupabase.storage
-              .from("articles")
-              .getPublicUrl(nomFichier);
-
-          nouvellePhotoUrl = urlPublique?.publicUrl || null;
-
           const { error: erreurMajPhoto } =
             await clientSupabase
               .from("referentiel_articles")
               .update({
-                photo_url: nouvellePhotoUrl,
+                photo_path: nomFichier,
                 updated_at: new Date().toISOString()
               })
               .eq("id", articleId);
@@ -1611,30 +1607,22 @@
             throw erreurMajPhoto;
           }
 
-          if (anciennePhotoUrl) {
-            const marqueur = "/storage/v1/object/public/articles/";
-            const position = anciennePhotoUrl.indexOf(marqueur);
-
-            if (position !== -1) {
-              const ancienChemin = decodeURIComponent(
-                anciennePhotoUrl.substring(position + marqueur.length)
-              );
-
-              if (ancienChemin && ancienChemin !== nomFichier) {
-                await clientSupabase.storage.from("articles").remove([ancienChemin]);
-              }
-            }
+          if (ancienPhotoPath && ancienPhotoPath !== nomFichier) {
+            await clientSupabase.storage
+              .from("articles")
+              .remove([ancienPhotoPath]);
           }
 
-          return nouvellePhotoUrl;
+          nouveauPhotoPath = nomFichier;
+          return nouveauPhotoPath;
         }
 
-        if (supprimerPhotoDemandee && anciennePhotoUrl) {
+        if (supprimerPhotoDemandee && ancienPhotoPath) {
           const { error: erreurMajPhoto } =
             await clientSupabase
               .from("referentiel_articles")
               .update({
-                photo_url: null,
+                photo_path: null,
                 updated_at: new Date().toISOString()
               })
               .eq("id", articleId);
@@ -1643,25 +1631,15 @@
             throw erreurMajPhoto;
           }
 
-          const marqueur = "/storage/v1/object/public/articles/";
-          const position = anciennePhotoUrl.indexOf(marqueur);
+          await clientSupabase.storage
+            .from("articles")
+            .remove([ancienPhotoPath]);
 
-          if (position !== -1) {
-            const ancienChemin = decodeURIComponent(
-              anciennePhotoUrl.substring(position + marqueur.length)
-            );
-
-            if (ancienChemin) {
-              await clientSupabase.storage.from("articles").remove([ancienChemin]);
-            }
-          }
-
-          nouvellePhotoUrl = null;
+          nouveauPhotoPath = null;
         }
 
-        return nouvellePhotoUrl;
+        return nouveauPhotoPath;
       }
-
 
       function remplirCategories(categorieSelectionnee) {
         champCategorie.innerHTML = "";
@@ -1774,7 +1752,7 @@
         supprimerPhotoDemandee = false;
 
         afficherApercuPhoto(urlApercuLocale);
-        choisirPhoto.textContent = "Remplacer la photo";
+        choisirPhoto.textContent = articleEnModification?.photoPath ? "Modifier la photo" : "Ajouter une photo";
         supprimerPhoto.hidden = false;
       });
 
@@ -1787,7 +1765,7 @@
 
         fichierPhotoSelectionne = null;
         champPhoto.value = "";
-        supprimerPhotoDemandee = Boolean(articleEnModification?.photoUrl);
+        supprimerPhotoDemandee = Boolean(articleEnModification?.photoPath);
 
         afficherApercuPhoto(null);
         choisirPhoto.textContent = "Ajouter une photo";
@@ -1918,7 +1896,7 @@
             await appliquerPhotoArticle(
               articleEnModification.articleId,
               nom,
-              articleEnModification.photoUrl
+              articleEnModification.photoPath
             );
 
           } else {
