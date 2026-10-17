@@ -54,15 +54,18 @@
     }
 
     .chargement-embleme {
-      width: 72px;
-      height: 72px;
+      width: 110px;
+      height: 110px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid rgba(255,255,255,.65);
-      border-radius: 20px;
-      background: rgba(255,255,255,.1);
-      font-size: 36px;
+    }
+
+    .chargement-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
     }
 
     .chargement-page strong { font-size: 28px; }
@@ -930,7 +933,9 @@
 <body>
 
   <div id="chargementPage" class="chargement-page" aria-live="polite">
-    <div class="chargement-embleme" aria-hidden="true">❄</div>
+    <div class="chargement-embleme" aria-hidden="true">
+      <img src="logo-mdn.png" alt="">
+    </div>
     <strong>MDN Sion</strong>
     <div class="spinner-page" aria-hidden="true"></div>
     <p>Ouverture de la caisse…</p>
