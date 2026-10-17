@@ -360,6 +360,253 @@
       line-height: 1.45;
     }
 
+
+    /* ======================================================
+       MOT DE PASSE OUBLIE
+       ====================================================== */
+
+    .zone-mot-de-passe-oublie {
+      margin-top: 14px;
+      text-align: center;
+    }
+
+    .lien-mot-de-passe-oublie {
+      padding: 4px 6px;
+      border: 0;
+      background: transparent;
+      color: #850000;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .lien-mot-de-passe-oublie:hover {
+      color: #a00000;
+    }
+
+    .lien-mot-de-passe-oublie:focus-visible {
+      outline: 3px solid rgba(139, 0, 0, 0.18);
+      border-radius: 6px;
+    }
+
+    .fenetre-reinitialisation {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+
+      display: none;
+      align-items: center;
+      justify-content: center;
+
+      padding:
+        max(18px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        max(18px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
+
+      background: rgba(40, 0, 0, 0.66);
+
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .fenetre-reinitialisation.visible {
+      display: flex;
+    }
+
+    .carte-reinitialisation {
+      width: min(100%, 430px);
+      max-height: calc(100dvh - 36px);
+      overflow-y: auto;
+
+      padding: 28px;
+
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+
+      background: #ffffff;
+      color: #222222;
+
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+    }
+
+    .entete-reinitialisation {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .icone-reinitialisation {
+      width: 58px;
+      height: 58px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin: 0 auto 13px;
+
+      border-radius: 16px;
+
+      background: #fff0f0;
+      color: #850000;
+
+      font-size: 27px;
+    }
+
+    .entete-reinitialisation h2 {
+      margin: 0;
+      color: #850000;
+      font-size: 23px;
+      line-height: 1.15;
+    }
+
+    .entete-reinitialisation p {
+      margin: 8px 0 0;
+      color: #666666;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .champ-reinitialisation {
+      margin-bottom: 16px;
+    }
+
+    .champ-reinitialisation label {
+      display: block;
+      margin-bottom: 7px;
+      color: #333333;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .champ-reinitialisation input {
+      width: 100%;
+      height: 50px;
+
+      padding: 0 14px;
+
+      border: 1px solid #cfcfcf;
+      border-radius: 12px;
+
+      outline: none;
+
+      background: #ffffff;
+      color: #222222;
+
+      font-size: 16px;
+    }
+
+    .champ-reinitialisation input:focus {
+      border-color: #8b0000;
+      box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.12);
+    }
+
+    .champ-reinitialisation input:disabled {
+      background: #f3f3f3;
+      cursor: not-allowed;
+    }
+
+    .actions-reinitialisation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .bouton-secondaire,
+    .bouton-reinitialisation {
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: 11px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .bouton-secondaire {
+      border: 1px solid #d0d0d0;
+      background: #ffffff;
+      color: #555555;
+    }
+
+    .bouton-reinitialisation {
+      border: 0;
+      background: linear-gradient(145deg, #9c0000, #760000);
+      color: #ffffff;
+    }
+
+    .bouton-secondaire:disabled,
+    .bouton-reinitialisation:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .message-reinitialisation {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .message-reinitialisation.visible {
+      display: block;
+    }
+
+    .message-reinitialisation.erreur {
+      border: 1px solid #e4b5b5;
+      background: #fff1f1;
+      color: #9c1616;
+    }
+
+    .message-reinitialisation.info {
+      border: 1px solid #b8cce5;
+      background: #eef6ff;
+      color: #174b7a;
+    }
+
+    @media (max-width: 520px) {
+      .carte-reinitialisation {
+        padding: 22px 18px;
+        border-radius: 18px;
+      }
+
+      .actions-reinitialisation {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-height: 650px) and (orientation: landscape) {
+      .carte-reinitialisation {
+        width: min(100%, 620px);
+        padding: 18px 22px;
+      }
+
+      .entete-reinitialisation {
+        margin-bottom: 14px;
+      }
+
+      .icone-reinitialisation {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 8px;
+        font-size: 22px;
+      }
+
+      .entete-reinitialisation h2 {
+        font-size: 20px;
+      }
+
+      .champ-reinitialisation {
+        margin-bottom: 12px;
+      }
+
+      .champ-reinitialisation input {
+        height: 44px;
+      }
+    }
+
     @keyframes rotation {
       to {
         transform: rotate(360deg);
@@ -588,6 +835,17 @@
       </form>
 
 
+      <div class="zone-mot-de-passe-oublie">
+        <button
+          id="boutonMotDePasseOublie"
+          class="lien-mot-de-passe-oublie"
+          type="button"
+        >
+          Mot de passe oublié ?
+        </button>
+      </div>
+
+
       <footer class="pied">
         Accès réservé aux utilisateurs autorisés.
       </footer>
@@ -595,6 +853,103 @@
     </section>
 
   </main>
+
+
+  <!-- ======================================================
+       FENETRE MOT DE PASSE OUBLIE
+       ====================================================== -->
+
+  <div
+    id="fenetreReinitialisation"
+    class="fenetre-reinitialisation"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titreReinitialisation"
+    aria-hidden="true"
+  >
+
+    <section class="carte-reinitialisation">
+
+      <header class="entete-reinitialisation">
+
+        <div
+          class="icone-reinitialisation"
+          aria-hidden="true"
+        >
+          🔑
+        </div>
+
+        <h2 id="titreReinitialisation">
+          Mot de passe oublié
+        </h2>
+
+        <p>
+          Saisis ton adresse e-mail. Un lien permettant de choisir
+          un nouveau mot de passe te sera envoyé.
+        </p>
+
+      </header>
+
+
+      <div
+        id="messageReinitialisation"
+        class="message-reinitialisation"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+
+      <form
+        id="formReinitialisation"
+        novalidate
+      >
+
+        <div class="champ-reinitialisation">
+
+          <label for="emailReinitialisation">
+            Adresse e-mail
+          </label>
+
+          <input
+            id="emailReinitialisation"
+            name="emailReinitialisation"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="nom@exemple.ch"
+            required
+          >
+
+        </div>
+
+
+        <div class="actions-reinitialisation">
+
+          <button
+            id="boutonAnnulerReinitialisation"
+            class="bouton-secondaire"
+            type="button"
+          >
+            Annuler
+          </button>
+
+          <button
+            id="boutonEnvoyerReinitialisation"
+            class="bouton-reinitialisation"
+            type="submit"
+          >
+            Envoyer le lien
+          </button>
+
+        </div>
+
+      </form>
+
+    </section>
+
+  </div>
 
 
   <!-- ======================================================
@@ -663,6 +1018,42 @@
       const messageConnexion =
         document.getElementById(
           "messageConnexion"
+        );
+
+
+      const boutonMotDePasseOublie =
+        document.getElementById(
+          "boutonMotDePasseOublie"
+        );
+
+      const fenetreReinitialisation =
+        document.getElementById(
+          "fenetreReinitialisation"
+        );
+
+      const formReinitialisation =
+        document.getElementById(
+          "formReinitialisation"
+        );
+
+      const emailReinitialisation =
+        document.getElementById(
+          "emailReinitialisation"
+        );
+
+      const messageReinitialisation =
+        document.getElementById(
+          "messageReinitialisation"
+        );
+
+      const boutonAnnulerReinitialisation =
+        document.getElementById(
+          "boutonAnnulerReinitialisation"
+        );
+
+      const boutonEnvoyerReinitialisation =
+        document.getElementById(
+          "boutonEnvoyerReinitialisation"
         );
 
 
@@ -759,6 +1150,303 @@
 
       }
 
+
+
+
+      /* ====================================================
+         MOT DE PASSE OUBLIE
+         ==================================================== */
+
+      function afficherMessageReinitialisation(
+        texte,
+        type = "erreur"
+      ) {
+
+        messageReinitialisation.textContent =
+          texte;
+
+        messageReinitialisation.className =
+          "message-reinitialisation visible " + type;
+
+      }
+
+
+      function masquerMessageReinitialisation() {
+
+        messageReinitialisation.textContent = "";
+
+        messageReinitialisation.className =
+          "message-reinitialisation";
+
+      }
+
+
+      function ouvrirReinitialisation() {
+
+        masquerMessageReinitialisation();
+
+        const emailConnexion =
+          champEmail.value
+            .trim()
+            .toLowerCase();
+
+        emailReinitialisation.value =
+          emailConnexion;
+
+        fenetreReinitialisation.classList.add(
+          "visible"
+        );
+
+        fenetreReinitialisation.setAttribute(
+          "aria-hidden",
+          "false"
+        );
+
+        setTimeout(
+          function () {
+            emailReinitialisation.focus();
+            emailReinitialisation.select();
+          },
+          0
+        );
+
+      }
+
+
+      function fermerReinitialisation() {
+
+        fenetreReinitialisation.classList.remove(
+          "visible"
+        );
+
+        fenetreReinitialisation.setAttribute(
+          "aria-hidden",
+          "true"
+        );
+
+        masquerMessageReinitialisation();
+
+        boutonMotDePasseOublie.focus();
+
+      }
+
+
+      function definirChargementReinitialisation(
+        actif
+      ) {
+
+        emailReinitialisation.disabled =
+          actif;
+
+        boutonAnnulerReinitialisation.disabled =
+          actif;
+
+        boutonEnvoyerReinitialisation.disabled =
+          actif;
+
+        boutonEnvoyerReinitialisation.textContent =
+          actif
+            ? "Envoi…"
+            : "Envoyer le lien";
+
+      }
+
+
+      boutonMotDePasseOublie.addEventListener(
+        "click",
+        ouvrirReinitialisation
+      );
+
+
+      boutonAnnulerReinitialisation.addEventListener(
+        "click",
+        fermerReinitialisation
+      );
+
+
+      fenetreReinitialisation.addEventListener(
+        "click",
+        function (evenement) {
+
+          if (
+            evenement.target ===
+            fenetreReinitialisation
+          ) {
+            fermerReinitialisation();
+          }
+
+        }
+      );
+
+
+      document.addEventListener(
+        "keydown",
+        function (evenement) {
+
+          if (
+            evenement.key === "Escape" &&
+            fenetreReinitialisation.classList.contains(
+              "visible"
+            ) &&
+            !boutonEnvoyerReinitialisation.disabled
+          ) {
+            fermerReinitialisation();
+          }
+
+        }
+      );
+
+
+      formReinitialisation.addEventListener(
+        "submit",
+        async function (evenement) {
+
+          evenement.preventDefault();
+
+          masquerMessageReinitialisation();
+
+
+          const email =
+            emailReinitialisation.value
+              .trim()
+              .toLowerCase();
+
+
+          if (!email) {
+
+            afficherMessageReinitialisation(
+              "Saisis ton adresse e-mail."
+            );
+
+            emailReinitialisation.focus();
+
+            return;
+          }
+
+
+          if (
+            !emailReinitialisation.checkValidity()
+          ) {
+
+            afficherMessageReinitialisation(
+              "Saisis une adresse e-mail valide."
+            );
+
+            emailReinitialisation.focus();
+
+            return;
+          }
+
+
+          definirChargementReinitialisation(
+            true
+          );
+
+
+          try {
+
+            if (!client) {
+              throw new Error(
+                "Le client Supabase MDN n'est pas disponible."
+              );
+            }
+
+
+            /*
+             * Le lien contenu dans l'e-mail doit revenir vers
+             * notre propre page mot-de-passe.html.
+             *
+             * new URL() permet de conserver automatiquement
+             * l'adresse GitHub Pages actuelle du projet.
+             */
+
+            const adresseRetour =
+              new URL(
+                "mot-de-passe.html",
+                window.location.href
+              ).href;
+
+
+            const {
+              error
+            } =
+              await client.auth
+                .resetPasswordForEmail(
+                  email,
+                  {
+                    redirectTo:
+                      adresseRetour
+                  }
+                );
+
+
+            if (error) {
+              throw error;
+            }
+
+
+            /*
+             * Message volontairement neutre :
+             * on ne révèle pas si une adresse correspond
+             * réellement à un compte utilisateur.
+             */
+
+            afficherMessageReinitialisation(
+              "Si cette adresse correspond à un compte, un e-mail de réinitialisation vient d’être envoyé. Pense à vérifier les courriers indésirables.",
+              "info"
+            );
+
+
+            console.info(
+              "[MDN Sion] Demande de réinitialisation de mot de passe envoyée."
+            );
+
+
+          } catch (erreur) {
+
+            console.error(
+              "[MDN Sion] Échec de la demande de réinitialisation :",
+              erreur
+            );
+
+
+            const message =
+              String(
+                erreur?.message || ""
+              ).toLowerCase();
+
+
+            if (
+              message.includes(
+                "too many requests"
+              ) ||
+              message.includes(
+                "rate limit"
+              )
+            ) {
+
+              afficherMessageReinitialisation(
+                "Trop de demandes ont été effectuées. Réessaie dans quelques instants."
+              );
+
+            } else {
+
+              afficherMessageReinitialisation(
+                "Impossible d'envoyer le lien de réinitialisation pour le moment. Réessaie dans quelques instants."
+              );
+
+            }
+
+          } finally {
+
+            definirChargementReinitialisation(
+              false
+            );
+
+          }
+
+        }
+      );
 
       boutonAfficherMotDePasse.addEventListener(
         "click",
