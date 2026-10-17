@@ -706,6 +706,23 @@
       }
     }
 
+    /* PANIER - ajout, quantités et total */
+    .panier-contenu { display:block; padding:14px; text-align:left; }
+    .panier-vide { min-height:100%; display:flex; align-items:center; justify-content:center; color:#888; text-align:center; }
+    .liste-panier { display:flex; flex-direction:column; gap:10px; }
+    .ligne-panier { padding:11px; border:1px solid #e2e2e2; border-radius:12px; background:#fff; }
+    .ligne-panier-haut { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:9px; }
+    .ligne-panier-nom { min-width:0; color:#333; font-size:14px; line-height:1.25; font-weight:800; }
+    .ligne-panier-sous-total { flex:0 0 auto; color:#850000; font-size:14px; font-weight:850; white-space:nowrap; }
+    .ligne-panier-bas { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .ligne-panier-prix { color:#777; font-size:11px; font-weight:700; }
+    .controle-quantite { display:inline-flex; align-items:center; gap:7px; }
+    .bouton-quantite { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #d6bcbc; border-radius:9px; background:#fff; color:#850000; cursor:pointer; font-size:19px; line-height:1; font-weight:900; }
+    .bouton-quantite:hover { background:#fff5f5; border-color:#8b0000; }
+    .quantite-panier { min-width:28px; text-align:center; color:#333; font-size:15px; font-weight:850; }
+    .bouton-encaisser.actif { background:#8b0000; color:#fff; cursor:pointer; }
+    .bouton-encaisser.actif:hover { background:#700000; }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -975,7 +992,7 @@
 
           <div class="panier-entete">
             <h2>Panier</h2>
-            <p>Aucune vente en cours</p>
+            <p id="etatPanier">Aucune vente en cours</p>
           </div>
 
           <div class="panier-contenu">
@@ -986,10 +1003,10 @@
 
             <div class="ligne-total">
               <span>Total</span>
-              <strong>CHF 0.00</strong>
+              <strong id="totalPanier">CHF 0.00</strong>
             </div>
 
-            <button class="bouton-encaisser" type="button" disabled>
+            <button id="boutonEncaisser" class="bouton-encaisser" type="button" disabled>
               Encaisser
             </button>
 
@@ -1045,10 +1062,16 @@
       const filtreFondation =
         document.getElementById("filtreFondation");
 
+      const etatPanier = document.getElementById("etatPanier");
+      const panierContenu = document.getElementById("panierContenu");
+      const totalPanier = document.getElementById("totalPanier");
+      const boutonEncaisser = document.getElementById("boutonEncaisser");
+
       let articlesCaisse = [];
       let filtreActif = "tout";
       let dossierActif = null;
       let clientSupabaseCaisse = null;
+      let panierCaisse = [];
 
 
       function masquerChargement() {
@@ -1252,6 +1275,46 @@
       }
 
 
+      function calculerTotalPanier() {
+        return panierCaisse.reduce(function (total, ligne) {
+          return total + (ligne.prix * ligne.quantite);
+        }, 0);
+      }
+
+      function afficherPanier() {
+        const nombreArticles = panierCaisse.reduce(function (total, ligne) { return total + ligne.quantite; }, 0);
+        if (panierCaisse.length === 0) {
+          etatPanier.textContent = "Aucune vente en cours";
+          panierContenu.innerHTML = '<div class="panier-vide">Le panier est vide.</div>';
+          totalPanier.textContent = formaterCHF(0);
+          boutonEncaisser.disabled = true;
+          boutonEncaisser.classList.remove("actif");
+          return;
+        }
+        etatPanier.textContent = nombreArticles + " article" + (nombreArticles > 1 ? "s" : "") + " dans le panier";
+        panierContenu.innerHTML = `<div class="liste-panier">${panierCaisse.map(function (ligne) {
+          return `<div class="ligne-panier"><div class="ligne-panier-haut"><div class="ligne-panier-nom">${echapperHTML(ligne.nom)}</div><div class="ligne-panier-sous-total">${echapperHTML(formaterCHF(ligne.prix * ligne.quantite))}</div></div><div class="ligne-panier-bas"><div class="ligne-panier-prix">${echapperHTML(formaterCHF(ligne.prix))} / unité</div><div class="controle-quantite"><button class="bouton-quantite" type="button" data-action-panier="moins" data-article-id="${echapperHTML(ligne.articleId)}">−</button><span class="quantite-panier">${ligne.quantite}</span><button class="bouton-quantite" type="button" data-action-panier="plus" data-article-id="${echapperHTML(ligne.articleId)}">+</button></div></div></div>`;
+        }).join("")}</div>`;
+        totalPanier.textContent = formaterCHF(calculerTotalPanier());
+        boutonEncaisser.disabled = false;
+        boutonEncaisser.classList.add("actif");
+      }
+
+      function ajouterArticleAuPanier(article) {
+        const ligne = panierCaisse.find(function (element) { return element.articleId === article.articleId; });
+        if (ligne) ligne.quantite += 1;
+        else panierCaisse.push({ articleId:article.articleId, editionArticleId:article.editionArticleId, nom:article.nom, prix:Number(article.prix), beneficiaire:article.beneficiaire, gestionStock:article.gestionStock, quantite:1 });
+        afficherPanier();
+      }
+
+      function modifierQuantitePanier(articleId, variation) {
+        const ligne = panierCaisse.find(function (element) { return element.articleId === articleId; });
+        if (!ligne) return;
+        ligne.quantite += variation;
+        if (ligne.quantite <= 0) panierCaisse = panierCaisse.filter(function (element) { return element.articleId !== articleId; });
+        afficherPanier();
+      }
+
       function brancherInteractionsCatalogue() {
 
         document
@@ -1311,11 +1374,7 @@
                 });
 
               if (article) {
-                console.info(
-                  "[MDN Sion] Article sélectionné :",
-                  article.nom,
-                  article.prix
-                );
+                ajouterArticleAuPanier(article);
               }
             }
 
@@ -1786,6 +1845,17 @@
 
       }
 
+
+      panierContenu.addEventListener("click", function (evenement) {
+        const bouton = evenement.target.closest("[data-action-panier]");
+        if (!bouton) return;
+        modifierQuantitePanier(bouton.dataset.articleId, bouton.dataset.actionPanier === "plus" ? 1 : -1);
+      });
+
+      boutonEncaisser.addEventListener("click", function () {
+        if (panierCaisse.length === 0) return;
+        console.info("[MDN Sion] Panier prêt pour l'encaissement :", panierCaisse, calculerTotalPanier());
+      });
 
       filtreTout.addEventListener(
         "click",
