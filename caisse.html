@@ -477,6 +477,108 @@
       }
     }
 
+
+    .carte-article,
+    .carte-dossier {
+      cursor: pointer;
+      user-select: none;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+
+    .carte-article:hover,
+    .carte-dossier:hover {
+      transform: translateY(-2px);
+      border-color: #b98b8b;
+      box-shadow: 0 8px 20px rgba(0,0,0,.09);
+    }
+
+    .carte-article:focus-visible,
+    .carte-dossier:focus-visible {
+      outline: 3px solid rgba(139,0,0,.18);
+      outline-offset: 2px;
+    }
+
+    .carte-dossier {
+      min-width: 0;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid #dedede;
+      border-radius: 15px;
+      background: #fff8f8;
+      color: #850000;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,.05);
+    }
+
+    .dossier-icone {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .dossier-nom {
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .dossier-compteur {
+      color: #777;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .barre-navigation-dossier {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .bouton-retour-dossier {
+      min-height: 38px;
+      padding: 7px 12px;
+      border: 1px solid #d6bcbc;
+      border-radius: 10px;
+      background: #fff;
+      color: #850000;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .titre-dossier {
+      color: #850000;
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .conteneur-catalogue {
+      width: 100%;
+      align-self: flex-start;
+    }
+
+    @media (max-width: 700px) {
+      .carte-dossier {
+        min-height: 118px;
+        padding: 13px;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .carte-dossier {
+        min-height: 105px;
+        padding: 11px;
+      }
+
+      .dossier-icone {
+        font-size: 26px;
+      }
+    }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -818,6 +920,7 @@
 
       let articlesCaisse = [];
       let filtreActif = "tout";
+      let dossierActif = null;
 
 
       function masquerChargement() {
@@ -877,9 +980,177 @@
       }
 
 
+      function articlesDuDossier(nomDossier) {
+
+        if (nomDossier === "Mugs") {
+          return articlesCaisse.filter(function (article) {
+            return article.beneficiaire === "mdn" &&
+                   article.categorie === "Mugs";
+          });
+        }
+
+        if (nomDossier === "Crèches") {
+          return articlesCaisse.filter(function (article) {
+            return article.beneficiaire === "fondation" &&
+                   article.categorie === "Crèches";
+          });
+        }
+
+        return [];
+      }
+
+
+      function carteArticleHTML(article) {
+
+        return `
+          <article
+            class="carte-article"
+            tabindex="0"
+            role="button"
+            data-article-id="${echapperHTML(article.articleId)}"
+            data-beneficiaire="${echapperHTML(article.beneficiaire)}"
+            aria-label="${echapperHTML(article.nom + " " + formaterCHF(article.prix))}"
+          >
+            <span class="article-beneficiaire">
+              ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
+            </span>
+
+            <div>
+              <h3 class="article-nom">
+                ${echapperHTML(article.nom)}
+              </h3>
+
+              <p class="article-categorie">
+                ${echapperHTML(article.categorie || "Sans catégorie")}
+              </p>
+            </div>
+
+            <div class="article-prix">
+              ${echapperHTML(formaterCHF(article.prix))}
+            </div>
+          </article>
+        `;
+      }
+
+
+      function carteDossierHTML(nom, icone, nombre) {
+
+        return `
+          <article
+            class="carte-dossier"
+            tabindex="0"
+            role="button"
+            data-dossier="${echapperHTML(nom)}"
+            aria-label="Ouvrir ${echapperHTML(nom)}"
+          >
+            <div class="dossier-icone" aria-hidden="true">
+              ${echapperHTML(icone)}
+            </div>
+
+            <div class="dossier-nom">
+              ${echapperHTML(nom)}
+            </div>
+
+            <div class="dossier-compteur">
+              ${nombre} article${nombre > 1 ? "s" : ""}
+            </div>
+          </article>
+        `;
+      }
+
+
+      function brancherInteractionsCatalogue() {
+
+        document
+          .querySelectorAll(".carte-dossier")
+          .forEach(function (carte) {
+
+            function ouvrir() {
+              dossierActif = carte.dataset.dossier;
+              afficherArticles();
+            }
+
+            carte.addEventListener("click", ouvrir);
+
+            carte.addEventListener(
+              "keydown",
+              function (evenement) {
+                if (
+                  evenement.key === "Enter" ||
+                  evenement.key === " "
+                ) {
+                  evenement.preventDefault();
+                  ouvrir();
+                }
+              }
+            );
+          });
+
+
+        const boutonRetourDossier =
+          document.getElementById("boutonRetourDossier");
+
+        if (boutonRetourDossier) {
+          boutonRetourDossier.addEventListener(
+            "click",
+            function () {
+              dossierActif = null;
+              afficherArticles();
+            }
+          );
+        }
+
+
+        /*
+         * Les vrais articles sont déjà cliquables.
+         * À l'étape suivante, ce clic alimentera le panier.
+         * Pour l'instant aucune vente n'est créée.
+         */
+        document
+          .querySelectorAll(".carte-article")
+          .forEach(function (carte) {
+
+            function preparerArticle() {
+
+              const article =
+                articlesCaisse.find(function (element) {
+                  return element.articleId === carte.dataset.articleId;
+                });
+
+              if (article) {
+                console.info(
+                  "[MDN Sion] Article sélectionné :",
+                  article.nom,
+                  article.prix
+                );
+              }
+            }
+
+            carte.addEventListener(
+              "click",
+              preparerArticle
+            );
+
+            carte.addEventListener(
+              "keydown",
+              function (evenement) {
+                if (
+                  evenement.key === "Enter" ||
+                  evenement.key === " "
+                ) {
+                  evenement.preventDefault();
+                  preparerArticle();
+                }
+              }
+            );
+          });
+      }
+
+
       function appliquerFiltre(nouveauFiltre) {
 
         filtreActif = nouveauFiltre;
+        dossierActif = null;
 
         filtreTout.classList.toggle(
           "active",
@@ -896,24 +1167,7 @@
           filtreActif === "fondation"
         );
 
-        document
-          .querySelectorAll(".carte-article")
-          .forEach(function (carte) {
-
-            const beneficiaire =
-              carte.dataset.beneficiaire;
-
-            const visible =
-              filtreActif === "tout" ||
-              beneficiaire === filtreActif;
-
-            carte.classList.toggle(
-              "masque",
-              !visible
-            );
-
-          });
-
+        afficherArticles();
       }
 
 
@@ -931,44 +1185,157 @@
         }
 
 
-        zoneArticles.innerHTML = `
-          <div class="grille-articles">
-            ${articlesCaisse.map(function (article) {
+        if (dossierActif) {
 
-              return `
-                <article
-                  class="carte-article"
-                  data-beneficiaire="${echapperHTML(article.beneficiaire)}"
+          const articlesDossier =
+            articlesDuDossier(dossierActif);
+
+          zoneArticles.innerHTML = `
+            <div class="conteneur-catalogue">
+
+              <div class="barre-navigation-dossier">
+                <button
+                  id="boutonRetourDossier"
+                  class="bouton-retour-dossier"
+                  type="button"
                 >
-                  <span class="article-beneficiaire">
-                    ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
-                  </span>
+                  ← Retour
+                </button>
 
-                  <div>
-                    <h3 class="article-nom">
-                      ${echapperHTML(article.nom)}
-                    </h3>
+                <div class="titre-dossier">
+                  ${echapperHTML(dossierActif)}
+                </div>
+              </div>
 
-                    <p class="article-categorie">
-                      ${echapperHTML(article.categorie || "Sans catégorie")}
-                    </p>
-                  </div>
+              <div class="grille-articles">
+                ${articlesDossier.map(carteArticleHTML).join("")}
+              </div>
 
-                  <div class="article-prix">
-                    ${echapperHTML(formaterCHF(article.prix))}
-                  </div>
-                </article>
-              `;
+            </div>
+          `;
 
-            }).join("")}
+          brancherInteractionsCatalogue();
+
+          return;
+        }
+
+
+        let contenu = [];
+
+
+        if (filtreActif === "tout") {
+
+          const mugs =
+            articlesDuDossier("Mugs");
+
+          const creches =
+            articlesDuDossier("Crèches");
+
+
+          if (mugs.length > 0) {
+            contenu.push(
+              carteDossierHTML(
+                "Mugs",
+                "☕",
+                mugs.length
+              )
+            );
+          }
+
+
+          articlesCaisse
+            .filter(function (article) {
+              return !(
+                article.categorie === "Mugs" ||
+                article.categorie === "Crèches"
+              );
+            })
+            .forEach(function (article) {
+              contenu.push(
+                carteArticleHTML(article)
+              );
+            });
+
+
+          if (creches.length > 0) {
+            contenu.push(
+              carteDossierHTML(
+                "Crèches",
+                "🎄",
+                creches.length
+              )
+            );
+          }
+
+        } else if (filtreActif === "mdn") {
+
+          const mugs =
+            articlesDuDossier("Mugs");
+
+
+          if (mugs.length > 0) {
+            contenu.push(
+              carteDossierHTML(
+                "Mugs",
+                "☕",
+                mugs.length
+              )
+            );
+          }
+
+
+          articlesCaisse
+            .filter(function (article) {
+              return article.beneficiaire === "mdn" &&
+                     article.categorie !== "Mugs";
+            })
+            .forEach(function (article) {
+              contenu.push(
+                carteArticleHTML(article)
+              );
+            });
+
+        } else if (filtreActif === "fondation") {
+
+          /*
+           * Règle validée :
+           * dans Fondation, les crèches apparaissent directement.
+           * Aucun dossier intermédiaire.
+           */
+          articlesCaisse
+            .filter(function (article) {
+              return article.beneficiaire === "fondation";
+            })
+            .forEach(function (article) {
+              contenu.push(
+                carteArticleHTML(article)
+              );
+            });
+        }
+
+
+        if (contenu.length === 0) {
+
+          afficherEtatArticles(
+            "📦",
+            "Aucun article",
+            "Aucun article n'est disponible pour ce filtre."
+          );
+
+          return;
+        }
+
+
+        zoneArticles.innerHTML = `
+          <div class="conteneur-catalogue">
+            <div class="grille-articles">
+              ${contenu.join("")}
+            </div>
           </div>
         `;
 
 
-        appliquerFiltre(
-          filtreActif
-        );
-
+        brancherInteractionsCatalogue();
       }
 
 
