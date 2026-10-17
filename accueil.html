@@ -2,357 +2,1508 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
   <meta name="theme-color" content="#8B0000">
-  <meta name="description" content="Accueil de l'application de gestion du Marché de Noël de Sion">
+
+  <meta
+    name="description"
+    content="Accueil de l'application de gestion du Marché de Noël de Sion"
+  >
+
   <title>Accueil - MDN Sion</title>
 
   <style>
-    * { box-sizing: border-box; }
-    html, body { width: 100%; min-height: 100%; margin: 0; padding: 0; }
-    body {
-      min-height: 100vh; min-height: 100dvh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
-      color: #222;
+    * {
+      box-sizing: border-box;
     }
-    button { font: inherit; -webkit-tap-highlight-color: transparent; }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      margin: 0;
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      color: #222222;
+    }
+
+    button {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ======================================================
+       CHARGEMENT
+       ====================================================== */
 
     .chargement-page {
-      position: fixed; inset: 0; z-index: 9999;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 16px; padding: 24px;
-      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
-      color: #fff; text-align: center;
-      transition: opacity .25s ease, visibility .25s ease;
-    }
-    .chargement-page.masque { opacity: 0; visibility: hidden; pointer-events: none; }
-    .chargement-embleme {
-      width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;
-      border: 1px solid rgba(255,255,255,.65); border-radius: 20px;
-      background: rgba(255,255,255,.1); font-size: 36px;
-    }
-    .chargement-page strong { font-size: 28px; }
-    .chargement-page p { margin: 0; color: rgba(255,255,255,.85); }
-    .spinner-page {
-      width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.3);
-      border-top-color: #fff; border-radius: 50%; animation: rotation .8s linear infinite;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      gap: 18px;
+
+      padding: 24px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      color: #ffffff;
+
+      text-align: center;
+
+      transition:
+        opacity 0.25s ease,
+        visibility 0.25s ease;
     }
 
-    .application { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+    .chargement-page.masque {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .chargement-embleme {
+      width: 74px;
+      height: 74px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.65);
+
+      border-radius: 20px;
+
+      background:
+        rgba(255, 255, 255, 0.10);
+
+      font-size: 36px;
+
+      box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .chargement-page strong {
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .chargement-page p {
+      margin: 0;
+
+      color:
+        rgba(255, 255, 255, 0.88);
+
+      font-size: 15px;
+    }
+
+    .spinner-page {
+      width: 28px;
+      height: 28px;
+
+      border:
+        3px solid rgba(255, 255, 255, 0.30);
+
+      border-top-color: #ffffff;
+      border-radius: 50%;
+
+      animation:
+        rotation 0.8s linear infinite;
+    }
+
+    /* ======================================================
+       APPLICATION
+       ====================================================== */
+
+    .application {
+      width: 100%;
+
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ======================================================
+       ENTÊTE
+       ====================================================== */
+
     .barre-haute {
-      padding: max(14px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 14px max(18px, env(safe-area-inset-left));
-      background: rgba(92,0,0,.45); border-bottom: 1px solid rgba(255,255,255,.16); color: #fff;
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      width: 100%;
+
+      padding:
+        max(14px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        14px
+        max(18px, env(safe-area-inset-left));
+
+      background:
+        rgba(92, 0, 0, 0.45);
+
+      border-bottom:
+        1px solid rgba(255, 255, 255, 0.16);
+
+      color: #ffffff;
+
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
+
     .barre-haute-contenu {
-      width: min(100%, 1220px); margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      width: min(100%, 1220px);
+
+      margin: 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 18px;
     }
-    .marque { min-width: 0; display: flex; align-items: center; gap: 12px; }
+
+    .marque {
+      min-width: 0;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+    }
+
     .marque-embleme {
-      width: 48px; height: 48px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-      border-radius: 14px; background: rgba(255,255,255,.12); font-size: 26px;
+      flex: 0 0 auto;
+
+      width: 48px;
+      height: 48px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+
+      background:
+        rgba(255, 255, 255, 0.12);
+
+      font-size: 26px;
     }
-    .marque-textes { min-width: 0; }
-    .marque-titre { margin: 0; font-size: 21px; line-height: 1.1; font-weight: 800; }
+
+    .marque-textes {
+      min-width: 0;
+    }
+
+    .marque-titre {
+      margin: 0;
+
+      font-size: 21px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
     .marque-sous-titre {
-      margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      color: rgba(255,255,255,.78); font-size: 12px;
+      margin: 3px 0 0;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      color:
+        rgba(255, 255, 255, 0.78);
+
+      font-size: 12px;
     }
-    .zone-utilisateur { min-width: 0; display: flex; align-items: center; gap: 12px; }
-    .identite-utilisateur { min-width: 0; text-align: right; }
+
+    .zone-utilisateur {
+      min-width: 0;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+    }
+
+    .identite-utilisateur {
+      min-width: 0;
+
+      text-align: right;
+    }
+
     .email-utilisateur {
-      max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      font-size: 14px; font-weight: 650;
+      max-width: 320px;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      font-size: 14px;
+      font-weight: 650;
     }
-    .role-utilisateur { margin-top: 2px; color: rgba(255,255,255,.76); font-size: 12px; }
+
+    .role-utilisateur {
+      margin-top: 2px;
+
+      color:
+        rgba(255, 255, 255, 0.76);
+
+      font-size: 12px;
+    }
+
     .bouton-deconnexion {
-      min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.35);
-      border-radius: 11px; background: rgba(255,255,255,.1); color: #fff; cursor: pointer; font-weight: 700;
+      flex: 0 0 auto;
+
+      min-height: 42px;
+
+      padding: 9px 14px;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.35);
+
+      border-radius: 11px;
+
+      background:
+        rgba(255, 255, 255, 0.10);
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 700;
     }
-    .bouton-deconnexion:hover:not(:disabled) { background: rgba(255,255,255,.18); }
-    .bouton-deconnexion:disabled { opacity: .55; cursor: wait; }
+
+    .bouton-deconnexion:hover:not(:disabled) {
+      background:
+        rgba(255, 255, 255, 0.18);
+    }
+
+    .bouton-deconnexion:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    /* ======================================================
+       CONTENU
+       ====================================================== */
 
     .contenu {
-      width: min(100%, 1220px); flex: 1; margin: 0 auto;
-      padding: 28px max(18px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      width: min(100%, 1220px);
+
+      flex: 1;
+
+      margin: 0 auto;
+
+      padding:
+        28px
+        max(18px, env(safe-area-inset-right))
+        max(28px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
     }
-    .bienvenue { margin-bottom: 24px; color: #fff; }
-    .bienvenue h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; }
-    .bienvenue p { margin: 8px 0 0; color: rgba(255,255,255,.82); font-size: 15px; }
 
-    .message { display: none; margin-bottom: 20px; padding: 13px 15px; border-radius: 12px; font-size: 14px; line-height: 1.45; }
-    .message.visible { display: block; }
-    .message.erreur { border: 1px solid #e4b5b5; background: #fff1f1; color: #9c1616; }
+    .bienvenue {
+      margin-bottom: 24px;
 
-    .grille-modules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+      color: #ffffff;
+    }
+
+    .bienvenue h1 {
+      margin: 0;
+
+      font-size:
+        clamp(28px, 4vw, 42px);
+
+      line-height: 1.08;
+    }
+
+    .bienvenue p {
+      margin: 8px 0 0;
+
+      color:
+        rgba(255, 255, 255, 0.82);
+
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ======================================================
+       MESSAGE
+       ====================================================== */
+
+    .message {
+      display: none;
+
+      margin-bottom: 20px;
+
+      padding: 13px 15px;
+
+      border-radius: 12px;
+
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .message.visible {
+      display: block;
+    }
+
+    .message.erreur {
+      border: 1px solid #e4b5b5;
+
+      background: #fff1f1;
+
+      color: #9c1616;
+    }
+
+    .message.info {
+      border: 1px solid #b8cce5;
+
+      background: #eef6ff;
+
+      color: #174b7a;
+    }
+
+    /* ======================================================
+       MODULES
+       ====================================================== */
+
+    .grille-modules {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+      gap: 18px;
+    }
+
     .module {
-      min-width: 0; min-height: 170px; display: flex; flex-direction: column; padding: 22px;
-      border: 1px solid rgba(255,255,255,.24); border-radius: 20px; background: rgba(255,255,255,.97);
-      box-shadow: 0 18px 45px rgba(0,0,0,.18);
-    }
-    .module.masque { display: none; }
-    .module-entete { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
-    .module-icone {
-      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-      border-radius: 14px; background: #fff0f0; color: #8b0000; font-size: 25px;
-    }
-    .badge { padding: 5px 8px; border-radius: 999px; background: #f2f2f2; color: #666; font-size: 11px; font-weight: 700; }
-    .module h2 { margin: 16px 0 6px; color: #850000; font-size: 19px; line-height: 1.15; }
-    .module p { flex: 1; margin: 0 0 18px; color: #666; font-size: 13px; line-height: 1.45; }
-    .bouton-module {
-      width: 100%; min-height: 42px; border: 0; border-radius: 11px;
-      background: linear-gradient(145deg, #9c0000, #760000); color: #fff; font-weight: 700;
-    }
-    .bouton-module:disabled { background: #dedede; color: #777; cursor: not-allowed; }
-    .pied-page {
-      padding: 12px max(18px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-      color: rgba(255,255,255,.66); text-align: center; font-size: 11px;
+      min-width: 0;
+      min-height: 170px;
+
+      display: flex;
+      flex-direction: column;
+
+      padding: 22px;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.24);
+
+      border-radius: 20px;
+
+      background:
+        rgba(255, 255, 255, 0.97);
+
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.18);
     }
 
-    @keyframes rotation { to { transform: rotate(360deg); } }
-    @media (max-width: 900px) { .grille-modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .module.masque {
+      display: none;
+    }
+
+    .module-entete {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+
+      gap: 14px;
+    }
+
+    .module-icone {
+      width: 48px;
+      height: 48px;
+
+      flex: 0 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+
+      background: #fff0f0;
+
+      color: #8b0000;
+
+      font-size: 25px;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+
+      padding: 5px 8px;
+
+      border-radius: 999px;
+
+      background: #f2f2f2;
+
+      color: #666666;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .module h2 {
+      margin: 16px 0 6px;
+
+      color: #850000;
+
+      font-size: 19px;
+      line-height: 1.15;
+    }
+
+    .module p {
+      flex: 1;
+
+      margin: 0 0 18px;
+
+      color: #666666;
+
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .bouton-module {
+      width: 100%;
+      min-height: 42px;
+
+      border: 0;
+      border-radius: 11px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #9c0000,
+          #760000
+        );
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 700;
+    }
+
+    .bouton-module:disabled {
+      background: #dedede;
+
+      color: #777777;
+
+      cursor: not-allowed;
+
+      box-shadow: none;
+    }
+
+    /* ======================================================
+       PIED DE PAGE
+       ====================================================== */
+
+    .pied-page {
+      padding:
+        12px
+        max(18px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
+
+      color:
+        rgba(255, 255, 255, 0.66);
+
+      text-align: center;
+
+      font-size: 11px;
+    }
+
+    /* ======================================================
+       ANIMATIONS
+       ====================================================== */
+
+    @keyframes rotation {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ======================================================
+       TABLETTE
+       ====================================================== */
+
+    @media (max-width: 900px) {
+
+      .grille-modules {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+    }
+
+    /* ======================================================
+       TELEPHONE PORTRAIT
+       ====================================================== */
+
     @media (max-width: 620px) {
-      .barre-haute-contenu { align-items: flex-start; }
-      .marque-sous-titre, .identite-utilisateur { display: none; }
-      .contenu { padding-top: 20px; }
-      .grille-modules { grid-template-columns: 1fr; gap: 14px; }
-      .module { min-height: 0; padding: 18px; }
+
+      .barre-haute-contenu {
+        align-items: flex-start;
+      }
+
+      .marque-sous-titre {
+        display: none;
+      }
+
+      .identite-utilisateur {
+        display: none;
+      }
+
+      .contenu {
+        padding-top: 20px;
+      }
+
+      .grille-modules {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+      }
+
+      .module {
+        min-height: 0;
+
+        padding: 18px;
+      }
+
     }
-    @media (max-height: 600px) and (orientation: landscape) {
-      .barre-haute { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: 8px; }
-      .marque-embleme { width: 40px; height: 40px; font-size: 22px; }
-      .contenu { padding-top: 16px; padding-bottom: 16px; }
-      .bienvenue { margin-bottom: 15px; }
-      .bienvenue h1 { font-size: 27px; }
-      .grille-modules { gap: 12px; }
-      .module { min-height: 145px; padding: 16px; }
+
+    /* ======================================================
+       TELEPHONE PAYSAGE
+       ====================================================== */
+
+    @media (
+      max-height: 600px
+    ) and (
+      orientation: landscape
+    ) {
+
+      .barre-haute {
+        padding-top:
+          max(8px, env(safe-area-inset-top));
+
+        padding-bottom: 8px;
+      }
+
+      .marque-embleme {
+        width: 40px;
+        height: 40px;
+
+        font-size: 22px;
+      }
+
+      .contenu {
+        padding-top: 16px;
+        padding-bottom: 16px;
+      }
+
+      .bienvenue {
+        margin-bottom: 15px;
+      }
+
+      .bienvenue h1 {
+        font-size: 27px;
+      }
+
+      .bienvenue p {
+        margin-top: 4px;
+      }
+
+      .grille-modules {
+        gap: 12px;
+      }
+
+      .module {
+        min-height: 145px;
+
+        padding: 16px;
+      }
+
+      .module-icone {
+        width: 40px;
+        height: 40px;
+
+        font-size: 21px;
+      }
+
+      .module h2 {
+        margin-top: 11px;
+
+        font-size: 17px;
+      }
+
+      .module p {
+        margin-bottom: 12px;
+      }
+
     }
+
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition: none !important; }
-      .spinner-page { animation-duration: 1.8s; }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+
+      .spinner-page {
+        animation-duration: 1.8s;
+      }
+
     }
   </style>
 </head>
+
 <body>
 
-  <div id="chargementPage" class="chargement-page" aria-live="polite">
-    <div class="chargement-embleme" aria-hidden="true">❄</div>
-    <strong>MDN Sion</strong>
-    <div class="spinner-page" aria-hidden="true"></div>
-    <p>Vérification de votre session…</p>
+  <!-- ======================================================
+       ECRAN DE CHARGEMENT
+       ====================================================== -->
+
+  <div
+    id="chargementPage"
+    class="chargement-page"
+    aria-live="polite"
+  >
+
+    <div
+      class="chargement-embleme"
+      aria-hidden="true"
+    >
+      ❄
+    </div>
+
+    <strong>
+      MDN Sion
+    </strong>
+
+    <div
+      class="spinner-page"
+      aria-hidden="true"
+    ></div>
+
+    <p>
+      Vérification de votre session…
+    </p>
+
   </div>
+
+
+  <!-- ======================================================
+       APPLICATION
+       ====================================================== -->
 
   <div class="application">
+
+    <!-- ====================================================
+         ENTETE
+         ==================================================== -->
+
     <header class="barre-haute">
+
       <div class="barre-haute-contenu">
+
         <div class="marque">
-          <div class="marque-embleme" aria-hidden="true">❄</div>
-          <div class="marque-textes">
-            <p class="marque-titre">MDN Sion</p>
-            <p class="marque-sous-titre">Marché de Noël de Sion</p>
+
+          <div
+            class="marque-embleme"
+            aria-hidden="true"
+          >
+            ❄
           </div>
+
+          <div class="marque-textes">
+
+            <p class="marque-titre">
+              MDN Sion
+            </p>
+
+            <p class="marque-sous-titre">
+              Marché de Noël de Sion
+            </p>
+
+          </div>
+
         </div>
+
 
         <div class="zone-utilisateur">
+
           <div class="identite-utilisateur">
-            <div id="emailUtilisateur" class="email-utilisateur">—</div>
-            <div id="roleUtilisateur" class="role-utilisateur">—</div>
+
+            <div
+              id="emailUtilisateur"
+              class="email-utilisateur"
+            >
+              —
+            </div>
+
+            <div
+              id="roleUtilisateur"
+              class="role-utilisateur"
+            >
+              —
+            </div>
+
           </div>
-          <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
+
+
+          <button
+            id="boutonDeconnexion"
+            class="bouton-deconnexion"
+            type="button"
+          >
+            Déconnexion
+          </button>
+
         </div>
+
       </div>
+
     </header>
 
+
+    <!-- ====================================================
+         CONTENU
+         ==================================================== -->
+
     <main class="contenu">
+
       <section class="bienvenue">
-        <h1>Accueil</h1>
-        <p id="texteBienvenue">Chargement de votre espace…</p>
+
+        <h1>
+          Accueil
+        </h1>
+
+        <p id="texteBienvenue">
+          Chargement de votre espace…
+        </p>
+
       </section>
 
-      <div id="messageAccueil" class="message" role="alert" aria-live="polite"></div>
 
-      <section class="grille-modules" aria-label="Modules de l'application">
-        <article class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">🛒</div><span class="badge">Caisse</span></div>
-          <h2>Caisse</h2>
-          <p>Ventes MDN et Fondation, paiements et opérations de caisse.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
-        </article>
+      <div
+        id="messageAccueil"
+        class="message"
+        role="alert"
+        aria-live="polite"
+      ></div>
 
-        <article class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">🍽️</div><span class="badge">Consignes</span></div>
-          <h2>Vaisselle &amp; Consignes</h2>
-          <p>Retraits, retours propres ou sales et gestion des contenants.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
-        </article>
 
-        <article class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">🏠</div><span class="badge">Partenaires</span></div>
-          <h2>Exposants / Partenaires</h2>
-          <p>Dossiers partenaires, comptes stands et QR internes.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
-        </article>
+      <!-- ==================================================
+           MODULES
+           ================================================== -->
+
+      <section
+        class="grille-modules"
+        aria-label="Modules de l'application"
+      >
+
+        <!-- ================================================
+             CAISSE
+             ================================================ -->
 
         <article class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">📦</div><span class="badge">Stocks</span></div>
-          <h2>Stocks</h2>
-          <p>Articles, vaisselle, réserve MDN et mouvements opérationnels.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🛒
+            </div>
+
+            <span class="badge">
+              Caisse
+            </span>
+
+          </div>
+
+          <h2>
+            Caisse
+          </h2>
+
+          <p>
+            Ventes MDN et Fondation, paiements et opérations de caisse.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
         </article>
 
-        <article id="moduleCaissePhysique" class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">💰</div><span class="badge">Responsable+</span></div>
-          <h2>Caisse physique</h2>
-          <p>Ouverture, mouvements, comptage et clôture de la caisse partagée.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
+
+        <!-- ================================================
+             VAISSELLE
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🍽️
+            </div>
+
+            <span class="badge">
+              Consignes
+            </span>
+
+          </div>
+
+          <h2>
+            Vaisselle &amp; Consignes
+          </h2>
+
+          <p>
+            Retraits, retours propres ou sales et gestion des contenants.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
         </article>
 
-        <article id="moduleRapports" class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">📊</div><span class="badge">Responsable+</span></div>
-          <h2>Suivi &amp; Rapports</h2>
-          <p>Tableau de bord, dons, comptes stands, stocks et contrôles.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
+
+        <!-- ================================================
+             PARTENAIRES
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🏠
+            </div>
+
+            <span class="badge">
+              Partenaires
+            </span>
+
+          </div>
+
+          <h2>
+            Exposants / Partenaires
+          </h2>
+
+          <p>
+            Dossiers partenaires, comptes stands et QR internes.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
         </article>
 
-        <article id="moduleAdministration" class="module">
-          <div class="module-entete"><div class="module-icone" aria-hidden="true">⚙️</div><span class="badge">Administrateur</span></div>
-          <h2>Administration</h2>
-          <p>Utilisateurs, éditions, référentiels, tarifs et paramètres.</p>
-          <button class="bouton-module" type="button" disabled>Bientôt disponible</button>
+
+        <!-- ================================================
+             STOCKS
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              📦
+            </div>
+
+            <span class="badge">
+              Stocks
+            </span>
+
+          </div>
+
+          <h2>
+            Stocks
+          </h2>
+
+          <p>
+            Articles, vaisselle, réserve MDN et mouvements opérationnels.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
         </article>
+
+
+        <!-- ================================================
+             CAISSE PHYSIQUE
+             Responsable + Administrateur
+             ================================================ -->
+
+        <article
+          id="moduleCaissePhysique"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              💰
+            </div>
+
+            <span class="badge">
+              Responsable+
+            </span>
+
+          </div>
+
+          <h2>
+            Caisse physique
+          </h2>
+
+          <p>
+            Ouverture, mouvements, comptage et clôture de la caisse partagée.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             SUIVI ET RAPPORTS
+             Responsable + Administrateur
+             ================================================ -->
+
+        <article
+          id="moduleRapports"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              📊
+            </div>
+
+            <span class="badge">
+              Responsable+
+            </span>
+
+          </div>
+
+          <h2>
+            Suivi &amp; Rapports
+          </h2>
+
+          <p>
+            Tableau de bord, dons, comptes stands, stocks et contrôles.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             ADMINISTRATION
+             Administrateur uniquement
+             ================================================ -->
+
+        <article
+          id="moduleAdministration"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              ⚙️
+            </div>
+
+            <span class="badge">
+              Administrateur
+            </span>
+
+          </div>
+
+          <h2>
+            Administration
+          </h2>
+
+          <p>
+            Utilisateurs, éditions, référentiels, tarifs et paramètres.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
       </section>
+
     </main>
 
-    <footer class="pied-page">Application de gestion du Marché de Noël de Sion</footer>
+
+    <!-- ====================================================
+         PIED DE PAGE
+         ==================================================== -->
+
+    <footer class="pied-page">
+      Application de gestion du Marché de Noël de Sion
+    </footer>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- ======================================================
+       BIBLIOTHEQUE SUPABASE
+       ====================================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+  ></script>
+
+
+  <!-- ======================================================
+       CONFIGURATION MDN SION
+       ====================================================== -->
+
   <script src="js/config.js"></script>
+
+
+  <!-- ======================================================
+       CLIENT SUPABASE
+       ====================================================== -->
+
   <script src="js/supabase.js"></script>
+
+
+  <!-- ======================================================
+       AUTHENTIFICATION COMMUNE
+       IMPORTANT :
+       auth.js doit être chargé APRES supabase.js
+       ====================================================== -->
+
+  <script src="js/auth.js"></script>
+
+
+  <!-- ======================================================
+       LOGIQUE SPECIFIQUE DE L'ACCUEIL
+       ====================================================== -->
 
   <script>
     "use strict";
 
     (function () {
-      const client = window.MDN_SUPABASE;
-      const chargementPage = document.getElementById("chargementPage");
-      const emailUtilisateur = document.getElementById("emailUtilisateur");
-      const roleUtilisateur = document.getElementById("roleUtilisateur");
-      const texteBienvenue = document.getElementById("texteBienvenue");
-      const messageAccueil = document.getElementById("messageAccueil");
-      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
-      const moduleCaissePhysique = document.getElementById("moduleCaissePhysique");
-      const moduleRapports = document.getElementById("moduleRapports");
-      const moduleAdministration = document.getElementById("moduleAdministration");
 
-      function afficherMessage(texte) {
-        messageAccueil.textContent = texte;
-        messageAccueil.className = "message visible erreur";
+      /* ====================================================
+         ELEMENTS DE LA PAGE
+         ==================================================== */
+
+      const chargementPage =
+        document.getElementById(
+          "chargementPage"
+        );
+
+
+      const emailUtilisateur =
+        document.getElementById(
+          "emailUtilisateur"
+        );
+
+
+      const roleUtilisateur =
+        document.getElementById(
+          "roleUtilisateur"
+        );
+
+
+      const texteBienvenue =
+        document.getElementById(
+          "texteBienvenue"
+        );
+
+
+      const messageAccueil =
+        document.getElementById(
+          "messageAccueil"
+        );
+
+
+      const boutonDeconnexion =
+        document.getElementById(
+          "boutonDeconnexion"
+        );
+
+
+      const moduleCaissePhysique =
+        document.getElementById(
+          "moduleCaissePhysique"
+        );
+
+
+      const moduleRapports =
+        document.getElementById(
+          "moduleRapports"
+        );
+
+
+      const moduleAdministration =
+        document.getElementById(
+          "moduleAdministration"
+        );
+
+
+      /* ====================================================
+         MESSAGE
+         ==================================================== */
+
+      function afficherMessage(
+        texte,
+        type = "erreur"
+      ) {
+
+        messageAccueil.textContent =
+          texte;
+
+
+        messageAccueil.className =
+          "message visible " + type;
+
       }
+
+
+      /* ====================================================
+         CHARGEMENT
+         ==================================================== */
 
       function masquerChargement() {
-        chargementPage.classList.add("masque");
+
+        chargementPage.classList.add(
+          "masque"
+        );
+
       }
 
-      function normaliserRole(role) {
-        return String(role || "").trim().toLowerCase();
+
+      /* ====================================================
+         AFFICHAGE DES MODULES SELON LE ROLE
+         ==================================================== */
+
+      function appliquerDroits(
+        role
+      ) {
+
+        const peutSuperviser =
+          window.MDN_AUTH
+            .estResponsableOuAdministrateur(
+              role
+            );
+
+
+        const estAdministrateur =
+          window.MDN_AUTH
+            .estAdministrateur(
+              role
+            );
+
+
+        /*
+         * Caisse physique :
+         * Responsable ou Administrateur.
+         */
+
+        moduleCaissePhysique.classList.toggle(
+          "masque",
+          !peutSuperviser
+        );
+
+
+        /*
+         * Suivi & Rapports :
+         * Responsable ou Administrateur.
+         */
+
+        moduleRapports.classList.toggle(
+          "masque",
+          !peutSuperviser
+        );
+
+
+        /*
+         * Administration :
+         * Administrateur uniquement.
+         */
+
+        moduleAdministration.classList.toggle(
+          "masque",
+          !estAdministrateur
+        );
+
       }
 
-      function libelleRole(role) {
-        switch (normaliserRole(role)) {
-          case "administrateur": return "Administrateur";
-          case "responsable": return "Responsable";
-          case "utilisateur": return "Utilisateur";
-          default: return "Utilisateur";
-        }
-      }
 
-      function appliquerDroits(role) {
-        const roleNormalise = normaliserRole(role);
-        const estAdministrateur = roleNormalise === "administrateur";
-        const estResponsable = roleNormalise === "responsable";
-        const peutSuperviser = estAdministrateur || estResponsable;
-
-        moduleCaissePhysique.classList.toggle("masque", !peutSuperviser);
-        moduleRapports.classList.toggle("masque", !peutSuperviser);
-        moduleAdministration.classList.toggle("masque", !estAdministrateur);
-      }
+      /* ====================================================
+         INITIALISATION DE L'ACCUEIL
+         ==================================================== */
 
       async function initialiserAccueil() {
+
         try {
-          if (!client) throw new Error("Le client Supabase MDN n'est pas disponible.");
 
-          const { data: sessionData, error: sessionError } = await client.auth.getSession();
-          if (sessionError) throw sessionError;
+          /*
+           * Toute la vérification de sécurité est maintenant
+           * centralisée dans js/auth.js.
+           *
+           * Cette fonction vérifie :
+           * - la session Supabase ;
+           * - le compte interne MDN ;
+           * - le champ actif ;
+           * - le rôle.
+           */
 
-          if (!sessionData || !sessionData.session || !sessionData.session.user) {
-            window.location.replace("connexion.html");
+          const auth =
+            await window.MDN_AUTH
+              .protegerPage();
+
+
+          /*
+           * Si aucune authentification valide n'est obtenue,
+           * auth.js effectue la redirection vers connexion.html.
+           */
+
+          if (!auth) {
             return;
           }
 
-          const utilisateurAuth = sessionData.session.user;
-          emailUtilisateur.textContent = utilisateurAuth.email || "Utilisateur";
 
-          const { data: profil, error: profilError } = await client
-            .from("utilisateurs")
-            .select("id, auth_user_id, email, role, actif")
-            .eq("auth_user_id", utilisateurAuth.id)
-            .maybeSingle();
+          /* ================================================
+             EMAIL
+             ================================================ */
 
-          if (profilError) throw profilError;
+          const emailAffiche =
+            auth.profil.email ||
+            auth.utilisateur.email ||
+            "Utilisateur";
 
-          if (!profil) {
-            await client.auth.signOut();
-            throw new Error("Aucun compte interne MDN n'est associé à cet utilisateur.");
-          }
 
-          if (profil.actif !== true) {
-            await client.auth.signOut();
-            throw new Error("Votre compte MDN est désactivé. Contactez un administrateur.");
-          }
+          emailUtilisateur.textContent =
+            emailAffiche;
 
-          const role = normaliserRole(profil.role);
-          if (!["utilisateur", "responsable", "administrateur"].includes(role)) {
-            await client.auth.signOut();
-            throw new Error("Le rôle de votre compte MDN n'est pas valide.");
-          }
 
-          emailUtilisateur.textContent = profil.email || utilisateurAuth.email || "Utilisateur";
-          roleUtilisateur.textContent = libelleRole(role);
-          texteBienvenue.textContent = "Connecté en tant que " + libelleRole(role) + ".";
-          appliquerDroits(role);
+          /* ================================================
+             ROLE
+             ================================================ */
+
+          roleUtilisateur.textContent =
+            auth.libelleRole;
+
+
+          /* ================================================
+             MESSAGE D'ACCUEIL
+             ================================================ */
+
+          texteBienvenue.textContent =
+            "Connecté en tant que " +
+            auth.libelleRole +
+            ".";
+
+
+          /* ================================================
+             DROITS D'AFFICHAGE
+             ================================================ */
+
+          appliquerDroits(
+            auth.role
+          );
+
+
+          /* ================================================
+             AFFICHAGE DE LA PAGE
+             ================================================ */
+
           masquerChargement();
+
         } catch (erreur) {
-          console.error("[MDN Sion] Initialisation de l'accueil impossible :", erreur);
+
+          console.error(
+            "[MDN Sion] Initialisation de l'accueil impossible :",
+            erreur
+          );
+
+
           masquerChargement();
-          afficherMessage(erreur?.message || "Impossible de charger votre espace utilisateur.");
-          texteBienvenue.textContent = "L'accès à l'application n'a pas pu être validé.";
-          setTimeout(function () { window.location.replace("connexion.html"); }, 3200);
+
+
+          afficherMessage(
+            erreur?.message ||
+            "Impossible de charger votre espace utilisateur."
+          );
+
+
+          texteBienvenue.textContent =
+            "L'accès à l'application n'a pas pu être validé.";
+
+
+          /*
+           * Si le profil interne est invalide,
+           * auth.js a déjà fermé la session.
+           *
+           * On laisse quelques secondes pour lire
+           * le message avant de revenir à la connexion.
+           */
+
+          setTimeout(
+            function () {
+
+              window.location.replace(
+                "connexion.html"
+              );
+
+            },
+            3200
+          );
+
         }
+
       }
 
-      boutonDeconnexion.addEventListener("click", async function () {
-        boutonDeconnexion.disabled = true;
-        boutonDeconnexion.textContent = "Déconnexion…";
-        try {
-          await client.auth.signOut();
-        } catch (erreur) {
-          console.error("[MDN Sion] Erreur de déconnexion :", erreur);
-        } finally {
-          window.location.replace("connexion.html");
+
+      /* ====================================================
+         DECONNEXION
+         ==================================================== */
+
+      boutonDeconnexion.addEventListener(
+        "click",
+        async function () {
+
+          boutonDeconnexion.disabled =
+            true;
+
+
+          boutonDeconnexion.textContent =
+            "Déconnexion…";
+
+
+          await window.MDN_AUTH
+            .deconnexion();
+
         }
+      );
+
+
+      /* ====================================================
+         SURVEILLANCE DE LA SESSION
+         ==================================================== */
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
       });
 
-      client.auth.onAuthStateChange(function (evenement, session) {
-        if (evenement === "SIGNED_OUT" || !session) {
-          window.location.replace("connexion.html");
-        }
-      });
+
+      /* ====================================================
+         DEMARRAGE
+         ==================================================== */
 
       initialiserAccueil();
+
     })();
   </script>
+
 </body>
 </html>
