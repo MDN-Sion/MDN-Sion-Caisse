@@ -345,6 +345,138 @@
       cursor: not-allowed;
     }
 
+
+    .grille-articles {
+      width: 100%;
+      align-self: flex-start;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+    }
+
+    .carte-article {
+      min-width: 0;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid #dedede;
+      border-radius: 15px;
+      background: #ffffff;
+      text-align: left;
+      box-shadow: 0 4px 14px rgba(0,0,0,.05);
+    }
+
+    .carte-article.masque {
+      display: none;
+    }
+
+    .article-beneficiaire {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f2f2f2;
+      color: #666666;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .article-nom {
+      margin: 0;
+      color: #333333;
+      font-size: 16px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .article-categorie {
+      margin: 4px 0 0;
+      color: #777777;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .article-prix {
+      margin-top: auto;
+      color: #850000;
+      font-size: 21px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .categorie:not(:disabled) {
+      cursor: pointer;
+    }
+
+    .categorie:not(:disabled):hover {
+      border-color: #8b0000;
+    }
+
+    .information-edition {
+      margin-left: auto;
+      flex: 0 0 auto;
+      color: #777777;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+      .grille-articles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .carte-article {
+        min-height: 118px;
+        padding: 13px;
+      }
+
+      .article-nom {
+        font-size: 14px;
+      }
+
+      .article-prix {
+        font-size: 18px;
+      }
+
+      .information-edition {
+        display: none;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .grille-articles {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .grille-articles {
+        grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+        gap: 8px;
+      }
+
+      .carte-article {
+        min-height: 105px;
+        padding: 11px;
+        gap: 7px;
+      }
+
+      .article-nom {
+        font-size: 13px;
+      }
+
+      .article-prix {
+        font-size: 17px;
+      }
+    }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -587,26 +719,24 @@
 
         <article class="panneau panneau-articles">
 
-          <nav class="barre-categories" aria-label="Catégories de la caisse">
-            <button class="categorie active" type="button" disabled>Tout</button>
-            <button class="categorie" type="button" disabled>MDN</button>
-            <button class="categorie" type="button" disabled>Fondation</button>
+          <nav class="barre-categories" aria-label="Filtres des articles">
+            <button id="filtreTout" class="categorie active" type="button">Tout</button>
+            <button id="filtreMDN" class="categorie" type="button">MDN</button>
+            <button id="filtreFondation" class="categorie" type="button">Fondation</button>
+
+            <span id="informationEdition" class="information-edition">
+              Édition…
+            </span>
           </nav>
 
-          <div class="zone-articles">
+          <div id="zoneArticles" class="zone-articles">
+
             <div class="etat-vide">
-
-              <div class="icone" aria-hidden="true">🛒</div>
-
-              <h2>Module Caisse prêt</h2>
-
-              <p>
-                L'authentification et l'interface responsive sont actives.
-                À l'étape suivante, les articles et tarifs de l'édition
-                seront chargés depuis Supabase.
-              </p>
-
+              <div class="icone" aria-hidden="true">⏳</div>
+              <h2>Chargement des articles…</h2>
+              <p>Lecture du catalogue et des tarifs de l'édition active.</p>
             </div>
+
           </div>
 
         </article>
@@ -671,6 +801,25 @@
         document.getElementById("boutonDeconnexion");
 
 
+      const zoneArticles =
+        document.getElementById("zoneArticles");
+
+      const informationEdition =
+        document.getElementById("informationEdition");
+
+      const filtreTout =
+        document.getElementById("filtreTout");
+
+      const filtreMDN =
+        document.getElementById("filtreMDN");
+
+      const filtreFondation =
+        document.getElementById("filtreFondation");
+
+      let articlesCaisse = [];
+      let filtreActif = "tout";
+
+
       function masquerChargement() {
         chargementPage.classList.add("masque");
       }
@@ -680,6 +829,421 @@
         messageCaisse.textContent = texte;
         messageCaisse.className = "message visible " + type;
       }
+
+
+
+
+      function echapperHTML(valeur) {
+        return String(valeur ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+
+      function formaterCHF(valeur) {
+        const nombre = Number(valeur || 0);
+
+        return "CHF " +
+          nombre.toLocaleString(
+            "fr-CH",
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }
+          );
+      }
+
+
+      function libelleBeneficiaire(beneficiaire) {
+        return beneficiaire === "fondation"
+          ? "Fondation"
+          : "MDN";
+      }
+
+
+      function afficherEtatArticles(icone, titre, texte) {
+
+        zoneArticles.innerHTML = `
+          <div class="etat-vide">
+            <div class="icone" aria-hidden="true">${echapperHTML(icone)}</div>
+            <h2>${echapperHTML(titre)}</h2>
+            <p>${echapperHTML(texte)}</p>
+          </div>
+        `;
+
+      }
+
+
+      function appliquerFiltre(nouveauFiltre) {
+
+        filtreActif = nouveauFiltre;
+
+        filtreTout.classList.toggle(
+          "active",
+          filtreActif === "tout"
+        );
+
+        filtreMDN.classList.toggle(
+          "active",
+          filtreActif === "mdn"
+        );
+
+        filtreFondation.classList.toggle(
+          "active",
+          filtreActif === "fondation"
+        );
+
+        document
+          .querySelectorAll(".carte-article")
+          .forEach(function (carte) {
+
+            const beneficiaire =
+              carte.dataset.beneficiaire;
+
+            const visible =
+              filtreActif === "tout" ||
+              beneficiaire === filtreActif;
+
+            carte.classList.toggle(
+              "masque",
+              !visible
+            );
+
+          });
+
+      }
+
+
+      function afficherArticles() {
+
+        if (articlesCaisse.length === 0) {
+
+          afficherEtatArticles(
+            "📦",
+            "Aucun article disponible",
+            "Aucun article actif avec un tarif n'est configuré pour l'édition active."
+          );
+
+          return;
+        }
+
+
+        zoneArticles.innerHTML = `
+          <div class="grille-articles">
+            ${articlesCaisse.map(function (article) {
+
+              return `
+                <article
+                  class="carte-article"
+                  data-beneficiaire="${echapperHTML(article.beneficiaire)}"
+                >
+                  <span class="article-beneficiaire">
+                    ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
+                  </span>
+
+                  <div>
+                    <h3 class="article-nom">
+                      ${echapperHTML(article.nom)}
+                    </h3>
+
+                    <p class="article-categorie">
+                      ${echapperHTML(article.categorie || "Sans catégorie")}
+                    </p>
+                  </div>
+
+                  <div class="article-prix">
+                    ${echapperHTML(formaterCHF(article.prix))}
+                  </div>
+                </article>
+              `;
+
+            }).join("")}
+          </div>
+        `;
+
+
+        appliquerFiltre(
+          filtreActif
+        );
+
+      }
+
+
+      async function chargerCatalogueCaisse() {
+
+        const client =
+          window.MDN_SUPABASE;
+
+
+        if (!client) {
+          throw new Error(
+            "Le client Supabase MDN n'est pas disponible."
+          );
+        }
+
+
+        /*
+         * 1. Edition active.
+         * La base garantit qu'une seule édition peut avoir est_active = true.
+         */
+        const {
+          data: edition,
+          error: erreurEdition
+        } =
+          await client
+            .from("editions")
+            .select("id, annee, nom, statut, est_active")
+            .eq("est_active", true)
+            .maybeSingle();
+
+
+        if (erreurEdition) {
+          throw erreurEdition;
+        }
+
+
+        if (!edition) {
+
+          informationEdition.textContent =
+            "Aucune édition active";
+
+          afficherEtatArticles(
+            "⚠️",
+            "Aucune édition active",
+            "Active une édition dans l'administration avant d'utiliser la caisse."
+          );
+
+          return;
+        }
+
+
+        informationEdition.textContent =
+          edition.nom ||
+          ("Édition " + edition.annee);
+
+
+        /*
+         * 2. Articles/tarifs actifs de cette édition.
+         */
+        const {
+          data: tarifs,
+          error: erreurTarifs
+        } =
+          await client
+            .from("edition_articles")
+            .select(
+              "id, edition_id, article_id, prix, gestion_stock, seuil_stock, actif, ordre_affichage"
+            )
+            .eq("edition_id", edition.id)
+            .eq("actif", true)
+            .order("ordre_affichage", {
+              ascending: true
+            });
+
+
+        if (erreurTarifs) {
+          throw erreurTarifs;
+        }
+
+
+        if (!tarifs || tarifs.length === 0) {
+
+          articlesCaisse = [];
+
+          afficherArticles();
+
+          return;
+        }
+
+
+        const idsArticles =
+          [...new Set(
+            tarifs.map(function (tarif) {
+              return tarif.article_id;
+            })
+          )];
+
+
+        /*
+         * 3. Référentiel des articles.
+         */
+        const {
+          data: articles,
+          error: erreurArticles
+        } =
+          await client
+            .from("referentiel_articles")
+            .select(
+              "id, nom, description, beneficiaire, categorie_id, actif"
+            )
+            .in("id", idsArticles)
+            .eq("actif", true);
+
+
+        if (erreurArticles) {
+          throw erreurArticles;
+        }
+
+
+        /*
+         * 4. Catégories actives.
+         */
+        const idsCategories =
+          [...new Set(
+            (articles || [])
+              .map(function (article) {
+                return article.categorie_id;
+              })
+              .filter(Boolean)
+          )];
+
+
+        let categories = [];
+
+
+        if (idsCategories.length > 0) {
+
+          const {
+            data: categoriesChargees,
+            error: erreurCategories
+          } =
+            await client
+              .from("categories_articles")
+              .select(
+                "id, nom, ordre_affichage, actif"
+              )
+              .in("id", idsCategories)
+              .eq("actif", true);
+
+
+          if (erreurCategories) {
+            throw erreurCategories;
+          }
+
+
+          categories =
+            categoriesChargees || [];
+
+        }
+
+
+        const articlesParId =
+          new Map(
+            (articles || []).map(function (article) {
+              return [
+                article.id,
+                article
+              ];
+            })
+          );
+
+
+        const categoriesParId =
+          new Map(
+            categories.map(function (categorie) {
+              return [
+                categorie.id,
+                categorie
+              ];
+            })
+          );
+
+
+        /*
+         * 5. Fusion du tarif annuel avec le référentiel permanent.
+         * Le prix affiché vient exclusivement de edition_articles.prix.
+         */
+        articlesCaisse =
+          tarifs
+            .map(function (tarif) {
+
+              const article =
+                articlesParId.get(
+                  tarif.article_id
+                );
+
+
+              if (!article) {
+                return null;
+              }
+
+
+              const categorie =
+                article.categorie_id
+                  ? categoriesParId.get(
+                      article.categorie_id
+                    )
+                  : null;
+
+
+              return {
+                editionArticleId:
+                  tarif.id,
+
+                articleId:
+                  article.id,
+
+                nom:
+                  article.nom,
+
+                description:
+                  article.description,
+
+                beneficiaire:
+                  article.beneficiaire,
+
+                categorie:
+                  categorie
+                    ? categorie.nom
+                    : null,
+
+                prix:
+                  Number(tarif.prix),
+
+                gestionStock:
+                  tarif.gestion_stock === true,
+
+                seuilStock:
+                  Number(tarif.seuil_stock || 0),
+
+                ordreAffichage:
+                  Number(tarif.ordre_affichage || 0)
+              };
+
+            })
+            .filter(Boolean);
+
+
+        afficherArticles();
+
+      }
+
+
+      filtreTout.addEventListener(
+        "click",
+        function () {
+          appliquerFiltre("tout");
+        }
+      );
+
+
+      filtreMDN.addEventListener(
+        "click",
+        function () {
+          appliquerFiltre("mdn");
+        }
+      );
+
+
+      filtreFondation.addEventListener(
+        "click",
+        function () {
+          appliquerFiltre("fondation");
+        }
+      );
 
 
       boutonRetour.addEventListener(
@@ -745,6 +1309,9 @@
             identite +
             " · " +
             auth.libelleRole;
+
+
+          await chargerCatalogueCaisse();
 
 
           masquerChargement();
