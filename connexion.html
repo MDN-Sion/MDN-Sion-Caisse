@@ -870,7 +870,7 @@
 
 
             afficherMessage(
-              "Connexion réussie. Session Supabase créée.",
+              "Connexion réussie. Ouverture de l’application…",
               "info"
             );
 
@@ -880,6 +880,11 @@
               {
                 userId: data.user.id
               }
+            );
+
+
+            window.location.replace(
+              "accueil.html"
             );
 
 
@@ -927,8 +932,12 @@
           if (data.session) {
 
             afficherMessage(
-              "Une session utilisateur est déjà active.",
+              "Session active détectée. Ouverture de l’application…",
               "info"
+            );
+
+            window.location.replace(
+              "accueil.html"
             );
 
           }
