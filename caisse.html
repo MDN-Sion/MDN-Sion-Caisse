@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <meta name="description" content="Caisse - Marché de Noël de Sion">
+  <title>Caisse - MDN Sion</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f3f3f3;
+      color: #222;
+    }
+
+    button { font: inherit; -webkit-tap-highlight-color: transparent; }
+
+    .chargement-page {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
+      color: #fff;
+      text-align: center;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+
+    .chargement-page.masque {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .chargement-embleme {
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.65);
+      border-radius: 20px;
+      background: rgba(255,255,255,.1);
+      font-size: 36px;
+    }
+
+    .chargement-page strong { font-size: 28px; }
+    .chargement-page p { margin: 0; color: rgba(255,255,255,.85); }
+
+    .spinner-page {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: rotation .8s linear infinite;
+    }
+
+    .application {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .barre-haute {
+      padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+      background: linear-gradient(145deg, #7b0000, #980000);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    }
+
+    .barre-haute-contenu {
+      width: min(100%, 1500px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bouton-retour,
+    .bouton-deconnexion {
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 11px;
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .bouton-retour {
+      padding: 9px 14px;
+    }
+
+    .bouton-deconnexion {
+      padding: 9px 14px;
+    }
+
+    .bouton-retour:hover,
+    .bouton-deconnexion:hover:not(:disabled) {
+      background: rgba(255,255,255,.18);
+    }
+
+    .bouton-deconnexion:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    .titre-entete {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .titre-entete h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .titre-entete p {
+      margin: 3px 0 0;
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contenu {
+      width: min(100%, 1500px);
+      flex: 1;
+      margin: 0 auto;
+      padding: 18px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    }
+
+    .message {
+      display: none;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message.visible { display: block; }
+    .message.erreur { border: 1px solid #e4b5b5; background: #fff1f1; color: #9c1616; }
+
+    .zone-caisse {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(330px, .75fr);
+      gap: 18px;
+      align-items: stretch;
+      min-height: calc(100dvh - 104px);
+    }
+
+    .panneau {
+      min-width: 0;
+      background: #fff;
+      border: 1px solid #e2e2e2;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .panneau-articles {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .barre-categories {
+      display: flex;
+      gap: 9px;
+      padding: 14px;
+      overflow-x: auto;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fafafa;
+      scrollbar-width: thin;
+    }
+
+    .categorie {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 9px 15px;
+      border: 1px solid #d7d7d7;
+      border-radius: 999px;
+      background: #fff;
+      color: #555;
+      font-weight: 700;
+      cursor: not-allowed;
+    }
+
+    .categorie.active {
+      border-color: #8b0000;
+      background: #8b0000;
+      color: #fff;
+    }
+
+    .zone-articles {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .etat-vide {
+      max-width: 520px;
+      color: #666;
+    }
+
+    .etat-vide .icone {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 22px;
+      background: #fff0f0;
+      font-size: 36px;
+    }
+
+    .etat-vide h2 {
+      margin: 0 0 8px;
+      color: #850000;
+      font-size: 23px;
+    }
+
+    .etat-vide p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .panneau-panier {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panier-entete {
+      padding: 16px 18px;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fafafa;
+    }
+
+    .panier-entete h2 {
+      margin: 0;
+      color: #850000;
+      font-size: 20px;
+    }
+
+    .panier-entete p {
+      margin: 4px 0 0;
+      color: #777;
+      font-size: 12px;
+    }
+
+    .panier-contenu {
+      flex: 1;
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #888;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .panier-total {
+      padding: 16px 18px;
+      border-top: 1px solid #e7e7e7;
+      background: #fafafa;
+    }
+
+    .ligne-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .ligne-total span {
+      color: #555;
+      font-weight: 700;
+    }
+
+    .ligne-total strong {
+      color: #850000;
+      font-size: 27px;
+      white-space: nowrap;
+    }
+
+    .bouton-encaisser {
+      width: 100%;
+      min-height: 52px;
+      border: 0;
+      border-radius: 12px;
+      background: #dedede;
+      color: #777;
+      font-weight: 800;
+      cursor: not-allowed;
+    }
+
+    .pied-page {
+      padding: 8px 16px max(10px, env(safe-area-inset-bottom));
+      color: #777;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    @keyframes rotation { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .zone-caisse {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr);
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .barre-haute-contenu {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+      }
+
+      .bouton-retour,
+      .bouton-deconnexion {
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .titre-entete h1 { font-size: 18px; }
+      .titre-entete p { display: none; }
+
+      .contenu {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .zone-caisse {
+        min-height: 0;
+        grid-template-columns: 1fr;
+      }
+
+      .panneau-articles {
+        min-height: 330px;
+      }
+
+      .panneau-panier {
+        min-height: 300px;
+      }
+
+      .zone-articles {
+        padding: 20px 16px;
+      }
+
+      .etat-vide .icone {
+        width: 62px;
+        height: 62px;
+        font-size: 30px;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .barre-haute {
+        padding-top: max(7px, env(safe-area-inset-top));
+        padding-bottom: 7px;
+      }
+
+      .contenu {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .zone-caisse {
+        grid-template-columns: minmax(0, 1.55fr) minmax(290px, .75fr);
+        min-height: calc(100dvh - 82px);
+        gap: 10px;
+      }
+
+      .barre-categories {
+        padding: 9px;
+      }
+
+      .categorie {
+        min-height: 36px;
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+
+      .etat-vide .icone {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 9px;
+        font-size: 25px;
+      }
+
+      .etat-vide h2 { font-size: 19px; }
+      .panier-entete { padding: 11px 14px; }
+      .panier-total { padding: 11px 14px; }
+      .ligne-total { margin-bottom: 9px; }
+      .ligne-total strong { font-size: 23px; }
+      .bouton-encaisser { min-height: 44px; }
+      .pied-page { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+      .spinner-page { animation-duration: 1.8s; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="chargementPage" class="chargement-page" aria-live="polite">
+    <div class="chargement-embleme" aria-hidden="true">❄</div>
+    <strong>MDN Sion</strong>
+    <div class="spinner-page" aria-hidden="true"></div>
+    <p>Ouverture de la caisse…</p>
+  </div>
+
+  <div class="application">
+
+    <header class="barre-haute">
+      <div class="barre-haute-contenu">
+
+        <button
+          id="boutonRetour"
+          class="bouton-retour"
+          type="button"
+        >
+          ← Accueil
+        </button>
+
+        <div class="titre-entete">
+          <h1>🛒 Caisse</h1>
+          <p id="identiteUtilisateur">Chargement…</p>
+        </div>
+
+        <button
+          id="boutonDeconnexion"
+          class="bouton-deconnexion"
+          type="button"
+        >
+          Déconnexion
+        </button>
+
+      </div>
+    </header>
+
+    <main class="contenu">
+
+      <div
+        id="messageCaisse"
+        class="message"
+        role="alert"
+        aria-live="polite"
+      ></div>
+
+      <section class="zone-caisse">
+
+        <article class="panneau panneau-articles">
+
+          <nav
+            class="barre-categories"
+            aria-label="Catégories de la caisse"
+          >
+            <button class="categorie active" type="button" disabled>Tout</button>
+            <button class="categorie" type="button" disabled>MDN</button>
+            <button class="categorie" type="button" disabled>Fondation</button>
+          </nav>
+
+          <div class="zone-articles">
+
+            <div class="etat-vide">
+              <div class="icone" aria-hidden="true">🛒</div>
+
+              <h2>Module Caisse prêt</h2>
+
+              <p>
+                L'authentification et l'interface responsive sont actives.
+                À l'étape suivante, les articles et tarifs de l'édition
+                seront chargés depuis Supabase.
+              </p>
+            </div>
+
+          </div>
+
+        </article>
+
+
+        <aside class="panneau panneau-panier">
+
+          <div class="panier-entete">
+            <h2>Panier</h2>
+            <p>Aucune vente en cours</p>
+          </div>
+
+          <div class="panier-contenu">
+            Le panier est vide.
+          </div>
+
+          <div class="panier-total">
+
+            <div class="ligne-total">
+              <span>Total</span>
+              <strong>CHF 0.00</strong>
+            </div>
+
+            <button
+              class="bouton-encaisser"
+              type="button"
+              disabled
+            >
+              Encaisser
+            </button>
+
+          </div>
+
+        </aside>
+
+      </section>
+
+    </main>
+
+    <footer class="pied-page">
+      Application de gestion du Marché de Noël de Sion
+    </footer>
+
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    "use strict";
+
+    (function () {
+
+      const chargementPage =
+        document.getElementById("chargementPage");
+
+      const identiteUtilisateur =
+        document.getElementById("identiteUtilisateur");
+
+      const messageCaisse =
+        document.getElementById("messageCaisse");
+
+      const boutonRetour =
+        document.getElementById("boutonRetour");
+
+      const boutonDeconnexion =
+        document.getElementById("boutonDeconnexion");
+
+
+      function masquerChargement() {
+        chargementPage.classList.add("masque");
+      }
+
+
+      function afficherMessage(
+        texte,
+        type = "erreur"
+      ) {
+        messageCaisse.textContent = texte;
+        messageCaisse.className =
+          "message visible " + type;
+      }
+
+
+      boutonRetour.addEventListener(
+        "click",
+        function () {
+          window.location.href = "accueil.html";
+        }
+      );
+
+
+      boutonDeconnexion.addEventListener(
+        "click",
+        async function () {
+
+          boutonDeconnexion.disabled = true;
+          boutonDeconnexion.textContent =
+            "Déconnexion…";
+
+          await window.MDN_AUTH.deconnexion();
+
+        }
+      );
+
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
+      });
+
+
+      async function initialiserCaisse() {
+
+        try {
+
+          /*
+           * La caisse est accessible aux trois rôles.
+           * Les opérations sensibles seront ensuite
+           * contrôlées côté serveur selon le rôle.
+           */
+
+          const auth =
+            await window.MDN_AUTH.protegerPage([
+              "utilisateur",
+              "responsable",
+              "administrateur"
+            ]);
+
+
+          if (!auth) {
+            return;
+          }
+
+
+          const email =
+            auth.profil.email ||
+            auth.utilisateur.email ||
+            "Utilisateur";
+
+
+          identiteUtilisateur.textContent =
+            email +
+            " · " +
+            auth.libelleRole;
+
+
+          masquerChargement();
+
+        } catch (erreur) {
+
+          console.error(
+            "[MDN Sion] Initialisation de la caisse impossible :",
+            erreur
+          );
+
+
+          masquerChargement();
+
+
+          afficherMessage(
+            erreur?.message ||
+            "Impossible d'ouvrir la caisse."
+          );
+
+        }
+
+      }
+
+
+      initialiserCaisse();
+
+    })();
+  </script>
+
+</body>
+</html>
