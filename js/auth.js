@@ -4,19 +4,10 @@
    MDN SION - AUTHENTIFICATION COMMUNE
    Fichier : js/auth.js
 
-   Rôles techniques de la base :
+   Rôles techniques :
    - utilisateur
    - responsable
    - administrateur
-
-   Ce fichier centralise :
-   - la récupération de la session Supabase ;
-   - la récupération du profil interne MDN ;
-   - la vérification du compte actif ;
-   - la vérification du rôle ;
-   - les fonctions de contrôle des droits ;
-   - la déconnexion ;
-   - la redirection vers la connexion.
    ============================================================ */
 
 (function () {
@@ -32,10 +23,11 @@
 
 
   /* ============================================================
-     OUTILS
+     CLIENT SUPABASE
      ============================================================ */
 
   function obtenirClientSupabase() {
+
     const client = window.MDN_SUPABASE;
 
     if (!client) {
@@ -48,14 +40,21 @@
   }
 
 
+  /* ============================================================
+     ROLES
+     ============================================================ */
+
   function normaliserRole(role) {
+
     return String(role || "")
       .trim()
       .toLowerCase();
+
   }
 
 
   function libelleRole(role) {
+
     switch (normaliserRole(role)) {
 
       case "administrateur":
@@ -69,17 +68,22 @@
 
       default:
         return "Utilisateur";
+
     }
+
   }
 
 
-  function urlConnexion() {
-    return "connexion.html";
-  }
-
+  /* ============================================================
+     REDIRECTION CONNEXION
+     ============================================================ */
 
   function redirigerVersConnexion() {
-    window.location.replace(urlConnexion());
+
+    window.location.replace(
+      "connexion.html"
+    );
+
   }
 
 
@@ -89,16 +93,21 @@
 
   async function obtenirSession() {
 
-    const client = obtenirClientSupabase();
+    const client =
+      obtenirClientSupabase();
+
 
     const {
       data,
       error
-    } = await client.auth.getSession();
+    } =
+      await client.auth.getSession();
+
 
     if (error) {
       throw error;
     }
+
 
     if (
       !data ||
@@ -108,7 +117,9 @@
       return null;
     }
 
+
     return data.session;
+
   }
 
 
@@ -116,253 +127,453 @@
      PROFIL INTERNE MDN
      ============================================================ */
 
-  async function obtenirProfil(utilisateurAuth) {
+  async function obtenirProfil(
+    utilisateurAuth
+  ) {
 
-    if (!utilisateurAuth || !utilisateurAuth.id) {
+    if (
+      !utilisateurAuth ||
+      !utilisateurAuth.id
+    ) {
+
       throw new Error(
         "Utilisateur Supabase invalide."
       );
+
     }
 
-    const client = obtenirClientSupabase();
+
+    const client =
+      obtenirClientSupabase();
+
+
+    /*
+     * On récupère maintenant également :
+     *
+     * - prenom
+     * - nom
+     *
+     * Cela permet aux différentes pages MDN
+     * d'afficher par exemple :
+     *
+     * Aymeric · Administrateur
+     *
+     * au lieu de l'adresse e-mail.
+     */
 
     const {
       data: profil,
       error
-    } = await client
-      .from("utilisateurs")
-      .select(
-        "id, auth_user_id, email, role, actif"
-      )
-      .eq(
-        "auth_user_id",
-        utilisateurAuth.id
-      )
-      .maybeSingle();
+    } =
+      await client
+        .from("utilisateurs")
+        .select(
+          "id, auth_user_id, email, prenom, nom, role, actif"
+        )
+        .eq(
+          "auth_user_id",
+          utilisateurAuth.id
+        )
+        .maybeSingle();
+
 
     if (error) {
       throw error;
     }
 
+
     if (!profil) {
+
       throw new Error(
         "Aucun compte interne MDN n'est associé à cet utilisateur."
       );
+
     }
 
-    if (profil.actif !== true) {
+
+    if (
+      profil.actif !== true
+    ) {
+
       throw new Error(
         "Votre compte MDN est désactivé. Contactez un administrateur."
       );
+
     }
 
-    const role = normaliserRole(profil.role);
 
-    if (!ROLES_AUTORISES.includes(role)) {
+    const role =
+      normaliserRole(
+        profil.role
+      );
+
+
+    if (
+      !ROLES_AUTORISES.includes(
+        role
+      )
+    ) {
+
       throw new Error(
         "Le rôle de votre compte MDN n'est pas valide."
       );
+
     }
 
-    profil.role = role;
+
+    /*
+     * On conserve toujours le rôle sous sa
+     * forme technique normalisée :
+     *
+     * utilisateur
+     * responsable
+     * administrateur
+     */
+
+    profil.role =
+      role;
+
 
     return profil;
+
   }
 
 
   /* ============================================================
-     INITIALISATION AUTHENTIFICATION
+     VERIFICATION COMPLETE DE L'AUTHENTIFICATION
      ============================================================ */
 
-  async function verifierAuthentification(options = {}) {
+  async function verifierAuthentification(
+    options = {}
+  ) {
 
     const {
+
       redirigerSiNonConnecte = true,
+
       deconnecterSiProfilInvalide = true
+
     } = options;
 
-    const client = obtenirClientSupabase();
 
-    const session = await obtenirSession();
+    const client =
+      obtenirClientSupabase();
+
+
+    const session =
+      await obtenirSession();
+
+
+    /*
+     * Aucune session Supabase.
+     */
 
     if (!session) {
 
-      utilisateurCourant = null;
-      profilCourant = null;
+      utilisateurCourant =
+        null;
 
-      if (redirigerSiNonConnecte) {
+      profilCourant =
+        null;
+
+
+      if (
+        redirigerSiNonConnecte
+      ) {
+
         redirigerVersConnexion();
+
       }
 
+
       return null;
+
     }
 
-    utilisateurCourant = session.user;
+
+    utilisateurCourant =
+      session.user;
+
+
+    /*
+     * Recherche du profil interne MDN.
+     */
 
     try {
 
-      profilCourant = await obtenirProfil(
-        utilisateurCourant
-      );
+      profilCourant =
+        await obtenirProfil(
+          utilisateurCourant
+        );
 
     } catch (erreur) {
 
-      profilCourant = null;
+      profilCourant =
+        null;
 
-      if (deconnecterSiProfilInvalide) {
+
+      /*
+       * Si le compte interne MDN est invalide,
+       * désactivé ou possède un rôle incorrect,
+       * on ferme également la session Supabase.
+       */
+
+      if (
+        deconnecterSiProfilInvalide
+      ) {
 
         try {
+
           await client.auth.signOut();
-        } catch (erreurDeconnexion) {
+
+        } catch (
+          erreurDeconnexion
+        ) {
+
           console.error(
             "[MDN Sion] Impossible de fermer la session invalide :",
             erreurDeconnexion
           );
+
         }
+
       }
 
+
       throw erreur;
+
     }
+
+
+    /*
+     * Objet commun retourné aux différentes
+     * pages de l'application.
+     */
 
     return {
-      session: session,
-      utilisateur: utilisateurCourant,
-      profil: profilCourant,
-      role: profilCourant.role,
-      libelleRole: libelleRole(profilCourant.role)
+
+      session:
+        session,
+
+      utilisateur:
+        utilisateurCourant,
+
+      profil:
+        profilCourant,
+
+      role:
+        profilCourant.role,
+
+      libelleRole:
+        libelleRole(
+          profilCourant.role
+        )
+
     };
+
   }
 
 
   /* ============================================================
-     DROITS
+     CONTROLE DES ROLES
      ============================================================ */
 
-  function estUtilisateur(role) {
+  function estUtilisateur(
+    role
+  ) {
 
-    const roleNormalise = normaliserRole(
+    return normaliserRole(
+
       role !== undefined
         ? role
         : profilCourant?.role
-    );
 
-    return roleNormalise === "utilisateur";
+    ) === "utilisateur";
+
   }
 
 
-  function estResponsable(role) {
+  function estResponsable(
+    role
+  ) {
 
-    const roleNormalise = normaliserRole(
+    return normaliserRole(
+
       role !== undefined
         ? role
         : profilCourant?.role
-    );
 
-    return roleNormalise === "responsable";
+    ) === "responsable";
+
   }
 
 
-  function estAdministrateur(role) {
+  function estAdministrateur(
+    role
+  ) {
 
-    const roleNormalise = normaliserRole(
+    return normaliserRole(
+
       role !== undefined
         ? role
         : profilCourant?.role
-    );
 
-    return roleNormalise === "administrateur";
+    ) === "administrateur";
+
   }
 
 
-  function estResponsableOuAdministrateur(role) {
+  function estResponsableOuAdministrateur(
+    role
+  ) {
 
-    const roleNormalise = normaliserRole(
-      role !== undefined
-        ? role
-        : profilCourant?.role
-    );
+    const roleNormalise =
+      normaliserRole(
+
+        role !== undefined
+          ? role
+          : profilCourant?.role
+
+      );
+
 
     return (
-      roleNormalise === "responsable" ||
-      roleNormalise === "administrateur"
+
+      roleNormalise ===
+        "responsable"
+
+      ||
+
+      roleNormalise ===
+        "administrateur"
+
     );
+
   }
 
 
-  function aUnDesRoles(rolesAutorises, role) {
+  function aUnDesRoles(
+    rolesAutorises,
+    role
+  ) {
 
-    if (!Array.isArray(rolesAutorises)) {
+    if (
+      !Array.isArray(
+        rolesAutorises
+      )
+    ) {
+
       return false;
+
     }
 
-    const roleNormalise = normaliserRole(
-      role !== undefined
-        ? role
-        : profilCourant?.role
-    );
+
+    const roleNormalise =
+      normaliserRole(
+
+        role !== undefined
+          ? role
+          : profilCourant?.role
+
+      );
+
 
     return rolesAutorises
-      .map(normaliserRole)
-      .includes(roleNormalise);
+      .map(
+        normaliserRole
+      )
+      .includes(
+        roleNormalise
+      );
+
   }
 
 
   /* ============================================================
-     PROTECTION D'UNE PAGE PAR RÔLE
+     PROTECTION D'UNE PAGE
      ============================================================ */
 
-  async function protegerPage(rolesAutorises = null) {
+  async function protegerPage(
+    rolesAutorises = null
+  ) {
 
-    const auth = await verifierAuthentification();
+    const auth =
+      await verifierAuthentification();
+
 
     if (!auth) {
       return null;
     }
 
+
+    /*
+     * Si aucun tableau de rôles n'est fourni,
+     * tout utilisateur MDN authentifié et actif
+     * peut accéder à la page.
+     */
+
     if (
-      Array.isArray(rolesAutorises) &&
+
+      Array.isArray(
+        rolesAutorises
+      )
+
+      &&
+
       rolesAutorises.length > 0
+
+      &&
+
+      !aUnDesRoles(
+        rolesAutorises,
+        auth.role
+      )
+
     ) {
 
-      const autorise = aUnDesRoles(
-        rolesAutorises,
+      console.warn(
+        "[MDN Sion] Accès refusé pour le rôle :",
         auth.role
       );
 
-      if (!autorise) {
 
-        console.warn(
-          "[MDN Sion] Accès refusé pour le rôle :",
-          auth.role
-        );
+      window.location.replace(
+        "accueil.html"
+      );
 
-        window.location.replace("accueil.html");
 
-        return null;
-      }
+      return null;
+
     }
 
+
     return auth;
+
   }
 
 
   /* ============================================================
-     DÉCONNEXION
+     DECONNEXION
      ============================================================ */
 
   async function deconnexion() {
 
-    const client = obtenirClientSupabase();
+    const client =
+      obtenirClientSupabase();
+
 
     try {
 
       const {
         error
-      } = await client.auth.signOut();
+      } =
+        await client.auth.signOut();
+
 
       if (error) {
         throw error;
       }
+
 
     } catch (erreur) {
 
@@ -371,80 +582,136 @@
         erreur
       );
 
+
     } finally {
 
-      utilisateurCourant = null;
-      profilCourant = null;
+      utilisateurCourant =
+        null;
+
+      profilCourant =
+        null;
+
 
       redirigerVersConnexion();
+
     }
+
   }
 
 
   /* ============================================================
-     ÉCOUTE DES CHANGEMENTS DE SESSION
+     SURVEILLANCE DE LA SESSION
      ============================================================ */
 
-  function surveillerSession(options = {}) {
+  function surveillerSession(
+    options = {}
+  ) {
 
     const {
-      redirigerApresDeconnexion = true
+
+      redirigerApresDeconnexion =
+        true
+
     } = options;
 
-    const client = obtenirClientSupabase();
 
-    return client.auth.onAuthStateChange(
-      function (evenement, session) {
+    const client =
+      obtenirClientSupabase();
 
-        if (
-          evenement === "SIGNED_OUT" ||
-          !session
+
+    return client.auth
+      .onAuthStateChange(
+
+        function (
+          evenement,
+          session
         ) {
 
-          utilisateurCourant = null;
-          profilCourant = null;
+          /*
+           * Session fermée.
+           */
 
-          if (redirigerApresDeconnexion) {
-            redirigerVersConnexion();
+          if (
+
+            evenement ===
+              "SIGNED_OUT"
+
+            ||
+
+            !session
+
+          ) {
+
+            utilisateurCourant =
+              null;
+
+            profilCourant =
+              null;
+
+
+            if (
+              redirigerApresDeconnexion
+            ) {
+
+              redirigerVersConnexion();
+
+            }
+
+
+            return;
+
           }
 
-          return;
+
+          /*
+           * Session toujours active.
+           */
+
+          if (
+            session &&
+            session.user
+          ) {
+
+            utilisateurCourant =
+              session.user;
+
+          }
+
         }
 
-        if (
-          session &&
-          session.user
-        ) {
-          utilisateurCourant = session.user;
-        }
-      }
-    );
+      );
+
   }
 
 
   /* ============================================================
-     INFORMATIONS UTILISATEUR COURANT
+     INFORMATIONS DE L'UTILISATEUR COURANT
      ============================================================ */
 
   function getUtilisateurCourant() {
+
     return utilisateurCourant;
+
   }
 
 
   function getProfilCourant() {
+
     return profilCourant;
+
   }
 
 
   function getRoleCourant() {
 
-    if (!profilCourant) {
-      return null;
-    }
+    return profilCourant
 
-    return normaliserRole(
-      profilCourant.role
-    );
+      ? normaliserRole(
+          profilCourant.role
+        )
+
+      : null;
+
   }
 
 
