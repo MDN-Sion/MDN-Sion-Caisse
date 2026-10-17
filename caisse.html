@@ -728,6 +728,219 @@
     .bouton-encaisser.actif { background:#8b0000; color:#fff; cursor:pointer; }
     .bouton-encaisser.actif:hover { background:#700000; }
 
+
+    /* =========================================================
+       ENCAISSEMENT - ÉTAPE 1 : CHOIX DU MOYEN DE PAIEMENT
+       ========================================================= */
+
+    .modal-encaissement {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(20, 20, 20, .55);
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-encaissement.visible {
+      display: flex;
+    }
+
+    .encaissement-carte {
+      width: min(100%, 620px);
+      max-height: min(90dvh, 760px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #dedede;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0,0,0,.25);
+    }
+
+    .encaissement-entete {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fafafa;
+    }
+
+    .encaissement-entete h2 {
+      margin: 0;
+      color: #850000;
+      font-size: 22px;
+    }
+
+    .encaissement-fermer {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .encaissement-corps {
+      min-height: 0;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .encaissement-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #fff4f4;
+    }
+
+    .encaissement-total span {
+      color: #555;
+      font-weight: 800;
+    }
+
+    .encaissement-total strong {
+      color: #850000;
+      font-size: 30px;
+      white-space: nowrap;
+    }
+
+    .encaissement-titre-section {
+      margin: 0 0 10px;
+      color: #333;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .moyens-paiement {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .moyen-paiement {
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 14px;
+      background: #fff;
+      color: #444;
+      cursor: pointer;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .moyen-paiement:hover {
+      border-color: #b98b8b;
+      background: #fffafa;
+    }
+
+    .moyen-paiement.selectionne {
+      border-color: #8b0000;
+      background: #fff1f1;
+      color: #850000;
+    }
+
+    .moyen-paiement-icone {
+      font-size: 27px;
+      line-height: 1;
+    }
+
+    .encaissement-info {
+      margin: 16px 0 0;
+      padding: 11px 13px;
+      border-radius: 11px;
+      background: #f5f5f5;
+      color: #666;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .encaissement-actions {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 20px;
+      border-top: 1px solid #e7e7e7;
+      background: #fafafa;
+    }
+
+    .encaissement-annuler,
+    .encaissement-continuer {
+      min-height: 46px;
+      padding: 10px 18px;
+      border-radius: 11px;
+      font-weight: 850;
+    }
+
+    .encaissement-annuler {
+      border: 1px solid #d6d6d6;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+    }
+
+    .encaissement-continuer {
+      border: 0;
+      background: #dedede;
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    .encaissement-continuer.actif {
+      background: #8b0000;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    @media (max-width: 560px) {
+      .modal-encaissement {
+        padding: 10px;
+      }
+
+      .encaissement-carte {
+        max-height: 94dvh;
+      }
+
+      .moyens-paiement {
+        grid-template-columns: 1fr;
+      }
+
+      .moyen-paiement {
+        min-height: 64px;
+        flex-direction: row;
+      }
+
+      .encaissement-total strong {
+        font-size: 25px;
+      }
+
+      .encaissement-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -1028,6 +1241,55 @@
   </div>
 
 
+  <div id="modalEncaissement" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreEncaissement">
+    <section class="encaissement-carte">
+
+      <div class="encaissement-entete">
+        <h2 id="titreEncaissement">Encaisser la vente</h2>
+        <button id="fermerEncaissement" class="encaissement-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="encaissement-corps">
+
+        <div class="encaissement-total">
+          <span>Total à encaisser</span>
+          <strong id="totalEncaissement">CHF 0.00</strong>
+        </div>
+
+        <p class="encaissement-titre-section">Moyen de paiement</p>
+
+        <div class="moyens-paiement">
+          <button class="moyen-paiement" type="button" data-moyen-paiement="especes">
+            <span class="moyen-paiement-icone" aria-hidden="true">💵</span>
+            <span>Espèces</span>
+          </button>
+
+          <button class="moyen-paiement" type="button" data-moyen-paiement="carte">
+            <span class="moyen-paiement-icone" aria-hidden="true">💳</span>
+            <span>Carte bancaire</span>
+          </button>
+
+          <button class="moyen-paiement" type="button" data-moyen-paiement="twint">
+            <span class="moyen-paiement-icone" aria-hidden="true">📱</span>
+            <span>TWINT</span>
+          </button>
+        </div>
+
+        <div class="encaissement-info">
+          Le paiement partagé sera disponible à l'étape suivante. Pour ce premier test, sélectionne simplement le moyen de paiement principal.
+        </div>
+
+      </div>
+
+      <div class="encaissement-actions">
+        <button id="annulerEncaissement" class="encaissement-annuler" type="button">Annuler</button>
+        <button id="continuerEncaissement" class="encaissement-continuer" type="button" disabled>Continuer</button>
+      </div>
+
+    </section>
+  </div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
@@ -1074,11 +1336,21 @@
       const totalPanier = document.getElementById("totalPanier");
       const boutonEncaisser = document.getElementById("boutonEncaisser");
 
+      const modalEncaissement = document.getElementById("modalEncaissement");
+      const fermerEncaissement = document.getElementById("fermerEncaissement");
+      const annulerEncaissement = document.getElementById("annulerEncaissement");
+      const continuerEncaissement = document.getElementById("continuerEncaissement");
+      const totalEncaissement = document.getElementById("totalEncaissement");
+      const boutonsMoyenPaiement = Array.from(
+        document.querySelectorAll("[data-moyen-paiement]")
+      );
+
       let articlesCaisse = [];
       let filtreActif = "tout";
       let dossierActif = null;
       let clientSupabaseCaisse = null;
       let panierCaisse = [];
+      let moyenPaiementSelectionne = null;
 
 
       function masquerChargement() {
@@ -1279,6 +1551,54 @@
             </div>
           </article>
         `;
+      }
+
+
+      function fermerFenetreEncaissement() {
+        modalEncaissement.classList.remove("visible");
+        moyenPaiementSelectionne = null;
+
+        boutonsMoyenPaiement.forEach(function (bouton) {
+          bouton.classList.remove("selectionne");
+        });
+
+        continuerEncaissement.disabled = true;
+        continuerEncaissement.classList.remove("actif");
+      }
+
+
+      function ouvrirFenetreEncaissement() {
+        if (panierCaisse.length === 0) {
+          return;
+        }
+
+        moyenPaiementSelectionne = null;
+        totalEncaissement.textContent =
+          formaterCHF(calculerTotalPanier());
+
+        boutonsMoyenPaiement.forEach(function (bouton) {
+          bouton.classList.remove("selectionne");
+        });
+
+        continuerEncaissement.disabled = true;
+        continuerEncaissement.classList.remove("actif");
+
+        modalEncaissement.classList.add("visible");
+      }
+
+
+      function selectionnerMoyenPaiement(code) {
+        moyenPaiementSelectionne = code;
+
+        boutonsMoyenPaiement.forEach(function (bouton) {
+          bouton.classList.toggle(
+            "selectionne",
+            bouton.dataset.moyenPaiement === code
+          );
+        });
+
+        continuerEncaissement.disabled = false;
+        continuerEncaissement.classList.add("actif");
       }
 
 
@@ -1859,9 +2179,74 @@
       });
 
       boutonEncaisser.addEventListener("click", function () {
-        if (panierCaisse.length === 0) return;
-        console.info("[MDN Sion] Panier prêt pour l'encaissement :", panierCaisse, calculerTotalPanier());
+        ouvrirFenetreEncaissement();
       });
+
+
+      boutonsMoyenPaiement.forEach(function (bouton) {
+        bouton.addEventListener("click", function () {
+          selectionnerMoyenPaiement(
+            bouton.dataset.moyenPaiement
+          );
+        });
+      });
+
+
+      fermerEncaissement.addEventListener(
+        "click",
+        fermerFenetreEncaissement
+      );
+
+
+      annulerEncaissement.addEventListener(
+        "click",
+        fermerFenetreEncaissement
+      );
+
+
+      modalEncaissement.addEventListener(
+        "click",
+        function (evenement) {
+          if (evenement.target === modalEncaissement) {
+            fermerFenetreEncaissement();
+          }
+        }
+      );
+
+
+      document.addEventListener(
+        "keydown",
+        function (evenement) {
+          if (
+            evenement.key === "Escape" &&
+            modalEncaissement.classList.contains("visible")
+          ) {
+            fermerFenetreEncaissement();
+          }
+        }
+      );
+
+
+      continuerEncaissement.addEventListener(
+        "click",
+        function () {
+          if (!moyenPaiementSelectionne) {
+            return;
+          }
+
+          console.info(
+            "[MDN Sion] Moyen de paiement sélectionné :",
+            moyenPaiementSelectionne
+          );
+
+          /*
+           * Étape suivante :
+           * - paiement simple ou partagé ;
+           * - préparation des données pour public.valider_vente ;
+           * - aucune vente n'est encore enregistrée ici.
+           */
+        }
+      );
 
       filtreTout.addEventListener(
         "click",
