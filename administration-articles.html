@@ -1539,7 +1539,7 @@
       function afficherApercuPhoto(url) {
         if (url) {
           apercuPhotoArticle.innerHTML =
-            '<img src="' + echapperHtml(url) + '" alt="Photo de l’article">';
+            '<img src="' + echapperHTML(url) + '" alt="Photo de l’article">';
         } else {
           apercuPhotoArticle.textContent = "📄";
         }
