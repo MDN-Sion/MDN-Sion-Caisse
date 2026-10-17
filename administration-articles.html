@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <meta name="description" content="Administration des articles et tarifs - Marché de Noël de Sion">
+  <title>Articles & Tarifs - MDN Sion</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f3f3f3;
+      color: #222;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chargement-page {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
+      color: #fff;
+      text-align: center;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+
+    .chargement-page.masque {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .chargement-embleme {
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.65);
+      border-radius: 20px;
+      background: rgba(255,255,255,.1);
+      font-size: 36px;
+    }
+
+    .chargement-page strong {
+      font-size: 27px;
+    }
+
+    .chargement-page p {
+      margin: 0;
+      color: rgba(255,255,255,.85);
+    }
+
+    .spinner-page {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: rotation .8s linear infinite;
+    }
+
+    .barre-haute {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+      background: linear-gradient(145deg, #7b0000, #980000);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    }
+
+    .barre-haute-contenu {
+      width: min(100%, 1500px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bouton-retour,
+    .bouton-deconnexion {
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 11px;
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .bouton-retour:hover,
+    .bouton-deconnexion:hover:not(:disabled) {
+      background: rgba(255,255,255,.18);
+    }
+
+    .titre-page {
+      text-align: center;
+      min-width: 0;
+    }
+
+    .titre-page h1 {
+      margin: 0;
+      font-size: clamp(21px, 2.2vw, 29px);
+      line-height: 1.1;
+    }
+
+    .titre-page p {
+      margin: 5px 0 0;
+      font-size: 13px;
+      color: rgba(255,255,255,.88);
+    }
+
+    .contenu {
+      width: min(calc(100% - 32px), 1500px);
+      margin: 22px auto 32px;
+    }
+
+    .entete-section {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .entete-section h2 {
+      margin: 0;
+      color: #8b0000;
+      font-size: 25px;
+    }
+
+    .entete-section p {
+      margin: 5px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .bouton-principal {
+      flex: 0 0 auto;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 11px;
+      background: #9b0000;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(139,0,0,.15);
+    }
+
+    .bouton-principal:hover {
+      background: #7f0000;
+    }
+
+    .bouton-principal:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    .panneau {
+      overflow: hidden;
+      border: 1px solid #ddd;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.05);
+    }
+
+    .barre-outils {
+      padding: 16px;
+      border-bottom: 1px solid #e4e4e4;
+      background: #fafafa;
+    }
+
+    .ligne-outils {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .recherche {
+      position: relative;
+      min-width: 0;
+    }
+
+    .recherche span {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #777;
+    }
+
+    .recherche input {
+      width: 100%;
+      height: 44px;
+      padding: 0 42px;
+      border: 1px solid #d8d8d8;
+      border-radius: 12px;
+      outline: none;
+      background: #fff;
+      color: #222;
+    }
+
+    .recherche input:focus {
+      border-color: #a90000;
+      box-shadow: 0 0 0 3px rgba(169,0,0,.08);
+    }
+
+    .effacer-recherche {
+      position: absolute;
+      right: 7px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #666;
+      cursor: pointer;
+      display: none;
+    }
+
+    .effacer-recherche.visible {
+      display: block;
+    }
+
+    .filtres {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .filtre {
+      min-height: 42px;
+      padding: 8px 14px;
+      border: 1px solid #d6d6d6;
+      border-radius: 999px;
+      background: #fff;
+      color: #444;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .filtre.actif {
+      border-color: #a90000;
+      background: #a90000;
+      color: #fff;
+    }
+
+    .resume {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 18px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fff;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .resume strong {
+      color: #222;
+    }
+
+    .resume-edition {
+      margin-left: auto;
+      font-weight: 700;
+      color: #666;
+    }
+
+    .liste {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .article {
+      display: grid;
+      grid-template-columns: 64px minmax(180px, 1.5fr) minmax(130px, .8fr) minmax(110px, .65fr) minmax(100px, .55fr) 105px 92px 46px;
+      gap: 12px;
+      align-items: center;
+      min-height: 82px;
+      padding: 10px 12px;
+      border: 1px solid #e1e1e1;
+      border-radius: 14px;
+      background: #fff;
+      transition: box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .article:hover {
+      border-color: #d2b5b5;
+      box-shadow: 0 5px 16px rgba(0,0,0,.055);
+    }
+
+    .photo {
+      width: 58px;
+      height: 58px;
+      border: 1px solid #e1e1e1;
+      border-radius: 11px;
+      background: #f7f7f7;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+      color: #999;
+    }
+
+    .photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .nom-article {
+      min-width: 0;
+    }
+
+    .nom-article strong {
+      display: block;
+      font-size: 16px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .nom-article small {
+      display: block;
+      margin-top: 5px;
+      color: #777;
+      line-height: 1.25;
+    }
+
+    .cellule {
+      min-width: 0;
+    }
+
+    .cellule .label-mobile {
+      display: none;
+      margin-bottom: 3px;
+      color: #888;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .beneficiaire {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #f1f1f1;
+      color: #555;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .prix {
+      color: #950000;
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .etat {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .etat::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #14833b;
+    }
+
+    .etat.inactif {
+      color: #777;
+    }
+
+    .etat.inactif::before {
+      background: #b7b7b7;
+    }
+
+    .stock {
+      font-weight: 700;
+    }
+
+    .bouton-modifier {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #d9c0c0;
+      border-radius: 10px;
+      background: #fff8f8;
+      color: #8b0000;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .bouton-modifier:hover {
+      background: #f7eaea;
+    }
+
+    .etat-vide,
+    .erreur {
+      margin: 14px;
+      padding: 34px 18px;
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .etat-vide {
+      background: #fafafa;
+      color: #777;
+    }
+
+    .erreur {
+      border: 1px solid #efcaca;
+      background: #fff4f4;
+      color: #8b0000;
+    }
+
+    .note-version {
+      margin-top: 12px;
+      color: #777;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 1150px) {
+      .article {
+        grid-template-columns: 64px minmax(180px, 1.5fr) minmax(110px, .7fr) minmax(95px, .55fr) 95px 46px;
+      }
+
+      .col-categorie,
+      .col-stock {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .barre-haute-contenu {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+      }
+
+      .bouton-retour,
+      .bouton-deconnexion {
+        min-height: 39px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+
+      .titre-page h1 {
+        font-size: 19px;
+      }
+
+      .titre-page p {
+        font-size: 11px;
+      }
+
+      .contenu {
+        width: min(calc(100% - 20px), 1500px);
+        margin-top: 14px;
+      }
+
+      .entete-section {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bouton-principal {
+        width: 100%;
+      }
+
+      .ligne-outils {
+        grid-template-columns: 1fr;
+      }
+
+      .filtres {
+        justify-content: flex-start;
+      }
+
+      .resume-edition {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .article {
+        grid-template-columns: 54px minmax(0, 1fr) 42px;
+        gap: 10px;
+        padding: 11px;
+      }
+
+      .photo {
+        width: 50px;
+        height: 50px;
+      }
+
+      .col-beneficiaire,
+      .col-categorie,
+      .col-prix,
+      .col-stock,
+      .col-etat {
+        display: none;
+      }
+
+      .nom-article strong {
+        font-size: 15px;
+      }
+
+      .nom-article small {
+        display: block;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .titre-page p {
+        display: none;
+      }
+
+      .bouton-retour {
+        font-size: 0;
+        width: 42px;
+        padding: 0;
+      }
+
+      .bouton-retour::before {
+        content: "←";
+        font-size: 20px;
+      }
+
+      .bouton-deconnexion {
+        font-size: 0;
+        width: 42px;
+        padding: 0;
+      }
+
+      .bouton-deconnexion::before {
+        content: "↪";
+        font-size: 19px;
+      }
+
+      .filtres {
+        gap: 6px;
+      }
+
+      .filtre {
+        min-height: 38px;
+        padding: 7px 11px;
+        font-size: 13px;
+      }
+    }
+
+    @keyframes rotation {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="chargementPage" class="chargement-page">
+    <div class="chargement-embleme">⚙️</div>
+    <strong>Articles & Tarifs</strong>
+    <div class="spinner-page" aria-hidden="true"></div>
+    <p>Chargement du catalogue…</p>
+  </div>
+
+  <header class="barre-haute">
+    <div class="barre-haute-contenu">
+      <button id="boutonRetour" class="bouton-retour" type="button">← Administration</button>
+
+      <div class="titre-page">
+        <h1>⚙️ Articles & Tarifs</h1>
+        <p id="identiteUtilisateur">Administration</p>
+      </div>
+
+      <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="contenu">
+
+    <section class="entete-section">
+      <div>
+        <h2>Catalogue</h2>
+        <p>Gestion des articles et des tarifs de l’édition active.</p>
+      </div>
+
+      <button id="boutonNouvelArticle" class="bouton-principal" type="button">
+        + Nouvel article
+      </button>
+    </section>
+
+    <section class="panneau">
+
+      <div class="barre-outils">
+        <div class="ligne-outils">
+
+          <div class="recherche">
+            <span aria-hidden="true">⌕</span>
+            <input
+              id="rechercheArticle"
+              type="search"
+              placeholder="Rechercher un article…"
+              autocomplete="off"
+            >
+            <button
+              id="effacerRecherche"
+              class="effacer-recherche"
+              type="button"
+              aria-label="Effacer la recherche"
+            >✕</button>
+          </div>
+
+          <div class="filtres" aria-label="Filtres du catalogue">
+            <button class="filtre actif" type="button" data-filtre="tous">Tous</button>
+            <button class="filtre" type="button" data-filtre="mdn">MDN</button>
+            <button class="filtre" type="button" data-filtre="fondation">Fondation</button>
+            <button class="filtre" type="button" data-filtre="actifs">Actifs</button>
+            <button class="filtre" type="button" data-filtre="inactifs">Inactifs</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="resume">
+        <span><strong id="nombreAffiche">0</strong> article(s) affiché(s)</span>
+        <span>•</span>
+        <span><strong id="nombreTotal">0</strong> au total</span>
+        <span id="editionActive" class="resume-edition">Édition active</span>
+      </div>
+
+      <div id="zoneListe" class="liste"></div>
+
+      <div id="etatVide" class="etat-vide" hidden>
+        Aucun article ne correspond aux filtres sélectionnés.
+      </div>
+
+      <div id="zoneErreur" class="erreur" hidden></div>
+
+    </section>
+
+    <p class="note-version">
+      Première étape : consultation du catalogue. L’ajout et la modification seront branchés à l’étape suivante.
+    </p>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const chargementPage = document.getElementById("chargementPage");
+      const boutonRetour = document.getElementById("boutonRetour");
+      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
+      const boutonNouvelArticle = document.getElementById("boutonNouvelArticle");
+      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
+
+      const rechercheArticle = document.getElementById("rechercheArticle");
+      const effacerRecherche = document.getElementById("effacerRecherche");
+      const boutonsFiltres = Array.from(document.querySelectorAll(".filtre"));
+
+      const nombreAffiche = document.getElementById("nombreAffiche");
+      const nombreTotal = document.getElementById("nombreTotal");
+      const editionActive = document.getElementById("editionActive");
+      const zoneListe = document.getElementById("zoneListe");
+      const etatVide = document.getElementById("etatVide");
+      const zoneErreur = document.getElementById("zoneErreur");
+
+      let clientSupabase = null;
+      let editionCourante = null;
+      let articles = [];
+      let filtreActif = "tous";
+
+
+      function masquerChargement() {
+        chargementPage.classList.add("masque");
+      }
+
+
+      function echapperHTML(valeur) {
+        return String(valeur ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+
+      function normaliser(valeur) {
+        return String(valeur || "")
+          .trim()
+          .toLocaleLowerCase("fr")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      }
+
+
+      function formaterCHF(valeur) {
+        const nombre = Number(valeur || 0);
+
+        return "CHF " +
+          nombre.toLocaleString("fr-CH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+      }
+
+
+      function libelleBeneficiaire(valeur) {
+        return valeur === "fondation" ? "Fondation" : "MDN";
+      }
+
+
+      function urlPhoto(photoPath) {
+        if (!photoPath || !clientSupabase) {
+          return null;
+        }
+
+        const resultat = clientSupabase
+          .storage
+          .from("articles")
+          .getPublicUrl(photoPath);
+
+        return resultat?.data?.publicUrl || null;
+      }
+
+
+      function afficherErreur(message) {
+        zoneErreur.textContent = message;
+        zoneErreur.hidden = false;
+      }
+
+
+      function masquerErreur() {
+        zoneErreur.hidden = true;
+        zoneErreur.textContent = "";
+      }
+
+
+      function articlesFiltres() {
+        const recherche = normaliser(rechercheArticle.value);
+
+        return articles.filter(function (article) {
+
+          if (filtreActif === "mdn" && article.beneficiaire !== "mdn") {
+            return false;
+          }
+
+          if (filtreActif === "fondation" && article.beneficiaire !== "fondation") {
+            return false;
+          }
+
+          if (filtreActif === "actifs" && article.actif !== true) {
+            return false;
+          }
+
+          if (filtreActif === "inactifs" && article.actif === true) {
+            return false;
+          }
+
+          if (!recherche) {
+            return true;
+          }
+
+          const texte = normaliser(
+            [
+              article.nom,
+              article.categorie,
+              article.beneficiaire,
+              article.description
+            ].join(" ")
+          );
+
+          return texte.includes(recherche);
+        });
+      }
+
+
+      function carteArticleHTML(article) {
+        const photoURL = urlPhoto(article.photoPath);
+
+        const photoHTML = photoURL
+          ? `
+              <div class="photo">
+                <img
+                  src="${echapperHTML(photoURL)}"
+                  alt=""
+                  loading="lazy"
+                  onerror="this.parentElement.innerHTML='📦';"
+                >
+              </div>
+            `
+          : `<div class="photo" aria-hidden="true">📦</div>`;
+
+        const detailsMobile = [
+          libelleBeneficiaire(article.beneficiaire),
+          article.categorie || "Sans catégorie",
+          formaterCHF(article.prix),
+          article.actif ? "Actif" : "Inactif"
+        ].join(" · ");
+
+        return `
+          <article class="article" data-article-id="${echapperHTML(article.articleId)}">
+
+            ${photoHTML}
+
+            <div class="nom-article">
+              <strong>${echapperHTML(article.nom)}</strong>
+              <small>${echapperHTML(detailsMobile)}</small>
+            </div>
+
+            <div class="cellule col-beneficiaire">
+              <span class="label-mobile">Bénéficiaire</span>
+              <span class="beneficiaire">
+                ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
+              </span>
+            </div>
+
+            <div class="cellule col-categorie">
+              <span class="label-mobile">Catégorie</span>
+              ${echapperHTML(article.categorie || "—")}
+            </div>
+
+            <div class="cellule col-prix">
+              <span class="label-mobile">Tarif</span>
+              <span class="prix">${echapperHTML(formaterCHF(article.prix))}</span>
+            </div>
+
+            <div class="cellule col-stock">
+              <span class="label-mobile">Stock</span>
+              <span class="stock">
+                ${article.gestionStock ? "Géré" : "Non géré"}
+              </span>
+            </div>
+
+            <div class="cellule col-etat">
+              <span class="label-mobile">État</span>
+              <span class="etat ${article.actif ? "" : "inactif"}">
+                ${article.actif ? "Actif" : "Inactif"}
+              </span>
+            </div>
+
+            <button
+              class="bouton-modifier"
+              type="button"
+              data-action="modifier"
+              data-article-id="${echapperHTML(article.articleId)}"
+              aria-label="Modifier ${echapperHTML(article.nom)}"
+              title="Modifier"
+            >✎</button>
+
+          </article>
+        `;
+      }
+
+
+      function afficherArticles() {
+        masquerErreur();
+
+        const resultat = articlesFiltres();
+
+        nombreTotal.textContent = String(articles.length);
+        nombreAffiche.textContent = String(resultat.length);
+
+        zoneListe.innerHTML = resultat
+          .map(carteArticleHTML)
+          .join("");
+
+        etatVide.hidden = resultat.length !== 0;
+      }
+
+
+      async function chargerCatalogue() {
+        clientSupabase = window.MDN_SUPABASE;
+
+        if (!clientSupabase) {
+          throw new Error("Connexion Supabase indisponible.");
+        }
+
+
+        const { data: edition, error: erreurEdition } =
+          await clientSupabase
+            .from("editions")
+            .select("id, annee, nom, statut, est_active")
+            .eq("est_active", true)
+            .maybeSingle();
+
+        if (erreurEdition) {
+          throw erreurEdition;
+        }
+
+        if (!edition) {
+          throw new Error("Aucune édition active n'est configurée.");
+        }
+
+        editionCourante = edition;
+        editionActive.textContent = edition.nom || ("Édition " + edition.annee);
+
+
+        const { data: tarifs, error: erreurTarifs } =
+          await clientSupabase
+            .from("edition_articles")
+            .select("id, edition_id, article_id, prix, gestion_stock, seuil_stock, actif, ordre_affichage")
+            .eq("edition_id", edition.id)
+            .order("ordre_affichage", { ascending: true });
+
+        if (erreurTarifs) {
+          throw erreurTarifs;
+        }
+
+
+        const idsArticles = Array.from(
+          new Set((tarifs || []).map(function (tarif) {
+            return tarif.article_id;
+          }))
+        );
+
+        if (idsArticles.length === 0) {
+          articles = [];
+          afficherArticles();
+          return;
+        }
+
+
+        const { data: referentiel, error: erreurArticles } =
+          await clientSupabase
+            .from("referentiel_articles")
+            .select("id, nom, description, beneficiaire, categorie_id, photo_path, actif")
+            .in("id", idsArticles);
+
+        if (erreurArticles) {
+          throw erreurArticles;
+        }
+
+
+        const idsCategories = Array.from(
+          new Set(
+            (referentiel || [])
+              .map(function (article) {
+                return article.categorie_id;
+              })
+              .filter(Boolean)
+          )
+        );
+
+        let categories = [];
+
+        if (idsCategories.length > 0) {
+          const { data, error } =
+            await clientSupabase
+              .from("categories_articles")
+              .select("id, nom, ordre_affichage, actif")
+              .in("id", idsCategories);
+
+          if (error) {
+            throw error;
+          }
+
+          categories = data || [];
+        }
+
+
+        const articlesParId = new Map(
+          (referentiel || []).map(function (article) {
+            return [article.id, article];
+          })
+        );
+
+        const categoriesParId = new Map(
+          categories.map(function (categorie) {
+            return [categorie.id, categorie];
+          })
+        );
+
+
+        articles = (tarifs || [])
+          .map(function (tarif) {
+            const article = articlesParId.get(tarif.article_id);
+
+            if (!article) {
+              return null;
+            }
+
+            const categorie = article.categorie_id
+              ? categoriesParId.get(article.categorie_id)
+              : null;
+
+            return {
+              editionArticleId: tarif.id,
+              articleId: article.id,
+              nom: article.nom,
+              description: article.description || "",
+              beneficiaire: article.beneficiaire,
+              categorieId: article.categorie_id,
+              categorie: categorie ? categorie.nom : null,
+              photoPath: article.photo_path || null,
+              prix: Number(tarif.prix || 0),
+              gestionStock: tarif.gestion_stock === true,
+              seuilStock: Number(tarif.seuil_stock || 0),
+              ordreAffichage: Number(tarif.ordre_affichage || 0),
+
+              /*
+               * Pour l'administration, un article est considéré
+               * actif seulement si le référentiel ET son tarif
+               * de l'édition sont actifs.
+               */
+              actifReferentiel: article.actif === true,
+              actifTarif: tarif.actif === true,
+              actif: article.actif === true && tarif.actif === true
+            };
+          })
+          .filter(Boolean);
+
+        afficherArticles();
+      }
+
+
+      boutonsFiltres.forEach(function (bouton) {
+        bouton.addEventListener("click", function () {
+          filtreActif = bouton.dataset.filtre || "tous";
+
+          boutonsFiltres.forEach(function (autreBouton) {
+            autreBouton.classList.toggle(
+              "actif",
+              autreBouton === bouton
+            );
+          });
+
+          afficherArticles();
+        });
+      });
+
+
+      rechercheArticle.addEventListener("input", function () {
+        effacerRecherche.classList.toggle(
+          "visible",
+          rechercheArticle.value.length > 0
+        );
+
+        afficherArticles();
+      });
+
+
+      effacerRecherche.addEventListener("click", function () {
+        rechercheArticle.value = "";
+        effacerRecherche.classList.remove("visible");
+        rechercheArticle.focus();
+        afficherArticles();
+      });
+
+
+      zoneListe.addEventListener("click", function (evenement) {
+        const bouton = evenement.target.closest("[data-action='modifier']");
+
+        if (!bouton) {
+          return;
+        }
+
+        const article = articles.find(function (element) {
+          return element.articleId === bouton.dataset.articleId;
+        });
+
+        if (!article) {
+          return;
+        }
+
+        /*
+         * Le bouton est volontairement déjà présent pour valider
+         * la liste et le responsive. Le formulaire complet sera
+         * branché à l'étape suivante.
+         */
+        window.alert(
+          "Modification de « " +
+          article.nom +
+          " » : le formulaire sera activé à l’étape suivante."
+        );
+      });
+
+
+      boutonNouvelArticle.addEventListener("click", function () {
+        window.alert(
+          "Le formulaire « Nouvel article » sera activé à l’étape suivante."
+        );
+      });
+
+
+      boutonRetour.addEventListener("click", function () {
+        /*
+         * Si administration.html existe dans le projet, c'est
+         * la destination logique de cette page.
+         */
+        window.location.href = "administration.html";
+      });
+
+
+      boutonDeconnexion.addEventListener("click", async function () {
+        boutonDeconnexion.disabled = true;
+        boutonDeconnexion.textContent = "Déconnexion…";
+
+        await window.MDN_AUTH.deconnexion();
+      });
+
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
+      });
+
+
+      async function initialiserPage() {
+        try {
+          const auth =
+            await window.MDN_AUTH.protegerPage([
+              "administrateur"
+            ]);
+
+          if (!auth) {
+            return;
+          }
+
+          const prenom =
+            String(auth.profil.prenom || "").trim();
+
+          const identite =
+            prenom ||
+            auth.profil.email ||
+            auth.utilisateur.email ||
+            "Administrateur";
+
+          identiteUtilisateur.textContent =
+            identite +
+            " · " +
+            auth.libelleRole;
+
+          await chargerCatalogue();
+
+          masquerChargement();
+
+        } catch (erreur) {
+          console.error(
+            "[MDN Sion] Impossible d'ouvrir Articles & Tarifs :",
+            erreur
+          );
+
+          masquerChargement();
+
+          afficherErreur(
+            erreur?.message ||
+            "Impossible de charger le catalogue."
+          );
+        }
+      }
+
+
+      initialiserPage();
+
+    })();
+  </script>
+
+</body>
+</html>
