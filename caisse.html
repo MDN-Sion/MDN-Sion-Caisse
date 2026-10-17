@@ -913,6 +913,130 @@
       cursor: pointer;
     }
 
+
+    .paiement-etape {
+      display: none;
+    }
+
+    .paiement-etape.visible {
+      display: block;
+    }
+
+    .paiement-retour {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 14px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #850000;
+      cursor: pointer;
+      font-weight: 850;
+    }
+
+    .paiement-mode-selectionne {
+      margin: 0 0 16px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .paiement-mode-selectionne strong {
+      color: #850000;
+    }
+
+    .paiement-lignes {
+      display: grid;
+      gap: 10px;
+    }
+
+    .paiement-ligne {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(150px, 190px);
+      align-items: center;
+      gap: 14px;
+      padding: 13px 14px;
+      border: 1px solid #e2e2e2;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .paiement-ligne-label {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      color: #444;
+      font-weight: 850;
+    }
+
+    .paiement-ligne-label span:first-child {
+      font-size: 22px;
+    }
+
+    .paiement-montant {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      padding: 8px 12px;
+      border: 1px solid #cfcfcf;
+      border-radius: 10px;
+      background: #fff;
+      color: #333;
+      font: inherit;
+      font-weight: 800;
+      text-align: right;
+      outline: none;
+    }
+
+    .paiement-montant:focus {
+      border-color: #8b0000;
+      box-shadow: 0 0 0 3px rgba(139,0,0,.08);
+    }
+
+    .paiement-resume {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 18px;
+      margin-top: 16px;
+      padding: 15px 16px;
+      border-radius: 12px;
+      background: #f5f5f5;
+      color: #555;
+      font-weight: 750;
+    }
+
+    .paiement-resume strong {
+      color: #333;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .paiement-resume .reste-label,
+    .paiement-resume .reste-valeur {
+      padding-top: 9px;
+      border-top: 1px solid #ddd;
+      color: #850000;
+      font-weight: 900;
+    }
+
+    .paiement-resume.equilibre .reste-label,
+    .paiement-resume.equilibre .reste-valeur {
+      color: #16743a;
+    }
+
+    .paiement-avertissement {
+      display: none;
+      margin-top: 10px;
+      color: #9b0000;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .paiement-avertissement.visible {
+      display: block;
+    }
+
     @media (max-width: 560px) {
       .modal-encaissement {
         padding: 10px;
@@ -938,6 +1062,11 @@
       .encaissement-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
+      }
+
+      .paiement-ligne {
+        grid-template-columns: 1fr;
+        gap: 8px;
       }
     }
 
@@ -1251,32 +1380,78 @@
 
       <div class="encaissement-corps">
 
-        <div class="encaissement-total">
-          <span>Total à encaisser</span>
-          <strong id="totalEncaissement">CHF 0.00</strong>
+        <div id="etapeChoixPaiement" class="paiement-etape visible">
+          <div class="encaissement-total">
+            <span>Total à encaisser</span>
+            <strong id="totalEncaissement">CHF 0.00</strong>
+          </div>
+
+          <p class="encaissement-titre-section">Moyen de paiement</p>
+
+          <div class="moyens-paiement">
+            <button class="moyen-paiement" type="button" data-moyen-paiement="especes">
+              <span class="moyen-paiement-icone" aria-hidden="true">💵</span>
+              <span>Espèces</span>
+            </button>
+
+            <button class="moyen-paiement" type="button" data-moyen-paiement="carte">
+              <span class="moyen-paiement-icone" aria-hidden="true">💳</span>
+              <span>Carte bancaire</span>
+            </button>
+
+            <button class="moyen-paiement" type="button" data-moyen-paiement="twint">
+              <span class="moyen-paiement-icone" aria-hidden="true">📱</span>
+              <span>TWINT</span>
+            </button>
+          </div>
+
+          <div class="encaissement-info">
+            Choisis le moyen principal. À l'étape suivante, tu pourras laisser le paiement complet sur ce moyen ou répartir le total entre plusieurs moyens de paiement.
+          </div>
         </div>
 
-        <p class="encaissement-titre-section">Moyen de paiement</p>
+        <div id="etapeRepartitionPaiement" class="paiement-etape">
+          <button id="retourChoixPaiement" class="paiement-retour" type="button">← Modifier le moyen principal</button>
 
-        <div class="moyens-paiement">
-          <button class="moyen-paiement" type="button" data-moyen-paiement="especes">
-            <span class="moyen-paiement-icone" aria-hidden="true">💵</span>
-            <span>Espèces</span>
-          </button>
+          <div class="encaissement-total">
+            <span>Total à encaisser</span>
+            <strong id="totalRepartition">CHF 0.00</strong>
+          </div>
 
-          <button class="moyen-paiement" type="button" data-moyen-paiement="carte">
-            <span class="moyen-paiement-icone" aria-hidden="true">💳</span>
-            <span>Carte bancaire</span>
-          </button>
+          <p class="paiement-mode-selectionne">
+            Moyen principal : <strong id="libelleMoyenPrincipal">—</strong>
+          </p>
 
-          <button class="moyen-paiement" type="button" data-moyen-paiement="twint">
-            <span class="moyen-paiement-icone" aria-hidden="true">📱</span>
-            <span>TWINT</span>
-          </button>
-        </div>
+          <p class="encaissement-titre-section">Répartition du paiement</p>
 
-        <div class="encaissement-info">
-          Le paiement partagé sera disponible à l'étape suivante. Pour ce premier test, sélectionne simplement le moyen de paiement principal.
+          <div class="paiement-lignes">
+            <label class="paiement-ligne">
+              <span class="paiement-ligne-label"><span aria-hidden="true">💵</span><span>Espèces</span></span>
+              <input id="montantEspeces" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+            </label>
+
+            <label class="paiement-ligne">
+              <span class="paiement-ligne-label"><span aria-hidden="true">💳</span><span>Carte bancaire</span></span>
+              <input id="montantCarte" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+            </label>
+
+            <label class="paiement-ligne">
+              <span class="paiement-ligne-label"><span aria-hidden="true">📱</span><span>TWINT</span></span>
+              <input id="montantTwint" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+            </label>
+          </div>
+
+          <div id="resumePaiement" class="paiement-resume">
+            <span>Total réparti</span>
+            <strong id="totalReparti">CHF 0.00</strong>
+
+            <span class="reste-label">Reste à répartir</span>
+            <strong id="resteARepartir" class="reste-valeur">CHF 0.00</strong>
+          </div>
+
+          <div id="avertissementPaiement" class="paiement-avertissement">
+            La répartition dépasse le total de la vente.
+          </div>
         </div>
 
       </div>
@@ -1344,6 +1519,19 @@
       const boutonsMoyenPaiement = Array.from(
         document.querySelectorAll("[data-moyen-paiement]")
       );
+
+      const etapeChoixPaiement = document.getElementById("etapeChoixPaiement");
+      const etapeRepartitionPaiement = document.getElementById("etapeRepartitionPaiement");
+      const retourChoixPaiement = document.getElementById("retourChoixPaiement");
+      const totalRepartition = document.getElementById("totalRepartition");
+      const libelleMoyenPrincipal = document.getElementById("libelleMoyenPrincipal");
+      const montantEspeces = document.getElementById("montantEspeces");
+      const montantCarte = document.getElementById("montantCarte");
+      const montantTwint = document.getElementById("montantTwint");
+      const totalReparti = document.getElementById("totalReparti");
+      const resteARepartir = document.getElementById("resteARepartir");
+      const resumePaiement = document.getElementById("resumePaiement");
+      const avertissementPaiement = document.getElementById("avertissementPaiement");
 
       let articlesCaisse = [];
       let filtreActif = "tout";
@@ -1554,6 +1742,98 @@
       }
 
 
+      function valeurMontantPaiement(champ) {
+        const valeur = Number(champ.value);
+        return Number.isFinite(valeur) && valeur > 0 ? valeur : 0;
+      }
+
+
+      function libelleMoyenPaiement(code) {
+        if (code === "especes") return "Espèces";
+        if (code === "carte") return "Carte bancaire";
+        if (code === "twint") return "TWINT";
+        return "—";
+      }
+
+
+      function mettreMontantPaiement(champ, montant) {
+        champ.value = Number(montant || 0).toFixed(2);
+      }
+
+
+      function actualiserRepartitionPaiement() {
+        const totalVente = calculerTotalPanier();
+
+        const especes = valeurMontantPaiement(montantEspeces);
+        const carte = valeurMontantPaiement(montantCarte);
+        const twint = valeurMontantPaiement(montantTwint);
+
+        const reparti = especes + carte + twint;
+        const reste = totalVente - reparti;
+
+        totalReparti.textContent = formaterCHF(reparti);
+        resteARepartir.textContent =
+          Math.abs(reste) < 0.005
+            ? formaterCHF(0)
+            : formaterCHF(reste);
+
+        const equilibre = Math.abs(reste) < 0.005;
+        const depassement = reste < -0.005;
+
+        resumePaiement.classList.toggle("equilibre", equilibre);
+        avertissementPaiement.classList.toggle("visible", depassement);
+
+        continuerEncaissement.disabled = !equilibre;
+        continuerEncaissement.classList.toggle("actif", equilibre);
+        continuerEncaissement.textContent = equilibre
+          ? "Valider le paiement"
+          : "Continuer";
+      }
+
+
+      function preparerRepartitionPaiement() {
+        const totalVente = calculerTotalPanier();
+
+        mettreMontantPaiement(montantEspeces, 0);
+        mettreMontantPaiement(montantCarte, 0);
+        mettreMontantPaiement(montantTwint, 0);
+
+        if (moyenPaiementSelectionne === "especes") {
+          mettreMontantPaiement(montantEspeces, totalVente);
+        }
+
+        if (moyenPaiementSelectionne === "carte") {
+          mettreMontantPaiement(montantCarte, totalVente);
+        }
+
+        if (moyenPaiementSelectionne === "twint") {
+          mettreMontantPaiement(montantTwint, totalVente);
+        }
+
+        totalRepartition.textContent = formaterCHF(totalVente);
+        libelleMoyenPrincipal.textContent =
+          libelleMoyenPaiement(moyenPaiementSelectionne);
+
+        etapeChoixPaiement.classList.remove("visible");
+        etapeRepartitionPaiement.classList.add("visible");
+
+        actualiserRepartitionPaiement();
+      }
+
+
+      function revenirChoixPaiement() {
+        etapeRepartitionPaiement.classList.remove("visible");
+        etapeChoixPaiement.classList.add("visible");
+
+        continuerEncaissement.textContent = "Continuer";
+        continuerEncaissement.disabled = !moyenPaiementSelectionne;
+        continuerEncaissement.classList.toggle(
+          "actif",
+          Boolean(moyenPaiementSelectionne)
+        );
+      }
+
+
       function fermerFenetreEncaissement() {
         modalEncaissement.classList.remove("visible");
         moyenPaiementSelectionne = null;
@@ -1562,6 +1842,10 @@
           bouton.classList.remove("selectionne");
         });
 
+        etapeRepartitionPaiement.classList.remove("visible");
+        etapeChoixPaiement.classList.add("visible");
+
+        continuerEncaissement.textContent = "Continuer";
         continuerEncaissement.disabled = true;
         continuerEncaissement.classList.remove("actif");
       }
@@ -1580,6 +1864,10 @@
           bouton.classList.remove("selectionne");
         });
 
+        etapeRepartitionPaiement.classList.remove("visible");
+        etapeChoixPaiement.classList.add("visible");
+
+        continuerEncaissement.textContent = "Continuer";
         continuerEncaissement.disabled = true;
         continuerEncaissement.classList.remove("actif");
 
@@ -2227,6 +2515,19 @@
       );
 
 
+      [montantEspeces, montantCarte, montantTwint].forEach(
+        function (champ) {
+          champ.addEventListener("input", actualiserRepartitionPaiement);
+        }
+      );
+
+
+      retourChoixPaiement.addEventListener(
+        "click",
+        revenirChoixPaiement
+      );
+
+
       continuerEncaissement.addEventListener(
         "click",
         function () {
@@ -2234,16 +2535,37 @@
             return;
           }
 
+          if (etapeChoixPaiement.classList.contains("visible")) {
+            preparerRepartitionPaiement();
+            return;
+          }
+
+          actualiserRepartitionPaiement();
+
+          if (continuerEncaissement.disabled) {
+            return;
+          }
+
+          const repartition = {
+            especes: valeurMontantPaiement(montantEspeces),
+            carte: valeurMontantPaiement(montantCarte),
+            twint: valeurMontantPaiement(montantTwint)
+          };
+
           console.info(
-            "[MDN Sion] Moyen de paiement sélectionné :",
-            moyenPaiementSelectionne
+            "[MDN Sion] Paiement prêt à être validé :",
+            {
+              total: calculerTotalPanier(),
+              moyenPrincipal: moyenPaiementSelectionne,
+              repartition: repartition,
+              panier: panierCaisse
+            }
           );
 
           /*
-           * Étape suivante :
-           * - paiement simple ou partagé ;
-           * - préparation des données pour public.valider_vente ;
-           * - aucune vente n'est encore enregistrée ici.
+           * AUCUNE VENTE SUPABASE N'EST ENCORE CRÉÉE.
+           * La prochaine étape branchera cette répartition validée
+           * sur le moteur serveur de vente.
            */
         }
       );
