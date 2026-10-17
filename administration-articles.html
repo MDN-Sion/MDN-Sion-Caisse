@@ -667,7 +667,8 @@
     .champ select,
     .champ textarea {
       width: 100%;
-      min-height: 44px;
+      height: 54px;
+      min-height: 54px;
       padding: 10px 12px;
       border: 1px solid #d6d6d6;
       border-radius: 10px;
@@ -692,10 +693,12 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      min-height: 44px;
-      padding: 9px 11px;
-      border: 1px solid #ddd;
+      height: 54px;
+      min-height: 54px;
+      padding: 0 13px;
+      border: 1px solid #d6d6d6;
       border-radius: 10px;
+      background: #fff;
     }
 
     .ligne-interrupteur input {
@@ -716,6 +719,82 @@
       background: #f7f7f7;
       color: #555;
       font-size: 13px;
+    }
+
+
+    .zone-photo-article {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px;
+      border: 1px solid #d6d6d6;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .apercu-photo-article {
+      width: 92px;
+      height: 92px;
+      flex: 0 0 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid #d9d9d9;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 38px;
+    }
+
+    .apercu-photo-article img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .actions-photo {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .bouton-photo {
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid #d3d3d3;
+      border-radius: 9px;
+      background: #fff;
+      color: #333;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .bouton-photo-danger {
+      color: #9b0000;
+      border-color: #e2bcbc;
+      background: #fff8f8;
+    }
+
+    .aide-photo {
+      width: 100%;
+      margin-top: 2px;
+      color: #777;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 520px) {
+      .zone-photo-article {
+        align-items: flex-start;
+      }
+
+      .apercu-photo-article {
+        width: 78px;
+        height: 78px;
+        flex-basis: 78px;
+      }
     }
 
     .message-formulaire {
@@ -884,7 +963,7 @@
     </section>
 
     <p class="note-version">
-      Les administrateurs peuvent ajouter et modifier les articles et tarifs. La gestion des photos sera branchée à l’étape suivante.
+      Les administrateurs peuvent ajouter et modifier les articles, tarifs et photos de l’édition active.
     </p>
 
   </main>
@@ -949,6 +1028,23 @@
             </div>
           </div>
 
+
+          <div class="champ champ-large">
+            <label>Photo de l’article</label>
+            <div class="zone-photo-article">
+              <div id="apercuPhotoArticle" class="apercu-photo-article" aria-label="Aperçu de la photo">📄</div>
+
+              <div class="actions-photo">
+                <input id="champPhoto" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                <button id="choisirPhoto" class="bouton-photo" type="button">Ajouter une photo</button>
+                <button id="supprimerPhoto" class="bouton-photo bouton-photo-danger" type="button" hidden>Supprimer la photo</button>
+                <div class="aide-photo">
+                  PNG, JPG ou WebP. La photo est enregistrée dans le bucket Supabase « articles ».
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="champ champ-large">
             <label for="champDescription">Description</label>
             <textarea id="champDescription" maxlength="1000"></textarea>
@@ -1008,6 +1104,11 @@
       const champGestionStock = document.getElementById("champGestionStock");
       const champActif = document.getElementById("champActif");
       const champDescription = document.getElementById("champDescription");
+      const champPhoto = document.getElementById("champPhoto");
+      const choisirPhoto = document.getElementById("choisirPhoto");
+      const supprimerPhoto = document.getElementById("supprimerPhoto");
+      const apercuPhotoArticle = document.getElementById("apercuPhotoArticle");
+
       const infoEditionFormulaire = document.getElementById("infoEditionFormulaire");
       const messageFormulaire = document.getElementById("messageFormulaire");
       const annulerFormulaire = document.getElementById("annulerFormulaire");
@@ -1020,6 +1121,9 @@
       let filtreActif = "tous";
       let categoriesDisponibles = [];
       let articleEnModification = null;
+      let fichierPhotoSelectionne = null;
+      let supprimerPhotoDemandee = false;
+      let urlApercuLocale = null;
 
 
       function masquerChargement() {
@@ -1404,6 +1508,161 @@
       });
 
 
+
+      function normaliserNomFichierPhoto(nom) {
+        return String(nom || "article")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 70) || "article";
+      }
+
+
+      function extensionPhoto(fichier) {
+        const type = String(fichier?.type || "").toLowerCase();
+
+        if (type === "image/png") return "png";
+        if (type === "image/webp") return "webp";
+        if (type === "image/jpeg") return "jpg";
+
+        const nom = String(fichier?.name || "");
+        const extension = nom.includes(".") ? nom.split(".").pop().toLowerCase() : "jpg";
+        return ["png", "jpg", "jpeg", "webp"].includes(extension) ? extension.replace("jpeg", "jpg") : "jpg";
+      }
+
+
+      function afficherApercuPhoto(url) {
+        if (url) {
+          apercuPhotoArticle.innerHTML =
+            '<img src="' + echapperHtml(url) + '" alt="Photo de l’article">';
+        } else {
+          apercuPhotoArticle.textContent = "📄";
+        }
+      }
+
+
+      function reinitialiserSelectionPhoto() {
+        if (urlApercuLocale) {
+          URL.revokeObjectURL(urlApercuLocale);
+          urlApercuLocale = null;
+        }
+
+        fichierPhotoSelectionne = null;
+        supprimerPhotoDemandee = false;
+        champPhoto.value = "";
+      }
+
+
+      function actualiserZonePhoto(article) {
+        reinitialiserSelectionPhoto();
+
+        const urlExistante = article?.photoUrl || "";
+
+        afficherApercuPhoto(urlExistante);
+
+        choisirPhoto.textContent = urlExistante ? "Remplacer la photo" : "Ajouter une photo";
+        supprimerPhoto.hidden = !urlExistante;
+      }
+
+
+      async function appliquerPhotoArticle(articleId, nomArticle, anciennePhotoUrl) {
+        let nouvellePhotoUrl = anciennePhotoUrl || null;
+
+        if (fichierPhotoSelectionne) {
+          const extension = extensionPhoto(fichierPhotoSelectionne);
+          const nomFichier =
+            articleId + "/" +
+            normaliserNomFichierPhoto(nomArticle) + "-" +
+            Date.now() + "." + extension;
+
+          const { error: erreurUpload } =
+            await clientSupabase.storage
+              .from("articles")
+              .upload(nomFichier, fichierPhotoSelectionne, {
+                cacheControl: "3600",
+                upsert: false,
+                contentType: fichierPhotoSelectionne.type || undefined
+              });
+
+          if (erreurUpload) {
+            throw erreurUpload;
+          }
+
+          const { data: urlPublique } =
+            clientSupabase.storage
+              .from("articles")
+              .getPublicUrl(nomFichier);
+
+          nouvellePhotoUrl = urlPublique?.publicUrl || null;
+
+          const { error: erreurMajPhoto } =
+            await clientSupabase
+              .from("referentiel_articles")
+              .update({
+                photo_url: nouvellePhotoUrl,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", articleId);
+
+          if (erreurMajPhoto) {
+            await clientSupabase.storage.from("articles").remove([nomFichier]);
+            throw erreurMajPhoto;
+          }
+
+          if (anciennePhotoUrl) {
+            const marqueur = "/storage/v1/object/public/articles/";
+            const position = anciennePhotoUrl.indexOf(marqueur);
+
+            if (position !== -1) {
+              const ancienChemin = decodeURIComponent(
+                anciennePhotoUrl.substring(position + marqueur.length)
+              );
+
+              if (ancienChemin && ancienChemin !== nomFichier) {
+                await clientSupabase.storage.from("articles").remove([ancienChemin]);
+              }
+            }
+          }
+
+          return nouvellePhotoUrl;
+        }
+
+        if (supprimerPhotoDemandee && anciennePhotoUrl) {
+          const { error: erreurMajPhoto } =
+            await clientSupabase
+              .from("referentiel_articles")
+              .update({
+                photo_url: null,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", articleId);
+
+          if (erreurMajPhoto) {
+            throw erreurMajPhoto;
+          }
+
+          const marqueur = "/storage/v1/object/public/articles/";
+          const position = anciennePhotoUrl.indexOf(marqueur);
+
+          if (position !== -1) {
+            const ancienChemin = decodeURIComponent(
+              anciennePhotoUrl.substring(position + marqueur.length)
+            );
+
+            if (ancienChemin) {
+              await clientSupabase.storage.from("articles").remove([ancienChemin]);
+            }
+          }
+
+          nouvellePhotoUrl = null;
+        }
+
+        return nouvellePhotoUrl;
+      }
+
+
       function remplirCategories(categorieSelectionnee) {
         champCategorie.innerHTML = "";
 
@@ -1447,10 +1706,12 @@
         champActif.checked = article ? article.actif : true;
         champDescription.value = article ? article.description : "";
 
+        actualiserZonePhoto(article);
+
         infoEditionFormulaire.textContent =
           "Tarif configuré pour : " +
           (editionCourante?.nom || "l’édition active") +
-          ". La gestion de la photo sera ajoutée à l’étape suivante.";
+          ". Les modifications sont enregistrées directement dans Supabase.";
 
         fondModaleArticle.hidden = false;
         document.body.style.overflow = "hidden";
@@ -1470,8 +1731,68 @@
         document.body.style.overflow = "";
         articleEnModification = null;
         formulaireArticle.reset();
+        reinitialiserSelectionPhoto();
         masquerMessageFormulaire();
       }
+
+
+
+      choisirPhoto.addEventListener("click", function () {
+        champPhoto.click();
+      });
+
+
+      champPhoto.addEventListener("change", function () {
+        const fichier = champPhoto.files?.[0];
+
+        if (!fichier) {
+          return;
+        }
+
+        const typesAutorises = ["image/png", "image/jpeg", "image/webp"];
+
+        if (!typesAutorises.includes(fichier.type)) {
+          champPhoto.value = "";
+          afficherMessageFormulaire("La photo doit être au format PNG, JPG ou WebP.");
+          return;
+        }
+
+        if (fichier.size > 5 * 1024 * 1024) {
+          champPhoto.value = "";
+          afficherMessageFormulaire("La photo ne doit pas dépasser 5 Mo.");
+          return;
+        }
+
+        masquerMessageFormulaire();
+
+        if (urlApercuLocale) {
+          URL.revokeObjectURL(urlApercuLocale);
+        }
+
+        urlApercuLocale = URL.createObjectURL(fichier);
+        fichierPhotoSelectionne = fichier;
+        supprimerPhotoDemandee = false;
+
+        afficherApercuPhoto(urlApercuLocale);
+        choisirPhoto.textContent = "Remplacer la photo";
+        supprimerPhoto.hidden = false;
+      });
+
+
+      supprimerPhoto.addEventListener("click", function () {
+        if (urlApercuLocale) {
+          URL.revokeObjectURL(urlApercuLocale);
+          urlApercuLocale = null;
+        }
+
+        fichierPhotoSelectionne = null;
+        champPhoto.value = "";
+        supprimerPhotoDemandee = Boolean(articleEnModification?.photoUrl);
+
+        afficherApercuPhoto(null);
+        choisirPhoto.textContent = "Ajouter une photo";
+        supprimerPhoto.hidden = true;
+      });
 
 
       zoneListe.addEventListener("click", function (evenement) {
@@ -1594,6 +1915,12 @@
               throw erreurTarif;
             }
 
+            await appliquerPhotoArticle(
+              articleEnModification.articleId,
+              nom,
+              articleEnModification.photoUrl
+            );
+
           } else {
 
             const { data: nouvelArticle, error: erreurReferentiel } =
@@ -1635,11 +1962,18 @@
                */
               throw erreurTarif;
             }
+
+            await appliquerPhotoArticle(
+              nouvelArticle.id,
+              nom,
+              null
+            );
           }
 
           fondModaleArticle.hidden = true;
           document.body.style.overflow = "";
           articleEnModification = null;
+          reinitialiserSelectionPhoto();
 
           await chargerCatalogue();
 
