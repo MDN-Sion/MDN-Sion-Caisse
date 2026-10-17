@@ -478,6 +478,55 @@
     }
 
 
+
+    .article-ligne-haute {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .article-infos {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .article-photo {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 58px;
+      border: 1px solid #e3e3e3;
+      border-radius: 11px;
+      background: #f7f7f7;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .article-photo img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .article-photo-placeholder {
+      display: none;
+      font-size: 23px;
+      line-height: 1;
+      opacity: .35;
+    }
+
+    .article-photo.sans-photo .article-photo-placeholder,
+    .article-photo.photo-erreur .article-photo-placeholder {
+      display: block;
+    }
+
+    .article-photo.photo-erreur {
+      background: #f7f7f7;
+    }
+
     .carte-article,
     .carte-dossier {
       cursor: pointer;
@@ -921,6 +970,7 @@
       let articlesCaisse = [];
       let filtreActif = "tout";
       let dossierActif = null;
+      let clientSupabaseCaisse = null;
 
 
       function masquerChargement() {
@@ -980,19 +1030,34 @@
       }
 
 
+      function normaliserLibelle(valeur) {
+        return String(valeur || "")
+          .trim()
+          .toLocaleLowerCase("fr")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      }
+
+
+      function estCategorie(article, nomCategorie) {
+        return normaliserLibelle(article.categorie) ===
+               normaliserLibelle(nomCategorie);
+      }
+
+
       function articlesDuDossier(nomDossier) {
 
         if (nomDossier === "Mugs") {
           return articlesCaisse.filter(function (article) {
             return article.beneficiaire === "mdn" &&
-                   article.categorie === "Mugs";
+                   estCategorie(article, "Mugs");
           });
         }
 
         if (nomDossier === "Crèches") {
           return articlesCaisse.filter(function (article) {
             return article.beneficiaire === "fondation" &&
-                   article.categorie === "Crèches";
+                   estCategorie(article, "Crèches");
           });
         }
 
@@ -1000,7 +1065,61 @@
       }
 
 
+      function urlPhotoArticle(article) {
+
+        if (
+          !article.photoPath ||
+          !clientSupabaseCaisse
+        ) {
+          return null;
+        }
+
+
+        /*
+         * photo_path contient uniquement le chemin du fichier
+         * dans le bucket public "articles".
+         *
+         * Exemple :
+         * mugs/mug-2026.webp
+         */
+        const resultat =
+          clientSupabaseCaisse
+            .storage
+            .from("articles")
+            .getPublicUrl(article.photoPath);
+
+
+        return resultat &&
+               resultat.data &&
+               resultat.data.publicUrl
+          ? resultat.data.publicUrl
+          : null;
+      }
+
+
       function carteArticleHTML(article) {
+
+        const photoURL =
+          urlPhotoArticle(article);
+
+        const photoHTML =
+          photoURL
+            ? `
+                <div class="article-photo">
+                  <img
+                    src="${echapperHTML(photoURL)}"
+                    alt=""
+                    loading="lazy"
+                    onerror="this.closest('.article-photo').classList.add('photo-erreur'); this.remove();"
+                  >
+                  <span class="article-photo-placeholder" aria-hidden="true">📦</span>
+                </div>
+              `
+            : `
+                <div class="article-photo sans-photo" aria-hidden="true">
+                  <span class="article-photo-placeholder">📦</span>
+                </div>
+              `;
 
         return `
           <article
@@ -1011,18 +1130,22 @@
             data-beneficiaire="${echapperHTML(article.beneficiaire)}"
             aria-label="${echapperHTML(article.nom + " " + formaterCHF(article.prix))}"
           >
-            <span class="article-beneficiaire">
-              ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
-            </span>
+            <div class="article-ligne-haute">
+              ${photoHTML}
 
-            <div>
-              <h3 class="article-nom">
-                ${echapperHTML(article.nom)}
-              </h3>
+              <div class="article-infos">
+                <span class="article-beneficiaire">
+                  ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
+                </span>
 
-              <p class="article-categorie">
-                ${echapperHTML(article.categorie || "Sans catégorie")}
-              </p>
+                <h3 class="article-nom">
+                  ${echapperHTML(article.nom)}
+                </h3>
+
+                <p class="article-categorie">
+                  ${echapperHTML(article.categorie || "Sans catégorie")}
+                </p>
+              </div>
             </div>
 
             <div class="article-prix">
@@ -1236,7 +1359,7 @@
             contenu.push(
               carteDossierHTML(
                 "Mugs",
-                "☕",
+                "📁",
                 mugs.length
               )
             );
@@ -1246,8 +1369,8 @@
           articlesCaisse
             .filter(function (article) {
               return !(
-                article.categorie === "Mugs" ||
-                article.categorie === "Crèches"
+                estCategorie(article, "Mugs") ||
+                estCategorie(article, "Crèches")
               );
             })
             .forEach(function (article) {
@@ -1261,7 +1384,7 @@
             contenu.push(
               carteDossierHTML(
                 "Crèches",
-                "🎄",
+                "📁",
                 creches.length
               )
             );
@@ -1277,7 +1400,7 @@
             contenu.push(
               carteDossierHTML(
                 "Mugs",
-                "☕",
+                "📁",
                 mugs.length
               )
             );
@@ -1287,7 +1410,7 @@
           articlesCaisse
             .filter(function (article) {
               return article.beneficiaire === "mdn" &&
-                     article.categorie !== "Mugs";
+                     !estCategorie(article, "Mugs");
             })
             .forEach(function (article) {
               contenu.push(
@@ -1343,6 +1466,8 @@
 
         const client =
           window.MDN_SUPABASE;
+
+        clientSupabaseCaisse = client;
 
 
         if (!client) {
@@ -1444,7 +1569,7 @@
           await client
             .from("referentiel_articles")
             .select(
-              "id, nom, description, beneficiaire, categorie_id, actif"
+              "id, nom, description, beneficiaire, categorie_id, photo_path, actif"
             )
             .in("id", idsArticles)
             .eq("actif", true);
@@ -1558,6 +1683,9 @@
 
                 description:
                   article.description,
+
+                photoPath:
+                  article.photo_path || null,
 
                 beneficiaire:
                   article.beneficiaire,
