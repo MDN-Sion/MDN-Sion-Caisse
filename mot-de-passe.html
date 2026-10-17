@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#8B0000">
+
+  <meta
+    name="description"
+    content="Modification du mot de passe - Marché de Noël de Sion"
+  >
+
+  <title>Nouveau mot de passe - MDN Sion</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding:
+        max(20px, env(safe-area-inset-top))
+        max(20px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom))
+        max(20px, env(safe-area-inset-left));
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      color: #ffffff;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .page-mot-de-passe {
+      width: 100%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carte {
+      width: min(100%, 430px);
+
+      padding: 34px;
+
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 24px;
+
+      background: rgba(255, 255, 255, 0.97);
+
+      color: #222222;
+
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.25);
+    }
+
+    .entete {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      margin-bottom: 28px;
+
+      text-align: center;
+    }
+
+    .embleme {
+      width: 76px;
+      height: 76px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 18px;
+
+      border-radius: 20px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #9f0000,
+          #750000
+        );
+
+      color: #ffffff;
+
+      font-size: 38px;
+
+      box-shadow:
+        0 10px 25px rgba(123, 0, 0, 0.22);
+    }
+
+    h1 {
+      margin: 0;
+
+      color: #850000;
+
+      font-size: clamp(26px, 7vw, 34px);
+      line-height: 1.15;
+    }
+
+    .sous-titre {
+      margin: 9px 0 0;
+
+      color: #666666;
+
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .message {
+      display: none;
+
+      margin-bottom: 18px;
+      padding: 12px 14px;
+
+      border-radius: 10px;
+
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .message.visible {
+      display: block;
+    }
+
+    .message.erreur {
+      border: 1px solid #e4b5b5;
+
+      background: #fff1f1;
+
+      color: #9c1616;
+    }
+
+    .message.info {
+      border: 1px solid #b8cce5;
+
+      background: #eef6ff;
+
+      color: #174b7a;
+    }
+
+    .message.succes {
+      border: 1px solid #abd4b3;
+
+      background: #effaf1;
+
+      color: #176329;
+    }
+
+    .champ {
+      margin-bottom: 20px;
+    }
+
+    .champ label {
+      display: block;
+
+      margin-bottom: 7px;
+
+      color: #333333;
+
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .bloc-mot-de-passe {
+      position: relative;
+    }
+
+    .champ input {
+      width: 100%;
+      height: 50px;
+
+      padding: 0 58px 0 14px;
+
+      border: 1px solid #cfcfcf;
+      border-radius: 12px;
+
+      outline: none;
+
+      background: #ffffff;
+
+      color: #222222;
+
+      font-size: 16px;
+
+      transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .champ input:focus {
+      border-color: #8b0000;
+
+      box-shadow:
+        0 0 0 3px rgba(139, 0, 0, 0.12);
+    }
+
+    .champ input:disabled {
+      background: #f3f3f3;
+
+      cursor: not-allowed;
+    }
+
+    .bouton-afficher-mdp {
+      position: absolute;
+
+      top: 50%;
+      right: 6px;
+
+      width: 44px;
+      height: 38px;
+
+      transform: translateY(-50%);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border: 0;
+      border-radius: 9px;
+
+      background: transparent;
+
+      color: #666666;
+
+      cursor: pointer;
+
+      font-size: 20px;
+    }
+
+    .bouton-afficher-mdp:hover {
+      background: #f1f1f1;
+    }
+
+    .bouton-afficher-mdp:focus-visible {
+      outline: 3px solid rgba(139, 0, 0, 0.20);
+    }
+
+    .indication {
+      margin: -9px 0 19px;
+
+      color: #777777;
+
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .bouton-principal {
+      width: 100%;
+      min-height: 52px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      gap: 10px;
+
+      padding: 12px 18px;
+
+      border: 0;
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #9c0000,
+          #760000
+        );
+
+      color: #ffffff;
+
+      font-size: 16px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 9px 20px rgba(123, 0, 0, 0.22);
+
+      transition:
+        transform 0.12s ease,
+        opacity 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .bouton-principal:hover:not(:disabled) {
+      box-shadow:
+        0 12px 25px rgba(123, 0, 0, 0.28);
+    }
+
+    .bouton-principal:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .bouton-principal:disabled {
+      opacity: 0.65;
+
+      cursor: wait;
+    }
+
+    .spinner {
+      display: none;
+
+      width: 20px;
+      height: 20px;
+
+      border: 3px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+
+      animation: rotation 0.8s linear infinite;
+    }
+
+    .bouton-principal.chargement .spinner {
+      display: block;
+    }
+
+    .retour {
+      display: block;
+
+      margin-top: 20px;
+
+      color: #850000;
+
+      text-align: center;
+      text-decoration: none;
+
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .retour:hover {
+      text-decoration: underline;
+    }
+
+    .pied {
+      margin-top: 22px;
+
+      text-align: center;
+
+      color: #777777;
+
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @keyframes rotation {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding:
+          max(14px, env(safe-area-inset-top))
+          max(14px, env(safe-area-inset-right))
+          max(14px, env(safe-area-inset-bottom))
+          max(14px, env(safe-area-inset-left));
+      }
+
+      .carte {
+        padding: 26px 20px;
+
+        border-radius: 20px;
+      }
+
+      .entete {
+        margin-bottom: 24px;
+      }
+
+      .embleme {
+        width: 66px;
+        height: 66px;
+
+        margin-bottom: 15px;
+
+        font-size: 33px;
+      }
+    }
+
+    @media (max-height: 690px) and (orientation: landscape) {
+      body {
+        align-items: flex-start;
+      }
+
+      .carte {
+        max-width: 680px;
+
+        padding: 20px 26px;
+      }
+
+      .entete {
+        margin-bottom: 17px;
+      }
+
+      .embleme {
+        width: 54px;
+        height: 54px;
+
+        margin-bottom: 9px;
+
+        border-radius: 15px;
+
+        font-size: 28px;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+
+      .sous-titre {
+        margin-top: 4px;
+      }
+
+      .champ {
+        margin-bottom: 13px;
+      }
+
+      .champ input {
+        height: 44px;
+      }
+
+      .indication {
+        margin-bottom: 13px;
+      }
+
+      .bouton-principal {
+        min-height: 46px;
+      }
+
+      .retour {
+        margin-top: 13px;
+      }
+
+      .pied {
+        margin-top: 13px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+
+      .spinner {
+        animation-duration: 1.8s;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page-mot-de-passe">
+
+    <section
+      class="carte"
+      aria-labelledby="titrePage"
+    >
+
+      <header class="entete">
+
+        <div
+          class="embleme"
+          aria-hidden="true"
+        >
+          ❄
+        </div>
+
+        <h1 id="titrePage">
+          Nouveau mot de passe
+        </h1>
+
+        <p class="sous-titre">
+          Choisissez un nouveau mot de passe pour votre compte MDN Sion.
+        </p>
+
+      </header>
+
+
+      <div
+        id="message"
+        class="message"
+        role="alert"
+        aria-live="polite"
+      ></div>
+
+
+      <form
+        id="formMotDePasse"
+        novalidate
+      >
+
+        <div class="champ">
+
+          <label for="nouveauMotDePasse">
+            Nouveau mot de passe
+          </label>
+
+          <div class="bloc-mot-de-passe">
+
+            <input
+              id="nouveauMotDePasse"
+              name="nouveauMotDePasse"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Nouveau mot de passe"
+              minlength="8"
+              required
+            >
+
+            <button
+              id="afficherNouveauMotDePasse"
+              class="bouton-afficher-mdp"
+              type="button"
+              aria-label="Afficher le nouveau mot de passe"
+              title="Afficher le nouveau mot de passe"
+            >
+              👁
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="champ">
+
+          <label for="confirmationMotDePasse">
+            Confirmer le mot de passe
+          </label>
+
+          <div class="bloc-mot-de-passe">
+
+            <input
+              id="confirmationMotDePasse"
+              name="confirmationMotDePasse"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Confirmer le mot de passe"
+              minlength="8"
+              required
+            >
+
+            <button
+              id="afficherConfirmationMotDePasse"
+              class="bouton-afficher-mdp"
+              type="button"
+              aria-label="Afficher la confirmation du mot de passe"
+              title="Afficher la confirmation du mot de passe"
+            >
+              👁
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <p class="indication">
+          Le mot de passe doit contenir au minimum 8 caractères.
+        </p>
+
+
+        <button
+          id="boutonEnregistrer"
+          class="bouton-principal"
+          type="submit"
+        >
+
+          <span
+            class="spinner"
+            aria-hidden="true"
+          ></span>
+
+          <span id="texteBouton">
+            Enregistrer le nouveau mot de passe
+          </span>
+
+        </button>
+
+      </form>
+
+
+      <a
+        id="lienRetourConnexion"
+        class="retour"
+        href="connexion.html"
+      >
+        Retour à la connexion
+      </a>
+
+
+      <footer class="pied">
+        Marché de Noël de Sion
+      </footer>
+
+    </section>
+
+  </main>
+
+
+  <!-- ======================================================
+       BIBLIOTHEQUE SUPABASE
+       ====================================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+  ></script>
+
+
+  <!-- ======================================================
+       CONFIGURATION MDN SION
+       ====================================================== -->
+
+  <script src="js/config.js"></script>
+
+
+  <!-- ======================================================
+       CLIENT SUPABASE
+       ====================================================== -->
+
+  <script src="js/supabase.js"></script>
+
+
+  <!-- ======================================================
+       MODIFICATION DU MOT DE PASSE
+       ====================================================== -->
+
+  <script>
+    "use strict";
+
+    (function () {
+
+      const client =
+        window.MDN_SUPABASE;
+
+
+      const formMotDePasse =
+        document.getElementById(
+          "formMotDePasse"
+        );
+
+
+      const nouveauMotDePasse =
+        document.getElementById(
+          "nouveauMotDePasse"
+        );
+
+
+      const confirmationMotDePasse =
+        document.getElementById(
+          "confirmationMotDePasse"
+        );
+
+
+      const afficherNouveauMotDePasse =
+        document.getElementById(
+          "afficherNouveauMotDePasse"
+        );
+
+
+      const afficherConfirmationMotDePasse =
+        document.getElementById(
+          "afficherConfirmationMotDePasse"
+        );
+
+
+      const boutonEnregistrer =
+        document.getElementById(
+          "boutonEnregistrer"
+        );
+
+
+      const texteBouton =
+        document.getElementById(
+          "texteBouton"
+        );
+
+
+      const message =
+        document.getElementById(
+          "message"
+        );
+
+
+      const lienRetourConnexion =
+        document.getElementById(
+          "lienRetourConnexion"
+        );
+
+
+      let sessionDisponible = false;
+
+
+      function afficherMessage(
+        texte,
+        type = "erreur"
+      ) {
+
+        message.textContent = texte;
+
+        message.className =
+          "message visible " + type;
+
+      }
+
+
+      function masquerMessage() {
+
+        message.textContent = "";
+
+        message.className = "message";
+
+      }
+
+
+      function definirChargement(
+        actif
+      ) {
+
+        nouveauMotDePasse.disabled = actif;
+
+        confirmationMotDePasse.disabled =
+          actif;
+
+        afficherNouveauMotDePasse.disabled =
+          actif;
+
+        afficherConfirmationMotDePasse.disabled =
+          actif;
+
+        boutonEnregistrer.disabled = actif;
+
+        boutonEnregistrer.classList.toggle(
+          "chargement",
+          actif
+        );
+
+        texteBouton.textContent =
+          actif
+            ? "Enregistrement…"
+            : "Enregistrer le nouveau mot de passe";
+
+      }
+
+
+      function configurerAffichageMotDePasse(
+        bouton,
+        champ,
+        libelle
+      ) {
+
+        bouton.addEventListener(
+          "click",
+          function () {
+
+            const estMasque =
+              champ.type === "password";
+
+
+            champ.type =
+              estMasque
+                ? "text"
+                : "password";
+
+
+            bouton.setAttribute(
+              "aria-label",
+              estMasque
+                ? "Masquer " + libelle
+                : "Afficher " + libelle
+            );
+
+
+            bouton.setAttribute(
+              "title",
+              estMasque
+                ? "Masquer " + libelle
+                : "Afficher " + libelle
+            );
+
+          }
+        );
+
+      }
+
+
+      function traduireErreur(
+        erreur
+      ) {
+
+        const texte =
+          String(
+            erreur?.message || ""
+          ).toLowerCase();
+
+
+        if (
+          texte.includes(
+            "auth session missing"
+          )
+        ) {
+          return "Le lien de récupération n'est plus valide. Demandez un nouveau lien de réinitialisation.";
+        }
+
+
+        if (
+          texte.includes(
+            "session"
+          ) &&
+          texte.includes(
+            "missing"
+          )
+        ) {
+          return "Aucune session de récupération valide n'a été trouvée.";
+        }
+
+
+        if (
+          texte.includes(
+            "password should be at least"
+          )
+        ) {
+          return "Le mot de passe est trop court.";
+        }
+
+
+        if (
+          texte.includes(
+            "same password"
+          )
+        ) {
+          return "Choisissez un mot de passe différent de l'ancien.";
+        }
+
+
+        return (
+          erreur?.message ||
+          "Impossible de modifier le mot de passe."
+        );
+
+      }
+
+
+      async function verifierSession() {
+
+        try {
+
+          const {
+            data,
+            error
+          } =
+            await client.auth.getSession();
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          sessionDisponible =
+            Boolean(
+              data &&
+              data.session &&
+              data.session.user
+            );
+
+
+          if (!sessionDisponible) {
+
+            afficherMessage(
+              "Aucune session de récupération valide. Demandez un nouveau lien de réinitialisation.",
+              "erreur"
+            );
+
+
+            nouveauMotDePasse.disabled = true;
+
+            confirmationMotDePasse.disabled =
+              true;
+
+            afficherNouveauMotDePasse.disabled =
+              true;
+
+            afficherConfirmationMotDePasse.disabled =
+              true;
+
+            boutonEnregistrer.disabled = true;
+
+            return;
+
+          }
+
+
+          afficherMessage(
+            "Session sécurisée détectée. Vous pouvez choisir votre nouveau mot de passe.",
+            "info"
+          );
+
+
+        } catch (erreur) {
+
+          console.error(
+            "[MDN Sion] Vérification de session impossible :",
+            erreur
+          );
+
+
+          sessionDisponible = false;
+
+
+          afficherMessage(
+            traduireErreur(erreur),
+            "erreur"
+          );
+
+
+          nouveauMotDePasse.disabled = true;
+
+          confirmationMotDePasse.disabled =
+            true;
+
+          afficherNouveauMotDePasse.disabled =
+            true;
+
+          afficherConfirmationMotDePasse.disabled =
+            true;
+
+          boutonEnregistrer.disabled = true;
+
+        }
+
+      }
+
+
+      configurerAffichageMotDePasse(
+        afficherNouveauMotDePasse,
+        nouveauMotDePasse,
+        "le nouveau mot de passe"
+      );
+
+
+      configurerAffichageMotDePasse(
+        afficherConfirmationMotDePasse,
+        confirmationMotDePasse,
+        "la confirmation du mot de passe"
+      );
+
+
+      formMotDePasse.addEventListener(
+        "submit",
+        async function (evenement) {
+
+          evenement.preventDefault();
+
+          masquerMessage();
+
+
+          if (!sessionDisponible) {
+
+            afficherMessage(
+              "Aucune session de récupération valide. Demandez un nouveau lien de réinitialisation."
+            );
+
+            return;
+
+          }
+
+
+          const motDePasse =
+            nouveauMotDePasse.value;
+
+
+          const confirmation =
+            confirmationMotDePasse.value;
+
+
+          if (!motDePasse) {
+
+            afficherMessage(
+              "Saisissez votre nouveau mot de passe."
+            );
+
+            nouveauMotDePasse.focus();
+
+            return;
+
+          }
+
+
+          if (motDePasse.length < 8) {
+
+            afficherMessage(
+              "Le nouveau mot de passe doit contenir au minimum 8 caractères."
+            );
+
+            nouveauMotDePasse.focus();
+
+            return;
+
+          }
+
+
+          if (!confirmation) {
+
+            afficherMessage(
+              "Confirmez votre nouveau mot de passe."
+            );
+
+            confirmationMotDePasse.focus();
+
+            return;
+
+          }
+
+
+          if (
+            motDePasse !== confirmation
+          ) {
+
+            afficherMessage(
+              "Les deux mots de passe ne correspondent pas."
+            );
+
+            confirmationMotDePasse.focus();
+
+            return;
+
+          }
+
+
+          definirChargement(true);
+
+
+          try {
+
+            const {
+              data,
+              error
+            } =
+              await client.auth.updateUser(
+                {
+                  password: motDePasse
+                }
+              );
+
+
+            if (error) {
+              throw error;
+            }
+
+
+            if (
+              !data ||
+              !data.user
+            ) {
+              throw new Error(
+                "Supabase n'a pas confirmé la modification du mot de passe."
+              );
+            }
+
+
+            afficherMessage(
+              "Votre mot de passe a été modifié avec succès. Vous allez être redirigé vers la page de connexion.",
+              "succes"
+            );
+
+
+            nouveauMotDePasse.value = "";
+
+            confirmationMotDePasse.value = "";
+
+
+            /*
+             * On ferme volontairement la session créée
+             * par le lien de récupération.
+             *
+             * L'utilisateur devra ensuite se connecter
+             * normalement avec son nouveau mot de passe.
+             */
+
+            const {
+              error: erreurDeconnexion
+            } =
+              await client.auth.signOut();
+
+
+            if (erreurDeconnexion) {
+
+              console.warn(
+                "[MDN Sion] Mot de passe modifié, mais la fermeture de session a rencontré une erreur :",
+                erreurDeconnexion
+              );
+
+            }
+
+
+            sessionDisponible = false;
+
+
+            formMotDePasse.style.display =
+              "none";
+
+
+            lienRetourConnexion.textContent =
+              "Se connecter";
+
+
+            setTimeout(
+              function () {
+
+                window.location.replace(
+                  "connexion.html"
+                );
+
+              },
+              2200
+            );
+
+
+          } catch (erreur) {
+
+            console.error(
+              "[MDN Sion] Modification du mot de passe impossible :",
+              erreur
+            );
+
+
+            afficherMessage(
+              traduireErreur(erreur),
+              "erreur"
+            );
+
+
+          } finally {
+
+            definirChargement(false);
+
+          }
+
+        }
+      );
+
+
+      verifierSession();
+
+    })();
+  </script>
+
+</body>
+</html>
