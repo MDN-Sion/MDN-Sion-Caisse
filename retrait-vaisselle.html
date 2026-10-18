@@ -1545,7 +1545,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         CHF 0.00
        </strong>
       </div>
-      <textarea class="comment" id="comment" placeholder="Commentaire facultatif"></textarea>
       <button class="validate" disabled="" id="validate">
        Valider sur le compte artisan
       </button>
@@ -1641,7 +1640,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const invoice=$("invoice");
     const credit=$("credit");
     const net=$("net");
-    const comment=$("comment");
     const validate=$("validate");
     const toast=$("toast");
     const toastText=$("toastText");
@@ -2167,11 +2165,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     <span>
                     </span>
                     </div>`;
-                    if(x.unites)html+=`<div class="detail">
-                    <span>${nombreLibelle(x.unites,"unité","unités")} hors caisse</span>
-                    <span>
-                    </span>
-                    </div>`;
                     html+=`<div class="detail">
                     <span>${x.q} × ${money(x.cons)} consigne</span>
                     <span>${money(x.q*x.cons)}</span>
@@ -2526,7 +2519,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         );
         if(!lines.length&&!containers.length)return null;
         return{
-            type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants
+            type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants:containers
         }
     }
     async function save(){
@@ -2553,7 +2546,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                         p_type_operation:op.type_operation,
                         p_lignes_vaisselle:op.lignes_vaisselle,
                         p_contenants:op.contenants,
-                        p_commentaire:comment.value.trim()||null
+                        p_commentaire:null
                     });
                     if(error)throw error;
                     if(!one?.ok)throw new Error("Validation Démo non confirmée par le serveur.");
@@ -2565,7 +2558,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 const response=await client.rpc("valider_session_vaisselle",{
                     p_participation_id:stand.id,
                     p_operations:ops,
-                    p_commentaire:comment.value.trim()||null
+                    p_commentaire:null
                 });
                 if(response.error)throw response.error;
                 r=response.data;
@@ -2578,7 +2571,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 true
             );
             initState();
-            comment.value="";
             renderCatalog();
             renderSummary();
             await loadAccount()
