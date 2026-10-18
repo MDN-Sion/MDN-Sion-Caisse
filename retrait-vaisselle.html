@@ -1173,6 +1173,196 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .sous-section-title{
     margin-top:18px
 }
+
+
+/* ============================================================
+   REGLEMENT DU COMPTE ARTISAN
+   ============================================================ */
+.account-strip {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 14px;
+    border-top: 1px solid #e4e7eb;
+    background: #fff;
+}
+
+.account-strip.show {
+    display: flex;
+}
+
+.account-balance {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.account-balance span {
+    color: #666;
+    font-size: 13px;
+}
+
+.account-balance strong {
+    color: #9f0000;
+    font-size: 18px;
+}
+
+.account-balance strong.credit {
+    color: #008b4b;
+}
+
+.pay-account {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 7px 14px;
+    border: 1px solid #a40000;
+    border-radius: 10px;
+    background: #a40000;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pay-account:disabled {
+    border-color: #d5d7da;
+    background: #d5d7da;
+    color: #888;
+    cursor: default;
+}
+
+.payment-card {
+    width: min(560px, calc(100vw - 28px));
+}
+
+.payment-body {
+    padding: 18px;
+}
+
+.payment-balance {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f5f6f7;
+}
+
+.payment-balance strong {
+    color: #a40000;
+    font-size: 24px;
+    white-space: nowrap;
+}
+
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.payment-method {
+    min-height: 48px;
+    border: 1px solid #d3d7dc;
+    border-radius: 12px;
+    background: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.payment-method.active {
+    border-color: #a40000;
+    background: #a40000;
+    color: #fff;
+}
+
+.payment-lines {
+    display: grid;
+    gap: 8px;
+}
+
+.payment-line {
+    display: grid;
+    grid-template-columns: 1fr 145px;
+    align-items: center;
+    gap: 12px;
+}
+
+.payment-line input {
+    width: 100%;
+    height: 42px;
+    padding: 0 10px;
+    border: 1px solid #cfd4da;
+    border-radius: 10px;
+    text-align: right;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.payment-line.off {
+    opacity: .45;
+}
+
+.payment-summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 7px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e0e2e5;
+}
+
+.payment-summary strong {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.payment-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.payment-actions button {
+    min-height: 46px;
+    border-radius: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.payment-cancel {
+    border: 1px solid #d3d7dc;
+    background: #fff;
+}
+
+.payment-confirm {
+    border: 1px solid #a40000;
+    background: #a40000;
+    color: #fff;
+}
+
+.payment-confirm:disabled {
+    border-color: #d5d7da;
+    background: #d5d7da;
+    color: #888;
+    cursor: default;
+}
+
+@media (max-width: 620px) {
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-line {
+        grid-template-columns: 1fr 120px;
+    }
+}
+
 </style>
  </head>
  <body>
@@ -1248,6 +1438,15 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        </div>
        <button class="change" id="change">
         Changer
+       </button>
+      </div>
+          <div class="account-strip" id="accountStrip">
+       <div class="account-balance">
+        <span>Compte actuel</span>
+        <strong id="accountBalance">CHF 0.00</strong>
+       </div>
+       <button class="pay-account" disabled id="payAccount">
+        Régler le compte
        </button>
       </div>
      </div>
@@ -1326,6 +1525,32 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <div aria-hidden="true" class="modal" id="paymentModal">
+   <div class="modalcard payment-card">
+    <div class="modalhead">
+     <h3>Régler le compte artisan</h3>
+     <button class="close" id="paymentClose">×</button>
+    </div>
+    <div class="payment-body">
+     <div class="payment-balance">
+      <span>Solde actuel du compte</span>
+      <strong id="paymentBalance">CHF 0.00</strong>
+     </div>
+     <div class="payment-methods" id="paymentMethods"></div>
+     <div class="payment-lines" id="paymentLines"></div>
+     <div class="payment-summary">
+      <span>Montant du règlement</span>
+      <strong id="paymentTotal">CHF 0.00</strong>
+      <span>Reste après règlement</span>
+      <strong id="paymentRemaining">CHF 0.00</strong>
+     </div>
+     <div class="payment-actions">
+      <button class="payment-cancel" id="paymentCancel" type="button">Annuler</button>
+      <button class="payment-confirm" disabled id="paymentConfirm" type="button">Enregistrer le règlement</button>
+     </div>
+    </div>
+   </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
@@ -1358,7 +1583,20 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const canvas=$("canvas");
     const manualQr=$("manualQr");
     const demoNote=$("demoNote");
+    const accountStrip=$("accountStrip");
+    const accountBalance=$("accountBalance");
+    const payAccount=$("payAccount");
+    const paymentModal=$("paymentModal");
+    const paymentBalance=$("paymentBalance");
+    const paymentMethods=$("paymentMethods");
+    const paymentLines=$("paymentLines");
+    const paymentTotal=$("paymentTotal");
+    const paymentRemaining=$("paymentRemaining");
+    const paymentConfirm=$("paymentConfirm");
     let client=null,data=null,stand=null,filter="retrait",returnFilter="sale",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
+    let accountData=null;
+    let paymentKey=null;
+    const selectedPaymentMethods=new Set();
     const state={
     }
     ;
@@ -1941,6 +2179,204 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         validate.disabled=!on;
         validate.classList.toggle("on",on)
     }
+    function paymentIcon(code){
+        const value=String(code||"").toLocaleLowerCase("fr");
+        if(value.includes("espe")||value.includes("cash"))return "💵";
+        if(value.includes("carte")||value.includes("card"))return "💳";
+        if(value.includes("twint"))return "📱";
+        return "💰";
+    }
+
+    function accountDue(){
+        return Math.max(0,Number(accountData?.compte?.solde_restant||0));
+    }
+
+    async function loadAccount(){
+        accountData=null;
+        selectedPaymentMethods.clear();
+        accountStrip.classList.toggle("show",Boolean(stand));
+        accountBalance.textContent="Chargement…";
+        accountBalance.classList.remove("credit");
+        payAccount.disabled=true;
+        if(!stand)return;
+        try{
+            const {data:r,error}=await client.rpc("charger_compte_stand_paiement",{
+                p_participation_id:stand.id
+            });
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Compte artisan non chargé.");
+            if(!stand||r.compte?.participation_id!==stand.id)return;
+            accountData=r;
+            const solde=Number(r.compte?.solde_restant||0);
+            accountBalance.textContent=money(Math.abs(solde));
+            accountBalance.classList.toggle("credit",solde<0);
+            if(solde<0){
+                accountBalance.textContent=`Crédit ${money(Math.abs(solde))}`;
+            }
+            else if(solde===0){
+                accountBalance.textContent=money(0);
+            }
+            payAccount.disabled=demo||!r.peut_encaisser||solde<=0;
+            payAccount.title=demo
+                ?"Indisponible en mode Démo"
+                :!r.peut_encaisser
+                    ?"Règlement réservé aux utilisateurs autorisés"
+                    :solde<=0
+                        ?"Aucun montant à régler"
+                        :"Régler tout ou partie du compte";
+        }
+        catch(e){
+            console.error(e);
+            accountBalance.textContent="Indisponible";
+            payAccount.disabled=true;
+            msg(e?.message||"Impossible de charger le compte artisan.");
+        }
+    }
+
+    function paymentAmount(id){
+        const input=paymentLines.querySelector(`[data-payment-input="${id}"]`);
+        if(!input)return 0;
+        const value=Number(String(input.value||"").replace(",","."));
+        return Number.isFinite(value)&&value>0?Math.round(value*100)/100:0;
+    }
+
+    function updatePayment(){
+        const due=accountDue();
+        let total=0;
+        for(const method of accountData?.moyens_paiement||[]){
+            const input=paymentLines.querySelector(`[data-payment-input="${method.id}"]`);
+            const line=input?.closest(".payment-line");
+            const active=selectedPaymentMethods.has(method.id);
+            if(input)input.disabled=!active;
+            if(line)line.classList.toggle("off",!active);
+            if(active)total+=paymentAmount(method.id);
+        }
+        total=Math.round(total*100)/100;
+        const remaining=Math.max(0,Math.round((due-total)*100)/100);
+        paymentTotal.textContent=money(total);
+        paymentRemaining.textContent=money(remaining);
+        paymentRemaining.style.color=remaining>0?"#a40000":"#008b4b";
+        paymentConfirm.disabled=total<=0||total>due+0.001;
+        if(total>due+0.001){
+            paymentRemaining.textContent="Surpaiement interdit";
+            paymentRemaining.style.color="#a40000";
+        }
+    }
+
+    function renderPayment(){
+        const methods=accountData?.moyens_paiement||[];
+        const due=accountDue();
+        paymentBalance.textContent=money(due);
+        paymentMethods.innerHTML=methods.map(method=>`
+            <button
+                class="payment-method${selectedPaymentMethods.has(method.id)?" active":""}"
+                data-payment-method="${method.id}"
+                type="button"
+            >
+                ${paymentIcon(method.code)} ${esc(method.nom||method.code||"Paiement")}
+            </button>
+        `).join("");
+        paymentLines.innerHTML=methods.map(method=>`
+            <label class="payment-line off">
+                <span>${paymentIcon(method.code)} ${esc(method.nom||method.code||"Paiement")}</span>
+                <input
+                    data-payment-input="${method.id}"
+                    type="number"
+                    min="0"
+                    max="${due.toFixed(2)}"
+                    step="0.05"
+                    inputmode="decimal"
+                    placeholder="0"
+                    disabled
+                >
+            </label>
+        `).join("");
+        paymentMethods.querySelectorAll("[data-payment-method]").forEach(button=>{
+            button.onclick=()=>{
+                const id=button.dataset.paymentMethod;
+                if(selectedPaymentMethods.has(id)){
+                    selectedPaymentMethods.delete(id);
+                }
+                else{
+                    selectedPaymentMethods.add(id);
+                }
+                const active=[...selectedPaymentMethods];
+                renderPayment();
+                if(active.length===1){
+                    const input=paymentLines.querySelector(`[data-payment-input="${active[0]}"]`);
+                    if(input)input.value=due.toFixed(2);
+                }
+                updatePayment();
+            };
+        });
+        paymentLines.querySelectorAll("[data-payment-input]").forEach(input=>{
+            input.oninput=updatePayment;
+            input.onfocus=()=>input.select();
+        });
+        updatePayment();
+    }
+
+    function openPayment(){
+        if(demo)return msg("Le règlement réel est désactivé en mode Démo.");
+        if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
+        if(!accountData.peut_encaisser)return msg("Tu n'es pas autorisé à enregistrer ce règlement.");
+        if(accountDue()<=0)return msg("Ce compte n'a aucun montant à payer.");
+        paymentKey=uuid();
+        selectedPaymentMethods.clear();
+        renderPayment();
+        paymentModal.classList.add("show");
+        paymentModal.setAttribute("aria-hidden","false");
+    }
+
+    function closePayment(){
+        paymentModal.classList.remove("show");
+        paymentModal.setAttribute("aria-hidden","true");
+    }
+
+    async function savePayment(){
+        if(!stand||!accountData)return;
+        const due=accountDue();
+        const payments=[];
+        for(const method of accountData.moyens_paiement||[]){
+            if(!selectedPaymentMethods.has(method.id))continue;
+            const amount=paymentAmount(method.id);
+            if(amount<=0)continue;
+            payments.push({
+                moyen_paiement_id:method.id,
+                montant:amount,
+                reference_externe:null
+            });
+        }
+        const total=payments.reduce((sum,p)=>sum+p.montant,0);
+        if(total<=0)return msg("Saisis un montant de règlement.");
+        if(total>due+0.001)return msg("Le règlement ne peut pas dépasser le solde du compte.");
+        paymentConfirm.disabled=true;
+        paymentConfirm.textContent="Enregistrement…";
+        try{
+            const {data:r,error}=await client.rpc("enregistrer_paiement_stand",{
+                p_idempotency_key:paymentKey,
+                p_participation_id:stand.id,
+                p_paiements:payments,
+                p_commentaire:"Règlement depuis Vaisselle & Consignes"
+            });
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Règlement non confirmé par le serveur.");
+            closePayment();
+            msg(`Règlement de ${money(total)} enregistré sur le compte de ${standName(stand)}.`,true);
+            paymentKey=null;
+            await loadAccount();
+        }
+        catch(e){
+            console.error(e);
+            msg(e?.message||"Impossible d'enregistrer le règlement.");
+            paymentConfirm.disabled=false;
+        }
+        finally{
+            paymentConfirm.textContent="Enregistrer le règlement";
+            updatePayment();
+        }
+    }
+
     function searchStands(){
         if(stand)return;
         const q=search.value.trim().toLocaleLowerCase("fr");
@@ -1971,10 +2407,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         results.classList.remove("show");
         renderCatalog();
         renderSummary();
+        loadAccount();
         return true
     }
     function changeStand(){
         stand=null;
+        accountData=null;
+        accountStrip.classList.remove("show");
         selected.classList.remove("show");
         searchZone.style.display="grid";
         search.value="";
@@ -2037,7 +2476,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             initState();
             comment.value="";
             renderCatalog();
-            renderSummary()
+            renderSummary();
+            await loadAccount()
         }
         catch(e){
             console.error(e);
@@ -2165,6 +2605,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(e.target===modal)closeQr()
         }
         ;
+        payAccount.onclick=openPayment;
+        $("paymentClose").onclick=closePayment;
+        $("paymentCancel").onclick=closePayment;
+        paymentConfirm.onclick=savePayment;
+        paymentModal.onclick=e=>{
+            if(e.target===paymentModal)closePayment();
+        };
         validate.onclick=save;
         $("toastClose").onclick=()=>toast.classList.remove("show");
         document.addEventListener("click",e=>{
