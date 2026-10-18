@@ -128,6 +128,33 @@ button{
     font-size:12px;
     font-weight:800
 }
+.return-subtabs{
+    display:flex;
+    gap:6px;
+    align-items:center
+}
+.return-subtabs[hidden]{
+    display:none
+}
+.subtab{
+    height:34px;
+    padding:0 15px;
+    border:1px solid #d4d9df;
+    border-radius:18px;
+    background:#fff;
+    font-weight:900;
+    color:#555
+}
+.subtab.active[data-return-filter="sale"]{
+    background:#d57b00;
+    border-color:#d57b00;
+    color:#fff
+}
+.subtab.active[data-return-filter="propre"]{
+    background:#17834a;
+    border-color:#17834a;
+    color:#fff
+}
 .catalog-scroll{
     min-height:0;
     overflow:auto;
@@ -182,6 +209,24 @@ button{
 }
 .card.propre{
     background:#f7fcf9
+}
+.card.case-card{
+    background:#fff5f5
+}
+.card.unit-card{
+    background:#f4f8ff
+}
+.card.sale.case-card{
+    background:#fff7e8
+}
+.card.sale.unit-card{
+    background:#f5f8ff
+}
+.card.propre.case-card{
+    background:#eef9f2
+}
+.card.propre.unit-card{
+    background:#f1f7ff
 }
 .card h3{
     font-size:14px;
@@ -238,7 +283,7 @@ button{
 }
 .stepper{
     display:grid;
-    grid-template-columns:40px minmax(0,1fr) 40px;
+    grid-template-columns:34px minmax(54px,1fr) 34px;
     align-items:center;
     gap:6px;
     margin-top:12px
@@ -249,7 +294,7 @@ button{
     border-radius:10px;
     background:#fff;
     color:#8b0000;
-    font-size:22px;
+    font-size:19px;
     font-weight:950
 }
 .step:hover{
@@ -264,7 +309,7 @@ button{
     width:100%;
     min-width:0;
     height:42px;
-    padding:0 4px;
+    padding:0 7px;
     border:1px solid #d3d8df;
     border-radius:10px;
     background:#fff;
@@ -1164,6 +1209,14 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
       <button class="tab" data-filter="retours">
        Retours
       </button>
+      <div class="return-subtabs" id="returnSubtabs" hidden>
+       <button class="subtab active" data-return-filter="sale">
+        Sale
+       </button>
+       <button class="subtab" data-return-filter="propre">
+        Propre
+       </button>
+      </div>
       <span class="edition" id="edition">
        MDN Sion
       </span>
@@ -1302,7 +1355,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const canvas=$("canvas");
     const manualQr=$("manualQr");
     const demoNote=$("demoNote");
-    let client=null,data=null,stand=null,filter="retrait",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
+    let client=null,data=null,stand=null,filter="retrait",returnFilter="sale",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
     const state={
     }
     ;
@@ -1401,7 +1454,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
         return `
             <div
-                class="card ${opClass(t)} ${allow ? "" : "disabled"}"
+                class="card ${opClass(t)} ${isCase ? "case-card" : "unit-card"} ${allow ? "" : "disabled"}"
                 data-clickable="${allow ? "true" : "false"}"
                 data-card-kind="dish"
                 data-card-id="${a.id}"
@@ -1474,7 +1527,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
         return `
             <div
-                class="card ${opClass(t)} empty-card"
+                class="card ${opClass(t)} case-card empty-card"
                 data-clickable="true"
                 data-card-kind="empty"
                 data-card-type="${t}"
@@ -1555,11 +1608,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             titreCaisses = "📤 Retrait Caisse";
             titreUnites = "📤 Retrait Unité";
         } else if (t === "retour_sale") {
-            titreCaisses = "📥 Retrait Caisse Sale";
-            titreUnites = "📥 Retrait Unité Sale";
+            titreCaisses = "📥 Retours Caisse Sale";
+            titreUnites = "📥 Retours Unité Sale";
         } else {
-            titreCaisses = "📥 Retrait Caisse Propre";
-            titreUnites = "📥 Retrait Unité Propre";
+            titreCaisses = "📥 Retours Caisse Propre";
+            titreUnites = "📥 Retours Unité Propre";
         }
 
         return `
@@ -1622,8 +1675,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
         if (filter === "retrait") {
             html += section("retrait");
-        } else {
+        } else if (returnFilter === "sale") {
             html += section("retour_sale");
+        } else {
             html += section("retour_propre");
         }
 
@@ -1636,6 +1690,14 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     "click",
                     (event) => {
                         event.stopPropagation();
+                        champ.select();
+                    }
+                );
+
+                champ.addEventListener(
+                    "focus",
+                    () => {
+                        champ.select();
                     }
                 );
 
@@ -1769,6 +1831,10 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         renderCatalog();
         renderSummary()
     }
+    function nombreLibelle(nombre, singulier, pluriel) {
+        return `${nombre} ${nombre === 1 ? singulier : pluriel}`;
+    }
+
     function renderSummary(){
         const c=calc();
         let html="",count=0;
@@ -1789,12 +1855,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     <button class="remove" data-rm="${t}|${x.id}|dish">×</button>
                     </div>`;
                     if(x.caisses)html+=`<div class="detail">
-                    <span>${x.caisses} caisse(s) × ${x.std} = ${x.caisses*x.std} unités</span>
+                    <span>${nombreLibelle(x.caisses,"caisse","caisses")} × ${x.std} = ${nombreLibelle(x.caisses*x.std,"unité","unités")}</span>
                     <span>
                     </span>
                     </div>`;
                     if(x.unites)html+=`<div class="detail">
-                    <span>${x.unites} unité(s) hors caisse</span>
+                    <span>${nombreLibelle(x.unites,"unité","unités")} hors caisse</span>
                     <span>
                     </span>
                     </div>`;
@@ -1819,12 +1885,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     <button class="remove" data-rm="${t}|container|container">×</button>
                     </div>`;
                     if(x.full)html+=`<div class="detail">
-                    <span>${x.full} caisse(s) avec vaisselle</span>
+                    <span>${nombreLibelle(x.full,"caisse","caisses")} avec vaisselle</span>
                     <span>
                     </span>
                     </div>`;
                     if(x.empty)html+=`<div class="detail">
-                    <span>${x.empty} caisse(s) vide(s)</span>
+                    <span>${nombreLibelle(x.empty,"caisse vide","caisses vides")}</span>
                     <span>
                     </span>
                     </div>`;
@@ -2060,10 +2126,22 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
             b.classList.add("active");
             filter=b.dataset.filter;
+            $("returnSubtabs").hidden = filter !== "retours";
             catalog.scrollTop=0;
             renderCatalog()
         }
         );
+        document.querySelectorAll(".subtab").forEach((b) => {
+            b.onclick = () => {
+                document.querySelectorAll(".subtab").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+                returnFilter = b.dataset.returnFilter;
+                catalog.scrollTop = 0;
+                renderCatalog();
+            };
+        });
         $("back").onclick=()=>location.href=demo?"vaisselle.html?mode=demo":"vaisselle.html";
         $("logout").onclick=async()=>{
             sessionStorage.removeItem("mdn_mode_demo_actif");
