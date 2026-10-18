@@ -550,29 +550,46 @@
     }
 
     /* ======================================================
-       ACCES SECONDAIRE MODE DEMO / FORMATION
+       MODE DEMO / FORMATION - COMMANDE DANS L'ENTETE
        ====================================================== */
 
-    .actions-caisse {
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-    }
-
-    .bouton-demo-secondaire {
-      width: 100%;
-      min-height: 38px;
-      border: 1px solid #d7a400;
+    .bouton-demo-entete {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 8px 13px;
+      border: 1px solid rgba(255,255,255,.38);
       border-radius: 11px;
-      background: #fff9dc;
-      color: #6f5200;
+      background: rgba(255,255,255,.10);
+      color: #ffffff;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
+      transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
     }
 
-    .bouton-demo-secondaire:hover {
-      background: #fff0ad;
-      border-color: #b98600;
+    .bouton-demo-entete:hover {
+      background: rgba(255,255,255,.18);
+    }
+
+    .bouton-demo-entete.actif {
+      border-color: #7ddf9b;
+      background: #198754;
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(25,135,84,.16);
+    }
+
+    .bouton-demo-entete.actif:hover {
+      background: #157347;
+    }
+
+    body.mode-demo .bouton-module:not(:disabled) {
+      background: linear-gradient(145deg, #d3a400, #a97e00);
+      color: #ffffff;
+    }
+
+    body.mode-demo .bouton-module:disabled {
+      border: 1px solid #dfc66e;
+      background: #f5e8b7;
+      color: #8a6a00;
     }
 
     /* ======================================================
@@ -818,7 +835,7 @@
           <div class="identite-utilisateur">
 
             <div
-              id="emailUtilisateur"
+              id="prenomUtilisateur"
               class="email-utilisateur"
             >
               —
@@ -832,6 +849,17 @@
             </div>
 
           </div>
+
+
+          <button
+            id="boutonModeDemo"
+            class="bouton-demo-entete"
+            type="button"
+            aria-pressed="false"
+            title="Activer le Mode Démo / Formation"
+          >
+            🎓 Démo
+          </button>
 
 
           <button
@@ -914,25 +942,15 @@
             Ventes MDN et Fondation, paiements et opérations de caisse.
           </p>
 
-          <div class="actions-caisse">
-
-            <button
-              id="boutonCaisse"
-              class="bouton-module"
-              type="button"
-            >
-              Ouvrir la caisse
-            </button>
-
-            <button
-              id="boutonModeDemo"
-              class="bouton-demo-secondaire"
-              type="button"
-            >
-              🎓 Mode Démo / Formation
-            </button>
-
-          </div>
+          <button
+            id="boutonCaisse"
+            class="bouton-module"
+            type="button"
+            data-texte-reel="Ouvrir la caisse"
+            data-texte-demo="Démo - Ouvrir la caisse"
+          >
+            Ouvrir la caisse
+          </button>
 
         </article>
 
@@ -970,6 +988,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1010,6 +1030,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1050,6 +1072,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1094,6 +1118,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1138,6 +1164,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1182,6 +1210,8 @@
             class="bouton-module"
             type="button"
             disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
             Bientôt disponible
           </button>
@@ -1255,9 +1285,9 @@
         );
 
 
-      const emailUtilisateur =
+      const prenomUtilisateur =
         document.getElementById(
-          "emailUtilisateur"
+          "prenomUtilisateur"
         );
 
 
@@ -1439,17 +1469,17 @@
 
 
           /* ================================================
-             EMAIL
+             PRENOM
              ================================================ */
 
-          const emailAffiche =
-            auth.profil.email ||
-            auth.utilisateur.email ||
+          const prenomAffiche =
+            auth.profil.prenom ||
+            auth.utilisateur.prenom ||
             "Utilisateur";
 
 
-          emailUtilisateur.textContent =
-            emailAffiche;
+          prenomUtilisateur.textContent =
+            prenomAffiche;
 
 
           /* ================================================
@@ -1531,21 +1561,77 @@
 
 
       /* ====================================================
-         NAVIGATION CAISSE / MODE DEMO
+         MODE DEMO GLOBAL DE L'ACCUEIL
          ==================================================== */
 
-      boutonCaisse.addEventListener(
-        "click",
-        function () {
-          window.location.href = "caisse.html";
-        }
-      );
+      let modeDemoActif = false;
+
+
+      function actualiserModeDemoAccueil() {
+
+        document.body.classList.toggle(
+          "mode-demo",
+          modeDemoActif
+        );
+
+
+        boutonModeDemo.classList.toggle(
+          "actif",
+          modeDemoActif
+        );
+
+
+        boutonModeDemo.setAttribute(
+          "aria-pressed",
+          modeDemoActif ? "true" : "false"
+        );
+
+
+        boutonModeDemo.title =
+          modeDemoActif
+            ? "Désactiver le Mode Démo / Formation"
+            : "Activer le Mode Démo / Formation";
+
+
+        document.querySelectorAll(
+          ".bouton-module[data-texte-reel][data-texte-demo]"
+        ).forEach(function (bouton) {
+
+          bouton.textContent =
+            modeDemoActif
+              ? bouton.dataset.texteDemo
+              : bouton.dataset.texteReel;
+
+        });
+
+      }
 
 
       boutonModeDemo.addEventListener(
         "click",
         function () {
-          window.location.href = "caisse.html?mode=demo";
+
+          modeDemoActif = !modeDemoActif;
+
+          actualiserModeDemoAccueil();
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION CAISSE
+         ==================================================== */
+
+      boutonCaisse.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "caisse.html?mode=demo"
+              : "caisse.html";
+
         }
       );
 
