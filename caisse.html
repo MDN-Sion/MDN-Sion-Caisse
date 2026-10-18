@@ -1721,8 +1721,18 @@
       const parametresPage =
         new URLSearchParams(window.location.search);
 
+      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
+
+      const parametresUrl = new URLSearchParams(window.location.search);
+      const modeDemoDemandeParUrl = parametresUrl.get("mode") === "demo";
+
+      if (modeDemoDemandeParUrl) {
+        sessionStorage.setItem(CLE_MODE_DEMO, "1");
+      }
+
       const modeDemo =
-        parametresPage.get("mode") === "demo";
+        modeDemoDemandeParUrl ||
+        sessionStorage.getItem(CLE_MODE_DEMO) === "1";
 
 
       function masquerChargement() {
@@ -3260,6 +3270,8 @@
 
           boutonDeconnexion.disabled = true;
           boutonDeconnexion.textContent = "Déconnexion…";
+
+          sessionStorage.removeItem(CLE_MODE_DEMO);
 
           await window.MDN_AUTH.deconnexion();
 
