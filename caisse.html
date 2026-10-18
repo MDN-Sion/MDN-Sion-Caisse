@@ -184,14 +184,28 @@
 
     .message {
       display: none;
-      margin-bottom: 12px;
-      padding: 10px 14px;
+      position: fixed;
+      z-index: 5000;
+      top: calc(18px + env(safe-area-inset-top));
+      left: 50%;
+      width: min(720px, calc(100vw - 32px));
+      padding: 12px 48px 12px 14px;
       border-radius: 12px;
+      box-shadow: 0 14px 38px rgba(0,0,0,.22);
+      transform: translateX(-50%);
       font-size: 14px;
       line-height: 1.4;
     }
 
-    .message.visible { display: block; }
+    .message.visible {
+      display: block;
+      animation: apparitionMessage .18s ease-out;
+    }
+
+    @keyframes apparitionMessage {
+      from { opacity: 0; transform: translate(-50%, -8px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
     .message.erreur {
       border: 1px solid #e4b5b5;
       background: #fff1f1;
@@ -203,6 +217,18 @@
       background: #effaf2;
       color: #146b35;
     }
+
+    .message-fermer {
+      position: absolute; top: 50%; right: 10px;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; border: 0; border-radius: 8px;
+      background: transparent; color: currentColor; cursor: pointer;
+      transform: translateY(-50%);
+      font-size: 22px; line-height: 1; font-weight: 800;
+    }
+
+    .message-fermer:hover { background: rgba(0,0,0,.06); }
 
     .zone-caisse {
       width: 100%;
@@ -893,6 +919,12 @@
       line-height: 1;
     }
 
+    .paiement-ligne.non-selectionne { opacity: .46; }
+    .paiement-ligne.non-selectionne input {
+      cursor: not-allowed;
+      background: #f3f3f3;
+    }
+
     .encaissement-info {
       margin: 10px 0 0;
       padding: 8px 11px;
@@ -1437,7 +1469,7 @@
 
     <main class="contenu">
 
-      <div id="messageCaisse" class="message" role="alert" aria-live="polite"></div>
+      <div id="messageCaisse" class="message" role="alert" aria-live="polite"><span id="texteMessageCaisse"></span><button id="fermerMessageCaisse" class="message-fermer" type="button" aria-label="Fermer le message">×</button></div>
 
       <section class="zone-caisse">
 
@@ -1515,7 +1547,7 @@
             <strong id="totalEncaissement">CHF 0.00</strong>
           </div>
 
-          <p class="encaissement-titre-section">Moyen de paiement</p>
+          <p class="encaissement-titre-section">Moyen(x) de paiement</p>
 
           <div class="moyens-paiement">
             <button class="moyen-paiement" type="button" data-moyen-paiement="especes">
@@ -1535,12 +1567,12 @@
           </div>
 
           <div class="encaissement-info">
-            Choisis le moyen principal. À l'étape suivante, tu pourras laisser le paiement complet sur ce moyen ou répartir le total entre plusieurs moyens de paiement.
+            Sélectionne un ou plusieurs moyens de paiement. Avec un seul moyen, le total sera prérempli. Avec plusieurs moyens, la répartition sera laissée vide pour une saisie manuelle.
           </div>
         </div>
 
         <div id="etapeRepartitionPaiement" class="paiement-etape">
-          <button id="retourChoixPaiement" class="paiement-retour" type="button">← Modifier le moyen principal</button>
+          <button id="retourChoixPaiement" class="paiement-retour" type="button">← Modifier les moyens de paiement</button>
 
           <div class="encaissement-total">
             <span>Total de la vente</span>
@@ -1548,7 +1580,7 @@
           </div>
 
           <p class="paiement-mode-selectionne">
-            Moyen principal : <strong id="libelleMoyenPrincipal">—</strong>
+            Moyen(x) sélectionné(s) : <strong id="libelleMoyenPrincipal">—</strong>
           </p>
 
           <p class="encaissement-titre-section">Répartition de la vente</p>
@@ -1556,17 +1588,17 @@
           <div class="paiement-lignes">
             <label class="paiement-ligne">
               <span class="paiement-ligne-label"><span aria-hidden="true">💵</span><span>Espèces</span></span>
-              <input id="montantEspeces" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+              <input id="montantEspeces" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
             </label>
 
             <label class="paiement-ligne">
               <span class="paiement-ligne-label"><span aria-hidden="true">💳</span><span>Carte bancaire</span></span>
-              <input id="montantCarte" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+              <input id="montantCarte" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
             </label>
 
             <label class="paiement-ligne">
               <span class="paiement-ligne-label"><span aria-hidden="true">📱</span><span>TWINT</span></span>
-              <input id="montantTwint" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+              <input id="montantTwint" class="paiement-montant" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
             </label>
           </div>
 
@@ -1575,7 +1607,7 @@
               <h3>💵 Règlement en espèces</h3>
               <div class="ligne-client-donne">
                 <label for="clientDonne">Le client donne</label>
-                <input id="clientDonne" class="client-donne" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+                <input id="clientDonne" class="client-donne" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
               </div>
               <div class="monnaie-ligne">
                 <span>Monnaie disponible</span>
@@ -1588,11 +1620,11 @@
               <div class="dons-grille">
                 <div class="don-champ">
                   <label for="donMDN">MDN</label>
-                  <input id="donMDN" class="don-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+                  <input id="donMDN" class="don-montant" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
                 </div>
                 <div class="don-champ">
                   <label for="donFondation">Fondation</label>
-                  <input id="donFondation" class="don-montant" type="number" min="0" step="0.05" inputmode="decimal" value="0.00">
+                  <input id="donFondation" class="don-montant" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0">
                 </div>
               </div>
               <div class="resume-don">
@@ -1644,6 +1676,9 @@
 
       const messageCaisse =
         document.getElementById("messageCaisse");
+      const texteMessageCaisse = document.getElementById("texteMessageCaisse");
+      const fermerMessageCaisse = document.getElementById("fermerMessageCaisse");
+      let minuterieMessageCaisse = null;
 
       const application =
         document.querySelector(".application");
@@ -1714,25 +1749,15 @@
       let dossierActif = null;
       let clientSupabaseCaisse = null;
       let panierCaisse = [];
-      let moyenPaiementSelectionne = null;
+      let moyenPaiementSelectionne = [];
       let validationPaiementEnCours = false;
       let cleIdempotenceEncaissement = null;
 
       const parametresPage =
         new URLSearchParams(window.location.search);
 
-      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
-
-      const parametresUrl = new URLSearchParams(window.location.search);
-      const modeDemoDemandeParUrl = parametresUrl.get("mode") === "demo";
-
-      if (modeDemoDemandeParUrl) {
-        sessionStorage.setItem(CLE_MODE_DEMO, "1");
-      }
-
       const modeDemo =
-        modeDemoDemandeParUrl ||
-        sessionStorage.getItem(CLE_MODE_DEMO) === "1";
+        parametresPage.get("mode") === "demo";
 
 
       function masquerChargement() {
@@ -1740,10 +1765,27 @@
       }
 
 
-      function afficherMessage(texte, type = "erreur") {
-        messageCaisse.textContent = texte;
-        messageCaisse.className = "message visible " + type;
+      function masquerMessageCaisse() {
+        if (minuterieMessageCaisse) {
+          window.clearTimeout(minuterieMessageCaisse);
+          minuterieMessageCaisse = null;
+        }
+        messageCaisse.className = "message";
       }
+
+      function afficherMessage(texte, type = "erreur") {
+        if (minuterieMessageCaisse) {
+          window.clearTimeout(minuterieMessageCaisse);
+        }
+        texteMessageCaisse.textContent = texte;
+        messageCaisse.className = "message visible " + type;
+        minuterieMessageCaisse = window.setTimeout(
+          masquerMessageCaisse,
+          type === "erreur" ? 10000 : 6000
+        );
+      }
+
+      fermerMessageCaisse.addEventListener("click", masquerMessageCaisse);
 
 
 
@@ -1950,8 +1992,38 @@
       }
 
 
+      function formaterMontantSaisie(montant) {
+        const nombre = Number(montant || 0);
+        if (!Number.isFinite(nombre) || nombre <= 0) return "";
+        return nombre.toFixed(2).replace(/\.00$/, "");
+      }
+
       function mettreMontantPaiement(champ, montant) {
-        champ.value = Number(montant || 0).toFixed(2);
+        champ.value = formaterMontantSaisie(montant);
+      }
+
+      function moyenEstSelectionne(code) {
+        return moyenPaiementSelectionne.includes(code);
+      }
+
+      function libelleMoyensPaiementSelectionnes() {
+        return moyenPaiementSelectionne.map(libelleMoyenPaiement).join(" + ");
+      }
+
+      function actualiserDisponibiliteChampsPaiement() {
+        [["especes", montantEspeces], ["carte", montantCarte], ["twint", montantTwint]].forEach(function (entree) {
+          const code = entree[0];
+          const champ = entree[1];
+          const selectionne = moyenEstSelectionne(code);
+          champ.disabled = !selectionne;
+          const ligne = champ.closest(".paiement-ligne");
+          if (ligne) ligne.classList.toggle("non-selectionne", !selectionne);
+          if (!selectionne) mettreMontantPaiement(champ, 0);
+        });
+
+        const especesSelectionnees = moyenEstSelectionne("especes");
+        clientDonne.disabled = !especesSelectionnees;
+        if (!especesSelectionnees) mettreMontantPaiement(clientDonne, 0);
       }
 
 
@@ -2123,39 +2195,33 @@
         mettreMontantPaiement(donMDN, 0);
         mettreMontantPaiement(donFondation, 0);
 
-        if (moyenPaiementSelectionne === "especes") {
-          mettreMontantPaiement(montantEspeces, totalVente);
-          mettreMontantPaiement(clientDonne, totalVente);
-        }
+        actualiserDisponibiliteChampsPaiement();
 
-        if (moyenPaiementSelectionne === "carte") {
-          mettreMontantPaiement(montantCarte, totalVente);
-        }
+        if (moyenPaiementSelectionne.length === 1) {
+          const codeUnique = moyenPaiementSelectionne[0];
 
-        if (moyenPaiementSelectionne === "twint") {
-          mettreMontantPaiement(montantTwint, totalVente);
+          if (codeUnique === "especes") {
+            mettreMontantPaiement(montantEspeces, totalVente);
+            mettreMontantPaiement(clientDonne, totalVente);
+          }
+          if (codeUnique === "carte") mettreMontantPaiement(montantCarte, totalVente);
+          if (codeUnique === "twint") mettreMontantPaiement(montantTwint, totalVente);
         }
 
         totalRepartition.textContent = formaterCHF(totalVente);
-        libelleMoyenPrincipal.textContent =
-          libelleMoyenPaiement(moyenPaiementSelectionne);
+        libelleMoyenPrincipal.textContent = libelleMoyensPaiementSelectionnes();
 
         etapeChoixPaiement.classList.remove("visible");
         etapeRepartitionPaiement.classList.add("visible");
-
         actualiserRepartitionPaiement();
       }
 
       function revenirChoixPaiement() {
         etapeRepartitionPaiement.classList.remove("visible");
         etapeChoixPaiement.classList.add("visible");
-
         continuerEncaissement.textContent = "Continuer";
-        continuerEncaissement.disabled = !moyenPaiementSelectionne;
-        continuerEncaissement.classList.toggle(
-          "actif",
-          Boolean(moyenPaiementSelectionne)
-        );
+        continuerEncaissement.disabled = moyenPaiementSelectionne.length === 0;
+        continuerEncaissement.classList.toggle("actif", moyenPaiementSelectionne.length > 0);
       }
 
 
@@ -2519,7 +2585,7 @@
         }
 
         modalEncaissement.classList.remove("visible");
-        moyenPaiementSelectionne = null;
+        moyenPaiementSelectionne = [];
         cleIdempotenceEncaissement = null;
 
         boutonsMoyenPaiement.forEach(function (bouton) {
@@ -2540,7 +2606,7 @@
           return;
         }
 
-        moyenPaiementSelectionne = null;
+        moyenPaiementSelectionne = [];
         cleIdempotenceEncaissement = null;
         totalEncaissement.textContent =
           formaterCHF(calculerTotalPanier());
@@ -2561,17 +2627,19 @@
 
 
       function selectionnerMoyenPaiement(code) {
-        moyenPaiementSelectionne = code;
+        if (moyenEstSelectionne(code)) {
+          moyenPaiementSelectionne = moyenPaiementSelectionne.filter(function (moyen) { return moyen !== code; });
+        } else {
+          moyenPaiementSelectionne.push(code);
+        }
 
         boutonsMoyenPaiement.forEach(function (bouton) {
-          bouton.classList.toggle(
-            "selectionne",
-            bouton.dataset.moyenPaiement === code
-          );
+          bouton.classList.toggle("selectionne", moyenEstSelectionne(bouton.dataset.moyenPaiement));
         });
 
-        continuerEncaissement.disabled = false;
-        continuerEncaissement.classList.add("actif");
+        const auMoinsUnMoyen = moyenPaiementSelectionne.length > 0;
+        continuerEncaissement.disabled = !auMoinsUnMoyen;
+        continuerEncaissement.classList.toggle("actif", auMoinsUnMoyen);
       }
 
 
@@ -3218,7 +3286,7 @@
       continuerEncaissement.addEventListener(
         "click",
         async function () {
-          if (!moyenPaiementSelectionne) {
+          if (moyenPaiementSelectionne.length === 0) {
             return;
           }
 
@@ -3270,8 +3338,6 @@
 
           boutonDeconnexion.disabled = true;
           boutonDeconnexion.textContent = "Déconnexion…";
-
-          sessionStorage.removeItem(CLE_MODE_DEMO);
 
           await window.MDN_AUTH.deconnexion();
 
