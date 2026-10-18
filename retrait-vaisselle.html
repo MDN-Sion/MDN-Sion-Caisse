@@ -236,6 +236,47 @@ button{
     background:#eceeef;
     color:#aaa
 }
+.stepper{
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr) 40px;
+    align-items:center;
+    gap:6px;
+    margin-top:12px
+}
+.step{
+    height:42px;
+    border:1px solid #d3d8df;
+    border-radius:10px;
+    background:#fff;
+    color:#8b0000;
+    font-size:22px;
+    font-weight:950
+}
+.step:hover{
+    background:#fff0f1
+}
+.step:disabled{
+    background:#eceeef;
+    color:#aaa;
+    cursor:not-allowed
+}
+.stepper .qty{
+    height:42px;
+    border:1px solid #d3d8df;
+    border-radius:10px;
+    background:#fff;
+    text-align:center;
+    font-size:18px;
+    font-weight:950;
+    outline:none
+}
+.card[data-clickable="true"]{
+    cursor:pointer
+}
+.card[data-clickable="true"]:hover{
+    transform:translateY(-1px);
+    box-shadow:0 7px 18px rgba(0,0,0,.08)
+}
 .rule{
     font-size:9px;
     color:#a00;
@@ -422,7 +463,9 @@ button{
     color:#666
 }
 .totals strong{
-    font-size:14px
+    font-size:14px;
+    text-align:right;
+    white-space:nowrap
 }
 .grand{
     margin-top:4px;
@@ -1159,7 +1202,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         CHF 0.00
        </strong>
        <span class="grand">
-        Solde de cette validation
+        Solde
        </span>
        <strong class="money" id="net">
         CHF 0.00
@@ -1312,76 +1355,311 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     function opClass(t){
         return t==="retour_sale"?"sale":t==="retour_propre"?"propre":"retrait"
     }
-    function card(a,t,field){
-        const e=state.vaisselle[a.id][t];
-        const std=n(a.quantite_standard);
-        const isCase=field==="caisses";
-        const allow=isCase||t!=="retour_propre"||properUnit(a);
-        const rule=t==="retour_propre"&&!isCase&&!allow?(stand?"Retour propre à l’unité non autorisé":"Choisir le stand pour les unités propres"):"";
-        const subtitle=isCase?(std?`1 caisse = ${std} unités`:"Conditionnement non défini"):"Saisie directe des unités";
-        return `<div class="card ${opClass(t)} ${allow?"":"disabled"}">
-        <h3>${esc(a.nom)}</h3>
-        <div class="meta">
-        <strong>${isCase?"Caisse":"Unité"}</strong>
-        <br>${esc(subtitle)}</div>
-        <div class="controls" style="grid-template-columns:1fr">
-        <div class="control">
-        <label>Quantité</label>
-        <input class="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="0" value="${e[field]||""}" data-kind="dish" data-id="${a.id}" data-type="${t}" data-field="${field}" ${allow?"":"disabled"}>
-        </div>
-        </div>
-        <div class="rule">${esc(rule)}</div>
-        </div>`;
+    function card(a, t, field) {
+        const e = state.vaisselle[a.id][t];
+        const std = n(a.quantite_standard);
+        const isCase = field === "caisses";
+        const allow =
+            isCase
+            || t !== "retour_propre"
+            || properUnit(a);
+
+        const rule =
+            t === "retour_propre"
+            && !isCase
+            && !allow
+                ? (
+                    stand
+                        ? "Retour propre à l’unité non autorisé"
+                        : "Choisir le stand pour les unités propres"
+                )
+                : "";
+
+        const subtitle =
+            isCase
+                ? (
+                    std
+                        ? `1 caisse = ${std} unités`
+                        : "Conditionnement non défini"
+                )
+                : "Saisie directe des unités";
+
+        return `
+            <div
+                class="card ${opClass(t)} ${allow ? "" : "disabled"}"
+                data-clickable="${allow ? "true" : "false"}"
+                data-card-kind="dish"
+                data-card-id="${a.id}"
+                data-card-type="${t}"
+                data-card-field="${field}"
+            >
+                <h3>
+                    ${esc(a.nom)}
+                </h3>
+
+                <div class="meta">
+                    <strong>
+                        ${isCase ? "Caisse" : "Unité"}
+                    </strong>
+                    <br>
+                    ${esc(subtitle)}
+                </div>
+
+                <div class="stepper">
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="-1"
+                        ${allow ? "" : "disabled"}
+                    >
+                        −
+                    </button>
+
+                    <input
+                        class="qty"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        value="${e[field] || 0}"
+                        data-kind="dish"
+                        data-id="${a.id}"
+                        data-type="${t}"
+                        data-field="${field}"
+                        ${allow ? "" : "disabled"}
+                    >
+
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="1"
+                        ${allow ? "" : "disabled"}
+                    >
+                        +
+                    </button>
+                </div>
+
+                <div class="rule">
+                    ${esc(rule)}
+                </div>
+            </div>
+        `;
     }
-    function emptyCard(t){
-        if(t==="retour_propre")return "";
-        const c=(data.contenants||[])[0];
-        if(!c)return "";
-        return `<div class="card ${opClass(t)} empty-card">
-        <h3>Caisse vide</h3>
-        <div class="meta">
-        <strong>Caisse vide</strong>
-        </div>
-        <div class="controls" style="grid-template-columns:1fr">
-        <div class="control">
-        <label>Quantité</label>
-        <input class="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="0" value="${state.caissesVides[t]||""}" data-kind="empty" data-type="${t}">
-        </div>
-        </div>
-        <div class="rule">
-        </div>
-        </div>`;
-    }
-    function section(t){
-        return `<section class="section ${opClass(t)}">
-        <div class="section-title">
-        <span class="dot">
-        </span>${opLabel(t)}</div>
-        <div class="cards">${(data.vaisselle||[]).map(a=>card(a,t,"caisses")+card(a,t,"unites")).join("")}${emptyCard(t)}</div>
-        </section>`;
-    }
-    function renderCatalog(){
-        let html="";
-        if(filter==="retrait"){
-            html+=section("retrait");
+
+    function emptyCard(t) {
+        if (t === "retour_propre") {
+            return "";
         }
-        else{
-            html+=section("retour_sale");
-            html+=section("retour_propre");
+
+        const c = (data.contenants || [])[0];
+
+        if (!c) {
+            return "";
         }
-        catalog.innerHTML=html;
-        catalog.querySelectorAll(".qty").forEach(i=>i.addEventListener("input",()=>{
-            const v=n(i.value);
-            if(i.dataset.kind==="dish"){
-                state.vaisselle[i.dataset.id][i.dataset.type][i.dataset.field]=v;
-            }
-            else{
-                state.caissesVides[i.dataset.type]=v;
-            }
-            renderSummary();
-        }
-        ));
+
+        return `
+            <div
+                class="card ${opClass(t)} empty-card"
+                data-clickable="true"
+                data-card-kind="empty"
+                data-card-type="${t}"
+            >
+                <h3>
+                    Caisse vide
+                </h3>
+
+                <div class="meta">
+                    <strong>
+                        Caisse vide
+                    </strong>
+                </div>
+
+                <div class="stepper">
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="-1"
+                    >
+                        −
+                    </button>
+
+                    <input
+                        class="qty"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        value="${state.caissesVides[t] || 0}"
+                        data-kind="empty"
+                        data-type="${t}"
+                    >
+
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="1"
+                    >
+                        +
+                    </button>
+                </div>
+
+                <div class="rule"></div>
+            </div>
+        `;
     }
+
+    function section(t) {
+        const articles = data.vaisselle || [];
+
+        const tuilesCaisses = articles
+            .map((article) => {
+                return card(
+                    article,
+                    t,
+                    "caisses"
+                );
+            })
+            .join("");
+
+        const tuileCaisseVide = emptyCard(t);
+
+        const tuilesUnites = articles
+            .map((article) => {
+                return card(
+                    article,
+                    t,
+                    "unites"
+                );
+            })
+            .join("");
+
+        return `
+            <section class="section ${opClass(t)}">
+                <div class="section-title">
+                    <span class="dot"></span>
+                    ${opLabel(t)}
+                </div>
+
+                <div class="cards">
+                    ${tuilesCaisses}
+                    ${tuileCaisseVide}
+                    ${tuilesUnites}
+                </div>
+            </section>
+        `;
+    }
+
+    function changerQuantiteDepuisElement(element, delta) {
+        const carte = element.closest(".card");
+
+        if (!carte) {
+            return;
+        }
+
+        const champ = carte.querySelector(".qty");
+
+        if (!champ || champ.disabled) {
+            return;
+        }
+
+        const nouvelleValeur = Math.max(
+            0,
+            n(champ.value) + delta
+        );
+
+        champ.value = nouvelleValeur;
+
+        if (champ.dataset.kind === "dish") {
+            state.vaisselle[champ.dataset.id][champ.dataset.type][champ.dataset.field] =
+                nouvelleValeur;
+        } else {
+            state.caissesVides[champ.dataset.type] =
+                nouvelleValeur;
+        }
+
+        renderSummary();
+    }
+
+    function renderCatalog() {
+        let html = "";
+
+        if (filter === "retrait") {
+            html += section("retrait");
+        } else {
+            html += section("retour_sale");
+            html += section("retour_propre");
+        }
+
+        catalog.innerHTML = html;
+
+        catalog
+            .querySelectorAll(".qty")
+            .forEach((champ) => {
+                champ.addEventListener(
+                    "click",
+                    (event) => {
+                        event.stopPropagation();
+                    }
+                );
+
+                champ.addEventListener(
+                    "input",
+                    () => {
+                        const valeur = n(champ.value);
+
+                        if (champ.dataset.kind === "dish") {
+                            state.vaisselle[champ.dataset.id][champ.dataset.type][champ.dataset.field] =
+                                valeur;
+                        } else {
+                            state.caissesVides[champ.dataset.type] =
+                                valeur;
+                        }
+
+                        renderSummary();
+                    }
+                );
+            });
+
+        catalog
+            .querySelectorAll(".step")
+            .forEach((bouton) => {
+                bouton.addEventListener(
+                    "click",
+                    (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        changerQuantiteDepuisElement(
+                            bouton,
+                            Number(bouton.dataset.step || 0)
+                        );
+                    }
+                );
+            });
+
+        catalog
+            .querySelectorAll('.card[data-clickable="true"]')
+            .forEach((carte) => {
+                carte.addEventListener(
+                    "click",
+                    (event) => {
+                        if (
+                            event.target.closest(
+                                ".stepper"
+                            )
+                        ) {
+                            return;
+                        }
+
+                        changerQuantiteDepuisElement(
+                            carte,
+                            1
+                        );
+                    }
+                );
+            });
+    }
+
     function qtyArticle(a,t){
         const e=state.vaisselle[a.id][t];
         return e.caisses*n(a.quantite_standard)+e.unites
