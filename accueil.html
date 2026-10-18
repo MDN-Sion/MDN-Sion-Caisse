@@ -550,34 +550,29 @@
     }
 
     /* ======================================================
-       MODE DEMO / FORMATION
+       ACCES SECONDAIRE MODE DEMO / FORMATION
        ====================================================== */
 
-    .module-demo {
-      border: 2px solid #d7a400;
+    .actions-caisse {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .bouton-demo-secondaire {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid #d7a400;
+      border-radius: 11px;
       background: #fff9dc;
+      color: #6f5200;
+      cursor: pointer;
+      font-weight: 700;
     }
 
-    .module-demo .module-icone {
+    .bouton-demo-secondaire:hover {
       background: #fff0ad;
-      color: #6f5200;
-    }
-
-    .module-demo h2 {
-      color: #6f5200;
-    }
-
-    .module-demo .badge {
-      background: #ffe680;
-      color: #5c4500;
-    }
-
-    .bouton-demo {
-      background: linear-gradient(145deg, #d29b00, #a97900);
-    }
-
-    .bouton-demo:hover {
-      background: linear-gradient(145deg, #b98600, #8f6600);
+      border-color: #b98600;
     }
 
     /* ======================================================
@@ -919,50 +914,25 @@
             Ventes MDN et Fondation, paiements et opérations de caisse.
           </p>
 
-          <button
-            id="boutonCaisse"
-            class="bouton-module"
-            type="button"
-          >
-            Ouvrir la caisse
-          </button>
+          <div class="actions-caisse">
 
-        </article>
+            <button
+              id="boutonCaisse"
+              class="bouton-module"
+              type="button"
+            >
+              Ouvrir la caisse
+            </button>
 
-
-        <!-- ================================================
-             MODE DEMO / FORMATION
-             ================================================ -->
-
-        <article class="module module-demo">
-
-          <div class="module-entete">
-
-            <div class="module-icone" aria-hidden="true">
-              🎓
-            </div>
-
-            <span class="badge">
-              Formation
-            </span>
+            <button
+              id="boutonModeDemo"
+              class="bouton-demo-secondaire"
+              type="button"
+            >
+              🎓 Mode Démo / Formation
+            </button>
 
           </div>
-
-          <h2>
-            Mode Démo / Formation
-          </h2>
-
-          <p>
-            Entraînez-vous sur la Caisse sans modifier les ventes, dons, stocks ou la caisse physique réels.
-          </p>
-
-          <button
-            id="boutonModeDemo"
-            class="bouton-module bouton-demo"
-            type="button"
-          >
-            Ouvrir le Mode Démo
-          </button>
 
         </article>
 
