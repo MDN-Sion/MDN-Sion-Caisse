@@ -9,6 +9,8 @@
   >
 
   <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
 
   <meta
     name="description"
@@ -118,10 +120,17 @@
       background:
         rgba(255, 255, 255, 0.10);
 
-      font-size: 36px;
+      overflow: hidden;
 
       box-shadow:
         0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .chargement-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
     }
 
     .chargement-page strong {
@@ -227,7 +236,14 @@
       background:
         rgba(255, 255, 255, 0.12);
 
-      font-size: 26px;
+      overflow: hidden;
+    }
+
+    .marque-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
     }
 
     .marque-textes {
@@ -534,6 +550,37 @@
     }
 
     /* ======================================================
+       MODE DEMO / FORMATION
+       ====================================================== */
+
+    .module-demo {
+      border: 2px solid #d7a400;
+      background: #fff9dc;
+    }
+
+    .module-demo .module-icone {
+      background: #fff0ad;
+      color: #6f5200;
+    }
+
+    .module-demo h2 {
+      color: #6f5200;
+    }
+
+    .module-demo .badge {
+      background: #ffe680;
+      color: #5c4500;
+    }
+
+    .bouton-demo {
+      background: linear-gradient(145deg, #d29b00, #a97900);
+    }
+
+    .bouton-demo:hover {
+      background: linear-gradient(145deg, #b98600, #8f6600);
+    }
+
+    /* ======================================================
        PIED DE PAGE
        ====================================================== */
 
@@ -714,7 +761,7 @@
       class="chargement-embleme"
       aria-hidden="true"
     >
-      ❄
+      <img src="logo-mdn.png" alt="">
     </div>
 
     <strong>
@@ -753,7 +800,7 @@
             class="marque-embleme"
             aria-hidden="true"
           >
-            ❄
+            <img src="logo-mdn.png" alt="">
           </div>
 
           <div class="marque-textes">
@@ -873,11 +920,48 @@
           </p>
 
           <button
+            id="boutonCaisse"
             class="bouton-module"
             type="button"
-            disabled
           >
-            Bientôt disponible
+            Ouvrir la caisse
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             MODE DEMO / FORMATION
+             ================================================ -->
+
+        <article class="module module-demo">
+
+          <div class="module-entete">
+
+            <div class="module-icone" aria-hidden="true">
+              🎓
+            </div>
+
+            <span class="badge">
+              Formation
+            </span>
+
+          </div>
+
+          <h2>
+            Mode Démo / Formation
+          </h2>
+
+          <p>
+            Entraînez-vous sur la Caisse sans modifier les ventes, dons, stocks ou la caisse physique réels.
+          </p>
+
+          <button
+            id="boutonModeDemo"
+            class="bouton-module bouton-demo"
+            type="button"
+          >
+            Ouvrir le Mode Démo
           </button>
 
         </article>
@@ -1231,6 +1315,18 @@
         );
 
 
+      const boutonCaisse =
+        document.getElementById(
+          "boutonCaisse"
+        );
+
+
+      const boutonModeDemo =
+        document.getElementById(
+          "boutonModeDemo"
+        );
+
+
       const moduleCaissePhysique =
         document.getElementById(
           "moduleCaissePhysique"
@@ -1462,6 +1558,26 @@
         }
 
       }
+
+
+      /* ====================================================
+         NAVIGATION CAISSE / MODE DEMO
+         ==================================================== */
+
+      boutonCaisse.addEventListener(
+        "click",
+        function () {
+          window.location.href = "caisse.html";
+        }
+      );
+
+
+      boutonModeDemo.addEventListener(
+        "click",
+        function () {
+          window.location.href = "caisse.html?mode=demo";
+        }
+      );
 
 
       /* ====================================================
