@@ -387,19 +387,27 @@
 
     .message {
       display: none;
-
-      margin-bottom: 20px;
-
-      padding: 13px 15px;
-
+      position: fixed;
+      z-index: 5000;
+      top: calc(18px + env(safe-area-inset-top));
+      left: 50%;
+      width: min(680px, calc(100vw - 32px));
+      padding: 13px 48px 13px 15px;
       border-radius: 12px;
-
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+      transform: translateX(-50%);
       font-size: 14px;
       line-height: 1.45;
     }
 
     .message.visible {
       display: block;
+      animation: apparitionMessage .18s ease-out;
+    }
+
+    @keyframes apparitionMessage {
+      from { opacity: 0; transform: translate(-50%, -8px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
     }
 
     .message.erreur {
@@ -423,6 +431,29 @@
       background: #eefaf1;
       color: #08752d;
     }
+
+    .message-fermer {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: currentColor;
+      cursor: pointer;
+      transform: translateY(-50%);
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    .message-fermer:hover { background: rgba(0, 0, 0, 0.06); }
 
     /* ======================================================
        REINITIALISATION MODE DEMO
@@ -971,7 +1002,10 @@
         class="message"
         role="alert"
         aria-live="polite"
-      ></div>
+      >
+        <span id="texteMessageAccueil"></span>
+        <button id="fermerMessageAccueil" class="message-fermer" type="button" aria-label="Fermer le message">×</button>
+      </div>
 
 
       <div
@@ -1400,6 +1434,14 @@
           "messageAccueil"
         );
 
+      const texteMessageAccueil =
+        document.getElementById("texteMessageAccueil");
+
+      const fermerMessageAccueil =
+        document.getElementById("fermerMessageAccueil");
+
+      let minuterieMessageAccueil = null;
+
 
       const boutonDeconnexion =
         document.getElementById(
@@ -1453,19 +1495,30 @@
          MESSAGE
          ==================================================== */
 
-      function afficherMessage(
-        texte,
-        type = "erreur"
-      ) {
-
-        messageAccueil.textContent =
-          texte;
-
-
-        messageAccueil.className =
-          "message visible " + type;
-
+      function masquerMessageAccueil() {
+        if (minuterieMessageAccueil) {
+          window.clearTimeout(minuterieMessageAccueil);
+          minuterieMessageAccueil = null;
+        }
+        messageAccueil.className = "message";
       }
+
+      function afficherMessage(texte, type = "erreur") {
+        if (minuterieMessageAccueil) {
+          window.clearTimeout(minuterieMessageAccueil);
+        }
+        texteMessageAccueil.textContent = texte;
+        messageAccueil.className = "message visible " + type;
+        minuterieMessageAccueil = window.setTimeout(
+          masquerMessageAccueil,
+          type === "erreur" ? 10000 : 6000
+        );
+      }
+
+      fermerMessageAccueil.addEventListener(
+        "click",
+        masquerMessageAccueil
+      );
 
 
       /* ====================================================
