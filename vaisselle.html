@@ -2,7 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
   <title>Vaisselle & Consignes - MDN Sion</title>
 
@@ -14,11 +17,14 @@
       --rouge-mdn: #b7192e;
       --rouge-mdn-fonce: #8f1021;
       --bleu: #00126b;
+
       --texte: #1d1d1f;
       --texte-secondaire: #686868;
+
       --fond: #f3f4f6;
       --blanc: #ffffff;
       --bordure: #e1e3e7;
+
       --or: #b58b00;
       --or-fonce: #8d6d00;
     }
@@ -37,6 +43,7 @@
     body {
       background: var(--fond);
       color: var(--texte);
+
       font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -52,6 +59,7 @@
 
     .application {
       min-height: 100vh;
+
       display: flex;
       flex-direction: column;
     }
@@ -63,6 +71,7 @@
     .chargement-page {
       position: fixed;
       z-index: 10000;
+
       inset: 0;
 
       display: flex;
@@ -82,10 +91,12 @@
     }
 
     .chargement-logo {
-      width: 84px;
-      height: 84px;
+      width: 72px;
+      height: 72px;
+
       object-fit: contain;
-      margin-bottom: 14px;
+
+      margin-bottom: 12px;
     }
 
     .chargement-texte {
@@ -98,21 +109,23 @@
        ====================================================== */
 
     .barre-haute {
-      min-height: 76px;
+      min-height: 64px;
 
       padding:
-        calc(10px + env(safe-area-inset-top))
-        18px
-        10px;
+        calc(8px + env(safe-area-inset-top))
+        20px
+        8px;
 
       display: grid;
+
       grid-template-columns:
-        minmax(230px, 1fr)
+        minmax(190px, 1fr)
         auto
-        minmax(230px, 1fr);
+        minmax(190px, 1fr);
 
       align-items: center;
-      gap: 16px;
+
+      gap: 14px;
 
       background:
         linear-gradient(
@@ -124,8 +137,8 @@
       color: #ffffff;
 
       box-shadow:
-        0 3px 14px
-        rgba(0, 0, 0, 0.16);
+        0 3px 12px
+        rgba(0, 0, 0, 0.15);
     }
 
     .application.mode-demo .barre-haute {
@@ -139,10 +152,12 @@
 
     .barre-gauche,
     .barre-droite {
+      min-width: 0;
+
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-width: 0;
+
+      gap: 10px;
     }
 
     .barre-droite {
@@ -150,12 +165,14 @@
     }
 
     .bouton-entete {
-      min-height: 40px;
-      padding: 8px 12px;
+      min-height: 38px;
+
+      padding: 7px 12px;
 
       display: inline-flex;
       align-items: center;
       justify-content: center;
+
       gap: 7px;
 
       border:
@@ -184,19 +201,22 @@
       margin: 0;
 
       text-align: center;
+
       white-space: nowrap;
 
       font-size:
-        clamp(18px, 2vw, 25px);
+        clamp(17px, 1.7vw, 23px);
 
       font-weight: 900;
-      letter-spacing: -0.3px;
+
+      letter-spacing: -0.2px;
     }
 
     .identite-utilisateur {
       min-width: 0;
 
       overflow: hidden;
+
       text-overflow: ellipsis;
       white-space: nowrap;
 
@@ -211,7 +231,7 @@
     .bandeau-demo {
       display: none;
 
-      padding: 8px 16px;
+      padding: 7px 16px;
 
       background: #fff4c4;
 
@@ -222,7 +242,7 @@
 
       text-align: center;
 
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
     }
 
@@ -235,31 +255,38 @@
        ====================================================== */
 
     .contenu {
-      width: min(1180px, 100%);
+      width: min(1320px, 100%);
 
       margin: 0 auto;
 
       padding:
-        28px
+        18px
         22px
-        34px;
+        20px;
 
       flex: 1;
+
+      display: flex;
+      flex-direction: column;
     }
 
+    /* ======================================================
+       INTRODUCTION
+       ====================================================== */
+
     .introduction {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
 
       text-align: center;
     }
 
     .introduction-logo {
-      width: 76px;
-      height: 76px;
+      width: 52px;
+      height: 52px;
 
       object-fit: contain;
 
-      margin-bottom: 6px;
+      margin-bottom: 2px;
     }
 
     .introduction h1 {
@@ -268,9 +295,11 @@
       color: var(--rouge-mdn);
 
       font-size:
-        clamp(25px, 3vw, 34px);
+        clamp(23px, 2.4vw, 31px);
 
       font-weight: 900;
+
+      line-height: 1.1;
     }
 
     .mode-demo .introduction h1 {
@@ -278,20 +307,20 @@
     }
 
     .introduction p {
-      max-width: 720px;
+      max-width: 800px;
 
       margin:
-        8px auto 0;
+        7px auto 0;
 
-      color:
-        var(--texte-secondaire);
+      color: var(--texte-secondaire);
 
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 13px;
+
+      line-height: 1.4;
     }
 
     /* ======================================================
-       CARTES ACTIONS
+       CARTES PRINCIPALES
        ====================================================== */
 
     .grille-actions {
@@ -303,53 +332,55 @@
           minmax(0, 1fr)
         );
 
-      gap: 18px;
+      gap: 16px;
     }
 
     .carte-action {
-      min-height: 270px;
+      min-width: 0;
 
       padding:
-        26px
-        22px;
+        18px
+        18px
+        16px;
 
       display: flex;
       flex-direction: column;
 
       align-items: center;
-      justify-content: center;
 
       border:
         1px solid
         var(--bordure);
 
-      border-radius: 20px;
+      border-radius: 18px;
 
-      background:
-        var(--blanc);
+      background: var(--blanc);
 
       box-shadow:
-        0 8px 24px
-        rgba(0, 0, 0, 0.07);
+        0 6px 18px
+        rgba(0, 0, 0, 0.065);
 
       text-align: center;
     }
 
     .carte-action-icone {
-      width: 74px;
-      height: 74px;
+      width: 58px;
+      height: 58px;
+
+      flex: 0 0 58px;
 
       display: flex;
       align-items: center;
       justify-content: center;
 
-      margin-bottom: 17px;
+      margin-bottom: 10px;
 
-      border-radius: 22px;
+      border-radius: 17px;
 
       background: #fff0f2;
 
-      font-size: 40px;
+      font-size: 31px;
+
       line-height: 1;
     }
 
@@ -363,36 +394,39 @@
 
       color: #202020;
 
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 900;
+
+      line-height: 1.2;
     }
 
     .carte-action p {
-      min-height: 42px;
-
       margin:
-        8px
+        7px
         0
-        20px;
+        14px;
 
-      color:
-        var(--texte-secondaire);
+      color: var(--texte-secondaire);
 
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 12.5px;
+
+      line-height: 1.4;
     }
 
     .bouton-action {
       width: 100%;
-      min-height: 46px;
+
+      min-height: 43px;
+
+      margin-top: auto;
 
       padding:
-        10px
-        14px;
+        9px
+        12px;
 
       border: 0;
 
-      border-radius: 12px;
+      border-radius: 11px;
 
       background:
         linear-gradient(
@@ -405,6 +439,7 @@
 
       cursor: pointer;
 
+      font-size: 14px;
       font-weight: 900;
     }
 
@@ -423,21 +458,20 @@
     }
 
     /* ======================================================
-       INFORMATIONS
+       RÉFÉRENTIEL
        ====================================================== */
 
     .bloc-information {
-      margin-top: 22px;
+      margin-top: 14px;
 
       padding:
-        16px
-        18px;
+        12px
+        15px;
 
       border:
-        1px solid
-        #dce0e5;
+        1px solid #dce0e5;
 
-      border-radius: 15px;
+      border-radius: 13px;
 
       background: #ffffff;
     }
@@ -446,22 +480,22 @@
       margin:
         0
         0
-        7px;
+        4px;
 
       color: var(--bleu);
 
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
     }
 
     .bloc-information-texte {
       margin: 0;
 
-      color:
-        var(--texte-secondaire);
+      color: var(--texte-secondaire);
 
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 12px;
+
+      line-height: 1.4;
     }
 
     /* ======================================================
@@ -505,6 +539,7 @@
         translateX(-50%);
 
       font-size: 14px;
+
       line-height: 1.45;
     }
 
@@ -564,56 +599,101 @@
     }
 
     /* ======================================================
-       RESPONSIVE TABLETTE
+       TABLETTE / LARGEUR INTERMÉDIAIRE
        ====================================================== */
 
-    @media (max-width: 900px) {
+    @media (max-width: 1000px) {
 
       .barre-haute {
         grid-template-columns:
-          1fr
+          minmax(110px, 1fr)
           auto
-          1fr;
+          minmax(110px, 1fr);
       }
 
       .identite-utilisateur {
         display: none;
       }
 
+      .contenu {
+        padding:
+          16px
+          16px
+          18px;
+      }
+
       .grille-actions {
-        grid-template-columns: 1fr;
+        gap: 12px;
       }
 
       .carte-action {
-        min-height: 190px;
+        padding:
+          16px
+          12px
+          14px;
+      }
+
+      .carte-action-icone {
+        width: 52px;
+        height: 52px;
+
+        flex-basis: 52px;
+
+        font-size: 28px;
+      }
+
+      .carte-action h2 {
+        font-size: 16px;
+      }
+
+      .carte-action p {
+        font-size: 12px;
+      }
+
+      .bouton-action {
+        font-size: 13px;
       }
 
     }
 
     /* ======================================================
-       RESPONSIVE TÉLÉPHONE
+       TÉLÉPHONE
        ====================================================== */
 
-    @media (max-width: 620px) {
+    @media (max-width: 700px) {
 
       .barre-haute {
-        min-height: 66px;
+        min-height: 62px;
 
-        padding-left: 10px;
-        padding-right: 10px;
+        padding:
+          calc(
+            7px +
+            env(safe-area-inset-top)
+          )
+          9px
+          7px;
 
-        gap: 8px;
+        grid-template-columns:
+          auto
+          minmax(0, 1fr)
+          auto;
+
+        gap: 7px;
       }
 
       .titre-entete {
-        font-size: 16px;
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        font-size: 15px;
       }
 
       .bouton-entete {
-        min-height: 38px;
+        min-height: 36px;
 
         padding:
-          7px
+          6px
           9px;
 
         font-size: 12px;
@@ -624,52 +704,210 @@
         display: none;
       }
 
+      .bouton-deconnexion
+      .texte-bouton {
+        display: none;
+      }
+
       .contenu {
         padding:
-          18px
           12px
-          24px;
+          10px
+          16px;
+      }
+
+      .introduction {
+        margin-bottom: 11px;
       }
 
       .introduction-logo {
-        width: 60px;
-        height: 60px;
+        width: 42px;
+        height: 42px;
+
+        margin-bottom: 0;
       }
 
       .introduction h1 {
-        font-size: 24px;
+        font-size: 21px;
+      }
+
+      .introduction p {
+        margin-top: 5px;
+
+        font-size: 11.5px;
+      }
+
+      .grille-actions {
+        grid-template-columns: 1fr;
+
+        gap: 9px;
       }
 
       .carte-action {
         min-height: 0;
 
         padding:
-          20px
-          16px;
+          12px
+          12px;
+
+        display: grid;
+
+        grid-template-columns:
+          50px
+          minmax(0, 1fr);
+
+        grid-template-areas:
+          "icone titre"
+          "icone description"
+          "bouton bouton";
+
+        column-gap: 12px;
+
+        text-align: left;
       }
 
       .carte-action-icone {
-        width: 62px;
-        height: 62px;
+        grid-area: icone;
 
-        margin-bottom: 12px;
+        width: 50px;
+        height: 50px;
 
-        font-size: 34px;
+        margin: 0;
+
+        align-self: center;
+
+        font-size: 27px;
+
+        border-radius: 14px;
+      }
+
+      .carte-action h2 {
+        grid-area: titre;
+
+        align-self: end;
+
+        font-size: 16px;
       }
 
       .carte-action p {
-        min-height: 0;
+        grid-area: description;
 
-        margin-bottom: 15px;
+        margin:
+          3px
+          0
+          0;
+
+        align-self: start;
+
+        font-size: 11.5px;
+      }
+
+      .bouton-action {
+        grid-area: bouton;
+
+        min-height: 39px;
+
+        margin-top: 10px;
+
+        font-size: 13px;
+
+        text-align: center;
+      }
+
+      .bloc-information {
+        margin-top: 9px;
+
+        padding:
+          9px
+          11px;
+      }
+
+      .bloc-information-titre {
+        font-size: 12px;
+      }
+
+      .bloc-information-texte {
+        font-size: 10.5px;
       }
 
     }
 
-    @media (max-width: 430px) {
+    /* ======================================================
+       PETIT TÉLÉPHONE
+       ====================================================== */
 
-      .bouton-deconnexion
-      .texte-bouton {
-        display: none;
+    @media (max-width: 400px) {
+
+      .titre-entete {
+        font-size: 14px;
+      }
+
+      .introduction h1 {
+        font-size: 19px;
+      }
+
+      .introduction p {
+        font-size: 11px;
+      }
+
+    }
+
+    /* ======================================================
+       PETITE HAUTEUR ORDINATEUR / TABLETTE PAYSAGE
+       ====================================================== */
+
+    @media (min-width: 701px) and (max-height: 720px) {
+
+      .contenu {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .introduction {
+        margin-bottom: 11px;
+      }
+
+      .introduction-logo {
+        width: 42px;
+        height: 42px;
+      }
+
+      .introduction h1 {
+        font-size: 24px;
+      }
+
+      .introduction p {
+        margin-top: 4px;
+        font-size: 12px;
+      }
+
+      .carte-action {
+        padding:
+          13px
+          14px;
+      }
+
+      .carte-action-icone {
+        width: 48px;
+        height: 48px;
+
+        flex-basis: 48px;
+
+        margin-bottom: 7px;
+
+        font-size: 26px;
+      }
+
+      .carte-action p {
+        margin:
+          5px
+          0
+          10px;
+      }
+
+      .bloc-information {
+        margin-top: 10px;
+        padding: 9px 13px;
       }
 
     }
@@ -783,7 +1021,7 @@
 
 
     <!-- ==================================================
-         BANDEAU MODE DÉMO
+         MODE DÉMO
          ================================================== -->
 
     <div
@@ -850,10 +1088,9 @@
 
 
         <p>
-          Choisis l'opération à effectuer
-          pour enregistrer les mouvements
-          de vaisselle et de consignes du
-          Marché de Noël de Sion.
+          Choisis l'opération à effectuer pour enregistrer
+          les mouvements de vaisselle et de consignes
+          du Marché de Noël de Sion.
         </p>
 
       </section>
@@ -866,7 +1103,9 @@
       <section class="grille-actions">
 
 
-        <!-- RETRAIT -->
+        <!-- =================================================
+             1 - RETRAIT VAISSELLE
+             ================================================= -->
 
         <article class="carte-action">
 
@@ -900,41 +1139,9 @@
         </article>
 
 
-        <!-- RETOUR PROPRE -->
-
-        <article class="carte-action">
-
-          <div
-            class="carte-action-icone"
-            aria-hidden="true"
-          >
-            📥
-          </div>
-
-
-          <h2>
-            Retour propre
-          </h2>
-
-
-          <p>
-            Enregistrer la vaisselle
-            rendue propre par un stand.
-          </p>
-
-
-          <button
-            id="boutonRetourPropre"
-            class="bouton-action"
-            type="button"
-          >
-            📥 Retour propre
-          </button>
-
-        </article>
-
-
-        <!-- RETOUR SALE -->
+        <!-- =================================================
+             2 - RETOUR SALE
+             ================================================= -->
 
         <article class="carte-action">
 
@@ -967,11 +1174,47 @@
 
         </article>
 
+
+        <!-- =================================================
+             3 - RETOUR PROPRE
+             ================================================= -->
+
+        <article class="carte-action">
+
+          <div
+            class="carte-action-icone"
+            aria-hidden="true"
+          >
+            📥
+          </div>
+
+
+          <h2>
+            Retour propre
+          </h2>
+
+
+          <p>
+            Enregistrer la vaisselle
+            rendue propre par un stand.
+          </p>
+
+
+          <button
+            id="boutonRetourPropre"
+            class="bouton-action"
+            type="button"
+          >
+            📥 Retour propre
+          </button>
+
+        </article>
+
       </section>
 
 
       <!-- ================================================
-           INFORMATIONS
+           RÉFÉRENTIEL
            ================================================ -->
 
       <section class="bloc-information">
@@ -1093,15 +1336,15 @@
         );
 
 
-      const boutonRetourPropre =
-        document.getElementById(
-          "boutonRetourPropre"
-        );
-
-
       const boutonRetourSale =
         document.getElementById(
           "boutonRetourSale"
+        );
+
+
+      const boutonRetourPropre =
+        document.getElementById(
+          "boutonRetourPropre"
         );
 
 
@@ -1141,7 +1384,7 @@
 
 
       /* ==================================================
-         MESSAGES FLOTTANTS
+         MESSAGES
          ================================================== */
 
       function masquerMessage() {
@@ -1213,11 +1456,11 @@
       ) {
 
         /*
-         * Pour cette première version,
-         * on valide d'abord le menu principal.
+         * Pour l'instant :
+         * validation du menu principal.
          *
-         * Les formulaires Retrait / Retour propre /
-         * Retour sale seront branchés à l'étape suivante.
+         * Les écrans opérationnels seront
+         * construits ensuite.
          */
 
         const libelles = {
@@ -1225,11 +1468,11 @@
           retrait:
             "Retrait vaisselle",
 
-          retour_propre:
-            "Retour propre",
-
           retour_sale:
-            "Retour sale"
+            "Retour sale",
+
+          retour_propre:
+            "Retour propre"
 
         };
 
@@ -1241,6 +1484,10 @@
 
       }
 
+
+      /* ==================================================
+         1 - RETRAIT
+         ================================================== */
 
       boutonRetrait.addEventListener(
         "click",
@@ -1254,17 +1501,9 @@
       );
 
 
-      boutonRetourPropre.addEventListener(
-        "click",
-        function () {
-
-          ouvrirOperation(
-            "retour_propre"
-          );
-
-        }
-      );
-
+      /* ==================================================
+         2 - RETOUR SALE
+         ================================================== */
 
       boutonRetourSale.addEventListener(
         "click",
@@ -1272,6 +1511,22 @@
 
           ouvrirOperation(
             "retour_sale"
+          );
+
+        }
+      );
+
+
+      /* ==================================================
+         3 - RETOUR PROPRE
+         ================================================== */
+
+      boutonRetourPropre.addEventListener(
+        "click",
+        function () {
+
+          ouvrirOperation(
+            "retour_propre"
           );
 
         }
@@ -1337,10 +1592,6 @@
           }
 
 
-          /*
-           * La page est accessible aux trois rôles.
-           */
-
           const auth =
             await window.MDN_AUTH.protegerPage([
               "utilisateur",
@@ -1355,7 +1606,7 @@
 
 
           /* ==============================================
-             IDENTITÉ UTILISATEUR
+             UTILISATEUR
              ============================================== */
 
           const prenom =
@@ -1436,7 +1687,7 @@
 
 
       /* ==================================================
-         SURVEILLANCE SESSION
+         SURVEILLANCE DE SESSION
          ================================================== */
 
       window.MDN_AUTH.surveillerSession({
