@@ -261,14 +261,25 @@ button{
     cursor:not-allowed
 }
 .stepper .qty{
+    width:100%;
+    min-width:0;
     height:42px;
+    padding:0 4px;
     border:1px solid #d3d8df;
     border-radius:10px;
     background:#fff;
     text-align:center;
     font-size:18px;
+    line-height:42px;
     font-weight:950;
-    outline:none
+    outline:none;
+    appearance:textfield;
+    -moz-appearance:textfield
+}
+.stepper .qty::-webkit-outer-spin-button,
+.stepper .qty::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0
 }
 .card[data-clickable="true"]{
     cursor:pointer
@@ -1110,6 +1121,10 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         margin-top: 5px;
     }
 }
+
+.sous-section-title{
+    margin-top:18px
+}
 </style>
  </head>
  <body>
@@ -1190,13 +1205,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
      <div class="bottom">
       <div class="totals">
        <span>
-        Retraits facturés au compte
+        Retraits facturés
        </span>
        <strong id="invoice">
         CHF 0.00
        </strong>
        <span>
-        Retours crédités au compte
+        Retours crédités
        </span>
        <strong class="credit" id="credit">
         CHF 0.00
@@ -1533,16 +1548,38 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             })
             .join("");
 
+        let titreCaisses = "";
+        let titreUnites = "";
+
+        if (t === "retrait") {
+            titreCaisses = "📤 Retrait Caisse";
+            titreUnites = "📤 Retrait Unité";
+        } else if (t === "retour_sale") {
+            titreCaisses = "📥 Retrait Caisse Sale";
+            titreUnites = "📥 Retrait Unité Sale";
+        } else {
+            titreCaisses = "📥 Retrait Caisse Propre";
+            titreUnites = "📥 Retrait Unité Propre";
+        }
+
         return `
             <section class="section ${opClass(t)}">
                 <div class="section-title">
                     <span class="dot"></span>
-                    ${opLabel(t)}
+                    ${titreCaisses}
                 </div>
 
                 <div class="cards">
                     ${tuilesCaisses}
                     ${tuileCaisseVide}
+                </div>
+
+                <div class="section-title sous-section-title">
+                    <span class="dot"></span>
+                    ${titreUnites}
+                </div>
+
+                <div class="cards">
                     ${tuilesUnites}
                 </div>
             </section>
