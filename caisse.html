@@ -1118,6 +1118,12 @@
       white-space: nowrap;
     }
 
+    #monnaieARendre {
+      color: #b00000;
+      font-size: 20px;
+      font-weight: 950;
+    }
+
     @media (max-width: 700px) {
       .modal-encaissement {
         padding: 8px;
@@ -1892,15 +1898,42 @@
       function actualiserRepartitionPaiement() {
         const totalVente = calculerTotalPanier();
 
+        /*
+         * Les trois champs de répartition correspondent au montant
+         * présenté sur chaque moyen pour la vente.
+         *
+         * Carte / TWINT peuvent dépasser le total de la vente :
+         * le dépassement devient alors un montant disponible pour un don.
+         *
+         * Pour les espèces, le champ "Le client donne" reste distinct :
+         * la différence entre ce que le client donne et la part Espèces
+         * constitue de la monnaie disponible, qui peut être rendue ou donnée.
+         */
         const especesVente = valeurMontantPaiement(montantEspeces);
-        const carteVente = valeurMontantPaiement(montantCarte);
-        const twintVente = valeurMontantPaiement(montantTwint);
+        const carteSaisie = valeurMontantPaiement(montantCarte);
+        const twintSaisi = valeurMontantPaiement(montantTwint);
 
-        const reparti = especesVente + carteVente + twintVente;
-        const resteVente = totalVente - reparti;
-        const venteEquilibree = Math.abs(resteVente) < 0.005;
+        const totalSaisiVente =
+          especesVente + carteSaisie + twintSaisi;
+
+        const venteRepartie =
+          Math.min(totalVente, totalSaisiVente);
+
+        const resteVente =
+          Math.max(0, totalVente - venteRepartie);
+
+        const venteCouverte =
+          totalSaisiVente + 0.005 >= totalVente;
+
+        /*
+         * Tout dépassement Carte/TWINT au-delà du total nécessaire
+         * pour couvrir la vente est disponible comme don.
+         */
+        const surplusNumerique =
+          Math.max(0, totalSaisiVente - totalVente);
 
         let donneEspeces = valeurMontantPaiement(clientDonne);
+
         if (especesVente <= 0) {
           donneEspeces = 0;
           clientDonne.value = "0.00";
@@ -1909,64 +1942,115 @@
           clientDonne.disabled = false;
         }
 
-        const disponibleEspeces = Math.max(0, donneEspeces - especesVente);
         const especesInsuffisantes =
-          especesVente > 0 && donneEspeces + 0.005 < especesVente;
+          especesVente > 0 &&
+          donneEspeces + 0.005 < especesVente;
 
-        const donMdnValeur = valeurMontantPaiement(donMDN);
-        const donFondationValeur = valeurMontantPaiement(donFondation);
-        const dons = donMdnValeur + donFondationValeur;
+        const monnaieDisponibleEspeces =
+          Math.max(0, donneEspeces - especesVente);
+
+        const donMdnValeur =
+          valeurMontantPaiement(donMDN);
+
+        const donFondationValeur =
+          valeurMontantPaiement(donFondation);
+
+        const dons =
+          donMdnValeur + donFondationValeur;
 
         /*
-         * Le don peut provenir :
-         * - du rendu d'espèces ;
-         * - d'un montant supplémentaire Carte/TWINT.
-         * Il est distinct du chiffre d'affaires de la vente.
+         * Les dons peuvent être financés par :
+         * - le surplus Carte/TWINT ;
+         * - la monnaie disponible en espèces ;
+         * - ou les deux à la fois.
          */
-        const complementNumerique =
-          Math.max(0, carteVente + twintVente - Math.max(0, totalVente - especesVente));
-        const disponiblePourDon = disponibleEspeces + complementNumerique;
-        const donTropEleve = dons > disponiblePourDon + 0.005;
+        const disponiblePourDon =
+          surplusNumerique + monnaieDisponibleEspeces;
 
-        const monnaie = Math.max(0, disponibleEspeces - dons);
+        const donTropEleve =
+          dons > disponiblePourDon + 0.005;
 
-        totalReparti.textContent = formaterCHF(reparti);
+        /*
+         * Un surplus numérique ne peut pas être rendu en espèces.
+         * Il doit donc être intégralement affecté à un don.
+         */
+        const donNumeriqueNonAffecte =
+          Math.max(0, surplusNumerique - dons);
+
+        /*
+         * Les dons utilisent d'abord le surplus Carte/TWINT.
+         * Seule la partie restante du don est prélevée sur
+         * la monnaie disponible en espèces.
+         */
+        const donPrisSurEspeces =
+          Math.max(0, dons - surplusNumerique);
+
+        const monnaie =
+          Math.max(
+            0,
+            monnaieDisponibleEspeces - donPrisSurEspeces
+          );
+
+        totalReparti.textContent =
+          formaterCHF(venteRepartie);
+
         resteARepartir.textContent =
-          Math.abs(resteVente) < 0.005
-            ? formaterCHF(0)
-            : formaterCHF(resteVente);
+          formaterCHF(resteVente);
 
-        monnaieDisponible.textContent = formaterCHF(disponibleEspeces);
-        totalDons.textContent = formaterCHF(dons);
-        monnaieARendre.textContent = formaterCHF(monnaie);
+        monnaieDisponible.textContent =
+          formaterCHF(monnaieDisponibleEspeces);
 
-        resumePaiement.classList.toggle("equilibre", venteEquilibree);
+        totalDons.textContent =
+          formaterCHF(dons);
+
+        monnaieARendre.textContent =
+          formaterCHF(monnaie);
+
+        resumePaiement.classList.toggle(
+          "equilibre",
+          venteCouverte
+        );
 
         let message = "";
 
-        if (reparti > totalVente + 0.005) {
-          message = "La répartition de la vente dépasse le total. Utilise les champs Don MDN / Fondation pour un montant supplémentaire.";
-        } else if (!venteEquilibree) {
-          message = "La vente n'est pas encore entièrement répartie.";
+        if (!venteCouverte) {
+          message =
+            "La vente n'est pas encore entièrement répartie.";
         } else if (especesInsuffisantes) {
-          message = "Le montant donné en espèces est inférieur à la part Espèces de la vente.";
+          message =
+            "Le montant donné en espèces est inférieur à la part Espèces de la vente.";
         } else if (donTropEleve) {
-          message = "Le total des dons dépasse le montant supplémentaire disponible.";
+          message =
+            "Le total des dons dépasse le montant supplémentaire disponible.";
+        } else if (donNumeriqueNonAffecte > 0.005) {
+          message =
+            "Il reste " +
+            formaterCHF(donNumeriqueNonAffecte) +
+            " payé en plus par Carte/TWINT. Répartis ce montant entre Don MDN et Don Fondation.";
         }
 
         avertissementPaiement.textContent = message;
-        avertissementPaiement.classList.toggle("visible", Boolean(message));
+        avertissementPaiement.classList.toggle(
+          "visible",
+          Boolean(message)
+        );
 
         const valide =
-          venteEquilibree &&
+          venteCouverte &&
           !especesInsuffisantes &&
-          !donTropEleve;
+          !donTropEleve &&
+          donNumeriqueNonAffecte <= 0.005;
 
         continuerEncaissement.disabled = !valide;
-        continuerEncaissement.classList.toggle("actif", valide);
-        continuerEncaissement.textContent = valide
-          ? "Valider le paiement"
-          : "Continuer";
+        continuerEncaissement.classList.toggle(
+          "actif",
+          valide
+        );
+
+        continuerEncaissement.textContent =
+          valide
+            ? "Valider le paiement"
+            : "Continuer";
       }
 
       function preparerRepartitionPaiement() {
@@ -2727,24 +2811,43 @@
             return;
           }
 
+          const especesFinal = valeurMontantPaiement(montantEspeces);
+          const carteFinal = valeurMontantPaiement(montantCarte);
+          const twintFinal = valeurMontantPaiement(montantTwint);
+          const donMdnFinal = valeurMontantPaiement(donMDN);
+          const donFondationFinal = valeurMontantPaiement(donFondation);
+          const donsFinal = donMdnFinal + donFondationFinal;
+          const surplusNumeriqueFinal =
+            Math.max(
+              0,
+              especesFinal +
+              carteFinal +
+              twintFinal -
+              calculerTotalPanier()
+            );
+          const donPrisSurEspecesFinal =
+            Math.max(
+              0,
+              donsFinal - surplusNumeriqueFinal
+            );
+
           const repartition = {
             vente: {
-              especes: valeurMontantPaiement(montantEspeces),
-              carte: valeurMontantPaiement(montantCarte),
-              twint: valeurMontantPaiement(montantTwint)
+              especes: especesFinal,
+              carte: carteFinal,
+              twint: twintFinal
             },
             clientDonneEspeces: valeurMontantPaiement(clientDonne),
             dons: {
-              mdn: valeurMontantPaiement(donMDN),
-              fondation: valeurMontantPaiement(donFondation)
+              mdn: donMdnFinal,
+              fondation: donFondationFinal
             },
             monnaieARendre:
               Math.max(
                 0,
                 valeurMontantPaiement(clientDonne) -
-                valeurMontantPaiement(montantEspeces) -
-                valeurMontantPaiement(donMDN) -
-                valeurMontantPaiement(donFondation)
+                especesFinal -
+                donPrisSurEspecesFinal
               )
           };
 
