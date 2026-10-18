@@ -620,8 +620,117 @@ textarea {
       id:r.id,nom:r.nom,cons:Number(r.consigne)||0,lav:Number(r.lavage)||0,q:0
     }));
     renderDish();
-    renderContainers()
+    renderContainers();
   }
+
+  function renderDish() {
+    if (!dishes.length) {
+      E.dish.innerHTML = '<div class="empty">Aucune vaisselle configurée pour cette édition.</div>';
+      return;
+    }
+
+    E.dish.innerHTML = dishes.map(function (r, index) {
+      return `
+        <div class="item ${r.q > 0 ? "on" : ""}">
+          <div class="iname">${esc(r.nom)}</div>
+          <div class="price">Consigne ${chf(r.cons)}</div>
+          <div class="qty">
+            <button class="qb" type="button" data-dish-minus="${index}" aria-label="Retirer une unité">−</button>
+            <input class="qi" type="number" min="0" step="1" inputmode="numeric" value="${r.q}" data-dish-input="${index}" aria-label="Quantité ${esc(r.nom)}">
+            <button class="qb" type="button" data-dish-plus="${index}" aria-label="Ajouter une unité">+</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    E.dish.querySelectorAll("[data-dish-minus]").forEach(function (b) {
+      b.onclick = function () {
+        const i = Number(b.dataset.dishMinus);
+        dishes[i].q = Math.max(0, q(dishes[i].q) - 1);
+        renderDish();
+        update();
+      };
+    });
+
+    E.dish.querySelectorAll("[data-dish-plus]").forEach(function (b) {
+      b.onclick = function () {
+        const i = Number(b.dataset.dishPlus);
+        dishes[i].q = q(dishes[i].q) + 1;
+        renderDish();
+        update();
+      };
+    });
+
+    E.dish.querySelectorAll("[data-dish-input]").forEach(function (input) {
+      input.oninput = function () {
+        const i = Number(input.dataset.dishInput);
+        dishes[i].q = q(input.value);
+        update();
+      };
+      input.onchange = function () {
+        const i = Number(input.dataset.dishInput);
+        dishes[i].q = q(input.value);
+        renderDish();
+        update();
+      };
+    });
+  }
+
+  function renderContainers() {
+    if (!containers.length) {
+      E.containers.innerHTML = '<div class="empty">Aucun contenant configuré pour cette édition.</div>';
+      return;
+    }
+
+    E.containers.innerHTML = containers.map(function (r, index) {
+      return `
+        <div class="crow ${r.q > 0 ? "on" : ""}">
+          <div>
+            <div class="iname">${esc(r.nom)}</div>
+            <div class="price">Consigne ${chf(r.cons)}${r.lav ? " · Lavage " + chf(r.lav) : ""}</div>
+          </div>
+          <div class="qty">
+            <button class="qb" type="button" data-container-minus="${index}" aria-label="Retirer un contenant">−</button>
+            <input class="qi" type="number" min="0" step="1" inputmode="numeric" value="${r.q}" data-container-input="${index}" aria-label="Quantité ${esc(r.nom)}">
+            <button class="qb" type="button" data-container-plus="${index}" aria-label="Ajouter un contenant">+</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    E.containers.querySelectorAll("[data-container-minus]").forEach(function (b) {
+      b.onclick = function () {
+        const i = Number(b.dataset.containerMinus);
+        containers[i].q = Math.max(0, q(containers[i].q) - 1);
+        renderContainers();
+        update();
+      };
+    });
+
+    E.containers.querySelectorAll("[data-container-plus]").forEach(function (b) {
+      b.onclick = function () {
+        const i = Number(b.dataset.containerPlus);
+        containers[i].q = q(containers[i].q) + 1;
+        renderContainers();
+        update();
+      };
+    });
+
+    E.containers.querySelectorAll("[data-container-input]").forEach(function (input) {
+      input.oninput = function () {
+        const i = Number(input.dataset.containerInput);
+        containers[i].q = q(input.value);
+        update();
+      };
+      input.onchange = function () {
+        const i = Number(input.dataset.containerInput);
+        containers[i].q = q(input.value);
+        renderContainers();
+        update();
+      };
+    });
+  }
+
   function renderStands(v="") {
     if(sel) {
       E.stands.classList.add("hide");
