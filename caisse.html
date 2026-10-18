@@ -2021,9 +2021,14 @@
           if (!selectionne) mettreMontantPaiement(champ, 0);
         });
 
-        const especesSelectionnees = moyenEstSelectionne("especes");
-        clientDonne.disabled = !especesSelectionnees;
-        if (!especesSelectionnees) mettreMontantPaiement(clientDonne, 0);
+        /*
+         * Le champ « Le client donne » reste toujours disponible.
+         * Il peut servir :
+         * - à régler tout ou partie de la vente en espèces ;
+         * - mais aussi à recevoir un don en espèces même lorsque
+         *   la vente elle-même est réglée uniquement par Carte/TWINT.
+         */
+        clientDonne.disabled = false;
       }
 
 
@@ -2064,15 +2069,16 @@
         const surplusNumerique =
           Math.max(0, totalSaisiVente - totalVente);
 
-        let donneEspeces = valeurMontantPaiement(clientDonne);
+        /*
+         * « Le client donne » correspond à l'argent liquide réellement
+         * remis par le client. Il reste donc utilisable même si la part
+         * Espèces de la vente vaut 0 : dans ce cas, l'argent peut être
+         * affecté à un don ou rendu au client.
+         */
+        const donneEspeces =
+          valeurMontantPaiement(clientDonne);
 
-        if (especesVente <= 0) {
-          donneEspeces = 0;
-          clientDonne.value = "0.00";
-          clientDonne.disabled = true;
-        } else {
-          clientDonne.disabled = false;
-        }
+        clientDonne.disabled = false;
 
         const especesInsuffisantes =
           especesVente > 0 &&
@@ -3392,7 +3398,7 @@
           if (modeDemo) {
             application.classList.add("mode-demo");
             bandeauDemo.classList.add("visible");
-            titreCaisse.textContent = "🎓 Caisse - Mode Démo";
+            titreCaisse.textContent = "🎓 Caisse — Mode Démo";
             document.title = "Caisse Démo - MDN Sion";
           }
 
