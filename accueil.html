@@ -1564,7 +1564,10 @@
          MODE DEMO GLOBAL DE L'ACCUEIL
          ==================================================== */
 
-      let modeDemoActif = false;
+      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
+
+      let modeDemoActif =
+        sessionStorage.getItem(CLE_MODE_DEMO) === "1";
 
 
       function actualiserModeDemoAccueil() {
@@ -1613,6 +1616,12 @@
 
           modeDemoActif = !modeDemoActif;
 
+          if (modeDemoActif) {
+            sessionStorage.setItem(CLE_MODE_DEMO, "1");
+          } else {
+            sessionStorage.removeItem(CLE_MODE_DEMO);
+          }
+
           actualiserModeDemoAccueil();
 
         }
@@ -1636,6 +1645,9 @@
       );
 
 
+      // Restaure immédiatement l’état Démo lors d’un retour depuis un module.
+      actualiserModeDemoAccueil();
+
       /* ====================================================
          DECONNEXION
          ==================================================== */
@@ -1650,6 +1662,8 @@
 
           boutonDeconnexion.textContent =
             "Déconnexion…";
+
+          sessionStorage.removeItem(CLE_MODE_DEMO);
 
 
           await window.MDN_AUTH
