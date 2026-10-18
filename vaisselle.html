@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
@@ -16,7 +17,6 @@
     :root {
       --rouge-mdn: #b7192e;
       --rouge-mdn-fonce: #8f1021;
-      --bleu: #00126b;
 
       --texte: #1d1d1f;
       --texte-secondaire: #686868;
@@ -109,19 +109,19 @@
        ====================================================== */
 
     .barre-haute {
-      min-height: 76px;
+      min-height: 64px;
 
       padding:
-        calc(10px + env(safe-area-inset-top))
+        calc(7px + env(safe-area-inset-top))
         24px
-        10px;
+        7px;
 
       display: grid;
 
       grid-template-columns:
-        minmax(190px, 1fr)
+        minmax(180px, 1fr)
         minmax(260px, auto)
-        minmax(190px, 1fr);
+        minmax(180px, 1fr);
 
       align-items: center;
 
@@ -163,23 +163,19 @@
     }
 
     .bouton-entete {
-      min-height: 46px;
+      min-height: 38px;
 
-      padding:
-        9px
-        14px;
+      padding: 7px 13px;
 
       display: inline-flex;
       align-items: center;
       justify-content: center;
 
-      gap: 7px;
-
       border:
         1px solid
         rgba(255, 255, 255, 0.55);
 
-      border-radius: 12px;
+      border-radius: 10px;
 
       background:
         rgba(255, 255, 255, 0.12);
@@ -188,7 +184,7 @@
 
       cursor: pointer;
 
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
 
       white-space: nowrap;
@@ -217,11 +213,11 @@
       color: #ffffff;
 
       font-size:
-        clamp(19px, 2vw, 25px);
+        clamp(18px, 1.8vw, 23px);
 
       font-weight: 900;
 
-      line-height: 1.15;
+      line-height: 1.05;
 
       white-space: nowrap;
     }
@@ -232,10 +228,10 @@
       color:
         rgba(255, 255, 255, 0.88);
 
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
 
-      line-height: 1.1;
+      line-height: 1;
 
       white-space: nowrap;
     }
@@ -247,9 +243,7 @@
     .bandeau-demo {
       display: none;
 
-      padding:
-        7px
-        16px;
+      padding: 6px 16px;
 
       background: #fff4c4;
 
@@ -273,18 +267,12 @@
        ====================================================== */
 
     .contenu {
-      width:
-        min(
-          1320px,
-          100%
-        );
+      width: min(1320px, 100%);
 
-      margin:
-        0
-        auto;
+      margin: 0 auto;
 
       padding:
-        24px
+        20px
         22px
         20px;
 
@@ -292,6 +280,7 @@
 
       display: flex;
       flex-direction: column;
+      justify-content: flex-start;
     }
 
     /* ======================================================
@@ -299,7 +288,7 @@
        ====================================================== */
 
     .introduction {
-      margin-bottom: 18px;
+      margin-bottom: 16px;
 
       text-align: center;
     }
@@ -307,15 +296,10 @@
     .introduction h1 {
       margin: 0;
 
-      color:
-        var(--rouge-mdn);
+      color: var(--rouge-mdn);
 
       font-size:
-        clamp(
-          24px,
-          2.5vw,
-          32px
-        );
+        clamp(24px, 2.5vw, 32px);
 
       font-weight: 900;
 
@@ -324,20 +308,18 @@
 
     .mode-demo
     .introduction h1 {
-      color:
-        var(--or-fonce);
+      color: var(--or-fonce);
     }
 
     .introduction p {
-      max-width: 800px;
+      max-width: 820px;
 
       margin:
-        8px
+        7px
         auto
         0;
 
-      color:
-        var(--texte-secondaire);
+      color: var(--texte-secondaire);
 
       font-size: 13px;
 
@@ -345,7 +327,7 @@
     }
 
     /* ======================================================
-       CARTES PRINCIPALES
+       CARTES
        ====================================================== */
 
     .grille-actions {
@@ -379,8 +361,7 @@
 
       border-radius: 18px;
 
-      background:
-        var(--blanc);
+      background: var(--blanc);
 
       box-shadow:
         0 6px 18px
@@ -435,8 +416,7 @@
         0
         14px;
 
-      color:
-        var(--texte-secondaire);
+      color: var(--texte-secondaire);
 
       font-size: 12.5px;
 
@@ -474,8 +454,7 @@
     }
 
     .bouton-action:hover {
-      filter:
-        brightness(0.96);
+      filter: brightness(0.96);
     }
 
     .mode-demo
@@ -486,50 +465,6 @@
           #d3a400,
           #a97e00
         );
-    }
-
-    /* ======================================================
-       RÉFÉRENTIEL
-       ====================================================== */
-
-    .bloc-information {
-      margin-top: 14px;
-
-      padding:
-        12px
-        15px;
-
-      border:
-        1px solid
-        #dce0e5;
-
-      border-radius: 13px;
-
-      background: #ffffff;
-    }
-
-    .bloc-information-titre {
-      margin:
-        0
-        0
-        4px;
-
-      color:
-        var(--bleu);
-
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .bloc-information-texte {
-      margin: 0;
-
-      color:
-        var(--texte-secondaire);
-
-      font-size: 12px;
-
-      line-height: 1.4;
     }
 
     /* ======================================================
@@ -687,40 +622,43 @@
     }
 
     /* ======================================================
-       TÉLÉPHONE
+       TÉLÉPHONE PORTRAIT
        ====================================================== */
 
-    @media (max-width: 700px) {
+    @media
+    (max-width: 700px)
+    and
+    (orientation: portrait) {
 
       .barre-haute {
-        min-height: 106px;
+        min-height: 76px;
 
         padding:
           calc(
-            10px +
+            7px +
             env(safe-area-inset-top)
           )
-          16px
-          10px;
+          13px
+          7px;
 
         grid-template-columns:
           auto
           minmax(0, 1fr)
           auto;
 
-        gap: 10px;
+        gap: 8px;
       }
 
       .bouton-entete {
-        min-height: 52px;
+        min-height: 42px;
 
         padding:
-          8px
-          13px;
+          7px
+          10px;
 
-        border-radius: 13px;
+        border-radius: 11px;
 
-        font-size: 14px;
+        font-size: 12.5px;
       }
 
       .titre-entete {
@@ -730,7 +668,7 @@
 
         text-overflow: ellipsis;
 
-        font-size: 18px;
+        font-size: 16px;
       }
 
       .identite-utilisateur {
@@ -742,36 +680,36 @@
 
         text-overflow: ellipsis;
 
-        margin-top: 4px;
+        margin-top: 3px;
 
-        font-size: 12px;
+        font-size: 10.5px;
       }
 
       .contenu {
         padding:
-          18px
+          16px
           10px
-          18px;
+          16px;
       }
 
       .introduction {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
       }
 
       .introduction h1 {
-        font-size: 23px;
+        font-size: 22px;
       }
 
       .introduction p {
         max-width: 580px;
 
-        margin-top: 7px;
+        margin-top: 6px;
 
         padding:
           0
           6px;
 
-        font-size: 12px;
+        font-size: 11.5px;
       }
 
       .grille-actions {
@@ -783,8 +721,7 @@
       .carte-action {
         min-height: 0;
 
-        padding:
-          12px;
+        padding: 12px;
 
         display: grid;
 
@@ -841,7 +778,7 @@
       .bouton-action {
         grid-area: bouton;
 
-        min-height: 42px;
+        min-height: 40px;
 
         margin-top: 10px;
 
@@ -850,115 +787,312 @@
         text-align: center;
       }
 
-      .bloc-information {
-        margin-top: 10px;
-
-        padding:
-          10px
-          11px;
-      }
-
-      .bloc-information-titre {
-        font-size: 12px;
-      }
-
-      .bloc-information-texte {
-        font-size: 10.5px;
-      }
-
     }
 
     /* ======================================================
-       PETITS TÉLÉPHONES
-       ====================================================== */
-
-    @media (max-width: 430px) {
-
-      .barre-haute {
-        padding-left: 10px;
-        padding-right: 10px;
-
-        gap: 7px;
-      }
-
-      .bouton-entete {
-        min-height: 48px;
-
-        padding:
-          7px
-          10px;
-
-        font-size: 12.5px;
-      }
-
-      .titre-entete {
-        font-size: 16px;
-      }
-
-      .identite-utilisateur {
-        font-size: 11px;
-      }
-
-    }
-
-    /* ======================================================
-       PETITES HAUTEURS
+       PETITS TÉLÉPHONES PORTRAIT
        ====================================================== */
 
     @media
-    (min-width: 701px)
+    (max-width: 430px)
     and
-    (max-height: 720px) {
+    (orientation: portrait) {
 
-      .contenu {
-        padding-top: 14px;
-        padding-bottom: 12px;
+      .barre-haute {
+        padding-left: 8px;
+        padding-right: 8px;
+
+        gap: 6px;
       }
 
-      .introduction {
-        margin-bottom: 11px;
+      .bouton-entete {
+        padding:
+          7px
+          8px;
+
+        font-size: 11.5px;
       }
 
-      .introduction h1 {
-        font-size: 24px;
+      .titre-entete {
+        font-size: 14.5px;
       }
 
-      .introduction p {
-        margin-top: 4px;
+      .identite-utilisateur {
+        font-size: 10px;
+      }
+
+    }
+
+    /* ======================================================
+       TÉLÉPHONE / TABLETTE PAYSAGE
+
+       Objectif :
+       - même principe que la Caisse
+       - page complète dans la hauteur disponible
+       - pas de référentiel
+       - cartes compactes
+       ====================================================== */
+
+    @media
+    (orientation: landscape)
+    and
+    (max-height: 650px) {
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      .application {
+        min-height: 100vh;
+      }
+
+      .barre-haute {
+        min-height: 54px;
+
+        padding:
+          calc(
+            5px +
+            env(safe-area-inset-top)
+          )
+          18px
+          5px;
+
+        grid-template-columns:
+          minmax(130px, 1fr)
+          auto
+          minmax(130px, 1fr);
+
+        gap: 10px;
+      }
+
+      .bouton-entete {
+        min-height: 36px;
+
+        padding:
+          6px
+          12px;
+
+        border-radius: 9px;
 
         font-size: 12px;
       }
 
-      .carte-action {
+      .titre-entete {
+        font-size: 17px;
+      }
+
+      .identite-utilisateur {
+        margin-top: 2px;
+
+        font-size: 10px;
+      }
+
+      .bandeau-demo {
         padding:
-          13px
-          14px;
+          4px
+          12px;
+
+        font-size: 10px;
+      }
+
+      .contenu {
+        padding:
+          10px
+          16px
+          10px;
+
+        justify-content: flex-start;
+      }
+
+      .introduction {
+        margin-bottom: 9px;
+      }
+
+      .introduction h1 {
+        font-size: 22px;
+
+        line-height: 1;
+      }
+
+      .introduction p {
+        max-width: 900px;
+
+        margin-top: 4px;
+
+        font-size: 11.5px;
+
+        line-height: 1.25;
+      }
+
+      .grille-actions {
+        grid-template-columns:
+          repeat(
+            3,
+            minmax(0, 1fr)
+          );
+
+        gap: 12px;
+      }
+
+      .carte-action {
+        min-height: 0;
+
+        padding:
+          11px
+          12px
+          10px;
+
+        border-radius: 15px;
       }
 
       .carte-action-icone {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
 
-        flex-basis: 48px;
+        flex-basis: 44px;
 
-        margin-bottom: 7px;
+        margin-bottom: 6px;
 
-        font-size: 26px;
+        border-radius: 13px;
+
+        font-size: 24px;
+      }
+
+      .carte-action h2 {
+        font-size: 15px;
+
+        line-height: 1.1;
       }
 
       .carte-action p {
         margin:
-          5px
+          4px
           0
-          10px;
+          8px;
+
+        font-size: 10.5px;
+
+        line-height: 1.25;
       }
 
-      .bloc-information {
-        margin-top: 10px;
+      .bouton-action {
+        min-height: 36px;
 
         padding:
-          9px
-          13px;
+          6px
+          9px;
+
+        border-radius: 9px;
+
+        font-size: 12px;
+      }
+
+    }
+
+    /* ======================================================
+       PAYSAGE TRÈS BAS
+       Ex. téléphone avec barres Safari visibles
+       ====================================================== */
+
+    @media
+    (orientation: landscape)
+    and
+    (max-height: 480px) {
+
+      .barre-haute {
+        min-height: 48px;
+
+        padding-top:
+          calc(
+            4px +
+            env(safe-area-inset-top)
+          );
+
+        padding-bottom: 4px;
+      }
+
+      .bouton-entete {
+        min-height: 32px;
+
+        padding:
+          5px
+          10px;
+
+        font-size: 11px;
+      }
+
+      .titre-entete {
+        font-size: 15px;
+      }
+
+      .identite-utilisateur {
+        font-size: 9px;
+      }
+
+      .contenu {
+        padding:
+          7px
+          12px
+          7px;
+      }
+
+      .introduction {
+        margin-bottom: 6px;
+      }
+
+      .introduction h1 {
+        font-size: 19px;
+      }
+
+      .introduction p {
+        margin-top: 3px;
+
+        font-size: 10px;
+      }
+
+      .grille-actions {
+        gap: 9px;
+      }
+
+      .carte-action {
+        padding:
+          8px
+          9px;
+      }
+
+      .carte-action-icone {
+        width: 38px;
+        height: 38px;
+
+        flex-basis: 38px;
+
+        margin-bottom: 4px;
+
+        font-size: 21px;
+      }
+
+      .carte-action h2 {
+        font-size: 13.5px;
+      }
+
+      .carte-action p {
+        margin:
+          3px
+          0
+          6px;
+
+        font-size: 9.5px;
+      }
+
+      .bouton-action {
+        min-height: 31px;
+
+        padding:
+          4px
+          7px;
+
+        font-size: 10.5px;
       }
 
     }
@@ -1060,7 +1194,7 @@
 
 
     <!-- ==================================================
-         BANDEAU MODE DÉMO
+         MODE DÉMO
          ================================================== -->
 
     <div
@@ -1109,7 +1243,6 @@
 
       <!-- ================================================
            INTRODUCTION
-           LOGO MAGES SUPPRIMÉ
            ================================================ -->
 
       <section class="introduction">
@@ -1241,34 +1374,6 @@
           </button>
 
         </article>
-
-      </section>
-
-
-      <!-- ================================================
-           RÉFÉRENTIEL
-           ================================================ -->
-
-      <section class="bloc-information">
-
-        <h2 class="bloc-information-titre">
-          Référentiel Vaisselle MDN
-        </h2>
-
-
-        <p class="bloc-information-texte">
-          Gobelets ·
-          Verres à vin ·
-          Assiettes plates ·
-          Barquettes ·
-          Couteaux ·
-          Fourchettes ·
-          Cuillères à soupe ·
-          Cuillères à café ·
-          Flûtes.
-          Les Caisses sont gérées séparément
-          dans les Contenants.
-        </p>
 
       </section>
 
@@ -1480,7 +1585,7 @@
 
 
       /* ==================================================
-         OPÉRATIONS
+         OPÉRATIONS VAISSELLE
          ================================================== */
 
       function ouvrirOperation(
@@ -1630,7 +1735,7 @@
 
 
           /* ==============================================
-             IDENTITÉ
+             IDENTITÉ UTILISATEUR
              ============================================== */
 
           const prenom =
@@ -1711,7 +1816,7 @@
 
 
       /* ==================================================
-         SESSION
+         SURVEILLANCE SESSION
          ================================================== */
 
       window.MDN_AUTH.surveillerSession({
