@@ -150,6 +150,29 @@
       white-space: nowrap;
     }
 
+    .bandeau-demo {
+      flex: 0 0 auto;
+      display: none;
+      width: 100%;
+      padding: 9px max(16px, env(safe-area-inset-right)) 9px max(16px, env(safe-area-inset-left));
+      border-bottom: 2px solid #b98500;
+      background: #ffe680;
+      color: #4d3900;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+
+    .bandeau-demo.visible {
+      display: block;
+    }
+
+    .application.mode-demo .barre-haute {
+      background: linear-gradient(145deg, #6f5200, #9a7200);
+    }
+
     .contenu {
       width: min(100%, 1500px);
       min-height: 0;
@@ -1408,6 +1431,10 @@
       </div>
     </header>
 
+    <div id="bandeauDemo" class="bandeau-demo" role="status" aria-live="polite">
+      🎓 MODE DÉMO / FORMATION — Aucune opération réelle ne sera enregistrée
+    </div>
+
     <main class="contenu">
 
       <div id="messageCaisse" class="message" role="alert" aria-live="polite"></div>
@@ -1618,6 +1645,15 @@
       const messageCaisse =
         document.getElementById("messageCaisse");
 
+      const application =
+        document.querySelector(".application");
+
+      const bandeauDemo =
+        document.getElementById("bandeauDemo");
+
+      const titreCaisse =
+        document.querySelector(".titre-entete h1");
+
       const boutonRetour =
         document.getElementById("boutonRetour");
 
@@ -1681,6 +1717,12 @@
       let moyenPaiementSelectionne = null;
       let validationPaiementEnCours = false;
       let cleIdempotenceEncaissement = null;
+
+      const parametresPage =
+        new URLSearchParams(window.location.search);
+
+      const modeDemo =
+        parametresPage.get("mode") === "demo";
 
 
       function masquerChargement() {
@@ -2368,7 +2410,9 @@
             data,
             error
           } = await clientSupabaseCaisse.rpc(
-            "valider_vente",
+            modeDemo
+              ? "valider_vente_demo"
+              : "valider_vente",
             {
               p_idempotency_key: cleIdempotenceEncaissement,
               p_lignes: lignes,
@@ -2392,7 +2436,9 @@
           }
 
           console.info(
-            "[MDN Sion] Vente enregistrée :",
+            modeDemo
+              ? "[MDN Sion] Vente Démo enregistrée :"
+              : "[MDN Sion] Vente enregistrée :",
             data
           );
 
@@ -2413,9 +2459,17 @@
           fermerFenetreEncaissement();
 
           afficherMessage(
-            numeroVente
-              ? "Paiement validé. Vente " + numeroVente + " enregistrée."
-              : "Paiement validé. La vente a bien été enregistrée.",
+            modeDemo
+              ? (
+                  numeroVente
+                    ? "Mode Démo : paiement simulé. Vente " + numeroVente + " enregistrée uniquement dans l'univers de formation."
+                    : "Mode Démo : paiement simulé. Aucune donnée réelle n'a été modifiée."
+                )
+              : (
+                  numeroVente
+                    ? "Paiement validé. Vente " + numeroVente + " enregistrée."
+                    : "Paiement validé. La vente a bien été enregistrée."
+                ),
             "succes"
           );
 
@@ -2878,7 +2932,9 @@
 
 
         informationEdition.textContent =
-          "MDN Sion " + edition.annee;
+          modeDemo
+            ? "DÉMO · MDN Sion " + edition.annee
+            : "MDN Sion " + edition.annee;
 
 
         /*
@@ -3253,6 +3309,14 @@
             identite +
             " · " +
             auth.libelleRole;
+
+
+          if (modeDemo) {
+            application.classList.add("mode-demo");
+            bandeauDemo.classList.add("visible");
+            titreCaisse.textContent = "🎓 Caisse — Mode Démo";
+            document.title = "Caisse Démo - MDN Sion";
+          }
 
 
           await chargerCatalogueCaisse();
