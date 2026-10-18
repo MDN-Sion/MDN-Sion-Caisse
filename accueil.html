@@ -1111,13 +1111,13 @@
           </p>
 
           <button
+            id="boutonVaisselle"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir Vaisselle & Consignes"
+            data-texte-demo="Démo - Ouvrir Vaisselle & Consignes"
           >
-            Bientôt disponible
+            Ouvrir Vaisselle & Consignes
           </button>
 
         </article>
@@ -1452,6 +1452,12 @@
       const boutonCaisse =
         document.getElementById(
           "boutonCaisse"
+        );
+
+
+      const boutonVaisselle =
+        document.getElementById(
+          "boutonVaisselle"
         );
 
 
@@ -1895,6 +1901,23 @@
             modeDemoActif
               ? "caisse.html?mode=demo"
               : "caisse.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION VAISSELLE & CONSIGNES
+         ==================================================== */
+
+      boutonVaisselle.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "retrait-vaisselle.html?mode=demo"
+              : "retrait-vaisselle.html";
 
         }
       );
