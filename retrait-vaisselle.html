@@ -1483,7 +1483,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        Valider sur le compte artisan
       </button>
       <div class="demo-note" id="demoNote">
-       Mode Démo : aucune opération réelle n'est enregistrée.
+       Mode Démo : stands, opérations, paiements et QR fictifs. Aucune donnée réelle n'est modifiée.
       </div>
      </div>
     </aside>
@@ -2175,7 +2175,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             renderSummary()
         }
         ));
-        const on=Boolean(stand&&count&&!demo);
+        const on=Boolean(stand&&count);
         validate.disabled=!on;
         validate.classList.toggle("on",on)
     }
@@ -2200,9 +2200,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         payAccount.disabled=true;
         if(!stand)return;
         try{
-            const {data:r,error}=await client.rpc("charger_compte_stand_paiement",{
-                p_participation_id:stand.id
-            });
+            const {data:r,error}=await client.rpc(
+                demo ? "charger_compte_stand_paiement_demo" : "charger_compte_stand_paiement",
+                demo
+                    ? {p_stand_demo_id:stand.id}
+                    : {p_participation_id:stand.id}
+            );
             if(error)throw error;
             if(!r?.ok)throw new Error("Compte artisan non chargé.");
             if(!stand||r.compte?.participation_id!==stand.id)return;
@@ -2216,13 +2219,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             else if(solde===0){
                 accountBalance.textContent=money(0);
             }
-            payAccount.disabled=demo||!r.peut_encaisser||solde<=0;
-            payAccount.title=demo
-                ?"Indisponible en mode Démo"
-                :!r.peut_encaisser
-                    ?"Règlement réservé aux utilisateurs autorisés"
-                    :solde<=0
-                        ?"Aucun montant à régler"
+            payAccount.disabled=!r.peut_encaisser||solde<=0;
+            payAccount.title=!r.peut_encaisser
+                ?"Règlement réservé aux utilisateurs autorisés"
+                :solde<=0
+                    ?"Aucun montant à régler"
+                    :demo
+                        ?"Régler tout ou partie du compte Démo"
                         :"Régler tout ou partie du compte";
         }
         catch(e){
@@ -2317,11 +2320,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
 
     function openPayment(){
-        if(demo)return msg("Le règlement réel est désactivé en mode Démo.");
         if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
         if(!accountData.peut_encaisser)return msg("Tu n'es pas autorisé à enregistrer ce règlement.");
         if(accountDue()<=0)return msg("Ce compte n'a aucun montant à payer.");
         paymentKey=uuid();
+        const paymentTitle=paymentModal.querySelector(".modalhead h3");
+        if(paymentTitle)paymentTitle.textContent=demo?"Régler le compte Démo":"Régler le compte artisan";
         selectedPaymentMethods.clear();
         renderPayment();
         paymentModal.classList.add("show");
@@ -2353,12 +2357,22 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         paymentConfirm.disabled=true;
         paymentConfirm.textContent="Enregistrement…";
         try{
-            const {data:r,error}=await client.rpc("enregistrer_paiement_stand",{
-                p_idempotency_key:paymentKey,
-                p_participation_id:stand.id,
-                p_paiements:payments,
-                p_commentaire:"Règlement depuis Vaisselle & Consignes"
-            });
+            const {data:r,error}=await client.rpc(
+                demo ? "enregistrer_paiement_stand_demo" : "enregistrer_paiement_stand",
+                demo
+                    ? {
+                        p_idempotency_key:paymentKey,
+                        p_stand_demo_id:stand.id,
+                        p_paiements:payments,
+                        p_commentaire:"Règlement DEMO depuis Vaisselle & Consignes"
+                    }
+                    : {
+                        p_idempotency_key:paymentKey,
+                        p_participation_id:stand.id,
+                        p_paiements:payments,
+                        p_commentaire:"Règlement depuis Vaisselle & Consignes"
+                    }
+            );
             if(error)throw error;
             if(!r?.ok)throw new Error("Règlement non confirmé par le serveur.");
             closePayment();
@@ -2449,7 +2463,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         }
     }
     async function save(){
-        if(demo)return;
         if(!stand)return msg("Sélectionne d'abord le stand / artisan.");
         let ops;
         try{
@@ -2461,18 +2474,42 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         if(!ops.length)return msg("Aucune opération à enregistrer.");
         validate.disabled=true;
         validate.classList.remove("on");
-        validate.textContent="Enregistrement sur le compte…";
+        validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
         try{
-            const{
-                data:r,error
+            let r=null;
+            if(demo){
+                const results=[];
+                for(const op of ops){
+                    const {data:one,error}=await client.rpc("valider_operation_vaisselle_demo",{
+                        p_idempotency_key:op.idempotency_key,
+                        p_stand_demo_id:stand.id,
+                        p_type_operation:op.type_operation,
+                        p_lignes_vaisselle:op.lignes_vaisselle,
+                        p_contenants:op.contenants,
+                        p_commentaire:comment.value.trim()||null
+                    });
+                    if(error)throw error;
+                    if(!one?.ok)throw new Error("Validation Démo non confirmée par le serveur.");
+                    results.push(one);
+                }
+                r={ok:true,operations:results};
             }
-            =await client.rpc("valider_session_vaisselle",{
-                p_participation_id:stand.id,p_operations:ops,p_commentaire:comment.value.trim()||null
+            else{
+                const response=await client.rpc("valider_session_vaisselle",{
+                    p_participation_id:stand.id,
+                    p_operations:ops,
+                    p_commentaire:comment.value.trim()||null
+                });
+                if(response.error)throw response.error;
+                r=response.data;
             }
-            );
-            if(error)throw error;
             if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
-            msg(`Enregistré sur le compte de ${standName(stand)}.`,true);
+            msg(
+                demo
+                    ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
+                    :`Enregistré sur le compte de ${standName(stand)}.`,
+                true
+            );
             initState();
             comment.value="";
             renderCatalog();
@@ -2484,7 +2521,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             msg(e?.message||"Impossible d'enregistrer la session.")
         }
         finally{
-            validate.textContent="Valider sur le compte artisan";
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte artisan";
             renderSummary()
         }
     }
@@ -2492,21 +2529,23 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const text=String(v||"").trim();
         if(!text)return msg("QR vide ou illisible.");
         try{
-            const{
-                data:r,error
-            }
-            =await client.rpc("resoudre_qr_interne",{
-                p_valeur_qr:text
-            }
+            const {data:r,error}=await client.rpc(
+                demo ? "resoudre_qr_stand_demo" : "resoudre_qr_interne",
+                demo
+                    ? {p_qr_payload:text}
+                    : {p_valeur_qr:text}
             );
             if(error)throw error;
-            if(!r?.participation_id)throw new Error("QR sans participation valide.");
-            if(!selectStand(r.participation_id))throw new Error("Stand indisponible pour la vaisselle.");
+            const participationId=demo
+                ?(r?.stand?.id||r?.stand?.participation_id)
+                :r?.participation_id;
+            if(!participationId)throw new Error(demo?"QR Démo sans stand valide.":"QR sans participation valide.");
+            if(!selectStand(participationId))throw new Error("Stand indisponible pour la vaisselle.");
             closeQr();
             msg(`Stand sélectionné : ${standName(stand)}.`,true)
         }
         catch(e){
-            msg(e?.message||"QR interne invalide.")
+            msg(e?.message||(demo?"QR Démo invalide.":"QR interne invalide."))
         }
     }
     async function openQr(){
@@ -2625,6 +2664,10 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
             topbar.classList.toggle("demo",demo);
             demoNote.classList.toggle("show",demo);
+            document.querySelector(".title h1").textContent=demo
+                ?"🍽️ Vaisselle & Consignes · MODE DÉMO"
+                :"🍽️ Vaisselle & Consignes";
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte artisan";
             if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
             const auth=await window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]);
             if(!auth)return;
@@ -2638,7 +2681,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             const{
                 data:d,error
             }
-            =await client.rpc("charger_ecran_retrait_vaisselle");
+            =await client.rpc(demo?"charger_ecran_retrait_vaisselle_demo":"charger_ecran_retrait_vaisselle");
             if(error)throw error;
             if(!d?.edition?.id)throw new Error("Aucune édition active.");
             data=d;
