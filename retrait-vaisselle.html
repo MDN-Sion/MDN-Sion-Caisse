@@ -1,1255 +1,838 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Vaisselle & Consignes - MDN Sion</title>
-  <link rel="icon" href="logo-mdn.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+  <meta name="description" content="Retrait et retours vaisselle - Marché de Noël de Sion">
+  <title>Retrait vaisselle - MDN Sion</title>
 
   <style>
-    :root {
-      --rouge: #b7192e;
-      --rouge-fonce: #941326;
-      --fond: #f3f4f6;
-      --blanc: #ffffff;
-      --texte: #171717;
-      --gris: #686868;
-      --bordure: #d9dce2;
-      --sale: #c26b16;
-      --propre: #167a3f;
-      --ombre: 0 8px 24px rgba(0, 0, 0, .06);
-    }
-
     * { box-sizing: border-box; }
-
-    html,
+    html, body { width:100%; min-height:100%; margin:0; padding:0; }
     body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--fond);
-      color: var(--texte);
+      min-height:100vh; min-height:100dvh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:#f3f3f3; color:#222;
     }
+    button,input,textarea { font:inherit; }
+    button { -webkit-tap-highlight-color:transparent; }
+    .application { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
 
-    button,
-    input,
-    textarea { font: inherit; }
-
-    button { cursor: pointer; }
-
-    .application {
-      height: 100dvh;
-      display: grid;
-      grid-template-rows: 66px 1fr;
-      overflow: hidden;
+    .chargement-page {
+      position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:15px; padding:24px;
+      background:linear-gradient(145deg,#7b0000 0%,#a00000 48%,#650000 100%);
+      color:#fff; text-align:center; transition:opacity .25s ease,visibility .25s ease;
     }
+    .chargement-page.masque { opacity:0; visibility:hidden; pointer-events:none; }
+    .chargement-embleme { width:100px; height:100px; }
+    .chargement-embleme img { width:100%; height:100%; object-fit:contain; }
+    .chargement-page strong { font-size:25px; }
+    .chargement-page p { margin:0; color:rgba(255,255,255,.85); }
+    .spinner { width:28px; height:28px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:rotation .8s linear infinite; }
+    @keyframes rotation { to { transform:rotate(360deg); } }
 
     .barre-haute {
-      background: var(--rouge);
-      color: white;
-      display: grid;
-      grid-template-columns: 170px 1fr 170px;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 18px;
+      flex:0 0 auto;
+      padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));
+      background:linear-gradient(145deg,#7b0000,#980000); color:#fff; box-shadow:0 2px 12px rgba(0,0,0,.18);
     }
+    .application.mode-demo .barre-haute { background:linear-gradient(145deg,#6f5200,#9a7200); }
+    .barre-haute-contenu { width:min(100%,1500px); margin:0 auto; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:14px; }
+    .bouton-entete { min-height:42px; padding:9px 14px; border:1px solid rgba(255,255,255,.35); border-radius:11px; background:rgba(255,255,255,.1); color:#fff; cursor:pointer; font-weight:800; }
+    .bouton-entete:hover { background:rgba(255,255,255,.18); }
+    .titre-entete { min-width:0; text-align:center; }
+    .titre-entete h1 { margin:0; font-size:22px; line-height:1.1; }
+    .titre-entete p { margin:3px 0 0; color:rgba(255,255,255,.82); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    .titre-entete { text-align: center; min-width: 0; }
-    .titre-entete h1 { margin: 0; font-size: 22px; line-height: 1.05; }
-    .titre-entete p { margin: 4px 0 0; font-size: 13px; }
+    .bandeau-demo { display:none; padding:9px 16px; border-bottom:2px solid #b98500; background:#ffe680; color:#4d3900; text-align:center; font-size:13px; font-weight:900; }
+    .bandeau-demo.visible { display:block; }
 
-    .bouton-entete {
-      height: 44px;
-      border: 1px solid rgba(255,255,255,.65);
-      border-radius: 13px;
-      background: rgba(255,255,255,.08);
-      color: white;
-      font-weight: 800;
-      padding: 0 14px;
+    .contenu { width:min(100%,1500px); margin:0 auto; padding:18px max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
+    .intro { margin-bottom:14px; }
+    .intro h2 { margin:0 0 4px; color:#850000; font-size:23px; }
+    .intro p { margin:0; color:#666; font-size:13px; }
+
+    .grille-principale { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(330px,.75fr); gap:16px; align-items:start; }
+    .colonne-gauche,.colonne-droite { display:flex; flex-direction:column; gap:14px; min-width:0; }
+    .panneau { background:#fff; border:1px solid #e2e2e2; border-radius:17px; box-shadow:0 8px 26px rgba(0,0,0,.07); overflow:hidden; }
+    .panneau-entete { padding:13px 15px; border-bottom:1px solid #e8e8e8; background:#fafafa; }
+    .panneau-entete h3 { margin:0; color:#850000; font-size:17px; }
+    .panneau-entete p { margin:3px 0 0; color:#777; font-size:11px; line-height:1.35; }
+    .panneau-corps { padding:14px 15px; }
+
+    .legende-operations { display:grid; grid-template-columns:minmax(150px,1.25fr) repeat(3,minmax(150px,1fr)); gap:8px; padding:0 0 8px; color:#666; font-size:11px; font-weight:900; text-align:center; }
+    .legende-operations span:first-child { text-align:left; }
+    .legende-retrait { color:#8b0000; }
+    .legende-sale { color:#9a5d00; }
+    .legende-propre { color:#176b38; }
+
+    .ligne-vaisselle { display:grid; grid-template-columns:minmax(150px,1.25fr) repeat(3,minmax(150px,1fr)); gap:8px; align-items:stretch; padding:9px 0; border-top:1px solid #eee; }
+    .ligne-vaisselle:first-of-type { border-top:0; }
+    .info-vaisselle { padding:8px 6px 8px 0; }
+    .nom-vaisselle { color:#333; font-size:14px; font-weight:900; }
+    .tarif-vaisselle { margin-top:4px; color:#777; font-size:10px; line-height:1.35; }
+    .standard-vaisselle { margin-top:3px; color:#8b0000; font-size:10px; font-weight:800; }
+
+    .cellule-operation { min-width:0; padding:8px; border:1px solid #e5e5e5; border-radius:11px; background:#fbfbfb; }
+    .cellule-operation.retrait { background:#fff8f8; border-color:#ead0d0; }
+    .cellule-operation.sale { background:#fffaf1; border-color:#eadcc1; }
+    .cellule-operation.propre { background:#f6fcf8; border-color:#cfe5d7; }
+    .mini-ligne { display:grid; grid-template-columns:1fr 54px; align-items:center; gap:6px; margin-top:6px; }
+    .mini-ligne:first-child { margin-top:0; }
+    .mini-ligne label { color:#666; font-size:10px; font-weight:800; }
+    .champ-qte { width:54px; height:34px; padding:5px; border:1px solid #ccc; border-radius:8px; background:#fff; text-align:center; font-weight:900; color:#333; }
+    .champ-qte:focus { outline:3px solid rgba(139,0,0,.12); border-color:#8b0000; }
+    .champ-qte:disabled { background:#eee; color:#999; cursor:not-allowed; }
+    .regle-unite { min-height:14px; margin-top:5px; color:#777; font-size:9px; line-height:1.25; }
+    .regle-unite.interdit { color:#9c1616; font-weight:800; }
+
+    .zone-caisses-vides { display:grid; grid-template-columns:minmax(150px,1.25fr) repeat(3,minmax(150px,1fr)); gap:8px; align-items:center; padding-top:10px; margin-top:4px; border-top:2px solid #ddd; }
+    .zone-caisses-vides .nom-vaisselle { padding:8px 6px 8px 0; }
+
+    .selection-stand { display:flex; gap:8px; }
+    .champ-recherche { min-width:0; flex:1; height:42px; padding:9px 11px; border:1px solid #ccc; border-radius:10px; background:#fff; }
+    .bouton-qr { flex:0 0 auto; min-height:42px; padding:8px 12px; border:1px solid #d3b7b7; border-radius:10px; background:#fff; color:#850000; cursor:pointer; font-weight:900; }
+    .resultats-stands { display:none; max-height:230px; margin-top:7px; overflow:auto; border:1px solid #ddd; border-radius:10px; background:#fff; }
+    .resultats-stands.visible { display:block; }
+    .resultat-stand { width:100%; display:flex; justify-content:space-between; gap:10px; padding:10px 11px; border:0; border-bottom:1px solid #eee; background:#fff; cursor:pointer; text-align:left; }
+    .resultat-stand:last-child { border-bottom:0; }
+    .resultat-stand:hover { background:#fff7f7; }
+    .resultat-stand strong { color:#333; font-size:12px; }
+    .resultat-stand span { color:#777; font-size:11px; }
+    .stand-selectionne { display:none; margin-top:9px; padding:10px 11px; border:1px solid #d8c1c1; border-radius:10px; background:#fff7f7; }
+    .stand-selectionne.visible { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .stand-selectionne strong { display:block; color:#850000; font-size:13px; }
+    .stand-selectionne span { color:#666; font-size:11px; }
+    .changer-stand { border:0; background:transparent; color:#850000; cursor:pointer; font-weight:900; }
+
+    .recap-vide { color:#888; font-size:12px; text-align:center; padding:10px 0; }
+    .recap-section { margin-top:10px; padding-top:10px; border-top:1px solid #eee; }
+    .recap-section:first-child { margin-top:0; padding-top:0; border-top:0; }
+    .recap-titre { display:flex; justify-content:space-between; gap:8px; margin-bottom:6px; font-size:12px; font-weight:900; }
+    .recap-titre.retrait { color:#8b0000; }
+    .recap-titre.sale { color:#9a5d00; }
+    .recap-titre.propre { color:#176b38; }
+    .recap-ligne { display:flex; justify-content:space-between; gap:8px; margin:4px 0; color:#555; font-size:10px; line-height:1.3; }
+    .recap-ligne span:last-child { white-space:nowrap; font-weight:800; }
+    .recap-total { display:flex; justify-content:space-between; gap:10px; margin-top:10px; padding-top:10px; border-top:2px solid #ddd; color:#333; font-size:13px; font-weight:900; }
+    .recap-total strong { color:#850000; font-size:17px; }
+    .recap-credit strong { color:#176b38; }
+    .info-credit { margin-top:8px; padding:8px 9px; border-radius:9px; background:#f3f7f4; color:#496052; font-size:10px; line-height:1.35; }
+
+    .commentaire { width:100%; min-height:72px; resize:vertical; padding:9px 10px; border:1px solid #ccc; border-radius:10px; }
+    .bouton-valider { width:100%; min-height:50px; margin-top:11px; border:0; border-radius:11px; background:#dedede; color:#777; cursor:not-allowed; font-weight:900; }
+    .bouton-valider.actif { background:#8b0000; color:#fff; cursor:pointer; }
+    .bouton-valider.actif:hover { background:#700000; }
+    .application.mode-demo .bouton-valider.actif { background:#9a7200; }
+    .note-demo { display:none; margin-top:8px; padding:8px; border-radius:9px; background:#fff5c9; color:#5d4700; font-size:10px; font-weight:800; }
+    .note-demo.visible { display:block; }
+
+    .message { display:none; position:fixed; z-index:5000; top:calc(18px + env(safe-area-inset-top)); left:50%; width:min(720px,calc(100vw - 32px)); padding:12px 48px 12px 14px; border-radius:12px; box-shadow:0 14px 38px rgba(0,0,0,.22); transform:translateX(-50%); font-size:14px; line-height:1.4; }
+    .message.visible { display:block; }
+    .message.erreur { border:1px solid #e4b5b5; background:#fff1f1; color:#9c1616; }
+    .message.succes { border:1px solid #b9ddc5; background:#effaf2; color:#146b35; }
+    .message-fermer { position:absolute; top:50%; right:10px; width:30px; height:30px; border:0; border-radius:8px; background:transparent; color:currentColor; cursor:pointer; transform:translateY(-50%); font-size:22px; font-weight:900; }
+
+    .modal-qr { display:none; position:fixed; inset:0; z-index:10000; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.68); }
+    .modal-qr.visible { display:flex; }
+    .carte-qr { width:min(100%,520px); overflow:hidden; border-radius:18px; background:#fff; box-shadow:0 24px 70px rgba(0,0,0,.3); }
+    .qr-entete { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 15px; border-bottom:1px solid #eee; }
+    .qr-entete h3 { margin:0; color:#850000; font-size:18px; }
+    .qr-fermer { width:36px; height:36px; border:1px solid #ddd; border-radius:9px; background:#fff; cursor:pointer; font-size:21px; }
+    .qr-corps { padding:14px; }
+    .video-wrap { position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; border-radius:12px; background:#111; }
+    #videoQr,#canvasQr { width:100%; height:100%; object-fit:cover; }
+    #canvasQr { display:none; }
+    .viseur { position:absolute; inset:18%; border:3px solid rgba(255,255,255,.85); border-radius:15px; box-shadow:0 0 0 999px rgba(0,0,0,.18); pointer-events:none; }
+    .qr-info { margin:9px 0 0; color:#666; font-size:11px; text-align:center; }
+    .qr-manuel { display:flex; gap:7px; margin-top:10px; }
+    .qr-manuel input { min-width:0; flex:1; height:40px; padding:8px 10px; border:1px solid #ccc; border-radius:9px; }
+    .qr-manuel button { border:0; border-radius:9px; background:#8b0000; color:#fff; padding:8px 12px; cursor:pointer; font-weight:900; }
+
+    @media (max-width:1000px) {
+      .grille-principale { grid-template-columns:1fr; }
+      .colonne-droite { display:grid; grid-template-columns:1fr 1fr; align-items:start; }
+      .colonne-droite .panneau:last-child { grid-column:1 / -1; }
     }
-
-    .bouton-retour { justify-self: start; }
-    .bouton-deconnexion { justify-self: end; }
-
-    .contenu {
-      min-height: 0;
-      padding: 12px 14px 14px;
-      overflow: hidden;
+    @media (max-width:760px) {
+      .barre-haute-contenu { gap:7px; }
+      .bouton-entete { min-height:38px; padding:7px 9px; font-size:11px; }
+      .titre-entete h1 { font-size:17px; }
+      .titre-entete p { display:none; }
+      .contenu { padding-top:12px; }
+      .intro h2 { font-size:19px; }
+      .colonne-droite { display:flex; }
+      .legende-operations { grid-template-columns:minmax(110px,1.1fr) repeat(3,minmax(92px,1fr)); gap:5px; font-size:9px; }
+      .ligne-vaisselle,.zone-caisses-vides { grid-template-columns:minmax(110px,1.1fr) repeat(3,minmax(92px,1fr)); gap:5px; }
+      .cellule-operation { padding:6px; }
+      .mini-ligne { grid-template-columns:1fr 45px; gap:4px; }
+      .mini-ligne label { font-size:9px; }
+      .champ-qte { width:45px; height:32px; }
+      .nom-vaisselle { font-size:12px; }
+      .tarif-vaisselle,.standard-vaisselle { font-size:9px; }
     }
-
-    .zone-caisse {
-      height: 100%;
-      min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(0, 1.55fr) minmax(330px, .72fr);
-      gap: 12px;
+    @media (max-width:560px) {
+      .panneau-vaisselle .panneau-corps { overflow-x:auto; }
+      .table-vaisselle { min-width:620px; }
+      .intro p { font-size:11px; }
     }
-
-    .panneau {
-      min-width: 0;
-      min-height: 0;
-      background: var(--blanc);
-      border: 1px solid var(--bordure);
-      border-radius: 16px;
-      box-shadow: var(--ombre);
-      overflow: hidden;
-    }
-
-    .panneau-catalogue {
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
-
-    .barre-filtres {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 9px 10px;
-      border-bottom: 1px solid #eceef1;
-      background: #fafafa;
-    }
-
-    .filtre {
-      min-width: 92px;
-      min-height: 36px;
-      border: 1px solid #d5d8de;
-      border-radius: 10px;
-      background: white;
-      font-weight: 800;
-      padding: 6px 12px;
-    }
-
-    .filtre.active {
-      background: var(--rouge);
-      border-color: var(--rouge);
-      color: white;
-    }
-
-    .information-edition {
-      margin-left: auto;
-      color: var(--gris);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .zone-operations {
-      min-height: 0;
-      overflow: auto;
-      padding: 9px;
-    }
-
-    .section-operation { margin-bottom: 10px; }
-    .section-operation:last-child { margin-bottom: 0; }
-
-    .titre-operation {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0 0 7px;
-      font-size: 15px;
-      font-weight: 900;
-    }
-
-    .pastille-operation {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--rouge);
-    }
-
-    .section-operation.sale .pastille-operation { background: var(--sale); }
-    .section-operation.propre .pastille-operation { background: var(--propre); }
-
-    .grille-vaisselle {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 7px;
-    }
-
-    .article-vaisselle {
-      min-width: 0;
-      border: 1px solid var(--bordure);
-      border-radius: 11px;
-      background: white;
-      padding: 7px;
-      display: grid;
-      grid-template-rows: auto auto;
-      gap: 6px;
-    }
-
-    .article-nom {
-      min-height: 30px;
-      display: flex;
-      align-items: center;
-      font-weight: 850;
-      font-size: 13px;
-      line-height: 1.08;
-    }
-
-    .article-tarif {
-      color: var(--gris);
-      font-size: 10px;
-      margin-top: 2px;
-      line-height: 1.2;
-    }
-
-    .article-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
-    }
-
-    .article-actions.une-action { grid-template-columns: 1fr; }
-
-    .touche {
-      min-height: 38px;
-      border: 0;
-      border-radius: 8px;
-      color: white;
-      font-size: 12px;
-      font-weight: 850;
-      padding: 5px 4px;
-      line-height: 1.05;
-    }
-
-    .touche.retrait { background: var(--rouge); }
-    .touche.sale { background: var(--sale); }
-    .touche.propre { background: var(--propre); }
-    .touche.unite { background: #eef0f3; color: #151515; border: 1px solid #d5d8de; }
-
-    .panneau-panier {
-      display: grid;
-      grid-template-rows: auto auto 1fr auto auto;
-    }
-
-    .panier-entete {
-      padding: 9px 11px;
-      border-bottom: 1px solid #eceef1;
-    }
-
-    .panier-entete h2 { margin: 0; font-size: 18px; }
-    .panier-entete p { margin: 2px 0 0; color: var(--gris); font-size: 11px; }
-
-    .zone-stand {
-      padding: 8px 10px;
-      border-bottom: 1px solid #eceef1;
-      background: #fafafa;
-    }
-
-    .zone-stand label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 12px;
-      font-weight: 850;
-    }
-
-    .recherche-wrap { position: relative; }
-
-    .recherche-stand {
-      width: 100%;
-      height: 38px;
-      border: 1px solid #cfd3da;
-      border-radius: 9px;
-      padding: 0 10px;
-      outline: none;
-    }
-
-    .resultats-stands {
-      display: none;
-      position: absolute;
-      z-index: 50;
-      top: 42px;
-      left: 0;
-      right: 0;
-      max-height: 220px;
-      overflow: auto;
-      padding: 4px;
-      border: 1px solid var(--bordure);
-      border-radius: 9px;
-      background: white;
-      box-shadow: 0 12px 28px rgba(0,0,0,.15);
-    }
-
-    .resultats-stands.visible { display: block; }
-
-    .resultat-stand {
-      width: 100%;
-      border: 0;
-      border-radius: 7px;
-      background: white;
-      text-align: left;
-      padding: 7px 8px;
-    }
-
-    .resultat-stand:hover { background: #f1f2f4; }
-    .resultat-stand strong { display: block; font-size: 12px; }
-    .resultat-stand small { color: var(--gris); }
-
-    .stand-selectionne {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 7px;
-      min-height: 38px;
-      padding: 5px 6px 5px 9px;
-      border: 1px solid #cfd3da;
-      border-radius: 9px;
-      background: white;
-      font-size: 12px;
-    }
-
-    .stand-selectionne strong { color: var(--rouge); }
-
-    .changer-stand {
-      border: 1px solid #d5d8de;
-      border-radius: 7px;
-      background: #f3f4f6;
-      padding: 5px 7px;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .panier-contenu {
-      min-height: 0;
-      overflow: auto;
-      padding: 6px 9px;
-    }
-
-    .panier-vide {
-      height: 100%;
-      min-height: 80px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      color: var(--gris);
-      font-size: 13px;
-      padding: 14px;
-    }
-
-    .ligne-panier {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 6px;
-      padding: 6px 0;
-      border-bottom: 1px solid #eceef1;
-    }
-
-    .ligne-panier:last-child { border-bottom: 0; }
-    .ligne-panier strong { font-size: 12px; }
-    .ligne-detail { margin-top: 2px; color: var(--gris); font-size: 10px; }
-    .ligne-droite { text-align: right; }
-    .ligne-montant { font-size: 12px; font-weight: 850; white-space: nowrap; }
-
-    .mini-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 3px;
-      margin-top: 3px;
-    }
-
-    .mini-bouton {
-      min-width: 24px;
-      height: 22px;
-      border: 1px solid #d5d8de;
-      border-radius: 6px;
-      background: #f3f4f6;
-      padding: 0 5px;
-      font-size: 10px;
-      font-weight: 850;
-    }
-
-    .panier-total {
-      padding: 8px 10px;
-      border-top: 1px solid #e1e3e7;
-      background: #fafafa;
-    }
-
-    .ligne-total {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .ligne-total strong { color: var(--rouge); font-size: 21px; }
-
-    .info-total {
-      margin-top: 3px;
-      color: var(--gris);
-      font-size: 10px;
-    }
-
-    .zone-validation {
-      padding: 8px 10px 10px;
-    }
-
-    .commentaire {
-      width: 100%;
-      height: 40px;
-      resize: none;
-      border: 1px solid #cfd3da;
-      border-radius: 8px;
-      padding: 6px 8px;
-      font-size: 11px;
-      outline: none;
-      margin-bottom: 6px;
-    }
-
-    .bouton-valider {
-      width: 100%;
-      min-height: 43px;
-      border: 0;
-      border-radius: 9px;
-      background: var(--rouge);
-      color: white;
-      font-weight: 900;
-      font-size: 15px;
-    }
-
-    .bouton-valider.sale { background: var(--sale); }
-    .bouton-valider.propre { background: var(--propre); }
-
-    .bouton-valider:disabled {
-      background: #d1d3d6;
-      color: #888;
-      cursor: not-allowed;
-    }
-
-    .message {
-      position: fixed;
-      z-index: 100;
-      left: 50%;
-      top: 12px;
-      transform: translateX(-50%);
-      width: min(760px, calc(100% - 28px));
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 15px;
-      border-radius: 12px;
-      box-shadow: 0 16px 38px rgba(0,0,0,.16);
-    }
-
-    .message.visible { display: flex; }
-    .message.erreur { background: #fff0f0; color: #a71d1d; border: 1px solid #efcaca; }
-    .message.succes { background: #edf9f1; color: #176a36; border: 1px solid #c8e8d2; }
-
-    .fermer-message { border: 0; background: transparent; color: inherit; font-size: 19px; }
-
-    .chargement {
-      position: fixed;
-      z-index: 200;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(243,244,246,.94);
-      font-weight: 800;
-    }
-
-    .chargement.masque { display: none; }
-
-    .spinner {
-      width: 38px;
-      height: 38px;
-      margin: 0 auto 9px;
-      border: 4px solid #ddd;
-      border-top-color: var(--rouge);
-      border-radius: 50%;
-      animation: tourner .8s linear infinite;
-    }
-
-    @keyframes tourner { to { transform: rotate(360deg); } }
-
-    @media (max-width: 1050px) {
-      .grille-vaisselle { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-
-    @media (max-width: 820px) {
-      html, body { height: auto; overflow: auto; }
-      .application { height: auto; min-height: 100dvh; display: block; }
-      .barre-haute { grid-template-columns: auto 1fr auto; padding: 8px 10px; }
-      .titre-entete p { display: none; }
-      .bouton-entete { height: 40px; padding: 0 9px; font-size: 13px; }
-      .contenu { overflow: visible; padding: 9px; }
-      .zone-caisse { display: block; }
-      .panneau { margin-bottom: 9px; }
-      .zone-operations, .panier-contenu { overflow: visible; }
-      .grille-vaisselle { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .panneau-panier { min-height: 420px; }
-    }
-
-    @media (max-width: 500px) {
-      .barre-haute { grid-template-columns: 44px 1fr 44px; }
-      .bouton-entete { width: 44px; font-size: 0; padding: 0; }
-      .bouton-retour::after { content: "←"; font-size: 20px; }
-      .bouton-deconnexion::after { content: "⏻"; font-size: 18px; }
-      .titre-entete h1 { font-size: 17px; }
-      .barre-filtres { gap: 5px; }
-      .filtre { min-width: 0; flex: 1; padding: 5px; }
-      .information-edition { display: none; }
-      .grille-vaisselle { grid-template-columns: 1fr 1fr; }
+    @media (max-height:650px) and (orientation:landscape) {
+      .barre-haute { padding-top:7px; padding-bottom:7px; }
+      .bouton-entete { min-height:34px; padding:6px 10px; }
+      .titre-entete h1 { font-size:17px; }
+      .titre-entete p { display:none; }
+      .bandeau-demo { padding:5px 12px; font-size:10px; }
+      .contenu { padding-top:9px; padding-bottom:10px; }
+      .intro { margin-bottom:8px; }
+      .intro h2 { font-size:18px; }
+      .intro p { display:none; }
+      .grille-principale { gap:9px; }
+      .colonne-gauche,.colonne-droite { gap:9px; }
+      .panneau-entete { padding:8px 11px; }
+      .panneau-entete h3 { font-size:14px; }
+      .panneau-entete p { display:none; }
+      .panneau-corps { padding:9px 11px; }
+      .ligne-vaisselle { padding:5px 0; }
+      .cellule-operation { padding:5px; }
+      .champ-qte { height:29px; }
+      .commentaire { min-height:45px; }
+      .bouton-valider { min-height:42px; }
     }
   </style>
 </head>
-
 <body>
-  <div id="chargement" class="chargement">
-    <div>
-      <div class="spinner"></div>
-      Chargement de la vaisselle…
-    </div>
+  <div id="chargementPage" class="chargement-page">
+    <div class="chargement-embleme"><img src="logo-mdn.png" alt="Marché de Noël de Sion"></div>
+    <strong>Vaisselle</strong>
+    <div class="spinner"></div>
+    <p>Chargement du référentiel…</p>
   </div>
 
-  <div id="message" class="message" role="alert" aria-live="polite">
-    <span id="texteMessage"></span>
-    <button id="fermerMessage" class="fermer-message" type="button">×</button>
-  </div>
-
-  <div class="application">
+  <div id="application" class="application">
     <header class="barre-haute">
-      <button id="boutonRetour" class="bouton-entete bouton-retour" type="button">← Vaisselle</button>
-
-      <div class="titre-entete">
-        <h1>🍽️ Vaisselle & Consignes</h1>
-        <p id="identiteUtilisateur">Chargement…</p>
+      <div class="barre-haute-contenu">
+        <button id="boutonRetour" class="bouton-entete" type="button">← Vaisselle</button>
+        <div class="titre-entete">
+          <h1>🍽️ Retrait & retours</h1>
+          <p id="identiteUtilisateur">Chargement…</p>
+        </div>
+        <button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
       </div>
-
-      <button id="boutonDeconnexion" class="bouton-entete bouton-deconnexion" type="button">Déconnexion</button>
     </header>
 
+    <div id="bandeauDemo" class="bandeau-demo">🎓 MODE DÉMO / FORMATION — validation désactivée pour protéger les données réelles.</div>
+
     <main class="contenu">
-      <section class="zone-caisse">
-        <article class="panneau panneau-catalogue">
-          <nav class="barre-filtres" aria-label="Filtres Vaisselle">
-            <button id="filtreTout" class="filtre active" type="button">Tout</button>
-            <button id="filtreRetrait" class="filtre" type="button">Retrait</button>
-            <button id="filtreRetours" class="filtre" type="button">Retours</button>
-            <span id="informationEdition" class="information-edition">Édition…</span>
-          </nav>
+      <div class="intro">
+        <h2>Session vaisselle</h2>
+        <p>Un même passage peut contenir un retrait, un retour sale et un retour propre. Les opérations sont enregistrées ensemble.</p>
+      </div>
 
-          <div id="zoneOperations" class="zone-operations"></div>
-        </article>
-
-        <aside class="panneau panneau-panier">
-          <div class="panier-entete">
-            <h2 id="titrePanier">Opération en cours</h2>
-            <p id="etatPanier">Tu peux préparer l'opération avant de choisir le stand.</p>
-          </div>
-
-          <div class="zone-stand">
-            <label>Stand / Artisan — obligatoire uniquement pour valider</label>
-
-            <div id="zoneRechercheStand" class="recherche-wrap">
-              <input id="rechercheStand" class="recherche-stand" type="search" autocomplete="off" placeholder="N° de stand ou nom">
-              <div id="resultatsStands" class="resultats-stands"></div>
+      <div class="grille-principale">
+        <section class="colonne-gauche">
+          <div class="panneau panneau-vaisselle">
+            <div class="panneau-entete">
+              <h3>Vaisselle</h3>
+              <p>Pour chaque article, indique les caisses complètes et/ou les unités hors caisse.</p>
             </div>
-
-            <div id="standSelectionne" class="stand-selectionne" hidden>
-              <div>
-                <strong id="nomStandSelectionne"></strong>
-                <span id="detailStandSelectionne"></span>
+            <div class="panneau-corps">
+              <div id="tableVaisselle" class="table-vaisselle">
+                <div class="legende-operations">
+                  <span>Article</span>
+                  <span class="legende-retrait">📤 Retrait</span>
+                  <span class="legende-sale">📥 Retour sale</span>
+                  <span class="legende-propre">✨ Retour propre</span>
+                </div>
+                <div id="listeVaisselle"></div>
+                <div id="zoneCaissesVides"></div>
               </div>
-              <button id="changerStand" class="changer-stand" type="button">Changer</button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="colonne-droite">
+          <div class="panneau">
+            <div class="panneau-entete">
+              <h3>Stand</h3>
+              <p>Recherche par numéro ou nom, ou scan du QR interne.</p>
+            </div>
+            <div class="panneau-corps">
+              <div id="zoneRechercheStand">
+                <div class="selection-stand">
+                  <input id="rechercheStand" class="champ-recherche" type="search" autocomplete="off" placeholder="🔎 Stand / nom">
+                  <button id="boutonQr" class="bouton-qr" type="button">📷 QR</button>
+                </div>
+                <div id="resultatsStands" class="resultats-stands"></div>
+              </div>
+              <div id="standSelectionne" class="stand-selectionne">
+                <div><strong id="standSelectionneNom"></strong><span id="standSelectionneDetail"></span></div>
+                <button id="changerStand" class="changer-stand" type="button">Changer</button>
+              </div>
             </div>
           </div>
 
-          <div id="panierContenu" class="panier-contenu">
-            <div class="panier-vide">Aucune vaisselle sélectionnée.</div>
-          </div>
-
-          <div class="panier-total">
-            <div class="ligne-total">
-              <span id="libelleTotal">Total</span>
-              <strong id="totalOperation">CHF 0.00</strong>
+          <div class="panneau">
+            <div class="panneau-entete">
+              <h3>Récapitulatif</h3>
+              <p>Facturation des retraits et crédits générés par les retours.</p>
             </div>
-            <div id="infoTotal" class="info-total">Sélectionne Retrait, Retour sale ou Retour propre.</div>
+            <div class="panneau-corps">
+              <div id="recapitulatif" class="recap-vide">Aucune quantité saisie.</div>
+            </div>
           </div>
 
-          <div class="zone-validation">
-            <textarea id="commentaire" class="commentaire" placeholder="Commentaire facultatif"></textarea>
-            <button id="boutonValider" class="bouton-valider" type="button" disabled>Valider</button>
+          <div class="panneau">
+            <div class="panneau-entete"><h3>Validation</h3></div>
+            <div class="panneau-corps">
+              <textarea id="commentaire" class="commentaire" placeholder="Commentaire facultatif"></textarea>
+              <button id="boutonValider" class="bouton-valider" type="button">Valider la session vaisselle</button>
+              <div id="noteDemo" class="note-demo">En mode Démo, l'écran peut être utilisé pour la formation mais aucune opération de vaisselle réelle n'est enregistrée.</div>
+            </div>
           </div>
         </aside>
-      </section>
+      </div>
     </main>
   </div>
 
+  <div id="message" class="message"><button id="messageFermer" class="message-fermer" type="button">×</button><div id="messageTexte"></div></div>
+
+  <div id="modalQr" class="modal-qr" aria-hidden="true">
+    <div class="carte-qr">
+      <div class="qr-entete"><h3>Scanner le QR du stand</h3><button id="fermerQr" class="qr-fermer" type="button">×</button></div>
+      <div class="qr-corps">
+        <div class="video-wrap">
+          <video id="videoQr" playsinline muted></video>
+          <canvas id="canvasQr"></canvas>
+          <div class="viseur"></div>
+        </div>
+        <p class="qr-info">Place le QR interne du stand dans le cadre.</p>
+        <div class="qr-manuel">
+          <input id="valeurQrManuelle" type="text" autocomplete="off" placeholder="Ou coller la valeur du QR">
+          <button id="validerQrManuel" type="button">Ouvrir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
 
   <script>
-    "use strict";
+    (() => {
+      "use strict";
 
-    (function () {
-      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
+      const application = document.getElementById("application");
+      const chargementPage = document.getElementById("chargementPage");
+      const bandeauDemo = document.getElementById("bandeauDemo");
+      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
+      const listeVaisselle = document.getElementById("listeVaisselle");
+      const zoneCaissesVides = document.getElementById("zoneCaissesVides");
+      const rechercheStand = document.getElementById("rechercheStand");
+      const resultatsStands = document.getElementById("resultatsStands");
+      const zoneRechercheStand = document.getElementById("zoneRechercheStand");
+      const standSelectionneBloc = document.getElementById("standSelectionne");
+      const standSelectionneNom = document.getElementById("standSelectionneNom");
+      const standSelectionneDetail = document.getElementById("standSelectionneDetail");
+      const recapitulatif = document.getElementById("recapitulatif");
+      const commentaire = document.getElementById("commentaire");
+      const boutonValider = document.getElementById("boutonValider");
+      const noteDemo = document.getElementById("noteDemo");
+      const message = document.getElementById("message");
+      const messageTexte = document.getElementById("messageTexte");
+      const modalQr = document.getElementById("modalQr");
+      const videoQr = document.getElementById("videoQr");
+      const canvasQr = document.getElementById("canvasQr");
+      const valeurQrManuelle = document.getElementById("valeurQrManuelle");
 
-      let stands = [];
-      let vaisselle = [];
-      let caisses = [];
-      let stand = null;
-      let filtre = "tout";
-      let typeOperation = null;
-      let cleIdempotence = null;
-      let validationEnCours = false;
+      let client = null;
+      let donnees = null;
+      let standSelectionne = null;
+      let modeDemo = false;
+      let cleSession = null;
       let minuterieMessage = null;
+      let fluxCamera = null;
+      let boucleQrActive = false;
 
-      const panier = {};
-
-      const $ = (id) => document.getElementById(id);
-
-      const E = {
-        chargement: $("chargement"),
-        message: $("message"),
-        texteMessage: $("texteMessage"),
-        fermerMessage: $("fermerMessage"),
-        boutonRetour: $("boutonRetour"),
-        boutonDeconnexion: $("boutonDeconnexion"),
-        identiteUtilisateur: $("identiteUtilisateur"),
-        informationEdition: $("informationEdition"),
-        filtreTout: $("filtreTout"),
-        filtreRetrait: $("filtreRetrait"),
-        filtreRetours: $("filtreRetours"),
-        zoneOperations: $("zoneOperations"),
-        zoneRechercheStand: $("zoneRechercheStand"),
-        rechercheStand: $("rechercheStand"),
-        resultatsStands: $("resultatsStands"),
-        standSelectionne: $("standSelectionne"),
-        nomStandSelectionne: $("nomStandSelectionne"),
-        detailStandSelectionne: $("detailStandSelectionne"),
-        changerStand: $("changerStand"),
-        titrePanier: $("titrePanier"),
-        etatPanier: $("etatPanier"),
-        panierContenu: $("panierContenu"),
-        libelleTotal: $("libelleTotal"),
-        totalOperation: $("totalOperation"),
-        infoTotal: $("infoTotal"),
-        commentaire: $("commentaire"),
-        boutonValider: $("boutonValider")
-      };
-
-      function client() {
-        if (!window.MDN_SUPABASE) {
-          throw new Error("Le client Supabase MDN n'est pas disponible.");
-        }
-        return window.MDN_SUPABASE;
-      }
-
-      function echapper(valeur) {
-        return String(valeur ?? "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      function normaliser(valeur) {
-        return String(valeur ?? "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .trim();
-      }
-
-      function nombre(valeur) {
-        const n = Number(valeur);
-        return Number.isFinite(n) ? n : 0;
-      }
-
-      function entier(valeur) {
-        const n = Math.trunc(nombre(valeur));
-        return n > 0 ? n : 0;
-      }
-
-      function chf(valeur) {
-        return "CHF " + nombre(valeur).toFixed(2);
-      }
+      const etats = {};
+      const typesOperations = ["retrait", "retour_sale", "retour_propre"];
 
       function uuid() {
-        if (crypto && typeof crypto.randomUUID === "function") {
-          return crypto.randomUUID();
-        }
-        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        if (crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
           const r = Math.random() * 16 | 0;
-          const v = c === "x" ? r : (r & 0x3 | 0x8);
+          const v = c === "x" ? r : (r & 3 | 8);
           return v.toString(16);
         });
       }
 
-      function afficherMessage(texte, type = "erreur") {
-        clearTimeout(minuterieMessage);
-        E.texteMessage.textContent = texte;
-        E.message.className = "message visible " + type;
-        minuterieMessage = setTimeout(masquerMessage, 6500);
+      function argent(v) {
+        return new Intl.NumberFormat("fr-CH", { style:"currency", currency:"CHF", minimumFractionDigits:2 }).format(Number(v || 0));
       }
 
-      function masquerMessage() {
-        E.message.className = "message";
+      function entier(v) {
+        const n = parseInt(v, 10);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      }
+
+      function echapper(v) {
+        return String(v ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+      }
+
+      function afficherMessage(texte, type="erreur") {
+        clearTimeout(minuterieMessage);
+        message.className = `message visible ${type}`;
+        messageTexte.textContent = texte;
+        minuterieMessage = setTimeout(() => message.classList.remove("visible"), 6000);
+      }
+
+      function masquerChargement() {
+        chargementPage.classList.add("masque");
       }
 
       function nomStand(s) {
-        return s?.nom || s?.raison_sociale || "Stand sans nom";
+        return String(s?.nom || s?.raison_sociale || "Stand").trim();
       }
 
       function libelleStand(s) {
-        return (s?.numero_stand ? "Stand " + s.numero_stand : "Stand") + " · " + nomStand(s);
+        const numero = String(s?.numero_stand || "").trim();
+        return numero ? `Stand ${numero} · ${nomStand(s)}` : nomStand(s);
       }
 
-      function classeOperation(type) {
-        if (type === "retour_sale") return "sale";
-        if (type === "retour_propre") return "propre";
-        return "retrait";
+      function regleRetourPropreUnite(article) {
+        if (!standSelectionne) return false;
+        const type = String(standSelectionne.type_partenaire || "");
+        const regle = (donnees.regles_retour || []).find(r => r.vaisselle_id === article.id && String(r.type_partenaire || "") === type);
+        return Boolean(regle?.retour_propre_unite_autorise);
       }
 
-      function titreOperation(type) {
-        if (type === "retour_sale") return "Retour sale";
-        if (type === "retour_propre") return "Retour propre";
-        return "Retrait";
-      }
-
-      function cleLigne(type, genre, id) {
-        return type + "|" + genre + "|" + id;
-      }
-
-      function obtenirLigne(type, genre, id) {
-        const cle = cleLigne(type, genre, id);
-        if (!panier[cle]) {
-          panier[cle] = { type, genre, id, caissesCompletes: 0, unites: 0 };
+      function initialiserEtats() {
+        etats.vaisselle = {};
+        for (const a of donnees.vaisselle || []) {
+          etats.vaisselle[a.id] = {
+            retrait:{caisses:0,unites:0},
+            retour_sale:{caisses:0,unites:0},
+            retour_propre:{caisses:0,unites:0}
+          };
         }
-        return panier[cle];
+        etats.caissesVides = {
+          retrait:0,
+          retour_sale:0,
+          retour_propre:0
+        };
+        cleSession = {
+          retrait:uuid(),
+          retour_sale:uuid(),
+          retour_propre:uuid()
+        };
       }
 
-      function panierVide() {
-        return !Object.values(panier).some(function (ligne) {
-          return entier(ligne.caissesCompletes) > 0 || entier(ligne.unites) > 0;
+      function rendreVaisselle() {
+        listeVaisselle.innerHTML = (donnees.vaisselle || []).map(a => {
+          const standard = entier(a.quantite_standard);
+          const autorise = regleRetourPropreUnite(a);
+          const regleTexte = standSelectionne
+            ? (autorise ? "Unités propres autorisées" : "Retour propre hors caisse interdit")
+            : "Sélectionne d'abord un stand";
+          return `
+            <div class="ligne-vaisselle" data-article="${a.id}">
+              <div class="info-vaisselle">
+                <div class="nom-vaisselle">${echapper(a.nom)}</div>
+                <div class="tarif-vaisselle">Consigne ${argent(a.consigne_unitaire)} · Lavage ${argent(a.lavage_unitaire)}</div>
+                <div class="standard-vaisselle">${standard ? `1 caisse = ${standard} unités` : "Conditionnement non défini"}</div>
+              </div>
+              ${cellule(a,"retrait",true,"")}
+              ${cellule(a,"retour_sale",true,"")}
+              ${cellule(a,"retour_propre",autorise,regleTexte)}
+            </div>`;
+        }).join("");
+
+        const contenant = (donnees.contenants || [])[0];
+        if (contenant) {
+          zoneCaissesVides.innerHTML = `
+            <div class="zone-caisses-vides">
+              <div class="nom-vaisselle">📦 ${echapper(contenant.nom)} vide<div class="tarif-vaisselle">Consigne ${argent(contenant.consigne)} · Lavage ${argent(contenant.lavage)}</div></div>
+              ${celluleCaisseVide("retrait")}
+              ${celluleCaisseVide("retour_sale")}
+              ${celluleCaisseVide("retour_propre")}
+            </div>`;
+        } else {
+          zoneCaissesVides.innerHTML = "";
+        }
+        brancherQuantites();
+      }
+
+      function cellule(article,type,uniteAutorisee,texteRegle) {
+        const e = etats.vaisselle[article.id][type];
+        const disableUnite = type === "retour_propre" && !uniteAutorisee;
+        return `
+          <div class="cellule-operation ${type === "retour_sale" ? "sale" : type === "retour_propre" ? "propre" : "retrait"}">
+            <div class="mini-ligne"><label>Caisses</label><input class="champ-qte qte" type="number" min="0" step="1" inputmode="numeric" value="${e.caisses || ""}" placeholder="0" data-kind="vaisselle" data-id="${article.id}" data-type="${type}" data-champ="caisses"></div>
+            <div class="mini-ligne"><label>Unités</label><input class="champ-qte qte" type="number" min="0" step="1" inputmode="numeric" value="${e.unites || ""}" placeholder="0" data-kind="vaisselle" data-id="${article.id}" data-type="${type}" data-champ="unites" ${disableUnite ? "disabled" : ""}></div>
+            <div class="regle-unite ${disableUnite ? "interdit" : ""}">${echapper(texteRegle)}</div>
+          </div>`;
+      }
+
+      function celluleCaisseVide(type) {
+        const val = etats.caissesVides[type] || 0;
+        const classe = type === "retour_sale" ? "sale" : type === "retour_propre" ? "propre" : "retrait";
+        return `<div class="cellule-operation ${classe}"><div class="mini-ligne"><label>Quantité</label><input class="champ-qte qte" type="number" min="0" step="1" inputmode="numeric" value="${val || ""}" placeholder="0" data-kind="caisse-vide" data-type="${type}"></div></div>`;
+      }
+
+      function brancherQuantites() {
+        document.querySelectorAll(".qte").forEach(input => {
+          input.addEventListener("input", () => {
+            const valeur = entier(input.value);
+            if (input.dataset.kind === "vaisselle") {
+              etats.vaisselle[input.dataset.id][input.dataset.type][input.dataset.champ] = valeur;
+            } else {
+              etats.caissesVides[input.dataset.type] = valeur;
+            }
+            mettreAJourRecap();
+          });
         });
       }
 
-      function viderPanier() {
-        Object.keys(panier).forEach((cle) => delete panier[cle]);
-        typeOperation = null;
-        cleIdempotence = null;
-        E.commentaire.value = "";
-        actualiserPanier();
+      function rechercherStands() {
+        if (standSelectionne) return;
+        const q = rechercheStand.value.trim().toLocaleLowerCase("fr");
+        const tous = donnees.stands || [];
+        const filtres = tous.filter(s => {
+          if (!q) return true;
+          return `${s.numero_stand || ""} ${s.nom || ""} ${s.raison_sociale || ""}`.toLocaleLowerCase("fr").includes(q);
+        }).slice(0, 30);
+
+        resultatsStands.innerHTML = filtres.length ? filtres.map(s => `
+          <button type="button" class="resultat-stand" data-stand="${s.id}">
+            <strong>${echapper(libelleStand(s))}</strong><span>${echapper(s.type_partenaire || "")}</span>
+          </button>`).join("") : `<div style="padding:12px;color:#888;font-size:11px;">Aucun stand trouvé.</div>`;
+        resultatsStands.classList.add("visible");
+        resultatsStands.querySelectorAll("[data-stand]").forEach(b => b.addEventListener("click", () => selectionnerStandParId(b.dataset.stand)));
       }
 
-      function assurerOperation(type) {
-        if (!typeOperation || panierVide()) {
-          typeOperation = type;
-          return true;
+      function selectionnerStandParId(id) {
+        const s = (donnees.stands || []).find(x => x.id === id);
+        if (!s) {
+          afficherMessage("Ce stand n'est pas disponible pour la vaisselle.");
+          return false;
         }
-
-        if (typeOperation === type) return true;
-
-        const ok = window.confirm(
-          "Une opération « " + titreOperation(typeOperation) + " » est déjà en cours.\n\n" +
-          "Passer à « " + titreOperation(type) + " » videra le panier actuel. Continuer ?"
-        );
-
-        if (!ok) return false;
-
-        viderPanier();
-        typeOperation = type;
+        standSelectionne = s;
+        zoneRechercheStand.style.display = "none";
+        standSelectionneBloc.classList.add("visible");
+        standSelectionneNom.textContent = libelleStand(s);
+        standSelectionneDetail.textContent = s.type_partenaire || "";
+        resultatsStands.classList.remove("visible");
+        rendreVaisselle();
+        mettreAJourRecap();
         return true;
       }
 
-      function tarifVaisselle(reference, type) {
-        const consigne = nombre(reference.consigne_unitaire);
-        const lavage = nombre(reference.lavage_unitaire);
-
-        if (type === "retrait") return consigne + lavage;
-        if (type === "retour_propre") return consigne + lavage;
-        return consigne;
+      function changerStand() {
+        standSelectionne = null;
+        standSelectionneBloc.classList.remove("visible");
+        zoneRechercheStand.style.display = "block";
+        rechercheStand.value = "";
+        rendreVaisselle();
+        mettreAJourRecap();
+        rechercheStand.focus();
       }
 
-      function tarifCaisse(caisse, type) {
-        const consigne = nombre(caisse.consigne);
-        const lavage = nombre(caisse.lavage);
-
-        if (type === "retrait") return consigne + lavage;
-
-        /* Configuration actuelle : retour propre/sale rembourse la consigne, pas le lavage. */
-        return consigne;
+      function quantiteArticle(article,type) {
+        const e = etats.vaisselle[article.id][type];
+        const standard = entier(article.quantite_standard);
+        return e.caisses * standard + e.unites;
       }
 
-      function creerCarteVaisselle(reference, type) {
-        const standard = entier(reference.quantite_standard);
-        const classe = classeOperation(type);
-        const tarif = tarifVaisselle(reference, type);
+      function calculer() {
+        const sections = { retrait:[], retour_sale:[], retour_propre:[] };
+        let totalFacture = 0;
+        let totalCreditEstime = 0;
+        const contenant = (donnees.contenants || [])[0] || null;
 
-        return `
-          <div class="article-vaisselle">
-            <div>
-              <div class="article-nom">${echapper(reference.nom)}</div>
-              <div class="article-tarif">${type === "retrait" ? "Facturé" : "Crédit"} ${chf(tarif)} / unité</div>
-            </div>
-
-            <div class="article-actions">
-              <button class="touche ${classe}" type="button" data-ajout-caisse="${echapper(reference.id)}" data-operation="${type}" ${standard <= 0 ? "disabled" : ""}>
-                Caisse (${standard || "—"})
-              </button>
-
-              <button class="touche unite" type="button" data-ajout-unite="${echapper(reference.id)}" data-operation="${type}">
-                + 1 unité
-              </button>
-            </div>
-          </div>
-        `;
-      }
-
-      function creerCarteCaisseVide(caisse, type) {
-        const classe = classeOperation(type);
-        const tarif = tarifCaisse(caisse, type);
-
-        return `
-          <div class="article-vaisselle">
-            <div>
-              <div class="article-nom">Caisse vide</div>
-              <div class="article-tarif">${type === "retrait" ? "Facturé" : "Crédit"} ${chf(tarif)} / caisse</div>
-            </div>
-
-            <div class="article-actions une-action">
-              <button class="touche ${classe}" type="button" data-ajout-caisse-vide="${echapper(caisse.id)}" data-operation="${type}">
-                + 1 caisse vide
-              </button>
-            </div>
-          </div>
-        `;
-      }
-
-      function creerSection(type) {
-        const classe = classeOperation(type);
-        const caisse = caisses[0] || null;
-
-        const cartes = vaisselle.map((reference) => creerCarteVaisselle(reference, type));
-        if (caisse) cartes.push(creerCarteCaisseVide(caisse, type));
-
-        return `
-          <section class="section-operation ${classe}">
-            <h2 class="titre-operation">
-              <span class="pastille-operation"></span>
-              ${titreOperation(type)}
-            </h2>
-            <div class="grille-vaisselle">${cartes.join("")}</div>
-          </section>
-        `;
-      }
-
-      function afficherOperations() {
-        const sections = [];
-
-        if (filtre === "tout" || filtre === "retrait") {
-          sections.push(creerSection("retrait"));
+        for (const article of donnees.vaisselle || []) {
+          for (const type of typesOperations) {
+            const e = etats.vaisselle[article.id][type];
+            const qte = quantiteArticle(article,type);
+            if (!qte) continue;
+            let montant = 0;
+            if (type === "retrait") {
+              montant = qte * (Number(article.consigne_unitaire || 0) + Number(article.lavage_unitaire || 0));
+              totalFacture += montant;
+            } else {
+              // Le moteur rembourse la consigne de la vaisselle au retour.
+              // Le montant exact final reste celui calculé côté serveur.
+              montant = qte * Number(article.consigne_unitaire || 0);
+              totalCreditEstime += montant;
+            }
+            sections[type].push({ nom:article.nom, qte, caisses:e.caisses, unites:e.unites, montant });
+          }
         }
 
-        if (filtre === "tout" || filtre === "retours") {
-          sections.push(creerSection("retour_sale"));
-          sections.push(creerSection("retour_propre"));
+        if (contenant) {
+          for (const type of typesOperations) {
+            let qteAvecVaisselle = 0;
+            for (const article of donnees.vaisselle || []) qteAvecVaisselle += etats.vaisselle[article.id][type].caisses;
+            const qteVide = etats.caissesVides[type] || 0;
+            const qteTotal = qteAvecVaisselle + qteVide;
+            if (!qteTotal) continue;
+
+            let montant = 0;
+            if (type === "retrait") {
+              montant = qteTotal * (Number(contenant.consigne || 0) + Number(contenant.lavage || 0));
+              totalFacture += montant;
+            } else {
+              const rembourseConsigne = type === "retour_propre" ? contenant.retour_propre_rembourse_consigne : contenant.retour_sale_rembourse_consigne;
+              const rembourseLavage = type === "retour_propre" ? contenant.retour_propre_rembourse_lavage : contenant.retour_sale_rembourse_lavage;
+              montant = qteTotal * ((rembourseConsigne ? Number(contenant.consigne || 0) : 0) + (rembourseLavage ? Number(contenant.lavage || 0) : 0));
+              totalCreditEstime += montant;
+            }
+            sections[type].push({ nom:`${contenant.nom}${qteVide ? ` (${qteVide} vide${qteVide>1?"s":""})` : ""}`, qte:qteTotal, caisses:0, unites:qteTotal, montant, contenant:true });
+          }
         }
-
-        E.zoneOperations.innerHTML = sections.join("");
-
-        E.zoneOperations.querySelectorAll("[data-ajout-caisse]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            const type = bouton.dataset.operation;
-            if (!assurerOperation(type)) return;
-            const ligne = obtenirLigne(type, "vaisselle", bouton.dataset.ajoutCaisse);
-            ligne.caissesCompletes += 1;
-            actualiserPanier();
-          });
-        });
-
-        E.zoneOperations.querySelectorAll("[data-ajout-unite]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            const type = bouton.dataset.operation;
-            if (!assurerOperation(type)) return;
-            const ligne = obtenirLigne(type, "vaisselle", bouton.dataset.ajoutUnite);
-            ligne.unites += 1;
-            actualiserPanier();
-          });
-        });
-
-        E.zoneOperations.querySelectorAll("[data-ajout-caisse-vide]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            const type = bouton.dataset.operation;
-            if (!assurerOperation(type)) return;
-            const ligne = obtenirLigne(type, "caisse_vide", bouton.dataset.ajoutCaisseVide);
-            ligne.unites += 1;
-            actualiserPanier();
-          });
-        });
+        return { sections,totalFacture,totalCreditEstime };
       }
 
-      function changerFiltre(nouveauFiltre) {
-        filtre = nouveauFiltre;
-        E.filtreTout.classList.toggle("active", filtre === "tout");
-        E.filtreRetrait.classList.toggle("active", filtre === "retrait");
-        E.filtreRetours.classList.toggle("active", filtre === "retours");
-        afficherOperations();
-        E.zoneOperations.scrollTop = 0;
-      }
-
-      function afficherResultatsStands(texte = "") {
-        const recherche = normaliser(texte);
-        const resultats = stands.filter(function (s) {
-          if (!recherche) return true;
-          return normaliser([s.numero_stand, s.nom, s.raison_sociale].join(" ")).includes(recherche);
-        });
-
-        E.resultatsStands.innerHTML = resultats.length
-          ? resultats.slice(0, 40).map(function (s) {
-              return `
-                <button class="resultat-stand" type="button" data-stand="${echapper(s.id)}">
-                  <strong>${echapper(libelleStand(s))}</strong>
-                  <small>${echapper(s.type_partenaire || "")}</small>
-                </button>
-              `;
-            }).join("")
-          : '<div style="padding:8px;text-align:center;color:#777;font-size:12px">Aucun stand trouvé.</div>';
-
-        E.resultatsStands.classList.add("visible");
-
-        E.resultatsStands.querySelectorAll("[data-stand]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            selectionnerStand(bouton.dataset.stand);
-          });
-        });
-      }
-
-      function selectionnerStand(id) {
-        stand = stands.find((s) => s.id === id) || null;
-        if (!stand) return;
-
-        E.zoneRechercheStand.hidden = true;
-        E.standSelectionne.hidden = false;
-        E.nomStandSelectionne.textContent = libelleStand(stand);
-        E.detailStandSelectionne.textContent = stand.mode_reglement_habituel ? " · " + stand.mode_reglement_habituel : "";
-        E.resultatsStands.classList.remove("visible");
-        cleIdempotence = null;
-        actualiserPanier();
-      }
-
-      function modifierStand() {
-        stand = null;
-        E.zoneRechercheStand.hidden = false;
-        E.standSelectionne.hidden = true;
-        E.rechercheStand.value = "";
-        E.rechercheStand.focus();
-        afficherResultatsStands("");
-        actualiserPanier();
-      }
-
-      function quantiteLigne(ligne, reference) {
-        return entier(ligne.unites) + entier(ligne.caissesCompletes) * entier(reference?.quantite_standard);
-      }
-
-      function calculerTotal() {
-        let total = 0;
-
-        Object.values(panier).forEach(function (ligne) {
-          if (ligne.genre === "vaisselle") {
-            const reference = vaisselle.find((r) => r.id === ligne.id);
-            if (!reference) return;
-            total += quantiteLigne(ligne, reference) * tarifVaisselle(reference, ligne.type);
-          } else {
-            const caisse = caisses.find((c) => c.id === ligne.id);
-            if (!caisse) return;
-            total += entier(ligne.unites) * tarifCaisse(caisse, ligne.type);
-          }
-        });
-
-        return total;
-      }
-
-      function actualiserPanier() {
-        const lignes = [];
-
-        Object.entries(panier).forEach(function ([cle, ligne]) {
-          if (ligne.genre === "vaisselle") {
-            const reference = vaisselle.find((r) => r.id === ligne.id);
-            if (!reference) return;
-
-            const quantite = quantiteLigne(ligne, reference);
-            if (quantite <= 0) return;
-
-            const standard = entier(reference.quantite_standard);
-            const montant = quantite * tarifVaisselle(reference, ligne.type);
-            const details = [];
-
-            if (entier(ligne.caissesCompletes) > 0) {
-              details.push(entier(ligne.caissesCompletes) + " caisse(s) × " + standard);
-            }
-            if (entier(ligne.unites) > 0) {
-              details.push(entier(ligne.unites) + " unité(s)");
-            }
-
-            lignes.push(`
-              <div class="ligne-panier">
-                <div>
-                  <strong>${echapper(reference.nom)} · ${quantite}</strong>
-                  <div class="ligne-detail">${echapper(details.join(" · "))}</div>
-                </div>
-                <div class="ligne-droite">
-                  <div class="ligne-montant">${chf(montant)}</div>
-                  <div class="mini-actions">
-                    ${entier(ligne.caissesCompletes) > 0 ? `<button class="mini-bouton" type="button" data-moins-caisse="${echapper(cle)}">−C</button>` : ""}
-                    ${entier(ligne.unites) > 0 ? `<button class="mini-bouton" type="button" data-moins-unite="${echapper(cle)}">−1</button>` : ""}
-                    <button class="mini-bouton" type="button" data-supprimer="${echapper(cle)}">×</button>
-                  </div>
-                </div>
-              </div>
-            `);
-          } else {
-            const caisse = caisses.find((c) => c.id === ligne.id);
-            if (!caisse || entier(ligne.unites) <= 0) return;
-
-            const montant = entier(ligne.unites) * tarifCaisse(caisse, ligne.type);
-
-            lignes.push(`
-              <div class="ligne-panier">
-                <div>
-                  <strong>Caisse vide · ${entier(ligne.unites)}</strong>
-                  <div class="ligne-detail">${titreOperation(ligne.type)}</div>
-                </div>
-                <div class="ligne-droite">
-                  <div class="ligne-montant">${chf(montant)}</div>
-                  <div class="mini-actions">
-                    <button class="mini-bouton" type="button" data-moins-unite="${echapper(cle)}">−1</button>
-                    <button class="mini-bouton" type="button" data-supprimer="${echapper(cle)}">×</button>
-                  </div>
-                </div>
-              </div>
-            `);
-          }
-        });
-
-        E.panierContenu.innerHTML = lignes.length
-          ? lignes.join("")
-          : '<div class="panier-vide">Aucune vaisselle sélectionnée.<br>Tu peux tester les touches sans choisir de stand.</div>';
-
-        E.panierContenu.querySelectorAll("[data-moins-caisse]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            const ligne = panier[bouton.dataset.moinsCaisse];
-            if (!ligne) return;
-            ligne.caissesCompletes = Math.max(0, entier(ligne.caissesCompletes) - 1);
-            actualiserPanier();
-          });
-        });
-
-        E.panierContenu.querySelectorAll("[data-moins-unite]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            const ligne = panier[bouton.dataset.moinsUnite];
-            if (!ligne) return;
-            ligne.unites = Math.max(0, entier(ligne.unites) - 1);
-            actualiserPanier();
-          });
-        });
-
-        E.panierContenu.querySelectorAll("[data-supprimer]").forEach(function (bouton) {
-          bouton.addEventListener("click", function () {
-            delete panier[bouton.dataset.supprimer];
-            if (panierVide()) typeOperation = null;
-            actualiserPanier();
-          });
-        });
-
-        const total = calculerTotal();
-        E.totalOperation.textContent = chf(total);
-
-        if (!typeOperation) {
-          E.titrePanier.textContent = "Opération en cours";
-          E.etatPanier.textContent = "Tu peux préparer l'opération avant de choisir le stand.";
-          E.libelleTotal.textContent = "Total";
-          E.infoTotal.textContent = "Sélectionne Retrait, Retour sale ou Retour propre.";
-          E.boutonValider.textContent = "Valider";
-          E.boutonValider.className = "bouton-valider";
-        } else if (typeOperation === "retrait") {
-          E.titrePanier.textContent = "Retrait en cours";
-          E.etatPanier.textContent = stand ? libelleStand(stand) : "Stand à sélectionner avant validation";
-          E.libelleTotal.textContent = "Total facturé au compte";
-          E.infoTotal.textContent = "Consigne + lavage sont facturés au compte du stand.";
-          E.boutonValider.textContent = "Valider le retrait";
-          E.boutonValider.className = "bouton-valider";
-        } else if (typeOperation === "retour_sale") {
-          E.titrePanier.textContent = "Retour sale en cours";
-          E.etatPanier.textContent = stand ? libelleStand(stand) : "Stand à sélectionner avant validation";
-          E.libelleTotal.textContent = "Crédit au compte";
-          E.infoTotal.textContent = "Retour sale : consigne créditée, lavage non remboursé.";
-          E.boutonValider.textContent = "Valider le retour sale";
-          E.boutonValider.className = "bouton-valider sale";
+      function mettreAJourRecap() {
+        const calc = calculer();
+        const totalLignes = typesOperations.reduce((n,t) => n + calc.sections[t].length, 0);
+        if (!totalLignes) {
+          recapitulatif.className = "recap-vide";
+          recapitulatif.innerHTML = "Aucune quantité saisie.";
         } else {
-          E.titrePanier.textContent = "Retour propre en cours";
-          E.etatPanier.textContent = stand ? libelleStand(stand) : "Stand à sélectionner avant validation";
-          E.libelleTotal.textContent = "Crédit au compte";
-          E.infoTotal.textContent = "Retour propre : consigne + lavage de la vaisselle sont crédités.";
-          E.boutonValider.textContent = "Valider le retour propre";
-          E.boutonValider.className = "bouton-valider propre";
+          recapitulatif.className = "";
+          const titres = { retrait:"📤 Retrait", retour_sale:"📥 Retour sale", retour_propre:"✨ Retour propre" };
+          const classes = { retrait:"retrait", retour_sale:"sale", retour_propre:"propre" };
+          let html = "";
+          for (const type of typesOperations) {
+            const lignes = calc.sections[type];
+            if (!lignes.length) continue;
+            const sousTotal = lignes.reduce((s,l) => s + l.montant, 0);
+            html += `<div class="recap-section"><div class="recap-titre ${classes[type]}"><span>${titres[type]}</span><span>${argent(sousTotal)}</span></div>`;
+            for (const l of lignes) {
+              const detail = l.contenant ? `${l.qte}` : `${l.qte} unité${l.qte>1?"s":""}${l.caisses ? ` · ${l.caisses} caisse${l.caisses>1?"s":""}` : ""}`;
+              html += `<div class="recap-ligne"><span>${echapper(l.nom)} · ${detail}</span><span>${argent(l.montant)}</span></div>`;
+            }
+            html += `</div>`;
+          }
+          if (calc.totalFacture > 0) html += `<div class="recap-total"><span>Total facturé au compte</span><strong>${argent(calc.totalFacture)}</strong></div>`;
+          if (calc.totalCreditEstime > 0) html += `<div class="recap-total recap-credit"><span>Crédit retours estimé</span><strong>${argent(calc.totalCreditEstime)}</strong></div>`;
+          if (calc.totalCreditEstime > 0) html += `<div class="info-credit">Le montant définitif est calculé par le moteur serveur selon les règles de retour du stand et sera crédité sur son compte.</div>`;
+          recapitulatif.innerHTML = html;
         }
-
-        E.boutonValider.disabled = validationEnCours || panierVide() || !stand;
+        const actif = Boolean(standSelectionne && totalLignes > 0 && !modeDemo);
+        boutonValider.classList.toggle("actif", actif);
+        boutonValider.disabled = !actif;
       }
 
-      function construireLignesVaisselle() {
-        return Object.values(panier)
-          .filter((ligne) => ligne.genre === "vaisselle")
-          .map(function (ligne) {
-            const reference = vaisselle.find((r) => r.id === ligne.id);
-            if (!reference) return null;
+      function construireOperation(type) {
+        const lignes = [];
+        const contenants = [];
+        const contenant = (donnees.contenants || [])[0] || null;
+        let caissesAvecVaisselle = 0;
 
-            const standard = entier(reference.quantite_standard);
-            const caissesCompletes = entier(ligne.caissesCompletes);
-            const unites = entier(ligne.unites);
-            const enCaissesCompletes = caissesCompletes * standard;
-            const total = enCaissesCompletes + unites;
+        for (const article of donnees.vaisselle || []) {
+          const e = etats.vaisselle[article.id][type];
+          const standard = entier(article.quantite_standard);
+          const qteCaisses = e.caisses * standard;
+          const qteTotal = qteCaisses + e.unites;
+          if (!qteTotal) continue;
 
-            if (total <= 0) return null;
+          if (type === "retour_propre" && e.unites > 0 && !regleRetourPropreUnite(article)) {
+            throw new Error(`Le retour propre à l'unité n'est pas autorisé pour « ${article.nom} » avec ce type de stand.`);
+          }
 
-            return {
-              vaisselle_id: reference.id,
-              quantite_unites: total,
-              nombre_caisses_completes: caissesCompletes,
-              quantite_en_caisses_completes: enCaissesCompletes,
-              quantite_en_caisses_partielles: 0,
-              quantite_hors_caisses: unites
-            };
-          })
-          .filter(Boolean);
-      }
-
-      function construireContenants() {
-        return Object.values(panier)
-          .filter((ligne) => ligne.genre === "caisse_vide" && entier(ligne.unites) > 0)
-          .map(function (ligne) {
-            return {
-              type_contenant_id: ligne.id,
-              quantite: entier(ligne.unites),
-              usage_contenant: "vide"
-            };
+          lignes.push({
+            vaisselle_id:article.id,
+            quantite_unites:qteTotal,
+            nombre_caisses_completes:e.caisses,
+            quantite_en_caisses_completes:qteCaisses,
+            quantite_en_caisses_partielles:0,
+            quantite_hors_caisses:e.unites
           });
+          caissesAvecVaisselle += e.caisses;
+        }
+
+        if (contenant && caissesAvecVaisselle > 0) {
+          contenants.push({ type_contenant_id:contenant.id, quantite:caissesAvecVaisselle, usage_contenant:"avec_vaisselle" });
+        }
+        if (contenant && etats.caissesVides[type] > 0) {
+          contenants.push({ type_contenant_id:contenant.id, quantite:etats.caissesVides[type], usage_contenant:"vide" });
+        }
+
+        if (!lignes.length && !contenants.length) return null;
+        return { type_operation:type, idempotency_key:cleSession[type], lignes_vaisselle:lignes, contenants };
       }
 
-      async function valider() {
-        if (validationEnCours || panierVide()) return;
+      async function validerSession() {
+        if (modeDemo) return;
+        if (!standSelectionne) return afficherMessage("Sélectionne d'abord un stand.");
 
-        if (!stand) {
-          afficherMessage("Sélectionne le stand / artisan avant de valider.");
-          E.rechercheStand.focus();
+        let operations;
+        try {
+          operations = typesOperations.map(construireOperation).filter(Boolean);
+        } catch (e) {
+          afficherMessage(e.message || String(e));
           return;
         }
+        if (!operations.length) return afficherMessage("Aucune quantité à enregistrer.");
 
-        const modeDemo =
-          new URLSearchParams(location.search).get("mode") === "demo" ||
-          sessionStorage.getItem(CLE_MODE_DEMO) === "1";
-
-        if (modeDemo) {
-          afficherMessage("Mode Démo : la validation de la vaisselle est désactivée pour protéger les données réelles.");
-          return;
-        }
-
-        if (!cleIdempotence) cleIdempotence = uuid();
-
-        validationEnCours = true;
-        E.boutonValider.textContent = "Validation…";
-        actualiserPanier();
+        boutonValider.disabled = true;
+        boutonValider.classList.remove("actif");
+        boutonValider.textContent = "Enregistrement…";
 
         try {
-          const { data, error } = await client().rpc("valider_operation_vaisselle", {
-            p_idempotency_key: cleIdempotence,
-            p_participation_id: stand.id,
-            p_type_operation: typeOperation,
-            p_lignes_vaisselle: construireLignesVaisselle(),
-            p_contenants: construireContenants(),
-            p_affectation: null,
-            p_paiements_remboursement: [],
-            p_commentaire: E.commentaire.value.trim() || null
+          const { data,error } = await client.rpc("valider_session_vaisselle", {
+            p_participation_id:standSelectionne.id,
+            p_operations:operations,
+            p_commentaire:commentaire.value.trim() || null
           });
-
           if (error) throw error;
+          if (!data?.ok) throw new Error("La validation n'a pas été confirmée par le serveur.");
 
-          afficherMessage(
-            titreOperation(typeOperation) + " enregistré" +
-            (data?.numero_operation ? " · " + data.numero_operation : "") + ".",
-            "succes"
-          );
-
-          viderPanier();
-        } catch (erreur) {
-          console.error("[MDN Sion] Vaisselle :", erreur);
-          afficherMessage(erreur?.message || "Impossible de valider l'opération.");
+          const numeros = (data.operations || []).map(o => o.numero_operation).filter(Boolean).join(" · ");
+          afficherMessage(`Session vaisselle validée${numeros ? ` · ${numeros}` : ""}.`, "succes");
+          initialiserEtats();
+          commentaire.value = "";
+          rendreVaisselle();
+          mettreAJourRecap();
+        } catch (e) {
+          console.error(e);
+          afficherMessage(e?.message || "Impossible de valider la session vaisselle.");
+          mettreAJourRecap();
         } finally {
-          validationEnCours = false;
-          actualiserPanier();
+          boutonValider.textContent = "Valider la session vaisselle";
         }
       }
 
-      async function charger() {
-        const { data, error } = await client().rpc("charger_ecran_retrait_vaisselle");
-        if (error) throw error;
-
-        stands = Array.isArray(data?.stands) ? data.stands : [];
-        vaisselle = Array.isArray(data?.vaisselle) ? data.vaisselle : [];
-        caisses = Array.isArray(data?.contenants) ? data.contenants : [];
-
-        E.informationEdition.textContent = data?.edition?.annee ? "MDN Sion " + data.edition.annee : "Édition active";
-
-        afficherOperations();
-        actualiserPanier();
-      }
-
-      E.filtreTout.addEventListener("click", () => changerFiltre("tout"));
-      E.filtreRetrait.addEventListener("click", () => changerFiltre("retrait"));
-      E.filtreRetours.addEventListener("click", () => changerFiltre("retours"));
-
-      E.rechercheStand.addEventListener("focus", () => afficherResultatsStands(E.rechercheStand.value));
-      E.rechercheStand.addEventListener("input", () => afficherResultatsStands(E.rechercheStand.value));
-      E.changerStand.addEventListener("click", modifierStand);
-      E.boutonValider.addEventListener("click", valider);
-      E.fermerMessage.addEventListener("click", masquerMessage);
-
-      E.boutonRetour.addEventListener("click", function () {
-        const demo =
-          new URLSearchParams(location.search).get("mode") === "demo" ||
-          sessionStorage.getItem(CLE_MODE_DEMO) === "1";
-        location.href = demo ? "vaisselle.html?mode=demo" : "vaisselle.html";
-      });
-
-      E.boutonDeconnexion.addEventListener("click", async function () {
-        E.boutonDeconnexion.disabled = true;
-        sessionStorage.removeItem(CLE_MODE_DEMO);
-        await window.MDN_AUTH.deconnexion();
-      });
-
-      document.addEventListener("click", function (event) {
-        if (!E.zoneRechercheStand.contains(event.target)) {
-          E.resultatsStands.classList.remove("visible");
-        }
-      });
-
-      window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion: true });
-
-      (async function initialiser() {
+      async function resoudreQr(valeur) {
+        const texte = String(valeur || "").trim();
+        if (!texte) return afficherMessage("QR vide ou illisible.");
         try {
-          const auth = await window.MDN_AUTH.protegerPage(["utilisateur", "responsable", "administrateur"]);
-          if (!auth) return;
-
-          E.identiteUtilisateur.textContent =
-            (auth.profil?.prenom || "Utilisateur") + " · " + window.MDN_AUTH.libelleRole(auth.role);
-
-          await charger();
-        } catch (erreur) {
-          console.error("[MDN Sion] Initialisation Vaisselle :", erreur);
-          afficherMessage(erreur?.message || "Impossible de charger l'écran Vaisselle.");
-        } finally {
-          E.chargement.classList.add("masque");
+          const { data,error } = await client.rpc("resoudre_qr_interne", { p_valeur_qr:texte });
+          if (error) throw error;
+          const id = data?.participation_id;
+          if (!id) throw new Error("Le QR ne contient pas de participation valide.");
+          if (!selectionnerStandParId(id)) throw new Error("Ce stand n'utilise pas la vaisselle ou son compte est soldé.");
+          fermerScannerQr();
+          afficherMessage(`Stand sélectionné : ${libelleStand(standSelectionne)}.`, "succes");
+        } catch (e) {
+          afficherMessage(e?.message || "QR interne invalide.");
         }
-      })();
+      }
+
+      async function ouvrirScannerQr() {
+        modalQr.classList.add("visible");
+        modalQr.setAttribute("aria-hidden","false");
+        valeurQrManuelle.value = "";
+        try {
+          fluxCamera = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" } }, audio:false });
+          videoQr.srcObject = fluxCamera;
+          await videoQr.play();
+          boucleQrActive = true;
+          scannerImage();
+        } catch (e) {
+          console.warn(e);
+          afficherMessage("Caméra indisponible. Tu peux coller la valeur du QR dans le champ sous la caméra.");
+        }
+      }
+
+      function fermerScannerQr() {
+        boucleQrActive = false;
+        if (fluxCamera) {
+          fluxCamera.getTracks().forEach(t => t.stop());
+          fluxCamera = null;
+        }
+        videoQr.srcObject = null;
+        modalQr.classList.remove("visible");
+        modalQr.setAttribute("aria-hidden","true");
+      }
+
+      function scannerImage() {
+        if (!boucleQrActive) return;
+        if (videoQr.readyState === videoQr.HAVE_ENOUGH_DATA && window.jsQR) {
+          const ctx = canvasQr.getContext("2d", { willReadFrequently:true });
+          canvasQr.width = videoQr.videoWidth;
+          canvasQr.height = videoQr.videoHeight;
+          ctx.drawImage(videoQr,0,0,canvasQr.width,canvasQr.height);
+          const image = ctx.getImageData(0,0,canvasQr.width,canvasQr.height);
+          const code = window.jsQR(image.data,image.width,image.height,{ inversionAttempts:"dontInvert" });
+          if (code?.data) {
+            boucleQrActive = false;
+            resoudreQr(code.data);
+            return;
+          }
+        }
+        requestAnimationFrame(scannerImage);
+      }
+
+      async function chargerDonnees() {
+        const { data,error } = await client.rpc("charger_ecran_retrait_vaisselle");
+        if (error) throw error;
+        if (!data?.edition?.id) throw new Error("Aucune édition active n'a été retournée.");
+        donnees = data;
+        initialiserEtats();
+        rendreVaisselle();
+        mettreAJourRecap();
+      }
+
+      function detecterDemo() {
+        const params = new URLSearchParams(location.search);
+        modeDemo = params.get("mode") === "demo" || sessionStorage.getItem("mdn_mode_demo_actif") === "1";
+        application.classList.toggle("mode-demo",modeDemo);
+        bandeauDemo.classList.toggle("visible",modeDemo);
+        noteDemo.classList.toggle("visible",modeDemo);
+      }
+
+      function brancherEvenements() {
+        document.getElementById("boutonRetour").addEventListener("click", () => location.href = modeDemo ? "vaisselle.html?mode=demo" : "vaisselle.html");
+        document.getElementById("boutonDeconnexion").addEventListener("click", async () => {
+          sessionStorage.removeItem("mdn_mode_demo_actif");
+          await window.MDN_AUTH.deconnexion();
+        });
+        document.getElementById("messageFermer").addEventListener("click", () => message.classList.remove("visible"));
+        rechercheStand.addEventListener("focus",rechercherStands);
+        rechercheStand.addEventListener("input",rechercherStands);
+        document.getElementById("changerStand").addEventListener("click",changerStand);
+        document.getElementById("boutonQr").addEventListener("click",ouvrirScannerQr);
+        document.getElementById("fermerQr").addEventListener("click",fermerScannerQr);
+        document.getElementById("validerQrManuel").addEventListener("click",() => resoudreQr(valeurQrManuelle.value));
+        valeurQrManuelle.addEventListener("keydown",e => { if (e.key === "Enter") resoudreQr(valeurQrManuelle.value); });
+        modalQr.addEventListener("click",e => { if (e.target === modalQr) fermerScannerQr(); });
+        boutonValider.addEventListener("click",validerSession);
+        document.addEventListener("click",e => {
+          if (!e.target.closest("#zoneRechercheStand")) resultatsStands.classList.remove("visible");
+        });
+      }
+
+      async function initialiser() {
+        try {
+          detecterDemo();
+          if (!window.MDN_AUTH) throw new Error("Le module d'authentification MDN n'est pas disponible.");
+          const auth = await window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]);
+          if (!auth) return;
+          const prenom = String(auth.profil?.prenom || "Utilisateur").trim();
+          const role = window.MDN_AUTH.libelleRole ? window.MDN_AUTH.libelleRole(auth.profil?.role) : String(auth.profil?.role || "");
+          identiteUtilisateur.textContent = `${prenom} · ${role}`;
+          client = window.MDN_SUPABASE;
+          if (!client) throw new Error("Le client Supabase MDN n'est pas disponible.");
+          brancherEvenements();
+          await chargerDonnees();
+          window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion:true });
+        } catch (e) {
+          console.error(e);
+          afficherMessage(e?.message || "Impossible de charger l'écran vaisselle.");
+        } finally {
+          masquerChargement();
+        }
+      }
+
+      initialiser();
     })();
   </script>
 </body>
