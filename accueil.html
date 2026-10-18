@@ -418,6 +418,67 @@
       color: #174b7a;
     }
 
+    .message.succes {
+      border: 1px solid #b7dfc2;
+      background: #eefaf1;
+      color: #08752d;
+    }
+
+    /* ======================================================
+       REINITIALISATION MODE DEMO
+       ====================================================== */
+
+    .zone-reinitialisation-demo {
+      display: none;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border: 1px solid #dfc66e;
+      border-radius: 14px;
+      background: #fff6d6;
+      color: #6f5600;
+    }
+
+    body.mode-demo .zone-reinitialisation-demo.autorisee {
+      display: flex;
+    }
+
+    .zone-reinitialisation-demo-texte {
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .zone-reinitialisation-demo-texte strong {
+      display: block;
+      margin-bottom: 2px;
+      color: #5f4900;
+      font-size: 14px;
+    }
+
+    .bouton-reinitialiser-demo {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid #a67c00;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #d3a400, #a97e00);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .bouton-reinitialiser-demo:hover:not(:disabled) {
+      filter: brightness(0.96);
+    }
+
+    .bouton-reinitialiser-demo:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
     /* ======================================================
        MODULES
        ====================================================== */
@@ -654,6 +715,15 @@
 
       .contenu {
         padding-top: 20px;
+      }
+
+      .zone-reinitialisation-demo {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bouton-reinitialiser-demo {
+        width: 100%;
       }
 
       .grille-modules {
@@ -902,6 +972,28 @@
         role="alert"
         aria-live="polite"
       ></div>
+
+
+      <div
+        id="zoneReinitialisationDemo"
+        class="zone-reinitialisation-demo"
+      >
+
+        <div class="zone-reinitialisation-demo-texte">
+          <strong>🎓 Gestion de la formation</strong>
+          Efface uniquement les ventes, dons et mouvements Démo,
+          puis remet le stock de formation à 100 unités par article.
+        </div>
+
+        <button
+          id="boutonReinitialiserDemo"
+          class="bouton-reinitialiser-demo"
+          type="button"
+        >
+          ↻ Réinitialiser la Démo
+        </button>
+
+      </div>
 
 
       <!-- ==================================================
@@ -1327,6 +1419,18 @@
         );
 
 
+      const zoneReinitialisationDemo =
+        document.getElementById(
+          "zoneReinitialisationDemo"
+        );
+
+
+      const boutonReinitialiserDemo =
+        document.getElementById(
+          "boutonReinitialiserDemo"
+        );
+
+
       const moduleCaissePhysique =
         document.getElementById(
           "moduleCaissePhysique"
@@ -1429,6 +1533,12 @@
         moduleAdministration.classList.toggle(
           "masque",
           !estAdministrateur
+        );
+
+
+        zoneReinitialisationDemo.classList.toggle(
+          "autorisee",
+          peutSuperviser
         );
 
       }
@@ -1623,6 +1733,98 @@
           }
 
           actualiserModeDemoAccueil();
+
+        }
+      );
+
+
+      /* ====================================================
+         REINITIALISATION DU MODE DEMO
+         Responsable ou Administrateur uniquement
+         ==================================================== */
+
+      boutonReinitialiserDemo.addEventListener(
+        "click",
+        async function () {
+
+          if (!modeDemoActif) {
+            return;
+          }
+
+          const confirmation =
+            window.confirm(
+              "Réinitialiser complètement le Mode Démo ?\n\n" +
+              "Cette opération va supprimer uniquement les ventes, " +
+              "dons et mouvements de formation, puis remettre le stock " +
+              "Démo à 100 unités par article.\n\n" +
+              "Aucune donnée réelle ne sera modifiée."
+            );
+
+          if (!confirmation) {
+            return;
+          }
+
+          if (!window.MDN_SUPABASE) {
+            afficherMessage(
+              "Le client Supabase MDN n'est pas disponible."
+            );
+            return;
+          }
+
+          boutonReinitialiserDemo.disabled = true;
+          boutonReinitialiserDemo.textContent = "Réinitialisation…";
+
+          try {
+            const { data, error } =
+              await window.MDN_SUPABASE.rpc(
+                "reinitialiser_mode_demo"
+              );
+
+            if (error) {
+              throw error;
+            }
+
+            const ventesSupprimees =
+              Number(data?.ventes_demo_supprimees || 0);
+
+            const donsSupprimes =
+              Number(data?.dons_demo_supprimes || 0);
+
+            const articlesStock =
+              Number(data?.articles_stock_demo || 0);
+
+            afficherMessage(
+              "Mode Démo réinitialisé : " +
+              ventesSupprimees +
+              " vente(s) et " +
+              donsSupprimes +
+              " don(s) de formation supprimés. " +
+              articlesStock +
+              " article(s) remis à 100 unités. " +
+              "Aucune donnée réelle n'a été modifiée.",
+              "succes"
+            );
+
+            sessionStorage.setItem(CLE_MODE_DEMO, "1");
+            modeDemoActif = true;
+            actualiserModeDemoAccueil();
+
+          } catch (erreur) {
+            console.error(
+              "[MDN Sion] Réinitialisation du Mode Démo impossible :",
+              erreur
+            );
+
+            afficherMessage(
+              erreur?.message ||
+              "Impossible de réinitialiser le Mode Démo."
+            );
+
+          } finally {
+            boutonReinitialiserDemo.disabled = false;
+            boutonReinitialiserDemo.textContent =
+              "↻ Réinitialiser la Démo";
+          }
 
         }
       );
