@@ -283,9 +283,11 @@ button{
 }
 .stepper{
     display:grid;
-    grid-template-columns:34px minmax(54px,1fr) 34px;
+    grid-template-columns:34px 68px 34px;
     align-items:center;
+    justify-content:center;
     gap:6px;
+    width:100%;
     margin-top:12px
 }
 .step{
@@ -516,7 +518,8 @@ button{
 }
 .totals span{
     font-size:11px;
-    color:#666
+    color:#666;
+    white-space:nowrap
 }
 .totals strong{
     font-size:14px;
@@ -1913,7 +1916,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         invoice.textContent=money(c.billed);
         credit.textContent=money(c.credited);
         const balance=c.billed-c.credited;
-        net.textContent=(balance>=0?"À facturer ":"À créditer ")+money(Math.abs(balance));
+        net.textContent=(balance>=0?"À payer ":"À créditer ")+money(Math.abs(balance));
         net.classList.toggle("credit",balance<0);
         summary.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{
             const[t,id,kind]=b.dataset.rm.split("|");
