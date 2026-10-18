@@ -175,6 +175,12 @@
       color: #9c1616;
     }
 
+    .message.succes {
+      border: 1px solid #b9ddc5;
+      background: #effaf2;
+      color: #146b35;
+    }
+
     .zone-caisse {
       width: 100%;
       height: 100%;
@@ -1673,6 +1679,8 @@
       let clientSupabaseCaisse = null;
       let panierCaisse = [];
       let moyenPaiementSelectionne = null;
+      let validationPaiementEnCours = false;
+      let cleIdempotenceEncaissement = null;
 
 
       function masquerChargement() {
@@ -2099,9 +2107,356 @@
       }
 
 
+      function arrondirMontant(valeur) {
+        return Math.round((Number(valeur || 0) + Number.EPSILON) * 100) / 100;
+      }
+
+
+      function genererCleIdempotence() {
+        if (
+          window.crypto &&
+          typeof window.crypto.randomUUID === "function"
+        ) {
+          return window.crypto.randomUUID();
+        }
+
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+          /[xy]/g,
+          function (caractere) {
+            const aleatoire = Math.floor(Math.random() * 16);
+            const valeur = caractere === "x"
+              ? aleatoire
+              : (aleatoire & 0x3) | 0x8;
+
+            return valeur.toString(16);
+          }
+        );
+      }
+
+
+      function construireRepartitionServeur() {
+        const totalVente = arrondirMontant(calculerTotalPanier());
+
+        const saisi = {
+          especes: arrondirMontant(valeurMontantPaiement(montantEspeces)),
+          carte: arrondirMontant(valeurMontantPaiement(montantCarte)),
+          twint: arrondirMontant(valeurMontantPaiement(montantTwint))
+        };
+
+        const ordreVente = ["especes", "carte", "twint"];
+        const vente = {
+          especes: 0,
+          carte: 0,
+          twint: 0
+        };
+
+        let resteVente = totalVente;
+
+        ordreVente.forEach(function (code) {
+          const utilise = arrondirMontant(
+            Math.min(saisi[code], resteVente)
+          );
+
+          vente[code] = utilise;
+          resteVente = arrondirMontant(resteVente - utilise);
+        });
+
+        if (resteVente > 0.005) {
+          throw new Error(
+            "La vente n'est pas entièrement répartie entre les moyens de paiement."
+          );
+        }
+
+        const surplusNumerique = {
+          carte: arrondirMontant(
+            Math.max(0, saisi.carte - vente.carte)
+          ),
+          twint: arrondirMontant(
+            Math.max(0, saisi.twint - vente.twint)
+          )
+        };
+
+        const clientDonneValeur =
+          arrondirMontant(valeurMontantPaiement(clientDonne));
+
+        const disponibleEspeces = arrondirMontant(
+          Math.max(0, clientDonneValeur - vente.especes)
+        );
+
+        const donMdnValeur =
+          arrondirMontant(valeurMontantPaiement(donMDN));
+
+        const donFondationValeur =
+          arrondirMontant(valeurMontantPaiement(donFondation));
+
+        const totalDonsValeur =
+          arrondirMontant(donMdnValeur + donFondationValeur);
+
+        const fondsDon = {
+          carte: surplusNumerique.carte,
+          twint: surplusNumerique.twint,
+          especes: disponibleEspeces
+        };
+
+        const disponibleDon = arrondirMontant(
+          fondsDon.carte + fondsDon.twint + fondsDon.especes
+        );
+
+        if (totalDonsValeur > disponibleDon + 0.005) {
+          throw new Error(
+            "Le total des dons dépasse le montant réellement disponible."
+          );
+        }
+
+        const dons = [];
+
+        function construireDon(beneficiaire, montant) {
+          if (montant <= 0) {
+            return;
+          }
+
+          let resteDon = montant;
+          const paiementsDon = [];
+
+          ["carte", "twint", "especes"].forEach(function (code) {
+            if (resteDon <= 0.005) {
+              return;
+            }
+
+            const utilise = arrondirMontant(
+              Math.min(fondsDon[code], resteDon)
+            );
+
+            if (utilise > 0) {
+              paiementsDon.push({
+                code: code,
+                montant: utilise
+              });
+
+              fondsDon[code] = arrondirMontant(
+                fondsDon[code] - utilise
+              );
+
+              resteDon = arrondirMontant(
+                resteDon - utilise
+              );
+            }
+          });
+
+          if (resteDon > 0.005) {
+            throw new Error(
+              "Impossible de répartir entièrement le don " +
+              libelleBeneficiaire(beneficiaire) +
+              "."
+            );
+          }
+
+          dons.push({
+            beneficiaire: beneficiaire,
+            origine: "arrondi_vente",
+            montant: montant,
+            paiements: paiementsDon
+          });
+        }
+
+        construireDon("mdn", donMdnValeur);
+        construireDon("fondation", donFondationValeur);
+
+        const paiementsVente = [];
+
+        ["especes", "carte", "twint"].forEach(function (code) {
+          if (vente[code] > 0) {
+            paiementsVente.push({
+              code: code,
+              montant: vente[code]
+            });
+          }
+        });
+
+        const totalPaiementsVente = arrondirMontant(
+          paiementsVente.reduce(function (total, paiement) {
+            return total + paiement.montant;
+          }, 0)
+        );
+
+        if (Math.abs(totalPaiementsVente - totalVente) > 0.005) {
+          throw new Error(
+            "La répartition envoyée au serveur ne correspond pas au total de la vente."
+          );
+        }
+
+        const especesDonneesAuxDons = arrondirMontant(
+          dons.reduce(function (total, don) {
+            return total + don.paiements
+              .filter(function (paiement) {
+                return paiement.code === "especes";
+              })
+              .reduce(function (sousTotal, paiement) {
+                return sousTotal + paiement.montant;
+              }, 0);
+          }, 0)
+        );
+
+        const monnaie = arrondirMontant(
+          Math.max(
+            0,
+            clientDonneValeur - vente.especes - especesDonneesAuxDons
+          )
+        );
+
+        return {
+          totalVente: totalVente,
+          paiementsVente: paiementsVente,
+          dons: dons,
+          monnaieARendre: monnaie
+        };
+      }
+
+
+      async function validerPaiementSupabase() {
+        if (validationPaiementEnCours || panierCaisse.length === 0) {
+          return;
+        }
+
+        actualiserRepartitionPaiement();
+
+        if (continuerEncaissement.disabled) {
+          return;
+        }
+
+        if (!clientSupabaseCaisse) {
+          afficherMessage(
+            "Le client Supabase MDN n'est pas disponible."
+          );
+          return;
+        }
+
+        let repartitionServeur;
+
+        try {
+          repartitionServeur = construireRepartitionServeur();
+        } catch (erreur) {
+          afficherMessage(
+            erreur?.message ||
+            "La répartition du paiement est invalide."
+          );
+          return;
+        }
+
+        if (!cleIdempotenceEncaissement) {
+          cleIdempotenceEncaissement = genererCleIdempotence();
+        }
+
+        const lignes = panierCaisse.map(function (ligne) {
+          return {
+            article_id: ligne.articleId,
+            quantite: ligne.quantite
+          };
+        });
+
+        validationPaiementEnCours = true;
+
+        continuerEncaissement.disabled = true;
+        continuerEncaissement.classList.remove("actif");
+        continuerEncaissement.textContent = "Enregistrement…";
+
+        fermerEncaissement.disabled = true;
+        annulerEncaissement.disabled = true;
+
+        try {
+          const {
+            data,
+            error
+          } = await clientSupabaseCaisse.rpc(
+            "valider_vente",
+            {
+              p_idempotency_key: cleIdempotenceEncaissement,
+              p_lignes: lignes,
+              p_paiements: repartitionServeur.paiementsVente,
+              p_don:
+                repartitionServeur.dons.length > 0
+                  ? repartitionServeur.dons
+                  : null,
+              p_commentaire: null
+            }
+          );
+
+          if (error) {
+            throw error;
+          }
+
+          if (!data || !data.vente_id) {
+            throw new Error(
+              "Le serveur n'a pas retourné l'identifiant de la vente."
+            );
+          }
+
+          console.info(
+            "[MDN Sion] Vente enregistrée :",
+            data
+          );
+
+          const numeroVente =
+            data.numero_vente ||
+            data.numero ||
+            "";
+
+          panierCaisse = [];
+          afficherPanier();
+
+          validationPaiementEnCours = false;
+          cleIdempotenceEncaissement = null;
+
+          fermerEncaissement.disabled = false;
+          annulerEncaissement.disabled = false;
+
+          fermerFenetreEncaissement();
+
+          afficherMessage(
+            numeroVente
+              ? "Paiement validé. Vente " + numeroVente + " enregistrée."
+              : "Paiement validé. La vente a bien été enregistrée.",
+            "succes"
+          );
+
+          try {
+            await chargerCatalogueCaisse();
+          } catch (erreurCatalogue) {
+            console.warn(
+              "[MDN Sion] Vente enregistrée mais actualisation du catalogue impossible :",
+              erreurCatalogue
+            );
+          }
+
+        } catch (erreur) {
+          console.error(
+            "[MDN Sion] Validation du paiement impossible :",
+            erreur
+          );
+
+          validationPaiementEnCours = false;
+
+          fermerEncaissement.disabled = false;
+          annulerEncaissement.disabled = false;
+
+          afficherMessage(
+            erreur?.message ||
+            "Impossible d'enregistrer la vente. Le panier a été conservé."
+          );
+
+          actualiserRepartitionPaiement();
+        }
+      }
+
+
       function fermerFenetreEncaissement() {
+        if (validationPaiementEnCours) {
+          return;
+        }
+
         modalEncaissement.classList.remove("visible");
         moyenPaiementSelectionne = null;
+        cleIdempotenceEncaissement = null;
 
         boutonsMoyenPaiement.forEach(function (bouton) {
           bouton.classList.remove("selectionne");
@@ -2122,6 +2477,7 @@
         }
 
         moyenPaiementSelectionne = null;
+        cleIdempotenceEncaissement = null;
         totalEncaissement.textContent =
           formaterCHF(calculerTotalPanier());
 
@@ -2795,7 +3151,7 @@
 
       continuerEncaissement.addEventListener(
         "click",
-        function () {
+        async function () {
           if (!moyenPaiementSelectionne) {
             return;
           }
@@ -2805,69 +3161,10 @@
             return;
           }
 
-          actualiserRepartitionPaiement();
-
-          if (continuerEncaissement.disabled) {
-            return;
-          }
-
-          const especesFinal = valeurMontantPaiement(montantEspeces);
-          const carteFinal = valeurMontantPaiement(montantCarte);
-          const twintFinal = valeurMontantPaiement(montantTwint);
-          const donMdnFinal = valeurMontantPaiement(donMDN);
-          const donFondationFinal = valeurMontantPaiement(donFondation);
-          const donsFinal = donMdnFinal + donFondationFinal;
-          const surplusNumeriqueFinal =
-            Math.max(
-              0,
-              especesFinal +
-              carteFinal +
-              twintFinal -
-              calculerTotalPanier()
-            );
-          const donPrisSurEspecesFinal =
-            Math.max(
-              0,
-              donsFinal - surplusNumeriqueFinal
-            );
-
-          const repartition = {
-            vente: {
-              especes: especesFinal,
-              carte: carteFinal,
-              twint: twintFinal
-            },
-            clientDonneEspeces: valeurMontantPaiement(clientDonne),
-            dons: {
-              mdn: donMdnFinal,
-              fondation: donFondationFinal
-            },
-            monnaieARendre:
-              Math.max(
-                0,
-                valeurMontantPaiement(clientDonne) -
-                especesFinal -
-                donPrisSurEspecesFinal
-              )
-          };
-
-          console.info(
-            "[MDN Sion] Paiement prêt à être validé :",
-            {
-              total: calculerTotalPanier(),
-              moyenPrincipal: moyenPaiementSelectionne,
-              repartition: repartition,
-              panier: panierCaisse
-            }
-          );
-
-          /*
-           * AUCUNE VENTE SUPABASE N'EST ENCORE CRÉÉE.
-           * La prochaine étape branchera cette répartition validée
-           * sur le moteur serveur de vente.
-           */
+          await validerPaiementSupabase();
         }
       );
+
 
       filtreTout.addEventListener(
         "click",
