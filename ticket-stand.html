@@ -118,6 +118,30 @@
       color: var(--bleu);
     }
 
+    .amount-factured {
+      color: var(--rouge) !important;
+    }
+
+    .amount-credited {
+      color: var(--vert) !important;
+    }
+
+    .amount-paid {
+      color: #175cd3 !important;
+    }
+
+    .amount-balance-debt {
+      color: var(--rouge) !important;
+    }
+
+    .amount-balance-credit {
+      color: var(--vert) !important;
+    }
+
+    .amount-balance-zero {
+      color: var(--bleu) !important;
+    }
+
     h2 {
       margin: 22px 0 10px;
       color: var(--bleu);
@@ -296,6 +320,20 @@
         });
       }
 
+      function balanceClass(value) {
+        const n = Number(value || 0);
+
+        if(n > 0.004) {
+          return "amount-balance-debt";
+        }
+
+        if(n < -0.004) {
+          return "amount-balance-credit";
+        }
+
+        return "amount-balance-zero";
+      }
+
       function movementLabel(type) {
         return ({
           retrait:"Retrait",
@@ -355,7 +393,7 @@
               <div class="movement-amount ${cls}">${esc(amount)}</div>
             </div>
             <div class="detail">${details(m)}</div>
-            <div class="balance"><span>Solde après mouvement</span><strong>${esc(money(running))}</strong></div>
+            <div class="balance"><span>Solde après mouvement</span><strong class="${balanceClass(running)}">${esc(money(running))}</strong></div>
           </div>`;
         }).join("");
 
@@ -367,10 +405,10 @@
             <div class="box"><span>Statut du compte</span><strong>${esc(c.statut_compte || i.statut_compte || "—")}</strong></div>
           </div>
           <div class="totals">
-            <div class="total"><span>Facturé</span><strong>${esc(money(c.total_facture || 0))}</strong></div>
-            <div class="total"><span>Crédité</span><strong>${esc(money(c.total_credit_compte || 0))}</strong></div>
-            <div class="total"><span>Payé</span><strong>${esc(money(c.total_paye || 0))}</strong></div>
-            <div class="total"><span>Solde</span><strong>${esc(money(c.solde_restant || 0))}</strong></div>
+            <div class="total"><span>Facturé</span><strong class="amount-factured">${esc(money(c.total_facture || 0))}</strong></div>
+            <div class="total"><span>Crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte || 0))}</strong></div>
+            <div class="total"><span>Payé</span><strong class="amount-paid">${esc(money(c.total_paye || 0))}</strong></div>
+            <div class="total"><span>Solde</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant || 0))}</strong></div>
           </div>
           <h2>Mouvements du compte</h2>
           <div>${history || `<div class="message">Aucun mouvement enregistré.</div>`}</div>`;
