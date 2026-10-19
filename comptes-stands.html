@@ -605,7 +605,17 @@ footer {
     width:100%
   }
 }
-  </style>
+  
+/* Historique complet + QR Démo */
+.action-row{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.action.history{background:#eef2ff;color:#00126b;border-color:#c7d2fe}
+.action.qr{background:#fff8e8;color:#7a5200;border-color:#e6c36a}
+.history-modal-card{width:min(980px,calc(100vw - 28px));max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.history-body{overflow:auto;padding:18px}.history-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}.history-summary>div{background:#f7f8fc;border:1px solid #e3e6ef;border-radius:12px;padding:12px}.history-summary span{display:block;color:#667085;font-size:12px;margin-bottom:4px}.history-summary strong{color:#00126b}.history-list{display:grid;gap:10px}.movement{border:1px solid #e3e6ef;border-radius:14px;overflow:hidden}.movement-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px 14px;background:#f8f9fc}.movement-title{font-weight:800;color:#172b6a}.movement-meta{color:#667085;font-size:12px}.movement-amount{text-align:right;font-weight:900}.movement-amount.debit{color:#b42318}.movement-amount.credit{color:#107c10}.movement-detail{padding:12px 14px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:12px;font-size:13px}.running-balance{margin-top:9px;padding-top:9px;border-top:1px dashed #d0d5dd}.running-balance strong{color:#00126b}.history-empty{text-align:center;padding:24px;color:#667085}.qr-modal-card{width:min(460px,calc(100vw - 28px))}.qr-body{text-align:center;padding:18px}.qr-demo-warning{background:#fff5d6;border:1px solid #e6c36a;color:#694b00;border-radius:12px;padding:10px;font-weight:800}.qr-link{font-size:12px;color:#667085;overflow-wrap:anywhere}.qr-box{margin:16px auto;display:flex;justify-content:center;min-height:220px}
+@media(max-width:760px){.history-summary{grid-template-columns:1fr 1fr}.movement-head{grid-template-columns:1fr 1fr}.action-row{width:100%}.action-row .action{flex:1 1 145px}}
+@media(max-width:430px){.history-summary,.movement-head{grid-template-columns:1fr}.detail-line,.running-balance{flex-direction:column;gap:3px}.movement-amount{text-align:left}}
+
+</style>
 </head>
 <body>
 <div id="loading" class="loading">
@@ -749,6 +759,37 @@ footer {
 </div>
 </div>
 </div>
+
+<div id="historyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+  <div class="modal-card history-modal-card">
+    <div class="modal-head">
+      <h3 id="historyTitle">Historique du compte</h3>
+      <button id="historyClose" class="modal-close" type="button">×</button>
+    </div>
+    <div id="historyBody" class="history-body"><div class="history-empty">Chargement de l’historique…</div></div>
+    <div class="modal-actions">
+      <button id="historyPrint" class="cancel" type="button">Imprimer</button>
+      <button id="historyDone" class="confirm" type="button">Fermer</button>
+    </div>
+  </div>
+</div>
+<div id="qrModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+  <div class="modal-card qr-modal-card">
+    <div class="modal-head">
+      <h3 id="qrTitle">QR du stand Démo</h3>
+      <button id="qrClose" class="modal-close" type="button">×</button>
+    </div>
+    <div class="qr-body">
+      <div class="qr-demo-warning">MODE DÉMO – Aucune donnée réelle</div>
+      <p><strong id="qrStand">—</strong></p>
+      <div id="qrCode" class="qr-box"></div>
+      <div id="qrLink" class="qr-link"></div>
+    </div>
+    <div class="modal-actions"><button id="qrDone" class="confirm" type="button">Fermer</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
 </script>
 <script src="js/config.js">
@@ -894,15 +935,15 @@ function amountClass(r) {
   return r.solde>0?"positive":r.solde<0?"negative":"zero"
 }
 function actionHtml(r) {
-  if(r.statut==="a_facturer")return `<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`;
-  if(demo) {
-    const descriptions= {
-      D01:"Compte soldé / clôturé",D02:"Paiement partiel",D03:"Paiement mixte",D04:r.statut==="facture"?"Facturation terminée":"Facturation"
-    }
-    ;
-    return `<button class="action info" type="button" disabled>${esc(descriptions[r.numero]||statusLabel(r.statut))}</button>`;
+  const buttons=[];
+  buttons.push(`<button class="action history" data-history="${esc(r.id)}" type="button">Voir les mouvements</button>`);
+  if(demo){
+    buttons.push(`<button class="action qr" data-qr="${esc(r.id)}" type="button">QR du stand</button>`);
   }
-  return `<button class="action info" type="button" disabled>${esc(statusLabel(r.statut))}</button>`;
+  if(r.statut==="a_facturer"){
+    buttons.push(`<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`);
+  }
+  return `<div class="action-row">${buttons.join("")}</div>`;
 }
 function render() {
   renderStats();
@@ -935,7 +976,36 @@ function render() {
 <div class="action-cell">${actionHtml(r)}</div>
 </article>`).join("");
   accounts.querySelectorAll("[data-invoice]").forEach(b=>b.addEventListener("click",()=>openInvoice(b.dataset.invoice)));
+  accounts.querySelectorAll("[data-history]").forEach(b=>b.addEventListener("click",()=>openHistory(b.dataset.history)));
+  accounts.querySelectorAll("[data-qr]").forEach(b=>b.addEventListener("click",()=>openQr(b.dataset.qr)));
 }
+function movementLabel(type){return ({retrait:"Retrait",retour_propre:"Retour propre",retour_sale:"Retour sale",paiement:"Paiement",remboursement_credit:"Remboursement du crédit",cloture_compte:"Clôture du compte",cloture_facturation:"Clôture pour facturation"})[type]||type||"Mouvement"}
+function formatDate(v){if(!v)return "—";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}
+function detailLines(m){
+  const d=m.detail||{};const out=[];
+  if(d.commentaire)out.push(`<div class="detail-line"><span>Commentaire</span><strong>${esc(d.commentaire)}</strong></div>`);
+  (Array.isArray(d.vaisselle)?d.vaisselle:[]).forEach((x,i)=>{const nom=x.nom||x.nom_vaisselle||x.libelle||x.vaisselle_nom||`Article ${i+1}`;const q=x.quantite_unites??x.quantite??x.qte??"—";const mt=x.montant_total??x.total??null;out.push(`<div class="detail-line"><span>${esc(nom)} · quantité ${esc(q)}</span><strong>${mt==null?"":esc(money(mt))}</strong></div>`)});
+  (Array.isArray(d.contenants)?d.contenants:[]).forEach((x,i)=>{const nom=x.nom||x.libelle||x.type_contenant||x.usage_contenant||`Contenant ${i+1}`;out.push(`<div class="detail-line"><span>${esc(nom)}</span><strong>Quantité ${esc(x.quantite??x.qte??"—")}</strong></div>`)});
+  (Array.isArray(d.moyens)?d.moyens:[]).forEach(x=>out.push(`<div class="detail-line"><span>${esc(x.nom||x.libelle||x.code||x.moyen||"Paiement")}</span><strong>${esc(money(x.montant||0))}</strong></div>`));
+  (Array.isArray(d.affectation_retour)?d.affectation_retour:[]).forEach(x=>{if(Number(x.montant_credit_compte||0)>0)out.push(`<div class="detail-line"><span>Crédit porté au compte</span><strong>${esc(money(x.montant_credit_compte))}</strong></div>`);if(Number(x.montant_rembourse||0)>0)out.push(`<div class="detail-line"><span>Remboursé immédiatement</span><strong>${esc(money(x.montant_rembourse))}</strong></div>`);if(Number(x.montant_don||0)>0)out.push(`<div class="detail-line"><span>Don</span><strong>${esc(money(x.montant_don))}</strong></div>`)});
+  if(d.montant_cloture_facturation!=null)out.push(`<div class="detail-line"><span>Montant figé pour facturation</span><strong>${esc(money(d.montant_cloture_facturation))}</strong></div>`);
+  return out.join("")||`<div class="detail-line"><span>Détail</span><strong>Aucun détail supplémentaire</strong></div>`;
+}
+function historyHtml(data){
+  const i=data.identite||{},c=data.compte||{},ms=Array.isArray(data.mouvements)?data.mouvements:[];let solde=0;
+  const cards=ms.map(m=>{solde+=Number(m.mouvement_delta_solde||0);const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);const cls=d>0?"debit":cr>0?"credit":"";return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong>${esc(money(solde))}</strong></div></div></article>`}).join("");
+  return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong>${esc(money(c.total_facture||0))}</strong></div><div><span>Total payé</span><strong>${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong>${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement enregistré pour ce stand.</div>`}</div>`;
+}
+async function openHistory(id){
+  const r=rows.find(x=>x.id===id);if(!r)return;$("historyTitle").textContent=`Historique · ${r.numero} · ${r.nom}`;$("historyBody").innerHTML=`<div class="history-empty">Chargement de l’historique…</div>`;$("historyModal").classList.add("show");
+  try{const fn=demo?"charger_historique_compte_stand_demo":"charger_historique_compte_stand";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");$("historyBody").innerHTML=historyHtml(data)}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
+}
+function closeHistory(){$("historyModal").classList.remove("show")}
+async function openQr(id){
+  if(!demo)return;const r=rows.find(x=>x.id===id);if(!r)return;$("qrStand").textContent=`${r.numero} · ${r.nom}`;$("qrCode").innerHTML="";$("qrLink").textContent="Préparation du QR…";$("qrModal").classList.add("show");
+  try{const {data,error}=await avecDelai(client.rpc("charger_historique_compte_stand_demo",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps.");if(error)throw error;const payload=data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M})}catch(e){console.error(e);$("qrCode").innerHTML="";$("qrLink").textContent=e?.message||"Impossible de générer le QR Démo."}
+}
+function closeQr(){$("qrModal").classList.remove("show")}
 function openInvoice(id) {
   selected=rows.find(r=>r.id===id);
   if(!selected)return;
@@ -1012,6 +1082,13 @@ function events() {
   ;
   invoiceCheck.onchange=()=>invoiceConfirm.disabled=!invoiceCheck.checked;
   invoiceConfirm.onclick=markInvoiced;
+  $("historyClose").onclick=closeHistory;
+  $("historyDone").onclick=closeHistory;
+  $("historyPrint").onclick=()=>window.print();
+  $("historyModal").onclick=x=>{if(x.target===$("historyModal"))closeHistory()};
+  $("qrClose").onclick=closeQr;
+  $("qrDone").onclick=closeQr;
+  $("qrModal").onclick=x=>{if(x.target===$("qrModal"))closeQr()};
 }
 async function init() {
   try {
