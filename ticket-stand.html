@@ -149,7 +149,7 @@
     }
 
     .movement {
-      padding: 12px 0;
+      padding: 8px 0;
       border-top: 1px dashed #d0d5dd;
     }
 
@@ -186,13 +186,13 @@
 
     .detail {
       display: grid;
-      gap: 4px;
-      margin-top: 8px;
+      gap: 2px;
+      margin-top: 5px;
     }
 
     .balance {
-      margin-top: 8px;
-      padding-top: 7px;
+      margin-top: 5px;
+      padding-top: 5px;
       border-top: 1px dotted #d0d5dd;
       font-size: 12px;
       font-weight: 800;
@@ -261,9 +261,15 @@
       }
     }
   
-    .detail-product { margin: 8px 0 12px; padding: 9px 0; border-top: 1px dashed #d0d5dd; }
-    .detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:6px; color:#172b6a; }
-    .detail-subtotal { margin-top:5px; padding-top:5px; border-top:1px dotted #d0d5dd; font-weight:800; }
+    .detail-product { margin: 4px 0 7px; padding: 5px 0; border-top: 1px dashed #d0d5dd; }
+    .detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:3px; color:#172b6a; }
+    .detail-subtotal { margin-top:3px; padding-top:3px; border-top:1px dotted #d0d5dd; font-weight:800; }
+    .detail-subtotal.subtotal-debit strong { color:#d92d20; }
+    .detail-subtotal.subtotal-credit strong { color:#16a34a; }
+    .history-filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 12px; }
+    .history-filters select { width:100%; min-height:40px; border:1px solid #d0d5dd; border-radius:9px; padding:0 10px; background:#fff; color:#172b6a; font-weight:700; }
+    @media (max-width:620px) { .history-filters { grid-template-columns:1fr; } }
+    @media print { .history-filters { display:none; } }
   </style>
 </head>
 <body>
@@ -377,7 +383,7 @@
           const montantTotal = Number(item.montant_total || 0);
           const conditionnement = String(item.type_conditionnement || "").toLowerCase();
 
-          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong></div>`);
 
           if(nbComplets > 0 && standard > 0) {
             const mot = conditionnement === "sachet" ? "sachet" : "caisse";
@@ -392,7 +398,7 @@
             rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage remboursé" : "lavage"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
           }
 
-          rows.push(`<div class="detail-row detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+          rows.push(`<div class="detail-row detail-subtotal ${isReturn ? "subtotal-credit" : "subtotal-debit"}"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
         });
 
         (Array.isArray(d.contenants) ? d.contenants : []).forEach((item,index) => {
@@ -404,10 +410,10 @@
           const montantLavage = Number(item.montant_lavage || 0);
           const montantTotal = Number(item.montant_total || 0);
 
-          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong></div>`);
           if(montantConsigne > 0 || (!isReturn && consigne > 0)) rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne contenant remboursée" : "consigne contenant"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
           if(montantLavage > 0 || (!isReturn && lavage > 0)) rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage contenant remboursé" : "lavage contenant"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
-          rows.push(`<div class="detail-row detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+          rows.push(`<div class="detail-row detail-subtotal ${isReturn ? "subtotal-credit" : "subtotal-debit"}"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
         });
 
         (Array.isArray(d.moyens) ? d.moyens : []).forEach(item => {
@@ -420,7 +426,20 @@
       function render(data) {
         const i = data.identite || {};
         const c = data.compte || {};
-        const movements = Array.isArray(data.mouvements) ? data.mouvements : [];
+        const allMovements = Array.isArray(data.mouvements) ? data.mouvements : [];
+        const selectedDay = window.ticketHistoryDay || "all";
+        const selectedType = window.ticketHistoryType || "all";
+        const dayKey = value => {
+          const d = new Date(value);
+          if(Number.isNaN(d.getTime())) return "";
+          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        };
+        const movements = allMovements.filter(m =>
+          (selectedDay === "all" || dayKey(m.date) === selectedDay) &&
+          (selectedType === "all" || m.type === selectedType)
+        );
+        const days = [...new Set(allMovements.map(m => dayKey(m.date)).filter(Boolean))].sort();
+        const types = [...new Set(allMovements.map(m => m.type).filter(Boolean))];
         let running = 0;
 
         $("subtitle").textContent = `Marché de Noël de Sion${i.edition_annee ? ` · ${i.edition_annee}` : ""}`;
@@ -459,7 +478,20 @@
             <div class="total"><span>Solde</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant || 0))}</strong></div>
           </div>
           <h2>Mouvements du compte</h2>
-          <div>${history || `<div class="message">Aucun mouvement enregistré.</div>`}</div>`;
+          <div class="history-filters">
+            <select id="ticketDayFilter" aria-label="Filtrer par jour">
+              <option value="all">Tous les jours</option>
+              ${days.map(day => `<option value="${esc(day)}" ${selectedDay===day?"selected":""}>${esc(new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}))}</option>`).join("")}
+            </select>
+            <select id="ticketTypeFilter" aria-label="Filtrer par type de mouvement">
+              <option value="all">Tous les mouvements</option>
+              ${types.map(type => `<option value="${esc(type)}" ${selectedType===type?"selected":""}>${esc(movementLabel(type))}</option>`).join("")}
+            </select>
+          </div>
+          <div>${history || `<div class="message">Aucun mouvement pour ce filtre.</div>`}</div>`;
+
+        $("ticketDayFilter")?.addEventListener("change", e => { window.ticketHistoryDay=e.target.value; render(data); });
+        $("ticketTypeFilter")?.addEventListener("change", e => { window.ticketHistoryType=e.target.value; render(data); });
       }
 
       async function init() {
