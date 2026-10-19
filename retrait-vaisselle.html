@@ -3,7 +3,3052 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+  <meta content="#8B0000" name="theme-color"/><!DOCTYPE html>
+<html lang="fr">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
   <meta content="#8B0000" name="theme-color"/>
+  <link href="logo-mdn.png" rel="icon" type="image/png"/>
+  <link href="logo-mdn.png" rel="apple-touch-icon"/>
+  <title>
+   Vaisselle & Consignes - MDN Sion
+  </title>
+  <style>
+*{
+    box-sizing:border-box
+}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden
+}
+body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#f1f3f5;
+    color:#171717
+}
+button,input,textarea{
+    font:inherit
+}
+button{
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent
+}
+.app{
+    height:100dvh;
+    display:grid;
+    grid-template-rows:74px 1fr;
+    overflow:hidden
+}
+.top{
+    background:#c4172c;
+    color:#fff;
+    display:grid;
+    grid-template-columns:190px 1fr 190px;
+    align-items:center;
+    padding:10px 20px;
+    gap:12px;
+    box-shadow:0 2px 10px #0002;
+    z-index:5
+}
+.top.demo{
+    background:#8a6800
+}
+.headbtn{
+    height:50px;
+    border:1px solid #ffffff88;
+    border-radius:16px;
+    background:#ffffff0f;
+    color:#fff;
+    font-weight:900;
+    font-size:16px
+}
+.headbtn:hover{
+    background:#ffffff1f
+}
+.title{
+    text-align:center;
+    min-width:0
+}
+.title h1{
+    margin:0;
+    font-size:25px;
+    line-height:1
+}
+.title p{
+    margin:6px 0 0;
+    font-size:13px
+}
+.main{
+    min-height:0;
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(360px,.8fr);
+    gap:14px;
+    padding:14px 18px 16px;
+    overflow:hidden;
+    max-width:1500px;
+    width:100%;
+    margin:0 auto
+}
+.panel{
+    background:#fff;
+    border:1px solid #d9dde2;
+    border-radius:20px;
+    box-shadow:0 8px 26px #0000000d;
+    min-height:0;
+    overflow:hidden
+}
+.catalog{
+    display:grid;
+    grid-template-rows:58px 1fr
+}
+.tabs{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:10px 12px;
+    border-bottom:1px solid #e3e5e8;
+    background:#fbfbfc
+}
+.tab{
+    height:38px;
+    min-width:115px;
+    padding:0 20px;
+    border:1px solid #d3d8df;
+    border-radius:13px;
+    background:#fff;
+    font-weight:900;
+    font-size:16px
+}
+.tab.active{
+    background:#c4172c;
+    border-color:#c4172c;
+    color:#fff
+}
+.edition{
+    margin-left:auto;
+    color:#666;
+    font-size:12px;
+    font-weight:800
+}
+.return-subtabs{
+    display:flex;
+    gap:6px;
+    align-items:center
+}
+.return-subtabs[hidden]{
+    display:none
+}
+.subtab{
+    height:34px;
+    padding:0 15px;
+    border:1px solid #d4d9df;
+    border-radius:18px;
+    background:#fff;
+    font-weight:900;
+    color:#555
+}
+.subtab.active[data-return-filter="sale"]{
+    background:#d57b00;
+    border-color:#d57b00;
+    color:#fff
+}
+.subtab.active[data-return-filter="propre"]{
+    background:#17834a;
+    border-color:#17834a;
+    color:#fff
+}
+.catalog-scroll{
+    min-height:0;
+    overflow:auto;
+    padding:10px 12px 14px;
+    scrollbar-width:thin
+}
+.section{
+    margin-bottom:12px
+}
+.section:last-child{
+    margin-bottom:0
+}
+.section-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:2px 0 8px;
+    font-size:17px;
+    font-weight:950
+}
+.dot{
+    width:10px;
+    height:10px;
+    border-radius:50%
+}
+.retrait .dot{
+    background:#c4172c
+}
+.sale .dot{
+    background:#d57b00
+}
+.propre .dot{
+    background:#17834a
+}
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:8px
+}
+.card{
+    border:1px solid #d9dde2;
+    border-radius:13px;
+    padding:9px;
+    background:#fff;
+    min-width:0
+}
+.card.retrait{
+    background:#fffafa
+}
+.card.sale{
+    background:#fffaf2
+}
+.card.propre{
+    background:#f7fcf9
+}
+.card.case-card{
+    background:#fff5f5
+}
+.card.unit-card{
+    background:#f4f8ff
+}
+.card.sale.case-card{
+    background:#fff7e8
+}
+.card.sale.unit-card{
+    background:#f5f8ff
+}
+.card.propre.case-card{
+    background:#eef9f2
+}
+.card.propre.unit-card{
+    background:#f1f7ff
+}
+.card h3{
+    font-size:14px;
+    margin:0 0 5px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+}
+.meta{
+    font-size:10px;
+    color:#6b7280;
+    line-height:1.25;
+    min-height:25px
+}
+.controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    margin-top:7px
+}
+.control{
+    display:grid;
+    grid-template-columns:1fr 56px;
+    align-items:center;
+    gap:4px;
+    border:1px solid #d8dce1;
+    border-radius:9px;
+    background:#fff;
+    min-height:38px;
+    padding-left:7px
+}
+.control label{
+    font-size:10px;
+    font-weight:900;
+    color:#333
+}
+.qty{
+    width:56px;
+    height:36px;
+    border:0;
+    border-left:1px solid #e1e3e6;
+    border-radius:0 8px 8px 0;
+    text-align:center;
+    font-weight:950;
+    background:#fff;
+    outline:none
+}
+.qty:focus{
+    box-shadow:inset 0 0 0 2px #c4172c
+}
+.qty:disabled{
+    background:#eceeef;
+    color:#aaa
+}
+.stepper{
+    display:grid;
+    grid-template-columns:34px 68px 34px;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    margin-top:12px
+}
+.step{
+    height:42px;
+    border:1px solid #d3d8df;
+    border-radius:10px;
+    background:#fff;
+    color:#8b0000;
+    font-size:19px;
+    font-weight:950
+}
+.step:hover{
+    background:#fff0f1
+}
+.step:disabled{
+    background:#eceeef;
+    color:#aaa;
+    cursor:not-allowed
+}
+.stepper .qty{
+    width:100%;
+    min-width:0;
+    height:42px;
+    padding:0 7px;
+    border:1px solid #d3d8df;
+    border-radius:10px;
+    background:#fff;
+    text-align:center;
+    font-size:18px;
+    line-height:42px;
+    font-weight:950;
+    outline:none;
+    appearance:textfield;
+    -moz-appearance:textfield
+}
+.stepper .qty::-webkit-outer-spin-button,
+.stepper .qty::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0
+}
+.card[data-clickable="true"]{
+    cursor:pointer
+}
+.card[data-clickable="true"]:hover{
+    transform:translateY(-1px);
+    box-shadow:0 7px 18px rgba(0,0,0,.08)
+}
+.rule{
+    font-size:9px;
+    color:#a00;
+    font-weight:800;
+    margin-top:5px;
+    min-height:11px
+}
+.empty-card{
+    grid-column:auto
+}
+.right{
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    min-height:0
+}
+.standbar{
+    padding:10px 12px;
+    border-bottom:1px solid #e4e6e9
+}
+.standline{
+    display:grid;
+    grid-template-columns:1fr 48px;
+    gap:7px
+}
+.search{
+    height:42px;
+    border:1px solid #ccd1d7;
+    border-radius:11px;
+    padding:0 11px;
+    min-width:0
+}
+.qr{
+    height:42px;
+    border:1px solid #d8b9bd;
+    border-radius:11px;
+    background:#fff;
+    color:#a20f22;
+    font-size:20px;
+    font-weight:900
+}
+.results{
+    display:none;
+    position:absolute;
+    z-index:20;
+    width:min(420px,calc(100vw - 40px));
+    max-height:220px;
+    overflow:auto;
+    margin-top:5px;
+    border:1px solid #ddd;
+    border-radius:11px;
+    background:#fff;
+    box-shadow:0 12px 30px #0002
+}
+.results.show{
+    display:block
+}
+.result{
+    display:block;
+    width:100%;
+    border:0;
+    border-bottom:1px solid #eee;
+    background:#fff;
+    padding:9px 10px;
+    text-align:left
+}
+.result:hover{
+    background:#fff5f6
+}
+.selected{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    height:42px;
+    border:1px solid #e1c1c5;
+    border-radius:11px;
+    background:#fff7f8;
+    padding:0 9px
+}
+.selected.show{
+    display:flex
+}
+.selected strong{
+    font-size:12px;
+    color:#a20f22
+}
+.selected small{
+    display:block;
+    color:#666;
+    font-size:9px
+}
+.change{
+    border:0;
+    background:transparent;
+    color:#a20f22;
+    font-weight:900
+}
+.summary{
+    min-height:0;
+    overflow:auto;
+    padding:10px 12px;
+    scrollbar-width:thin
+}
+.empty{
+    height:100%;
+    display:grid;
+    place-items:center;
+    color:#8a8f98;
+    text-align:center;
+    font-size:13px
+}
+.sumsec{
+    border-bottom:1px solid #e5e7eb;
+    padding:0 0 9px;
+    margin-bottom:9px
+}
+.sumtitle{
+    font-weight:950;
+    font-size:14px;
+    margin-bottom:6px
+}
+.sumtitle.retrait{
+    color:#c4172c
+}
+.sumtitle.sale{
+    color:#b86500
+}
+.sumtitle.propre{
+    color:#13723f
+}
+.item{
+    padding:7px 0;
+    border-top:1px dashed #e2e4e7
+}
+.item:first-of-type{
+    border-top:0
+}
+.itemhead{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-size:12px;
+    font-weight:900
+}
+.detail{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    color:#666;
+    font-size:10px;
+    line-height:1.35;
+    margin-top:2px
+}
+.detail span:last-child{
+    white-space:nowrap
+}
+.subtotal{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    font-weight:900;
+    margin-top:4px
+}
+.remove{
+    border:0;
+    background:#f1f2f4;
+    border-radius:7px;
+    padding:2px 7px;
+    font-weight:900
+}
+.bottom{
+    border-top:1px solid #e1e4e8;
+    background:#fbfbfc;
+    padding:10px 12px
+}
+.totals{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:3px 10px;
+    align-items:end
+}
+.totals span{
+    font-size:11px;
+    color:#666;
+    white-space:nowrap
+}
+.totals strong{
+    font-size:14px;
+    text-align:right;
+    white-space:nowrap
+}
+.grand{
+    margin-top:4px;
+    padding-top:6px;
+    border-top:1px solid #ddd;
+    font-size:17px!important;
+    color:#111!important;
+    font-weight:950
+}
+.money{
+    font-size:18px!important;
+    line-height:1.15;
+    color:#c4172c;
+    max-width:100%;
+    min-width:0;
+    white-space:nowrap
+}
+.totals .money{
+    justify-self:end;
+    text-align:right
+}
+.credit{
+    color:#17834a!important
+}
+.comment{
+    width:100%;
+    height:36px;
+    resize:none;
+    margin-top:8px;
+    border:1px solid #d0d4da;
+    border-radius:9px;
+    padding:7px 9px;
+    font-size:11px
+}
+.validate{
+    width:100%;
+    height:47px;
+    margin-top:7px;
+    border:0;
+    border-radius:11px;
+    background:#cfd2d6;
+    color:#888;
+    font-weight:950;
+    font-size:16px;
+    cursor:not-allowed
+}
+.validate.on{
+    background:#c4172c;
+    color:#fff;
+    cursor:pointer
+}
+.validate.on:hover{
+    background:#a81124
+}
+.demo-note{
+    display:none;
+    margin-top:5px;
+    font-size:9px;
+    color:#745900
+}
+.demo-note.show{
+    display:block
+}
+.toast{
+    display:none;
+    position:fixed;
+    z-index:100;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(650px,calc(100vw - 30px));
+    padding:12px 42px 12px 14px;
+    border-radius:12px;
+    background:#8b0000;
+    color:#fff;
+    box-shadow:0 12px 30px #0003
+}
+.toast.show{
+    display:block
+}
+.toast.ok{
+    background:#157a45
+}
+.toast button{
+    position:absolute;
+    right:8px;
+    top:7px;
+    border:0;
+    background:transparent;
+    color:#fff;
+    font-size:20px
+}
+.loading{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    background:#8b0000;
+    color:#fff;
+    display:grid;
+    place-items:center;
+    text-align:center
+}
+.loading.hide{
+    display:none
+}
+.loading img{
+    width:90px;
+    height:90px;
+    object-fit:contain
+}
+.spin{
+    width:28px;
+    height:28px;
+    border:3px solid #ffffff55;
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:s .8s linear infinite;
+    margin:12px auto
+}
+@keyframes s{
+    to{
+        transform:rotate(360deg)
+    }
+}
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:200;
+    background:#0009;
+    padding:20px;
+    align-items:center;
+    justify-content:center
+}
+.modal.show{
+    display:flex
+}
+.modalcard{
+    width:min(520px,100%);
+    background:#fff;
+    border-radius:18px;
+    overflow:hidden
+}
+.modalhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 14px;
+    border-bottom:1px solid #ddd
+}
+.modalhead h3{
+    margin:0
+}
+.close{
+    border:0;
+    background:transparent;
+    font-size:25px
+}
+.modalbody{
+    padding:12px
+}
+.video{
+    position:relative;
+    aspect-ratio:4/3;
+    background:#111;
+    border-radius:12px;
+    overflow:hidden
+}
+.video video{
+    width:100%;
+    height:100%;
+    object-fit:cover
+}
+.video canvas{
+    display:none
+}
+.finder{
+    position:absolute;
+    inset:18%;
+    border:3px solid #fff;
+    border-radius:14px;
+    box-shadow:0 0 0 999px #0003
+}
+.manual{
+    display:flex;
+    gap:7px;
+    margin-top:9px
+}
+.manual input{
+    flex:1;
+    min-width:0;
+    height:40px;
+    border:1px solid #ccc;
+    border-radius:9px;
+    padding:8px
+}
+.manual button{
+    border:0;
+    border-radius:9px;
+    background:#c4172c;
+    color:#fff;
+    font-weight:900;
+    padding:0 14px
+}
+@media(max-width:680px){
+    html,body{
+        overflow:auto
+    }
+    .app{
+        height:auto;
+        min-height:100dvh;
+        grid-template-rows:auto 1fr
+    }
+    .top{
+        grid-template-columns:auto 1fr auto;
+        padding:8px
+    }
+    .headbtn{
+        height:42px;
+        font-size:12px
+    }
+    .title h1{
+        font-size:18px
+    }
+    .title p{
+        display:none
+    }
+    .main{
+        grid-template-columns:1fr;
+        overflow:visible
+    }
+    .catalog{
+        height:72dvh
+    }
+    .right{
+        height:72dvh
+    }
+    .cards{
+        grid-template-columns:repeat(2,minmax(0,1fr))
+    }
+}
+@media(max-width:560px){
+    .main{
+        padding:8px
+    }
+    .tabs{
+        gap:5px
+    }
+    .tab{
+        min-width:0;
+        flex:1;
+        padding:0 8px;
+        font-size:13px
+    }
+    .edition{
+        display:none
+    }
+    .cards{
+        grid-template-columns:1fr
+    }
+    .catalog{
+        height:78dvh
+    }
+    .right{
+        height:75dvh
+    }
+    .top{
+        grid-template-columns:85px 1fr 85px
+    }
+    .headbtn{
+        padding:4px;
+        font-size:10px
+    }
+    .title h1{
+        font-size:15px
+    }
+}
+@media(max-height:700px) and (orientation:landscape){
+    .app{
+        grid-template-rows:58px 1fr
+    }
+    .top{
+        padding:5px 14px
+    }
+    .headbtn{
+        height:40px
+    }
+    .title h1{
+        font-size:19px
+    }
+    .title p{
+        display:none
+    }
+    .main{
+        padding:8px 12px;
+        gap:9px
+    }
+    .catalog{
+        grid-template-rows:48px 1fr
+    }
+    .tabs{
+        padding:5px 8px
+    }
+    .tab{
+        height:35px
+    }
+    .card{
+        padding:6px
+    }
+    .meta{
+        min-height:0
+    }
+    .controls{
+        margin-top:4px
+    }
+    .control{
+        min-height:32px
+    }
+    .qty{
+        height:30px
+    }
+    .section-title{
+        margin-bottom:5px
+    }
+    .bottom{
+        padding:7px 9px
+    }
+    .comment{
+        height:31px;
+        margin-top:5px
+    }
+    .validate{
+        height:40px;
+        margin-top:5px
+    }
+    .standbar{
+        padding:7px 9px
+    }
+    .search,.qr,.selected{
+        height:36px
+    }
+    .summary{
+        padding:7px 9px
+    }
+}
+/* =========================================================
+VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
+========================================================= */
+.app {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.top {
+    flex: 0 0 auto;
+    min-height: 68px;
+    grid-template-columns: auto 1fr auto;
+    padding: 10px 20px;
+    background: linear-gradient(145deg, #7b0000, #980000);
+}
+.headbtn {
+    min-height: 42px;
+    height: auto;
+    padding: 9px 14px;
+    border-radius: 11px;
+    font-size: 14px;
+}
+.title h1 {
+    font-size: 22px;
+}
+.title p {
+    margin-top: 3px;
+    font-size: 12px;
+    color: rgba(255,255,255,.82);
+}
+.main {
+    width: min(100%, 1500px);
+    min-height: 0;
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(330px, .75fr);
+    gap: 18px;
+    margin: 0 auto;
+    padding: 18px 16px;
+    overflow: hidden;
+}
+.panel {
+    border: 1px solid #e2e2e2;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+.catalog {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.tabs,
+.standbar {
+    flex: 0 0 86px;
+    height: 86px;
+    min-height: 86px;
+    background: #fafafa;
+    border-bottom: 1px solid #e7e7e7;
+}
+.tabs {
+    padding: 14px 18px;
+    gap: 9px;
+}
+.tab {
+    min-width: 0;
+    min-height: 42px;
+    height: 42px;
+    padding: 9px 20px;
+    border-radius: 999px;
+    background: #fff;
+    color: #555;
+    font-size: 14px;
+}
+.tab.active {
+    border-color: #8b0000;
+    background: #8b0000;
+    color: #fff;
+}
+.edition {
+    margin-left: auto;
+    color: #777;
+    font-size: 11px;
+    font-weight: 700;
+}
+.catalog-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 14px;
+}
+.section-title {
+    margin: 0 0 10px;
+    font-size: 16px;
+}
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+.card {
+    min-width: 0;
+    min-height: 154px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid #dedede;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.05);
+}
+.card.retrait {
+    background: #fff8f8;
+}
+.card.sale {
+    background: #fffaf2;
+}
+.card.propre {
+    background: #f7fcf9;
+}
+.card h3 {
+    margin: 0;
+    color: #333;
+    font-size: 15px;
+    line-height: 1.2;
+    white-space: normal;
+}
+.meta {
+    min-height: 0;
+    color: #777;
+    font-size: 11px;
+    line-height: 1.35;
+}
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: auto;
+}
+.control {
+    min-width: 0;
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 10px;
+}
+.control label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 3px 5px;
+    font-size: 10px;
+}
+.qty {
+    width: 100%;
+    height: 31px;
+    border: 0;
+    border-top: 1px solid #e1e3e6;
+    border-left: 0;
+    border-radius: 0;
+    font-size: 15px;
+}
+.rule {
+    min-height: 0;
+    margin-top: 0;
+    font-size: 9px;
+    line-height: 1.15;
+}
+.right {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.standbar {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+}
+.standline {
+    width: 100%;
+    grid-template-columns: 1fr 48px;
+}
+.search,
+.qr,
+.selected {
+    height: 46px;
+}
+.summary {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 14px;
+}
+.bottom {
+    flex: 0 0 auto;
+    padding: 14px 18px 16px;
+    background: #fafafa;
+}
+.comment {
+    height: 40px;
+}
+.validate {
+    min-height: 52px;
+    height: 52px;
+}
+@media (max-width: 680px) {
+    html, body {
+        overflow: auto;
+    }
+    .app {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+    .main {
+        grid-template-columns: 1fr;
+        overflow: visible;
+    }
+    .catalog, .right {
+        height: 72dvh;
+    }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+    html, body {
+        overflow: hidden;
+    }
+    .app {
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+    }
+    .top {
+        min-height: 54px;
+        padding: 6px 14px;
+    }
+    .headbtn {
+        min-height: 36px;
+        padding: 6px 10px;
+    }
+    .title h1 {
+        font-size: 18px;
+    }
+    .title p {
+        display: none;
+    }
+    .main {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+    .tabs, .standbar {
+        flex-basis: 62px;
+        height: 62px;
+        min-height: 62px;
+    }
+    .tabs, .standbar {
+        padding: 9px 12px;
+    }
+    .tab {
+        min-height: 36px;
+        height: 36px;
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+    .cards {
+        grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+        gap: 8px;
+    }
+    .card {
+        min-height: 120px;
+        padding: 10px;
+        gap: 5px;
+    }
+    .card h3 {
+        font-size: 13px;
+    }
+    .meta {
+        font-size: 9px;
+    }
+    .control {
+        min-height: 46px;
+    }
+    .qty {
+        height: 27px;
+    }
+    .summary {
+        padding: 9px;
+    }
+    .bottom {
+        padding: 9px 12px;
+    }
+    .comment {
+        height: 32px;
+        margin-top: 5px;
+    }
+    .validate {
+        min-height: 42px;
+        height: 42px;
+        margin-top: 5px;
+    }
+}
+
+.sous-section-title{
+    margin-top:18px
+}
+
+
+/* ============================================================
+   REGLEMENT DU COMPTE ARTISAN
+   ============================================================ */
+.account-strip {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 14px;
+    border-top: 1px solid #e4e7eb;
+    background: #fff;
+}
+
+.account-strip.show {
+    display: flex;
+}
+
+.account-balance {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.account-balance span {
+    color: #666;
+    font-size: 13px;
+}
+
+.account-balance strong {
+    color: #9f0000;
+    font-size: 18px;
+}
+
+.account-balance strong.credit {
+    color: #008b4b;
+}
+
+.pay-account {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 7px 14px;
+    border: 1px solid #a40000;
+    border-radius: 10px;
+    background: #a40000;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pay-account:disabled {
+    border-color: #d5d7da;
+    background: #d5d7da;
+    color: #888;
+    cursor: default;
+}
+
+.pay-account.refund {
+    border-color: #008b4b;
+    background: #008b4b;
+}
+
+.account-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-account {
+    min-height: 36px;
+    padding: 7px 14px;
+    border: 1px solid #555;
+    border-radius: 10px;
+    background: #fff;
+    color: #333;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.close-account:disabled {
+    border-color: #d5d7da;
+    background: #f0f1f2;
+    color: #999;
+    cursor: default;
+}
+
+.refund-note {
+    margin: 0 0 14px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    background: #eef8f2;
+    color: #126b3e;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.refund-amount {
+    display: grid;
+    grid-template-columns: 1fr 150px;
+    align-items: center;
+    gap: 12px;
+}
+
+.refund-amount input {
+    width: 100%;
+    height: 42px;
+    padding: 0 10px;
+    border: 1px solid #cfd4da;
+    border-radius: 10px;
+    text-align: right;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.payment-card {
+    width: min(560px, calc(100vw - 28px));
+}
+
+.payment-body {
+    padding: 18px;
+}
+
+.payment-balance {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f5f6f7;
+}
+
+.payment-balance strong {
+    color: #a40000;
+    font-size: 24px;
+    white-space: nowrap;
+}
+
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.payment-method {
+    min-height: 48px;
+    border: 1px solid #d3d7dc;
+    border-radius: 12px;
+    background: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.payment-method.active {
+    border-color: #a40000;
+    background: #a40000;
+    color: #fff;
+}
+
+.payment-lines {
+    display: grid;
+    gap: 8px;
+}
+
+.payment-line {
+    display: grid;
+    grid-template-columns: 1fr 145px;
+    align-items: center;
+    gap: 12px;
+}
+
+.payment-line input {
+    width: 100%;
+    height: 42px;
+    padding: 0 10px;
+    border: 1px solid #cfd4da;
+    border-radius: 10px;
+    text-align: right;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.payment-line.off {
+    opacity: .45;
+}
+
+.payment-summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 7px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e0e2e5;
+}
+
+.payment-summary strong {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.payment-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.payment-actions button {
+    min-height: 46px;
+    border-radius: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.payment-cancel {
+    border: 1px solid #d3d7dc;
+    background: #fff;
+}
+
+.payment-confirm {
+    border: 1px solid #a40000;
+    background: #a40000;
+    color: #fff;
+}
+
+.payment-confirm:disabled {
+    border-color: #d5d7da;
+    background: #d5d7da;
+    color: #888;
+    cursor: default;
+}
+
+@media (max-width: 620px) {
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-line {
+        grid-template-columns: 1fr 120px;
+    }
+}
+
+
+/* ============================================================
+   BANDEAU STAND / COMPTE — VERSION LISIBLE ET RESPONSIVE
+   ============================================================ */
+.standbar{
+    height:auto !important;
+    min-height:86px !important;
+    flex-basis:auto !important;
+    display:block !important;
+    padding:10px 12px !important;
+}
+.selected.show{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    width:100%;
+    height:auto !important;
+    min-height:48px;
+    padding:7px 10px;
+}
+.selected > div{min-width:0}
+.selected strong{
+    display:block;
+    font-size:13px;
+    line-height:1.25;
+    white-space:normal;
+    overflow-wrap:anywhere;
+}
+.selected small{margin-top:3px}
+.change{
+    flex:0 0 auto;
+    min-height:34px;
+    padding:6px 10px;
+    border:1px solid #e1c1c5;
+    border-radius:9px;
+    background:#fff;
+}
+.account-strip.show{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:8px 12px;
+    width:100%;
+    margin-top:7px;
+    padding:7px 0 0;
+    border-top:1px solid #e4e7eb;
+    background:transparent;
+    container-type:inline-size;
+}
+.account-balance{
+    min-width:0;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:4px 8px;
+    white-space:normal;
+}
+.account-balance span{font-size:12px}
+.account-balance strong{font-size:17px;white-space:nowrap}
+.account-actions{
+    min-width:0;
+    max-width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.pay-account,
+.close-account{
+    min-width:0;
+    max-width:100%;
+    min-height:36px;
+    padding:7px 11px;
+    white-space:nowrap;
+}
+
+/* Le bandeau du compte s'adapte à sa propre largeur :
+   dès que la colonne de droite devient étroite, les actions
+   passent sous le solde au lieu de se chevaucher. */
+@container (max-width:430px){
+    .account-strip.show{
+        grid-template-columns:minmax(0,1fr);
+    }
+    .account-actions{
+        width:100%;
+        justify-content:stretch;
+    }
+    .pay-account,
+    .close-account{
+        width:100%;
+    }
+}
+
+@media (max-width:760px){
+    .account-strip.show{grid-template-columns:minmax(0,1fr)}
+    .account-actions{width:100%;justify-content:stretch}
+    .pay-account,.close-account{width:100%}
+}
+
+/* CONFIRMATION DE CLÔTURE DU COMPTE */
+.close-confirm-card{width:min(560px,calc(100vw - 28px))}
+.close-confirm-body{padding:18px}
+.close-confirm-summary{display:grid;gap:9px;margin-bottom:15px;padding:13px 14px;border:1px solid #e0e2e5;border-radius:12px;background:#f7f8f9}
+.close-confirm-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px}
+.close-confirm-row span{color:#666;font-size:13px}.close-confirm-row strong{min-width:0;text-align:right;overflow-wrap:anywhere}
+.close-confirm-row .invoice-value{color:#a40000;font-size:18px;white-space:nowrap}
+.close-warning{margin:0 0 15px;padding:11px 12px;border-radius:10px;background:#fff4e5;color:#7a4a00;font-size:13px;line-height:1.4}
+.close-check{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #d8dce1;border-radius:11px;background:#fff;cursor:pointer;line-height:1.4;font-size:13px}
+.close-check input{flex:0 0 auto;width:19px;height:19px;margin:1px 0 0;accent-color:#8b0000}
+.close-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.close-confirm-actions button{min-height:46px;border-radius:11px;font-weight:800}
+.close-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.close-confirm-button{border:1px solid #8b0000;background:#8b0000;color:#fff}
+.close-confirm-button:disabled{border-color:#d5d7da;background:#d5d7da;color:#888;cursor:default}
+@media (max-width:520px){.close-confirm-row{grid-template-columns:1fr}.close-confirm-row strong{text-align:left}.close-confirm-actions{grid-template-columns:1fr}}
+
+</style>
+ </head>
+ <body>
+  <div class="loading" id="loading">
+   <div>
+    <img alt="MDN" src="logo-mdn.png"/>
+    <div class="spin">
+    </div>
+    <strong>
+     Chargement de la vaisselle…
+    </strong>
+   </div>
+  </div>
+  <div class="app" id="app">
+   <header class="top" id="top">
+    <button class="headbtn" id="back">
+     ← Accueil
+    </button>
+    <div class="title">
+     <h1>
+      🍽️ Vaisselle & Consignes
+     </h1>
+     <p id="identity">
+      Chargement…
+     </p>
+    </div>
+    <button class="headbtn" id="logout">
+     Déconnexion
+    </button>
+   </header>
+   <main class="main">
+    <section class="panel catalog">
+     <div class="tabs">
+      <button class="tab active" data-filter="retrait">
+       Retrait
+      </button>
+      <button class="tab" data-filter="retours">
+       Retours
+      </button>
+      <div class="return-subtabs" id="returnSubtabs" hidden>
+       <button class="subtab active" data-return-filter="sale">
+        Sale
+       </button>
+       <button class="subtab" data-return-filter="propre">
+        Propre
+       </button>
+      </div>
+      <span class="edition" id="edition">
+       MDN Sion
+      </span>
+     </div>
+     <div class="catalog-scroll" id="catalogScroll">
+     </div>
+    </section>
+    <aside class="panel right">
+     <div class="standbar">
+      <div class="standline" id="searchZone">
+       <div style="position:relative;min-width:0">
+        <input autocomplete="off" class="search" id="search" placeholder="🔎 N° stand ou nom" type="search"/>
+        <div class="results" id="results">
+        </div>
+       </div>
+       <button class="qr" id="qr" title="Scanner le QR du stand">
+        📷
+       </button>
+      </div>
+      <div class="selected" id="selected">
+       <div>
+        <strong id="selectedName">
+        </strong>
+        <small id="selectedType">
+        </small>
+       </div>
+       <button class="change" id="change">
+        Changer
+       </button>
+      </div>
+          <div class="account-strip" id="accountStrip">
+       <div class="account-balance">
+        <span>Compte actuel</span>
+        <strong id="accountBalance">CHF 0.00</strong>
+       </div>
+       <div class="account-actions">
+        <button class="close-account" disabled id="closeAccount" type="button">
+         Clôturer le compte
+        </button>
+        <button class="pay-account" disabled id="payAccount" type="button">
+         Régler le compte
+        </button>
+       </div>
+      </div>
+     </div>
+     <div class="summary" id="summary">
+      <div class="empty">
+       Aucune opération saisie.
+       <br/>
+       Utilise les touches à gauche.
+      </div>
+     </div>
+     <div class="bottom">
+      <div class="totals">
+       <span>
+        Retraits facturés
+       </span>
+       <strong id="invoice">
+        CHF 0.00
+       </strong>
+       <span>
+        Retours crédités
+       </span>
+       <strong class="credit" id="credit">
+        CHF 0.00
+       </strong>
+       <span class="grand">
+        Solde
+       </span>
+       <strong class="money" id="net">
+        CHF 0.00
+       </strong>
+      </div>
+      <button class="validate" disabled="" id="validate">
+       Valider sur le compte du stand
+      </button>
+      <div class="demo-note" id="demoNote">
+       Mode Démo : stands, opérations, paiements et QR fictifs. Aucune donnée réelle n'est modifiée.
+      </div>
+     </div>
+    </aside>
+   </main>
+  </div>
+  <div class="toast" id="toast">
+   <button id="toastClose">
+    ×
+   </button>
+   <span id="toastText">
+   </span>
+  </div>
+  <div aria-hidden="true" class="modal" id="modal">
+   <div class="modalcard">
+    <div class="modalhead">
+     <h3>
+      Scanner le QR du stand
+     </h3>
+     <button class="close" id="modalClose">
+      ×
+     </button>
+    </div>
+    <div class="modalbody">
+     <div class="video">
+      <video id="video" muted="" playsinline="">
+      </video>
+      <canvas id="canvas">
+      </canvas>
+      <div class="finder">
+      </div>
+     </div>
+     <div class="manual">
+      <input id="manualQr" placeholder="Ou coller la valeur du QR"/>
+      <button id="manualGo">
+       Ouvrir
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <div aria-hidden="true" class="modal" id="paymentModal">
+   <div class="modalcard payment-card">
+    <div class="modalhead">
+     <h3>Régler le compte du stand</h3>
+     <button class="close" id="paymentClose">×</button>
+    </div>
+    <div class="payment-body">
+     <div class="payment-balance">
+      <span>Solde actuel du compte</span>
+      <strong id="paymentBalance">CHF 0.00</strong>
+     </div>
+     <div class="payment-methods" id="paymentMethods"></div>
+     <div class="payment-lines" id="paymentLines"></div>
+     <div class="payment-summary">
+      <span>Montant du règlement</span>
+      <strong id="paymentTotal">CHF 0.00</strong>
+      <span>Reste après règlement</span>
+      <strong id="paymentRemaining">CHF 0.00</strong>
+     </div>
+     <div class="payment-actions">
+      <button class="payment-cancel" id="paymentCancel" type="button">Annuler</button>
+      <button class="payment-confirm" disabled id="paymentConfirm" type="button">Enregistrer le règlement</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div aria-hidden="true" class="modal" id="refundModal">
+   <div class="modalcard payment-card">
+    <div class="modalhead">
+     <h3>Rembourser le crédit</h3>
+     <button class="close" id="refundClose" type="button">×</button>
+    </div>
+    <div class="payment-body">
+     <div class="payment-balance">
+      <span>Crédit disponible</span>
+      <strong class="credit" id="refundBalance">CHF 0.00</strong>
+     </div>
+     <p class="refund-note">Le remboursement du crédit est effectué uniquement en espèces.</p>
+     <label class="refund-amount">
+      <span>Montant à rembourser</span>
+      <input id="refundAmount" type="number" min="0" step="0.05" inputmode="decimal"/>
+     </label>
+     <div class="payment-summary">
+      <span>Crédit restant après remboursement</span>
+      <strong class="credit" id="refundRemaining">CHF 0.00</strong>
+     </div>
+     <div class="payment-actions">
+      <button class="payment-cancel" id="refundCancel" type="button">Annuler</button>
+      <button class="payment-confirm" disabled id="refundConfirm" type="button">Rembourser en espèces</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div aria-hidden="true" class="modal" id="closeAccountModal"><div class="modalcard close-confirm-card"><div class="modalhead"><h3 id="closeAccountModalTitle">Confirmer la clôture</h3><button class="close" id="closeAccountModalClose" type="button">×</button></div><div class="close-confirm-body"><div class="close-confirm-summary"><div class="close-confirm-row"><span>Stand</span><strong id="closeAccountStand">—</strong></div><div class="close-confirm-row"><span>Type de règlement</span><strong id="closeAccountMode">—</strong></div><div class="close-confirm-row"><span>Solde actuel</span><strong id="closeAccountBalance">CHF 0.00</strong></div><div class="close-confirm-row" id="closeAccountInvoiceRow" hidden><span>Montant figé à facturer</span><strong class="invoice-value" id="closeAccountInvoice">CHF 0.00</strong></div></div><p class="close-warning" id="closeAccountWarning">Après confirmation, le compte sera clôturé et aucune nouvelle opération ne pourra être enregistrée.</p><label class="close-check"><input id="closeAccountCheck" type="checkbox"/><span>Je confirme avoir vérifié le compte du stand et souhaite le clôturer définitivement.</span></label><div class="close-confirm-actions"><button class="close-confirm-cancel" id="closeAccountCancel" type="button">Annuler</button><button class="close-confirm-button" disabled id="closeAccountConfirm" type="button">Confirmer la clôture</button></div></div></div></div>
+   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+(()=>{
+    "use strict";
+    const $=id=>document.getElementById(id);
+    const app=$("app");
+    const topbar=$("top");
+    const loading=$("loading");
+    const catalog=$("catalogScroll");
+    const edition=$("edition");
+    const search=$("search");
+    const results=$("results");
+    const searchZone=$("searchZone");
+    const selected=$("selected");
+    const selectedName=$("selectedName");
+    const selectedType=$("selectedType");
+    const summary=$("summary");
+    const invoice=$("invoice");
+    const credit=$("credit");
+    const net=$("net");
+    const validate=$("validate");
+    const toast=$("toast");
+    const toastText=$("toastText");
+    const modal=$("modal");
+    const video=$("video");
+    const canvas=$("canvas");
+    const manualQr=$("manualQr");
+    const demoNote=$("demoNote");
+    const accountStrip=$("accountStrip");
+    const accountBalance=$("accountBalance");
+    const payAccount=$("payAccount");
+    const closeAccount=$("closeAccount");
+    const paymentModal=$("paymentModal");
+    const paymentBalance=$("paymentBalance");
+    const paymentMethods=$("paymentMethods");
+    const paymentLines=$("paymentLines");
+    const paymentTotal=$("paymentTotal");
+    const paymentRemaining=$("paymentRemaining");
+    const paymentConfirm=$("paymentConfirm");
+    const refundModal=$("refundModal");
+    const refundBalance=$("refundBalance");
+    const refundAmount=$("refundAmount");
+    const refundRemaining=$("refundRemaining");
+    const refundConfirm=$("refundConfirm");
+    const closeAccountModal=$("closeAccountModal");
+    const closeAccountModalTitle=$("closeAccountModalTitle");
+    const closeAccountStand=$("closeAccountStand");
+    const closeAccountMode=$("closeAccountMode");
+    const closeAccountBalance=$("closeAccountBalance");
+    const closeAccountInvoiceRow=$("closeAccountInvoiceRow");
+    const closeAccountInvoice=$("closeAccountInvoice");
+    const closeAccountWarning=$("closeAccountWarning");
+    const closeAccountCheck=$("closeAccountCheck");
+    const closeAccountConfirm=$("closeAccountConfirm");
+    let client=null,data=null,stand=null,filter="retrait",returnFilter="sale",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
+    let accountData=null;
+    let paymentKey=null;
+    let refundKey=null;
+    const selectedPaymentMethods=new Set();
+    const state={
+    }
+    ;
+    const types=["retrait","retour_sale","retour_propre"];
+    const uuid=()=>crypto?.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{
+        const r=Math.random()*16|0,v=c==="x"?r:(r&3|8);
+        return v.toString(16)
+    }
+    );
+    const money=v=>new Intl.NumberFormat("fr-CH",{
+        style:"currency",currency:"CHF",minimumFractionDigits:2
+    }
+    ).format(Number(v||0));
+    const n=v=>{
+        const x=parseInt(v,10);
+        return Number.isFinite(x)&&x>0?x:0
+    }
+    ;
+    const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"
+    }
+    [c]));
+    function msg(t,ok=false){
+        clearTimeout(timer);
+        toast.className="toast show"+(ok?" ok":"");
+        toastText.textContent=t;
+        timer=setTimeout(()=>toast.classList.remove("show"),5500)
+    }
+    function standName(s){
+        const name=String(s?.nom||s?.raison_sociale||"Stand").trim(),num=String(s?.numero_stand||"").trim();
+        return num?`Stand ${num} · ${name}`:name
+    }
+    function properUnit(a){
+        if(!stand)return false;
+        const type=String(stand.type_partenaire||"");
+        return Boolean((data.regles_retour||[]).find(r=>r.vaisselle_id===a.id&&String(r.type_partenaire||"")===type)?.retour_propre_unite_autorise)
+    }
+    function properUnitRefundsWash(a){
+        if(!stand)return false;
+        const type=String(stand.type_partenaire||"");
+        return Boolean((data.regles_retour||[]).find(r=>
+            r.vaisselle_id===a.id
+            && String(r.type_partenaire||"")===type
+        )?.retour_propre_unite_rembourse_lavage)
+    }
+    function packagingType(a){
+        return String(a?.type_conditionnement||"caisse").toLocaleLowerCase("fr")==="sachet"?"sachet":"caisse"
+    }
+    function packagingLabels(a){
+        const sachet=packagingType(a)==="sachet";
+        return sachet
+            ?{singulier:"sachet",pluriel:"sachets",titre:"Sachet"}
+            :{singulier:"caisse",pluriel:"caisses",titre:"Caisse"}
+    }
+    function initState(){
+        state.vaisselle={
+        }
+        ;
+        for(const a of data.vaisselle||[])state.vaisselle[a.id]={
+            retrait:{
+                caisses:0,unites:0
+            }
+            ,retour_sale:{
+                caisses:0,unites:0
+            }
+            ,retour_propre:{
+                caisses:0,unites:0
+            }
+        }
+        ;
+        state.caissesVides={
+            retrait:0,retour_sale:0,retour_propre:0
+        }
+        ;
+        keys={
+            retrait:uuid(),retour_sale:uuid(),retour_propre:uuid()
+        }
+    }
+    function opLabel(t){
+        return t==="retrait"?"📤 Retrait":t==="retour_sale"?"📥 Retour sale":"✨ Retour propre"
+    }
+    function opClass(t){
+        return t==="retour_sale"?"sale":t==="retour_propre"?"propre":"retrait"
+    }
+    function card(a, t, field) {
+        const e = state.vaisselle[a.id][t];
+        const std = n(a.quantite_standard);
+        const isPackage = field === "caisses";
+        const labels = packagingLabels(a);
+        const allow = isPackage || t !== "retour_propre" || properUnit(a);
+
+        const rule =
+            t === "retour_propre" && !isPackage && !allow
+                ? (stand ? "Retour propre à l’unité non autorisé" : "Choisir le stand pour les unités propres")
+                : "";
+
+        const subtitle = isPackage
+            ? (std ? `1 ${labels.singulier} = ${std} unités` : "Conditionnement non défini")
+            : "Saisie directe des unités";
+
+        return `
+            <div
+                class="card ${opClass(t)} ${isPackage ? "case-card" : "unit-card"} ${allow ? "" : "disabled"}"
+                data-clickable="${allow ? "true" : "false"}"
+                data-card-kind="dish"
+                data-card-id="${a.id}"
+                data-card-type="${t}"
+                data-card-field="${field}"
+            >
+                <h3>${esc(a.nom)}</h3>
+                <div class="meta">
+                    <strong>${isPackage ? labels.titre : "Unité"}</strong><br>
+                    ${esc(subtitle)}
+                </div>
+                <div class="stepper">
+                    <button class="step" type="button" data-step="-1" ${allow ? "" : "disabled"}>−</button>
+                    <input
+                        class="qty" type="number" min="0" step="1" inputmode="numeric"
+                        value="${e[field] || 0}" data-kind="dish" data-id="${a.id}"
+                        data-type="${t}" data-field="${field}" ${allow ? "" : "disabled"}
+                    >
+                    <button class="step" type="button" data-step="1" ${allow ? "" : "disabled"}>+</button>
+                </div>
+                <div class="rule">${esc(rule)}</div>
+            </div>
+        `;
+    }
+
+    function emptyCard(t) {
+        if (t === "retour_propre") {
+            return "";
+        }
+
+        const c = (data.contenants || [])[0];
+
+        if (!c) {
+            return "";
+        }
+
+        return `
+            <div
+                class="card ${opClass(t)} case-card empty-card"
+                data-clickable="true"
+                data-card-kind="empty"
+                data-card-type="${t}"
+            >
+                <h3>
+                    Caisse vide
+                </h3>
+
+                <div class="meta">
+                    <strong>
+                        Caisse vide
+                    </strong>
+                </div>
+
+                <div class="stepper">
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="-1"
+                    >
+                        −
+                    </button>
+
+                    <input
+                        class="qty"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        value="${state.caissesVides[t] || 0}"
+                        data-kind="empty"
+                        data-type="${t}"
+                    >
+
+                    <button
+                        class="step"
+                        type="button"
+                        data-step="1"
+                    >
+                        +
+                    </button>
+                </div>
+
+                <div class="rule"></div>
+            </div>
+        `;
+    }
+
+    function section(t) {
+        const articles = data.vaisselle || [];
+        const articlesCaisses = articles.filter(a => packagingType(a) === "caisse");
+        const articlesSachets = articles.filter(a => packagingType(a) === "sachet");
+
+        const tuilesCaisses = articlesCaisses.map(a => card(a,t,"caisses")).join("");
+        const tuilesSachets = articlesSachets.map(a => card(a,t,"caisses")).join("");
+        const tuileCaisseVide = emptyCard(t);
+        const tuilesUnites = articles.map(a => card(a,t,"unites")).join("");
+
+        const titres = t === "retrait"
+            ? {caisses:"📤 Retrait en caisse",sachets:"📤 Retrait en sachet",unites:"📤 Retrait à l’unité"}
+            : t === "retour_sale"
+                ? {caisses:"📥 Retours en caisses sales",sachets:"📥 Retours en sachets sales",unites:"📥 Retours à l’unité (sales)"}
+                : {caisses:"📥 Retours en caisses propres",sachets:"📥 Retours en sachets propres",unites:"📥 Retours à l’unité (propres)"};
+
+        return `
+            <section class="section ${opClass(t)}">
+                <div class="section-title"><span class="dot"></span>${titres.caisses}</div>
+                <div class="cards">${tuilesCaisses}${tuileCaisseVide}</div>
+
+                <div class="section-title sous-section-title"><span class="dot"></span>${titres.sachets}</div>
+                <div class="cards">${tuilesSachets}</div>
+
+                <div class="section-title sous-section-title"><span class="dot"></span>${titres.unites}</div>
+                <div class="cards">${tuilesUnites}</div>
+            </section>
+        `;
+    }
+
+    function changerQuantiteDepuisElement(element, delta) {
+        const carte = element.closest(".card");
+
+        if (!carte) {
+            return;
+        }
+
+        const champ = carte.querySelector(".qty");
+
+        if (!champ || champ.disabled) {
+            return;
+        }
+
+        const nouvelleValeur = Math.max(
+            0,
+            n(champ.value) + delta
+        );
+
+        champ.value = nouvelleValeur;
+
+        if (champ.dataset.kind === "dish") {
+            state.vaisselle[champ.dataset.id][champ.dataset.type][champ.dataset.field] =
+                nouvelleValeur;
+        } else {
+            state.caissesVides[champ.dataset.type] =
+                nouvelleValeur;
+        }
+
+        renderSummary();
+    }
+
+    function renderCatalog() {
+        let html = "";
+
+        if (filter === "retrait") {
+            html += section("retrait");
+        } else if (returnFilter === "sale") {
+            html += section("retour_sale");
+        } else {
+            html += section("retour_propre");
+        }
+
+        catalog.innerHTML = html;
+
+        catalog
+            .querySelectorAll(".qty")
+            .forEach((champ) => {
+                champ.addEventListener(
+                    "click",
+                    (event) => {
+                        event.stopPropagation();
+                        champ.select();
+                    }
+                );
+
+                champ.addEventListener(
+                    "focus",
+                    () => {
+                        champ.select();
+                    }
+                );
+
+                champ.addEventListener(
+                    "input",
+                    () => {
+                        const valeur = n(champ.value);
+
+                        if (champ.dataset.kind === "dish") {
+                            state.vaisselle[champ.dataset.id][champ.dataset.type][champ.dataset.field] =
+                                valeur;
+                        } else {
+                            state.caissesVides[champ.dataset.type] =
+                                valeur;
+                        }
+
+                        renderSummary();
+                    }
+                );
+            });
+
+        catalog
+            .querySelectorAll(".step")
+            .forEach((bouton) => {
+                bouton.addEventListener(
+                    "click",
+                    (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        changerQuantiteDepuisElement(
+                            bouton,
+                            Number(bouton.dataset.step || 0)
+                        );
+                    }
+                );
+            });
+
+        catalog
+            .querySelectorAll('.card[data-clickable="true"]')
+            .forEach((carte) => {
+                carte.addEventListener(
+                    "click",
+                    (event) => {
+                        if (
+                            event.target.closest(
+                                ".stepper"
+                            )
+                        ) {
+                            return;
+                        }
+
+                        changerQuantiteDepuisElement(
+                            carte,
+                            1
+                        );
+                    }
+                );
+            });
+    }
+
+    function qtyArticle(a,t){
+        const e=state.vaisselle[a.id][t];
+        return e.caisses*n(a.quantite_standard)+e.unites
+    }
+    function calc(){
+        const sections={retrait:[],retour_sale:[],retour_propre:[]};
+        let billed=0,credited=0;
+        const c=(data.contenants||[]).find(x=>String(x.nom||"").toLocaleLowerCase("fr")==="caisse")||(data.contenants||[])[0]||null;
+
+        for(const a of data.vaisselle||[]){
+            for(const t of types){
+                const e=state.vaisselle[a.id][t];
+                const std=n(a.quantite_standard);
+                const packageQty=e.caisses*std;
+                const unitQty=e.unites;
+                const q=packageQty+unitQty;
+                if(!q)continue;
+
+                const cons=Number(a.consigne_unitaire||0);
+                const wash=Number(a.lavage_unitaire||0);
+                let consAmount=q*cons;
+                let washQty=0;
+
+                if(t==="retrait") washQty=q;
+                else if(t==="retour_propre") washQty=packageQty+(properUnitRefundsWash(a)?unitQty:0);
+
+                const washAmount=washQty*wash;
+                const amount=consAmount+washAmount;
+                if(t==="retrait") billed+=amount; else credited+=amount;
+
+                sections[t].push({
+                    kind:"dish",name:a.nom,q,caisses:e.caisses,unites:e.unites,std,cons,wash,
+                    consAmount,washQty,washAmount,amount,id:a.id,conditionnement:packagingType(a)
+                });
+            }
+        }
+
+        if(c){
+            for(const t of types){
+                let full=0;
+                for(const a of data.vaisselle||[]){
+                    if(packagingType(a)==="caisse") full+=state.vaisselle[a.id][t].caisses;
+                }
+                const empty=t==="retour_propre"?0:(state.caissesVides[t]||0);
+                const total=full+empty;
+                if(!total)continue;
+
+                const cons=Number(c.consigne||0),wash=Number(c.lavage||0);
+                const rc=t==="retrait"?true:t==="retour_propre"?Boolean(c.retour_propre_rembourse_consigne):Boolean(c.retour_sale_rembourse_consigne);
+                const rw=t==="retrait"?true:t==="retour_propre"?Boolean(c.retour_propre_rembourse_lavage):Boolean(c.retour_sale_rembourse_lavage);
+                const consAmount=total*(rc?cons:0);
+                const washAmount=total*(rw?wash:0);
+                const amount=consAmount+washAmount;
+                if(t==="retrait") billed+=amount; else credited+=amount;
+                sections[t].push({kind:"container",name:"Caisse",full,empty,q:total,cons,wash,consAmount,washAmount,amount});
+            }
+        }
+        return{sections,billed,credited};
+    }
+    function removeItem(t,item){
+        if(item.kind==="dish"){
+            state.vaisselle[item.id][t].caisses=0;
+            state.vaisselle[item.id][t].unites=0
+        }
+        else state.caissesVides[t]=0;
+        renderCatalog();
+        renderSummary()
+    }
+    function nombreLibelle(nombre, singulier, pluriel) {
+        return `${nombre} ${nombre === 1 ? singulier : pluriel}`;
+    }
+
+    function renderSummary(){
+        const c=calc();
+        let html="",count=0;
+        for(const t of types){
+            const arr=c.sections[t];
+            if(!arr.length)continue;
+            count+=arr.length;
+            html+=`<div class="sumsec"><div class="sumtitle ${opClass(t)}">${opLabel(t)}</div>`;
+            for(const x of arr){
+                if(x.kind==="dish"){
+                    const labels=x.conditionnement==="sachet"
+                        ?{singulier:"sachet",pluriel:"sachets"}
+                        :{singulier:"caisse",pluriel:"caisses"};
+                    html+=`<div class="item">
+                        <div class="itemhead"><span>${esc(x.name)} · ${x.q}</span><button class="remove" data-rm="${t}|${x.id}|dish">×</button></div>`;
+                    if(x.caisses) html+=`<div class="detail"><span>${nombreLibelle(x.caisses,labels.singulier,labels.pluriel)} × ${x.std} = ${nombreLibelle(x.caisses*x.std,"unité","unités")}</span><span></span></div>`;
+                    html+=`<div class="detail"><span>${x.q} × ${money(x.cons)} consigne</span><span>${money(x.consAmount)}</span></div>`;
+                    if(x.washQty>0) html+=`<div class="detail"><span>${x.washQty} × ${money(x.wash)} lavage</span><span>${money(x.washAmount)}</span></div>`;
+                    html+=`<div class="subtotal"><span>Sous-total</span><span>${money(x.amount)}</span></div></div>`;
+                }else{
+                    html+=`<div class="item">
+                        <div class="itemhead"><span>Caisse${x.q>1?"s":""} · ${x.q}</span><button class="remove" data-rm="${t}|container|container">×</button></div>`;
+                    if(x.empty) html+=`<div class="detail"><span>${nombreLibelle(x.empty,"caisse vide","caisses vides")}</span><span></span></div>`;
+                    if(x.consAmount>0) html+=`<div class="detail"><span>${x.q} × ${money(x.cons)} consigne caisse</span><span>${money(x.consAmount)}</span></div>`;
+                    if(x.washAmount>0) html+=`<div class="detail"><span>${x.q} × ${money(x.wash)} lavage caisse</span><span>${money(x.washAmount)}</span></div>`;
+                    html+=`<div class="subtotal"><span>Sous-total</span><span>${money(x.amount)}</span></div></div>`;
+                }
+            }
+            html+=`</div>`;
+        }
+        summary.innerHTML=count?html:`<div class="empty">Aucune opération saisie.<br>Utilise les touches à gauche.</div>`;
+        invoice.textContent=money(c.billed);
+        credit.textContent=money(c.credited);
+        const balance=Math.round((c.billed-c.credited)*100)/100;
+        net.textContent=balance===0?`Solde ${money(0)}`:(balance>0?"À payer ":"À créditer ")+money(Math.abs(balance));
+        net.classList.toggle("credit",balance<0);
+        summary.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{
+            const[t,id,kind]=b.dataset.rm.split("|");
+            if(kind==="dish"){
+                state.vaisselle[id][t].caisses=0;
+                state.vaisselle[id][t].unites=0;
+            }else{
+                state.caissesVides[t]=0;
+            }
+            renderCatalog();
+            renderSummary();
+        }));
+        const on=Boolean(stand&&count);
+        validate.disabled=!on;
+        validate.classList.toggle("on",on);
+    }
+    function paymentIcon(code){
+        const value=String(code||"").toLocaleLowerCase("fr");
+        if(value.includes("espe")||value.includes("cash"))return "💵";
+        if(value.includes("carte")||value.includes("card"))return "💳";
+        if(value.includes("twint"))return "📱";
+        return "💰";
+    }
+
+    function accountDue(){
+        return Math.max(0,Number(accountData?.compte?.solde_restant||0));
+    }
+
+    function accountCredit(){
+        return Math.max(0,-Number(accountData?.compte?.solde_restant||0));
+    }
+
+    function accountClosed(){
+        const c=accountData?.compte||{};
+        return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||["a_facturer","facture","solde"].includes(String(c.statut_compte||""));
+    }
+
+    async function enrichDemoAccountClosure(){
+        if(!demo||!stand||!accountData)return;
+        const {data:demoStand,error}=await client.from("stands_vaisselle_demo").select("statut_compte,date_cloture_compte,montant_cloture_facturation,date_cloture_facturation,utilisateur_cloture_id,commentaire_cloture").eq("id",stand.id).maybeSingle();
+        if(error)throw error;
+        if(!demoStand)return;
+        accountData.compte={...(accountData.compte||{}),...demoStand};
+        accountData.peut_cloturer=true;
+    }
+
+    async function loadAccount(){
+        accountData=null;
+        selectedPaymentMethods.clear();
+        accountStrip.classList.toggle("show",Boolean(stand));
+        accountBalance.textContent="Chargement…";
+        accountBalance.classList.remove("credit");
+        payAccount.classList.remove("refund");
+        payAccount.textContent="Régler le compte";
+        payAccount.disabled=true;
+        closeAccount.disabled=true;
+        closeAccount.textContent="Clôturer le compte";
+        if(!stand)return;
+        try{
+            const {data:r,error}=await client.rpc(
+                demo ? "charger_compte_stand_paiement_demo" : "charger_compte_stand_paiement",
+                demo
+                    ? {p_stand_demo_id:stand.id}
+                    : {p_participation_id:stand.id}
+            );
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Compte du stand non chargé.");
+            if(!stand||r.compte?.participation_id!==stand.id)return;
+            accountData=r;
+            await enrichDemoAccountClosure();
+            const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
+            const closed=accountClosed();
+            accountBalance.classList.toggle("credit",solde<0);
+
+            if(closed){
+                const status=String(r.compte?.statut_compte||"");
+                if(status==="a_facturer"||status==="facture"){
+                    const frozen=Number(r.compte?.montant_cloture_facturation??Math.max(0,solde));
+                    accountBalance.textContent=`À facturer ${money(frozen)}`;
+                }else{
+                    accountBalance.textContent="Compte clôturé";
+                }
+                payAccount.disabled=true;
+                payAccount.title="Compte clôturé";
+                closeAccount.style.display="inline-flex";
+                if(demo){
+                    closeAccount.disabled=false;
+                    closeAccount.textContent="Rouvrir le compte Démo";
+                    closeAccount.title="Rouvrir ce compte fictif pour poursuivre les exercices";
+                }else{
+                    closeAccount.disabled=true;
+                    closeAccount.textContent="Compte clôturé";
+                    closeAccount.title="Ce compte est déjà clôturé";
+                }
+                return;
+            }
+
+            if(solde<0){
+                accountBalance.textContent=`Crédit ${money(Math.abs(solde))}`;
+                payAccount.textContent="Rembourser";
+                payAccount.classList.add("refund");
+                payAccount.disabled=!r.peut_rembourser;
+                payAccount.title=r.peut_rembourser
+                    ?"Rembourser tout ou partie du crédit en espèces"
+                    :"Remboursement indisponible";
+            }
+            else if(solde===0){
+                accountBalance.textContent=money(0);
+                payAccount.textContent="Régler le compte";
+                payAccount.disabled=true;
+                payAccount.title="Aucun montant à régler";
+            }
+            else{
+                accountBalance.textContent=money(solde);
+                payAccount.textContent="Régler le compte";
+                payAccount.disabled=!r.peut_encaisser;
+                payAccount.title=!r.peut_encaisser
+                    ?"Règlement indisponible"
+                    :demo
+                        ?"Régler tout ou partie du compte Démo"
+                        :"Régler tout ou partie du compte";
+            }
+
+            closeAccount.style.display="inline-flex";
+            const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
+            const canClose=Boolean(accountData.peut_cloturer)&&(solde===0||(invoiceMode&&solde>0));
+            closeAccount.disabled=!canClose;
+            closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
+            closeAccount.title=solde<0
+                ?"Le crédit doit être remboursé avant la clôture"
+                :invoiceMode&&solde>0
+                    ?"Figer le solde et clôturer le compte pour facturation"
+                    :solde===0
+                        ?demo?"Clôturer ce compte Démo":"Clôturer définitivement ce compte"
+                        :"Le compte doit être soldé avant la clôture";
+        }
+        catch(e){
+            console.error(e);
+            accountBalance.textContent="Indisponible";
+            payAccount.disabled=true;
+            closeAccount.disabled=true;
+            msg(e?.message||"Impossible de charger le compte du stand.");
+        }
+    }
+
+    function paymentAmount(id){
+        const input=paymentLines.querySelector(`[data-payment-input="${id}"]`);
+        if(!input)return 0;
+        const value=Number(String(input.value||"").replace(",","."));
+        return Number.isFinite(value)&&value>0?Math.round(value*100)/100:0;
+    }
+
+    function updatePayment(){
+        const due=accountDue();
+        let total=0;
+        for(const method of accountData?.moyens_paiement||[]){
+            const input=paymentLines.querySelector(`[data-payment-input="${method.id}"]`);
+            const line=input?.closest(".payment-line");
+            const active=selectedPaymentMethods.has(method.id);
+            if(input)input.disabled=!active;
+            if(line)line.classList.toggle("off",!active);
+            if(active)total+=paymentAmount(method.id);
+        }
+        total=Math.round(total*100)/100;
+        const remaining=Math.max(0,Math.round((due-total)*100)/100);
+        paymentTotal.textContent=money(total);
+        paymentRemaining.textContent=money(remaining);
+        paymentRemaining.style.color=remaining>0?"#a40000":"#008b4b";
+        paymentConfirm.disabled=total<=0||total>due+0.001;
+        if(total>due+0.001){
+            paymentRemaining.textContent="Surpaiement interdit";
+            paymentRemaining.style.color="#a40000";
+        }
+    }
+
+    function renderPayment(){
+        const methods=accountData?.moyens_paiement||[];
+        const due=accountDue();
+        paymentBalance.textContent=money(due);
+        paymentMethods.innerHTML=methods.map(method=>`
+            <button
+                class="payment-method${selectedPaymentMethods.has(method.id)?" active":""}"
+                data-payment-method="${method.id}"
+                type="button"
+            >
+                ${paymentIcon(method.code)} ${esc(method.nom||method.code||"Paiement")}
+            </button>
+        `).join("");
+        paymentLines.innerHTML=methods.map(method=>`
+            <label class="payment-line off">
+                <span>${paymentIcon(method.code)} ${esc(method.nom||method.code||"Paiement")}</span>
+                <input
+                    data-payment-input="${method.id}"
+                    type="number"
+                    min="0"
+                    max="${due.toFixed(2)}"
+                    step="0.05"
+                    inputmode="decimal"
+                    placeholder="0"
+                    disabled
+                >
+            </label>
+        `).join("");
+        paymentMethods.querySelectorAll("[data-payment-method]").forEach(button=>{
+            button.onclick=()=>{
+                const id=button.dataset.paymentMethod;
+                if(selectedPaymentMethods.has(id)){
+                    selectedPaymentMethods.delete(id);
+                }
+                else{
+                    selectedPaymentMethods.add(id);
+                }
+                const active=[...selectedPaymentMethods];
+                renderPayment();
+                if(active.length===1){
+                    const input=paymentLines.querySelector(`[data-payment-input="${active[0]}"]`);
+                    if(input)input.value=due.toFixed(2);
+                }
+                updatePayment();
+            };
+        });
+        paymentLines.querySelectorAll("[data-payment-input]").forEach(input=>{
+            input.oninput=updatePayment;
+            input.onfocus=()=>input.select();
+        });
+        updatePayment();
+    }
+
+    function openPayment(){
+        if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
+        if(!accountData.peut_encaisser)return msg("Tu n'es pas autorisé à enregistrer ce règlement.");
+        if(accountDue()<=0)return msg("Ce compte n'a aucun montant à payer.");
+        paymentKey=uuid();
+        const paymentTitle=paymentModal.querySelector(".modalhead h3");
+        if(paymentTitle)paymentTitle.textContent=demo?"Régler le compte Démo":"Régler le compte du stand";
+        selectedPaymentMethods.clear();
+        renderPayment();
+        paymentModal.classList.add("show");
+        paymentModal.setAttribute("aria-hidden","false");
+    }
+
+    function closePayment(){
+        paymentModal.classList.remove("show");
+        paymentModal.setAttribute("aria-hidden","true");
+    }
+
+    async function savePayment(){
+        if(!stand||!accountData)return;
+        const due=accountDue();
+        const payments=[];
+        for(const method of accountData.moyens_paiement||[]){
+            if(!selectedPaymentMethods.has(method.id))continue;
+            const amount=paymentAmount(method.id);
+            if(amount<=0)continue;
+            payments.push({
+                moyen_paiement_id:method.id,
+                montant:amount,
+                reference_externe:null
+            });
+        }
+        const total=payments.reduce((sum,p)=>sum+p.montant,0);
+        if(total<=0)return msg("Saisis un montant de règlement.");
+        if(total>due+0.001)return msg("Le règlement ne peut pas dépasser le solde du compte.");
+        paymentConfirm.disabled=true;
+        paymentConfirm.textContent="Enregistrement…";
+        try{
+            const {data:r,error}=await client.rpc(
+                demo ? "enregistrer_paiement_stand_demo" : "enregistrer_paiement_stand",
+                demo
+                    ? {
+                        p_idempotency_key:paymentKey,
+                        p_stand_demo_id:stand.id,
+                        p_paiements:payments,
+                        p_commentaire:"Règlement DEMO depuis Vaisselle & Consignes"
+                    }
+                    : {
+                        p_idempotency_key:paymentKey,
+                        p_participation_id:stand.id,
+                        p_paiements:payments,
+                        p_commentaire:"Règlement depuis Vaisselle & Consignes"
+                    }
+            );
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Règlement non confirmé par le serveur.");
+            closePayment();
+            msg(`Règlement de ${money(total)} enregistré sur le compte de ${standName(stand)}.`,true);
+            paymentKey=null;
+            await loadAccount();
+        }
+        catch(e){
+            console.error(e);
+            msg(e?.message||"Impossible d'enregistrer le règlement.");
+            paymentConfirm.disabled=false;
+        }
+        finally{
+            paymentConfirm.textContent="Enregistrer le règlement";
+            updatePayment();
+        }
+    }
+
+    function updateRefund(){
+        const available=accountCredit();
+        const amount=Number(String(refundAmount.value||"").replace(",","."));
+        const valid=Number.isFinite(amount)&&amount>0&&amount<=available+0.001;
+        const remaining=Math.max(0,Math.round((available-(Number.isFinite(amount)?amount:0))*100)/100);
+        refundRemaining.textContent=amount>available+0.001?"Montant trop élevé":money(remaining);
+        refundRemaining.classList.toggle("credit",amount<=available+0.001);
+        refundConfirm.disabled=!valid;
+    }
+
+    function openRefund(){
+        if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
+        if(!accountData.peut_rembourser)return msg("Ce crédit ne peut pas être remboursé.");
+        const available=accountCredit();
+        if(available<=0)return msg("Ce compte n'a aucun crédit à rembourser.");
+        refundKey=uuid();
+        refundBalance.textContent=money(available);
+        refundAmount.max=available.toFixed(2);
+        refundAmount.value=available.toFixed(2);
+        updateRefund();
+        refundModal.classList.add("show");
+        refundModal.setAttribute("aria-hidden","false");
+        setTimeout(()=>refundAmount.select(),0);
+    }
+
+    function closeRefund(){
+        refundModal.classList.remove("show");
+        refundModal.setAttribute("aria-hidden","true");
+    }
+
+    async function saveRefund(){
+        if(!stand||!accountData)return;
+        const available=accountCredit();
+        const amount=Math.round(Number(String(refundAmount.value||"").replace(",","."))*100)/100;
+        if(!Number.isFinite(amount)||amount<=0)return msg("Saisis un montant à rembourser.");
+        if(amount>available+0.001)return msg("Le remboursement ne peut pas dépasser le crédit disponible.");
+        refundConfirm.disabled=true;
+        refundConfirm.textContent="Remboursement…";
+        try{
+            const {data:r,error}=await client.rpc(
+                demo?"rembourser_credit_stand_demo":"rembourser_credit_stand",
+                demo
+                    ?{p_idempotency_key:refundKey,p_stand_demo_id:stand.id,p_montant:amount,p_commentaire:"Remboursement du crédit DEMO depuis Vaisselle & Consignes"}
+                    :{p_idempotency_key:refundKey,p_participation_id:stand.id,p_montant:amount,p_commentaire:"Remboursement du crédit depuis Vaisselle & Consignes"}
+            );
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Remboursement non confirmé par le serveur.");
+            closeRefund();
+            msg(`Remboursement de ${money(amount)} enregistré pour ${standName(stand)}.`,true);
+            refundKey=null;
+            await loadAccount();
+        }
+        catch(e){
+            console.error(e);
+            msg(e?.message||"Impossible d'enregistrer le remboursement.");
+            refundConfirm.disabled=false;
+        }
+        finally{
+            refundConfirm.textContent="Rembourser en espèces";
+            updateRefund();
+        }
+    }
+
+    async function openCloseAccount(){
+        if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
+        if(accountClosed()){
+            if(!demo)return msg("Ce compte est déjà clôturé.");
+            if(!confirm("Rouvrir ce compte Démo ?\n\nCette action est réservée à l'entraînement et permettra de poursuivre les exercices sur ce stand."))return;
+            closeAccount.disabled=true;
+            closeAccount.textContent="Réouverture…";
+            try{
+                const {data:r,error}=await client.rpc("rouvrir_compte_stand_demo",{p_stand_demo_id:stand.id});
+                if(error)throw error;
+                if(!r?.ok)throw new Error("Réouverture non confirmée par le serveur.");
+                msg("Compte Démo rouvert.",true);
+                await loadAccount();
+                renderSummary();
+            }catch(e){
+                console.error(e);
+                msg(e?.message||"Impossible de rouvrir le compte Démo.");
+                await loadAccount();
+            }
+            return;
+        }
+        const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
+        const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
+        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte.");
+        if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture.");
+        if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
+        const forInvoice=invoiceMode&&solde>0;
+        closeAccountModalTitle.textContent=forInvoice?"Clôturer pour facturation":"Confirmer la clôture";
+        closeAccountStand.textContent=standName(stand); closeAccountMode.textContent=invoiceMode?"Facture":"Règlement direct"; closeAccountBalance.textContent=money(solde);
+        closeAccountInvoiceRow.hidden=!forInvoice; closeAccountInvoice.textContent=money(solde);
+        closeAccountWarning.textContent=forInvoice?`Après confirmation, le compte sera clôturé et ${money(solde)} seront figés à facturer. Aucune nouvelle opération ne pourra être enregistrée.`:demo?"Après confirmation, le compte Démo sera clôturé et aucune nouvelle opération ne pourra être enregistrée. Il pourra être rouvert ensuite pour poursuivre l'entraînement.":"Après confirmation, le compte sera clôturé définitivement. Aucune nouvelle opération ne pourra être enregistrée.";
+        closeAccountCheck.checked=false; closeAccountConfirm.disabled=true; closeAccountConfirm.textContent=forInvoice?"Confirmer la facturation":"Confirmer la clôture";
+        closeAccountModal.classList.add("show"); closeAccountModal.setAttribute("aria-hidden","false");
+    }
+    function closeCloseAccountModal(){closeAccountModal.classList.remove("show");closeAccountModal.setAttribute("aria-hidden","true");closeAccountCheck.checked=false;closeAccountConfirm.disabled=true;}
+    async function confirmCloseStandAccount(){
+        if(!stand||!accountData)return; if(!closeAccountCheck.checked)return;
+        if(accountClosed()){closeCloseAccountModal();return msg("Ce compte est déjà clôturé.");}
+        const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100; const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
+        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte."); if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture."); if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
+        closeAccountConfirm.disabled=true; closeAccountConfirm.textContent="Clôture…";
+        try{
+            const rpcName=demo?"cloturer_compte_stand_demo":"cloturer_compte_stand";
+            const rpcArgs=demo?{p_stand_demo_id:stand.id,p_commentaire:"Clôture Démo confirmée depuis Vaisselle & Consignes"}:{p_participation_id:stand.id,p_commentaire:"Clôture confirmée depuis Vaisselle & Consignes"};
+            const {data:r,error}=await client.rpc(rpcName,rpcArgs);
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Clôture non confirmée par le serveur.");
+            closeCloseAccountModal();
+            const nouveauStatut=String(r.nouveau_statut||r.statut_compte||"");
+            const montantFacture=Number(r.montant_a_facturer??r.montant_cloture_facturation??solde);
+            msg(nouveauStatut==="a_facturer"?`Compte clôturé. ${money(montantFacture)} à facturer.`:demo?"Compte Démo clôturé.":"Compte clôturé.",true);
+            await loadAccount(); renderSummary();}
+        catch(e){console.error(e);msg(e?.message||"Impossible de clôturer le compte.");closeAccountConfirm.disabled=!closeAccountCheck.checked;closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";await loadAccount();}
+    }
+
+    function searchStands(){
+        if(stand)return;
+        const q=search.value.trim().toLocaleLowerCase("fr");
+    const arr=(data.stands||[])
+        .filter(s=>!q||`${s.numero_stand||""} ${s.nom||""} ${s.raison_sociale||""}`
+        .toLocaleLowerCase("fr")
+        .includes(q))
+        .slice(0,25);
+        results.innerHTML=arr.length?arr.map(s=>`<button class="result" data-stand="${s.id}">
+        <strong>${esc(standName(s))}</strong>
+        <br>
+        <small>${esc(s.type_partenaire||"")}</small>
+        </button>`).join(""):`<div style="padding:10px;color:#777">Aucun stand trouvé.</div>`;
+        results.classList.add("show");
+        results.querySelectorAll("[data-stand]").forEach(b=>b.onclick=()=>selectStand(b.dataset.stand))
+    }
+    function selectStand(id){
+        const s=(data.stands||[]).find(x=>x.id===id);
+        if(!s){
+            msg("Ce stand n'est pas disponible pour la vaisselle.");
+            return false
+        }
+        stand=s;
+        searchZone.style.display="none";
+        selected.classList.add("show");
+        selectedName.textContent=standName(s);
+        selectedType.textContent=s.type_partenaire||"";
+        results.classList.remove("show");
+        renderCatalog();
+        renderSummary();
+        loadAccount();
+        return true
+    }
+    function changeStand(){
+        stand=null;
+        accountData=null;
+        accountStrip.classList.remove("show");
+        selected.classList.remove("show");
+        searchZone.style.display="grid";
+        search.value="";
+        renderCatalog();
+        renderSummary();
+        search.focus()
+    }
+    function buildOperation(t){
+        const lines=[],containers=[];
+        const c=(data.contenants||[]).find(x=>String(x.nom||"").toLocaleLowerCase("fr")==="caisse")||(data.contenants||[])[0]||null;
+        let fullCases=0;
+        for(const a of data.vaisselle||[]){
+            const e=state.vaisselle[a.id][t];
+            const std=n(a.quantite_standard);
+            const inCompletePackages=e.caisses*std;
+            const total=inCompletePackages+e.unites;
+            if(!total)continue;
+            if(t==="retour_propre"&&e.unites>0&&!properUnit(a))
+                throw new Error(`Retour propre à l'unité non autorisé pour « ${a.nom} » avec ce stand.`);
+
+            lines.push({
+                vaisselle_id:a.id,
+                quantite_unites:total,
+                nombre_caisses_completes:e.caisses,
+                quantite_en_caisses_completes:inCompletePackages,
+                quantite_en_caisses_partielles:0,
+                quantite_hors_caisses:e.unites
+            });
+
+            if(packagingType(a)==="caisse") fullCases+=e.caisses;
+        }
+        if(c&&fullCases) containers.push({type_contenant_id:c.id,quantite:fullCases,usage_contenant:"avec_vaisselle"});
+        if(c&&t!=="retour_propre"&&state.caissesVides[t])
+            containers.push({type_contenant_id:c.id,quantite:state.caissesVides[t],usage_contenant:"vide"});
+        if(!lines.length&&!containers.length)return null;
+        return{type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants:containers};
+    }
+    async function save(){
+        if(!stand)return msg("Sélectionne d'abord le stand.");
+        if(accountClosed())return msg("Ce compte est clôturé. Aucune nouvelle opération ne peut être enregistrée.");
+        let ops;
+        try{
+            ops=types.map(buildOperation).filter(Boolean)
+        }
+        catch(e){
+            return msg(e.message)
+        }
+        if(!ops.length)return msg("Aucune opération à enregistrer.");
+        validate.disabled=true;
+        validate.classList.remove("on");
+        validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
+        try{
+            let r=null;
+            if(demo){
+                const results=[];
+                for(const op of ops){
+                    const {data:one,error}=await client.rpc("valider_operation_vaisselle_demo",{
+                        p_idempotency_key:op.idempotency_key,
+                        p_stand_demo_id:stand.id,
+                        p_type_operation:op.type_operation,
+                        p_lignes_vaisselle:op.lignes_vaisselle,
+                        p_contenants:op.contenants,
+                        p_commentaire:null
+                    });
+                    if(error)throw error;
+                    if(!one?.ok)throw new Error("Validation Démo non confirmée par le serveur.");
+                    results.push(one);
+                }
+                r={ok:true,operations:results};
+            }
+            else{
+                const response=await client.rpc("valider_session_vaisselle",{
+                    p_participation_id:stand.id,
+                    p_operations:ops,
+                    p_commentaire:null
+                });
+                if(response.error)throw response.error;
+                r=response.data;
+            }
+            if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
+            msg(
+                demo
+                    ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
+                    :`Enregistré sur le compte de ${standName(stand)}.`,
+                true
+            );
+            initState();
+            renderCatalog();
+            renderSummary();
+            await loadAccount()
+        }
+        catch(e){
+            console.error(e);
+            msg(e?.message||"Impossible d'enregistrer la session.")
+        }
+        finally{
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
+            renderSummary()
+        }
+    }
+    async function resolveQr(v){
+        const text=String(v||"").trim();
+        if(!text)return msg("QR vide ou illisible.");
+        try{
+            const {data:r,error}=await client.rpc(
+                demo ? "resoudre_qr_stand_demo" : "resoudre_qr_interne",
+                demo
+                    ? {p_qr_payload:text}
+                    : {p_valeur_qr:text}
+            );
+            if(error)throw error;
+            const participationId=demo
+                ?(r?.stand?.id||r?.stand?.participation_id)
+                :r?.participation_id;
+            if(!participationId)throw new Error(demo?"QR Démo sans stand valide.":"QR sans participation valide.");
+            if(!selectStand(participationId))throw new Error("Stand indisponible pour la vaisselle.");
+            closeQr();
+            msg(`Stand sélectionné : ${standName(stand)}.`,true)
+        }
+        catch(e){
+            msg(e?.message||(demo?"QR Démo invalide.":"QR interne invalide."))
+        }
+    }
+    async function openQr(){
+        modal.classList.add("show");
+        modal.setAttribute("aria-hidden","false");
+        manualQr.value="";
+        try{
+            stream=await navigator.mediaDevices.getUserMedia({
+                video:{
+                    facingMode:{
+                        ideal:"environment"
+                    }
+                }
+                ,audio:false
+            }
+            );
+            video.srcObject=stream;
+            await video.play();
+            scanLoop=true;
+            scan()
+        }
+        catch(e){
+            msg("Caméra indisponible. Tu peux coller la valeur du QR.")
+        }
+    }
+    function closeQr(){
+        scanLoop=false;
+        if(stream){
+            stream.getTracks().forEach(t=>t.stop());
+            stream=null
+        }
+        video.srcObject=null;
+        modal.classList.remove("show");
+        modal.setAttribute("aria-hidden","true")
+    }
+    function scan(){
+        if(!scanLoop)return;
+        if(video.readyState===video.HAVE_ENOUGH_DATA&&window.jsQR){
+            const ctx=canvas.getContext("2d",{
+                willReadFrequently:true
+            }
+            );
+            canvas.width=video.videoWidth;
+            canvas.height=video.videoHeight;
+            ctx.drawImage(video,0,0,canvas.width,canvas.height);
+            const im=ctx.getImageData(0,0,canvas.width,canvas.height),code=window.jsQR(im.data,im.width,im.height,{
+                inversionAttempts:"dontInvert"
+            }
+            );
+            if(code?.data){
+                scanLoop=false;
+                resolveQr(code.data);
+                return
+            }
+        }
+        requestAnimationFrame(scan)
+    }
+    function events(){
+        document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+            document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+            b.classList.add("active");
+            filter=b.dataset.filter;
+            $("returnSubtabs").hidden = filter !== "retours";
+            catalog.scrollTop=0;
+            renderCatalog()
+        }
+        );
+        document.querySelectorAll(".subtab").forEach((b) => {
+            b.onclick = () => {
+                document.querySelectorAll(".subtab").forEach((x) => {
+                    x.classList.remove("active");
+                });
+                b.classList.add("active");
+                returnFilter = b.dataset.returnFilter;
+                catalog.scrollTop = 0;
+                renderCatalog();
+            };
+        });
+        $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
+        $("logout").onclick=async()=>{
+            sessionStorage.removeItem("mdn_mode_demo_actif");
+            await window.MDN_AUTH.deconnexion()
+        }
+        ;
+        search.onfocus=searchStands;
+        search.oninput=searchStands;
+        $("change").onclick=changeStand;
+        $("qr").onclick=openQr;
+        $("modalClose").onclick=closeQr;
+        $("manualGo").onclick=()=>resolveQr(manualQr.value);
+        manualQr.onkeydown=e=>{
+            if(e.key==="Enter")resolveQr(manualQr.value)
+        }
+        ;
+        modal.onclick=e=>{
+            if(e.target===modal)closeQr()
+        }
+        ;
+        payAccount.onclick=()=>{
+            if(accountCredit()>0)openRefund();
+            else openPayment();
+        };
+        closeAccount.onclick=openCloseAccount;
+        $("closeAccountModalClose").onclick=closeCloseAccountModal;
+        $("closeAccountCancel").onclick=closeCloseAccountModal;
+        closeAccountCheck.onchange=()=>{closeAccountConfirm.disabled=!closeAccountCheck.checked;};
+        closeAccountConfirm.onclick=confirmCloseStandAccount;
+        closeAccountModal.onclick=e=>{if(e.target===closeAccountModal)closeCloseAccountModal();};
+        $("paymentClose").onclick=closePayment;
+        $("paymentCancel").onclick=closePayment;
+        paymentConfirm.onclick=savePayment;
+        paymentModal.onclick=e=>{
+            if(e.target===paymentModal)closePayment();
+        };
+        $("refundClose").onclick=closeRefund;
+        $("refundCancel").onclick=closeRefund;
+        refundAmount.oninput=updateRefund;
+        refundAmount.onfocus=()=>refundAmount.select();
+        refundConfirm.onclick=saveRefund;
+        refundModal.onclick=e=>{
+            if(e.target===refundModal)closeRefund();
+        };
+        validate.onclick=save;
+        $("toastClose").onclick=()=>toast.classList.remove("show");
+        document.addEventListener("click",e=>{
+            if(!e.target.closest(".standbar"))results.classList.remove("show")
+        }
+        )
+    }
+    function avecDelai(promise, delaiMs, message){
+        return Promise.race([
+            promise,
+            new Promise((_,reject)=>{
+                setTimeout(()=>reject(new Error(message)),delaiMs);
+            })
+        ]);
+    }
+
+    async function init(){
+        try{
+            const p=new URLSearchParams(location.search);
+            demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
+            closeAccount.style.display="inline-flex";
+            topbar.classList.toggle("demo",demo);
+            demoNote.classList.toggle("show",demo);
+            document.querySelector(".title h1").textContent=demo
+                ?"🍽️ Vaisselle & Consignes · MODE DÉMO"
+                :"🍽️ Vaisselle & Consignes";
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
+            if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
+            const auth=await avecDelai(window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
+            if(!auth)return;
+            const first=String(auth.profil?.prenom||"Utilisateur").trim();
+            const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
+            $("identity").textContent=`${first} · ${role}`;
+            client=window.MDN_SUPABASE;
+            if(!client)throw new Error("Client Supabase indisponible.");
+            const response=await avecDelai(client.rpc(demo?"charger_ecran_retrait_vaisselle_demo":"charger_ecran_retrait_vaisselle"),12000,"Le chargement des données de vaisselle prend trop de temps. Recharge la page.");
+            const d=response?.data;
+            const error=response?.error;
+            if(error)throw error;
+            if(!d?.edition?.id)throw new Error("Aucune édition active.");
+            data=d;
+            edition.textContent=`MDN Sion ${d.edition.annee||""}`;
+            initState();
+            events();
+            renderCatalog();
+            renderSummary();
+            window.MDN_AUTH.surveillerSession({redirigerApresDeconnexion:true});
+        }
+        catch(e){
+            console.error("Initialisation Vaisselle :",e);
+            msg(e?.message||"Impossible de charger l'écran vaisselle.");
+        }
+        finally{
+            loading.classList.add("hide");
+        }
+    }
+
+    const securiteChargement=setTimeout(()=>{
+        if(!loading.classList.contains("hide")){
+            loading.classList.add("hide");
+            msg("Le chargement prend anormalement longtemps. Recharge la page si les données ne s'affichent pas.");
+        }
+    },15000);
+
+    init().finally(()=>{
+        clearTimeout(securiteChargement);
+    });
+}
+)();
+</script>
+ </body>
+</html>
   <link href="logo-mdn.png" rel="icon" type="image/png"/>
   <link href="logo-mdn.png" rel="apple-touch-icon"/>
   <title>
