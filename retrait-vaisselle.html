@@ -2742,22 +2742,31 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             }
 
             renderSummary();
-            await loadAccount();
 
-            // Si le chargement renvoie momentanément l'ancien état,
-            // on conserve visuellement la clôture déjà confirmée.
-            if(accountData?.compte&&!accountData.compte.date_cloture_compte){
-                accountData.compte.date_cloture_compte =
-                    r?.date_cloture_compte || new Date().toISOString();
+            // La clôture vient d'être confirmée par le serveur.
+            // On affiche immédiatement et explicitement l'état clôturé,
+            // sans relancer loadAccount() qui réinitialisait l'affichage
+            // avec l'ancien état du compte.
+            accountBalance.classList.remove("credit");
+            payAccount.style.display="none";
+            payAccount.disabled=true;
+            payAccount.title="Compte clôturé";
+            closeAccount.style.display="inline-flex";
 
-                if(invoiceMode&&solde>0){
-                    accountData.compte.statut_compte="a_facturer";
-                    accountData.compte.montant_cloture_facturation =
-                        Number(r?.montant_cloture_facturation ?? solde);
-                }else{
-                    accountData.compte.statut_compte="solde";
-                }
-                renderSummary();
+            if(invoiceMode&&solde>0){
+                accountBalance.textContent=`À facturer ${money(solde)}`;
+            }else{
+                accountBalance.textContent="Compte clôturé";
+            }
+
+            if(demo){
+                closeAccount.disabled=false;
+                closeAccount.textContent="Rouvrir cpt démo";
+                closeAccount.title="Rouvrir ce compte Démo pour poursuivre les exercices";
+            }else{
+                closeAccount.disabled=true;
+                closeAccount.textContent="Compte clôturé";
+                closeAccount.title="Ce compte est déjà clôturé";
             }
         }
         catch(e){console.error(e);msg(e?.message||"Impossible de clôturer le compte.");closeAccountConfirm.disabled=!closeAccountCheck.checked;closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";await loadAccount();}
