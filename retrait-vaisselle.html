@@ -2307,9 +2307,21 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
 
     function accountClosed(){
-        if(demo)return false;
         const c=accountData?.compte||{};
         return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||["a_facturer","facture","solde"].includes(String(c.statut_compte||""));
+    }
+
+    async function chargerClotureDemo(){
+        if(!demo||!stand||!accountData)return;
+        const {data:etat,error}=await client
+            .from("stands_vaisselle_demo")
+            .select("statut_compte,date_cloture_compte,montant_cloture_facturation,date_cloture_facturation")
+            .eq("id",stand.id)
+            .maybeSingle();
+        if(error)throw error;
+        if(etat){
+            accountData.compte={...(accountData.compte||{}),...etat};
+        }
     }
 
     async function loadAccount(){
@@ -2335,7 +2347,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(!r?.ok)throw new Error("Compte du stand non chargé.");
             if(!stand||r.compte?.participation_id!==stand.id)return;
             accountData=r;
-            const solde=Math.round(Number(r.compte?.solde_restant||0)*100)/100;
+            if(demo)await chargerClotureDemo();
+            const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
             const closed=accountClosed();
             accountBalance.classList.toggle("credit",solde<0);
 
@@ -2349,6 +2362,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 }
                 payAccount.disabled=true;
                 payAccount.title="Compte clôturé";
+                closeAccount.style.display="inline-flex";
                 closeAccount.disabled=true;
                 closeAccount.textContent="Compte clôturé";
                 closeAccount.title="Ce compte est déjà clôturé";
@@ -2381,25 +2395,19 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                         :"Régler tout ou partie du compte";
             }
 
-            if(demo){
-                closeAccount.style.display="none";
-                closeAccount.disabled=true;
-                closeAccount.textContent="Clôturer le compte";
-                closeAccount.title="";
-            }else{
-                closeAccount.style.display="inline-flex";
-                const invoiceMode=String(r.compte?.mode_reglement_habituel||"")==="facture";
-                const canClose=Boolean(r.peut_cloturer)&&(solde===0||(invoiceMode&&solde>0));
-                closeAccount.disabled=!canClose;
-                closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
-                closeAccount.title=solde<0
-                    ?"Le crédit doit être remboursé avant la clôture"
-                    :invoiceMode&&solde>0
-                        ?"Figer le solde et clôturer le compte pour facturation"
-                        :solde===0
-                            ?"Clôturer définitivement ce compte"
-                            :"Le compte doit être soldé avant la clôture";
-            }
+            closeAccount.style.display="inline-flex";
+            const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
+            const autoriseCloture=demo?true:Boolean(accountData.peut_cloturer);
+            const canClose=autoriseCloture&&(solde===0||(invoiceMode&&solde>0));
+            closeAccount.disabled=!canClose;
+            closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
+            closeAccount.title=solde<0
+                ?"Le crédit doit être remboursé avant la clôture"
+                :invoiceMode&&solde>0
+                    ?"Figer le solde et clôturer le compte pour facturation"
+                    :solde===0
+                        ?"Clôturer ce compte"
+                        :"Le compte doit être soldé avant la clôture";
         }
         catch(e){
             console.error(e);
@@ -2630,29 +2638,45 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function openCloseAccount(){
         if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
-        if(demo)return msg("La clôture définitive du compte n'est pas exécutée en mode Démo.");
         if(accountClosed())return msg("Ce compte est déjà clôturé.");
         const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
         const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
         if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte.");
         if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture.");
-        if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
+        if(!demo&&!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
         const forInvoice=invoiceMode&&solde>0;
         closeAccountModalTitle.textContent=forInvoice?"Clôturer pour facturation":"Confirmer la clôture";
         closeAccountStand.textContent=standName(stand); closeAccountMode.textContent=invoiceMode?"Facture":"Règlement direct"; closeAccountBalance.textContent=money(solde);
         closeAccountInvoiceRow.hidden=!forInvoice; closeAccountInvoice.textContent=money(solde);
-        closeAccountWarning.textContent=forInvoice?`Après confirmation, le compte sera clôturé et ${money(solde)} seront figés à facturer. Aucune nouvelle opération ne pourra être enregistrée.`:"Après confirmation, le compte sera clôturé définitivement. Aucune nouvelle opération ne pourra être enregistrée.";
+        closeAccountWarning.textContent=forInvoice
+            ?`Après confirmation, le compte sera clôturé et ${money(solde)} seront figés à facturer. Aucune nouvelle opération ne pourra être enregistrée.`
+            :demo
+                ?"Après confirmation, le compte Démo sera clôturé. Aucune nouvelle opération ne pourra être enregistrée sur ce compte."
+                :"Après confirmation, le compte sera clôturé définitivement. Aucune nouvelle opération ne pourra être enregistrée.";
         closeAccountCheck.checked=false; closeAccountConfirm.disabled=true; closeAccountConfirm.textContent=forInvoice?"Confirmer la facturation":"Confirmer la clôture";
         closeAccountModal.classList.add("show"); closeAccountModal.setAttribute("aria-hidden","false");
     }
     function closeCloseAccountModal(){closeAccountModal.classList.remove("show");closeAccountModal.setAttribute("aria-hidden","true");closeAccountCheck.checked=false;closeAccountConfirm.disabled=true;}
     async function confirmCloseStandAccount(){
-        if(!stand||!accountData)return; if(demo)return closeCloseAccountModal(); if(!closeAccountCheck.checked)return;
+        if(!stand||!accountData)return; if(!closeAccountCheck.checked)return;
         if(accountClosed()){closeCloseAccountModal();return msg("Ce compte est déjà clôturé.");}
         const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100; const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
-        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte."); if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture."); if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
+        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte."); if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture."); if(!demo&&!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
         closeAccountConfirm.disabled=true; closeAccountConfirm.textContent="Clôture…";
-        try{const {data:r,error}=await client.rpc("cloturer_compte_stand",{p_participation_id:stand.id,p_commentaire:"Clôture confirmée depuis Vaisselle & Consignes"}); if(error)throw error; if(!r?.ok)throw new Error("Clôture non confirmée par le serveur."); closeCloseAccountModal(); msg(r.nouveau_statut==="a_facturer"?`Compte clôturé. ${money(r.montant_a_facturer||solde)} à facturer.`:"Compte clôturé.",true); await loadAccount(); renderSummary();}
+        try{
+            const {data:r,error}=await client.rpc(
+                demo?"cloturer_compte_stand_demo":"cloturer_compte_stand",
+                demo
+                    ?{p_stand_demo_id:stand.id,p_commentaire:"Clôture Démo confirmée depuis Vaisselle & Consignes"}
+                    :{p_participation_id:stand.id,p_commentaire:"Clôture confirmée depuis Vaisselle & Consignes"}
+            );
+            if(error)throw error;
+            if(!r?.ok)throw new Error("Clôture non confirmée par le serveur.");
+            closeCloseAccountModal();
+            msg(invoiceMode&&solde>0?`Compte clôturé. ${money(solde)} à facturer.`:(demo?"Compte Démo clôturé.":"Compte clôturé."),true);
+            await loadAccount();
+            renderSummary();
+        }
         catch(e){console.error(e);msg(e?.message||"Impossible de clôturer le compte.");closeAccountConfirm.disabled=!closeAccountCheck.checked;closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";await loadAccount();}
     }
 
@@ -2956,7 +2980,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         try{
             const p=new URLSearchParams(location.search);
             demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
-            closeAccount.style.display=demo?"none":"inline-flex";
+            closeAccount.style.display="inline-flex";
             topbar.classList.toggle("demo",demo);
             demoNote.classList.toggle("show",demo);
             document.querySelector(".title h1").textContent=demo
