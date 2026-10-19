@@ -1287,13 +1287,13 @@
           </p>
 
           <button
+            id="boutonRapports"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir les comptes stands"
+            data-texte-demo="Démo - Comptes stands"
           >
-            Bientôt disponible
+            Ouvrir les comptes stands
           </button>
 
         </article>
@@ -1488,6 +1488,11 @@
       const moduleRapports =
         document.getElementById(
           "moduleRapports"
+        );
+
+      const boutonRapports =
+        document.getElementById(
+          "boutonRapports"
         );
 
 
@@ -1918,6 +1923,24 @@
             modeDemoActif
               ? "retrait-vaisselle.html?mode=demo"
               : "retrait-vaisselle.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION COMPTES STANDS
+         Responsable + Administrateur
+         ==================================================== */
+
+      boutonRapports.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "comptes-stands.html?mode=demo"
+              : "comptes-stands.html";
 
         }
       );
