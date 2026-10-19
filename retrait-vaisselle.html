@@ -1442,7 +1442,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 }
 .selected.show{
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-columns:minmax(0,1fr);
     align-items:center;
     width:100%;
     height:auto !important;
@@ -1493,7 +1493,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     max-width:100%;
     display:flex;
     align-items:center;
-    justify-content:flex-end;
+    width:100%;
+    justify-content:stretch;
     gap:8px;
     flex-wrap:wrap;
 }
@@ -1504,6 +1505,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     min-height:36px;
     padding:7px 11px;
     white-space:nowrap;
+    flex:1 1 100%;
+    width:100%;
 }
 
 /* Le bandeau du compte s'adapte à sa propre largeur :
@@ -2334,6 +2337,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         payAccount.style.display="inline-flex";
         payAccount.textContent="Régler le compte";
         payAccount.disabled=true;
+        closeAccount.style.display="none";
         closeAccount.disabled=true;
         closeAccount.textContent="Clôturer le compte";
         if(!stand)return;
@@ -2405,19 +2409,30 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                         :"Régler tout ou partie du compte";
             }
 
-            closeAccount.style.display="inline-flex";
             const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
             const autoriseCloture=demo?true:Boolean(accountData.peut_cloturer);
             const canClose=autoriseCloture&&(solde===0||(invoiceMode&&solde>0));
-            closeAccount.disabled=!canClose;
-            closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
-            closeAccount.title=solde<0
-                ?"Le crédit doit être remboursé avant la clôture"
-                :invoiceMode&&solde>0
-                    ?"Figer le solde et clôturer le compte pour facturation"
-                    :solde===0
-                        ?"Clôturer ce compte"
-                        :"Le compte doit être soldé avant la clôture";
+
+            // Une seule action principale est affichée selon l'état du compte.
+            if(invoiceMode&&solde>0){
+                payAccount.style.display="none";
+                closeAccount.style.display="inline-flex";
+                closeAccount.disabled=!canClose;
+                closeAccount.textContent="Clôturer pour facturation";
+                closeAccount.title="Figer le solde et clôturer le compte pour facturation";
+            }else if(solde===0){
+                payAccount.style.display="none";
+                closeAccount.style.display="inline-flex";
+                closeAccount.disabled=!canClose;
+                closeAccount.textContent="Clôturer le compte";
+                closeAccount.title="Clôturer ce compte";
+            }else{
+                closeAccount.style.display="none";
+                closeAccount.disabled=true;
+                closeAccount.title=solde<0
+                    ?"Le crédit doit être remboursé avant la clôture"
+                    :"Le compte doit être soldé avant la clôture";
+            }
         }
         catch(e){
             console.error(e);
