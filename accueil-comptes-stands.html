@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+
+  <meta
+    name="description"
+    content="Accueil de l'application de gestion du Marché de Noël de Sion"
+  >
+
+  <title>Accueil - MDN Sion</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      margin: 0;
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      color: #222222;
+    }
+
+    button {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ======================================================
+       CHARGEMENT
+       ====================================================== */
+
+    .chargement-page {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      gap: 18px;
+
+      padding: 24px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #7b0000 0%,
+          #a00000 48%,
+          #650000 100%
+        );
+
+      color: #ffffff;
+
+      text-align: center;
+
+      transition:
+        opacity 0.25s ease,
+        visibility 0.25s ease;
+    }
+
+    .chargement-page.masque {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .chargement-embleme {
+      width: 74px;
+      height: 74px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.65);
+
+      border-radius: 20px;
+
+      background:
+        rgba(255, 255, 255, 0.10);
+
+      overflow: hidden;
+
+      box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .chargement-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .chargement-page strong {
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .chargement-page p {
+      margin: 0;
+
+      color:
+        rgba(255, 255, 255, 0.88);
+
+      font-size: 15px;
+    }
+
+    .spinner-page {
+      width: 28px;
+      height: 28px;
+
+      border:
+        3px solid rgba(255, 255, 255, 0.30);
+
+      border-top-color: #ffffff;
+      border-radius: 50%;
+
+      animation:
+        rotation 0.8s linear infinite;
+    }
+
+    /* ======================================================
+       APPLICATION
+       ====================================================== */
+
+    .application {
+      width: 100%;
+
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ======================================================
+       ENTÊTE
+       ====================================================== */
+
+    .barre-haute {
+      width: 100%;
+
+      padding:
+        max(14px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        14px
+        max(18px, env(safe-area-inset-left));
+
+      background:
+        rgba(92, 0, 0, 0.45);
+
+      border-bottom:
+        1px solid rgba(255, 255, 255, 0.16);
+
+      color: #ffffff;
+
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .barre-haute-contenu {
+      width: min(100%, 1220px);
+
+      margin: 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 18px;
+    }
+
+    .marque {
+      min-width: 0;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+    }
+
+    .marque-embleme {
+      flex: 0 0 auto;
+
+      width: 48px;
+      height: 48px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+
+      background:
+        rgba(255, 255, 255, 0.12);
+
+      overflow: hidden;
+    }
+
+    .marque-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .marque-textes {
+      min-width: 0;
+    }
+
+    .marque-titre {
+      margin: 0;
+
+      font-size: 21px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .marque-sous-titre {
+      margin: 3px 0 0;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      color:
+        rgba(255, 255, 255, 0.78);
+
+      font-size: 12px;
+    }
+
+    .zone-utilisateur {
+      min-width: 0;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+    }
+
+    .identite-utilisateur {
+      min-width: 0;
+
+      text-align: right;
+    }
+
+    .email-utilisateur {
+      max-width: 320px;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .role-utilisateur {
+      margin-top: 2px;
+
+      color:
+        rgba(255, 255, 255, 0.76);
+
+      font-size: 12px;
+    }
+
+    .bouton-deconnexion {
+      flex: 0 0 auto;
+
+      min-height: 42px;
+
+      padding: 9px 14px;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.35);
+
+      border-radius: 11px;
+
+      background:
+        rgba(255, 255, 255, 0.10);
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 700;
+    }
+
+    .bouton-deconnexion:hover:not(:disabled) {
+      background:
+        rgba(255, 255, 255, 0.18);
+    }
+
+    .bouton-deconnexion:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    /* ======================================================
+       CONTENU
+       ====================================================== */
+
+    .contenu {
+      width: min(100%, 1220px);
+
+      flex: 1;
+
+      margin: 0 auto;
+
+      padding:
+        28px
+        max(18px, env(safe-area-inset-right))
+        max(28px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
+    }
+
+    .bienvenue {
+      margin-bottom: 24px;
+
+      color: #ffffff;
+    }
+
+    .bienvenue h1 {
+      margin: 0;
+
+      font-size:
+        clamp(28px, 4vw, 42px);
+
+      line-height: 1.08;
+    }
+
+    .bienvenue p {
+      margin: 8px 0 0;
+
+      color:
+        rgba(255, 255, 255, 0.82);
+
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ======================================================
+       MESSAGE
+       ====================================================== */
+
+    .message {
+      display: none;
+      position: fixed;
+      z-index: 5000;
+      top: calc(18px + env(safe-area-inset-top));
+      left: 50%;
+      width: min(680px, calc(100vw - 32px));
+      padding: 13px 48px 13px 15px;
+      border-radius: 12px;
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+      transform: translateX(-50%);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .message.visible {
+      display: block;
+      animation: apparitionMessage .18s ease-out;
+    }
+
+    @keyframes apparitionMessage {
+      from { opacity: 0; transform: translate(-50%, -8px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    .message.erreur {
+      border: 1px solid #e4b5b5;
+
+      background: #fff1f1;
+
+      color: #9c1616;
+    }
+
+    .message.info {
+      border: 1px solid #b8cce5;
+
+      background: #eef6ff;
+
+      color: #174b7a;
+    }
+
+    .message.succes {
+      border: 1px solid #b7dfc2;
+      background: #eefaf1;
+      color: #08752d;
+    }
+
+    .message-fermer {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: currentColor;
+      cursor: pointer;
+      transform: translateY(-50%);
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    .message-fermer:hover { background: rgba(0, 0, 0, 0.06); }
+
+    /* ======================================================
+       REINITIALISATION MODE DEMO
+       ====================================================== */
+
+    .zone-reinitialisation-demo {
+      display: none;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border: 1px solid #dfc66e;
+      border-radius: 14px;
+      background: #fff6d6;
+      color: #6f5600;
+    }
+
+    body.mode-demo .zone-reinitialisation-demo.autorisee {
+      display: flex;
+    }
+
+    .zone-reinitialisation-demo-texte {
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .zone-reinitialisation-demo-texte strong {
+      display: block;
+      margin-bottom: 2px;
+      color: #5f4900;
+      font-size: 14px;
+    }
+
+    .bouton-reinitialiser-demo {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid #a67c00;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #d3a400, #a97e00);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .bouton-reinitialiser-demo:hover:not(:disabled) {
+      filter: brightness(0.96);
+    }
+
+    .bouton-reinitialiser-demo:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    /* ======================================================
+       MODULES
+       ====================================================== */
+
+    .grille-modules {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+      gap: 18px;
+    }
+
+    .module {
+      min-width: 0;
+      min-height: 170px;
+
+      display: flex;
+      flex-direction: column;
+
+      padding: 22px;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.24);
+
+      border-radius: 20px;
+
+      background:
+        rgba(255, 255, 255, 0.97);
+
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.18);
+    }
+
+    .module.masque {
+      display: none;
+    }
+
+    .module-entete {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+
+      gap: 14px;
+    }
+
+    .module-icone {
+      width: 48px;
+      height: 48px;
+
+      flex: 0 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+
+      background: #fff0f0;
+
+      color: #8b0000;
+
+      font-size: 25px;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+
+      padding: 5px 8px;
+
+      border-radius: 999px;
+
+      background: #f2f2f2;
+
+      color: #666666;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .module h2 {
+      margin: 16px 0 6px;
+
+      color: #850000;
+
+      font-size: 19px;
+      line-height: 1.15;
+    }
+
+    .module p {
+      flex: 1;
+
+      margin: 0 0 18px;
+
+      color: #666666;
+
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .bouton-module {
+      width: 100%;
+      min-height: 42px;
+
+      border: 0;
+      border-radius: 11px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #9c0000,
+          #760000
+        );
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 700;
+    }
+
+    .bouton-module:disabled {
+      background: #dedede;
+
+      color: #777777;
+
+      cursor: not-allowed;
+
+      box-shadow: none;
+    }
+
+    /* ======================================================
+       MODE DEMO / FORMATION - COMMANDE DANS L'ENTETE
+       ====================================================== */
+
+    .bouton-demo-entete {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 8px 13px;
+      border: 1px solid rgba(255,255,255,.38);
+      border-radius: 11px;
+      background: rgba(255,255,255,.10);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 800;
+      transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .bouton-demo-entete:hover {
+      background: rgba(255,255,255,.18);
+    }
+
+    .bouton-demo-entete.actif {
+      border-color: #7ddf9b;
+      background: #198754;
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(25,135,84,.16);
+    }
+
+    .bouton-demo-entete.actif:hover {
+      background: #157347;
+    }
+
+    body.mode-demo .bouton-module:not(:disabled) {
+      background: linear-gradient(145deg, #d3a400, #a97e00);
+      color: #ffffff;
+    }
+
+    body.mode-demo .bouton-module:disabled {
+      border: 1px solid #dfc66e;
+      background: #f5e8b7;
+      color: #8a6a00;
+    }
+
+    /* ======================================================
+       PIED DE PAGE
+       ====================================================== */
+
+    .pied-page {
+      padding:
+        12px
+        max(18px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom))
+        max(18px, env(safe-area-inset-left));
+
+      color:
+        rgba(255, 255, 255, 0.66);
+
+      text-align: center;
+
+      font-size: 11px;
+    }
+
+    /* ======================================================
+       ANIMATIONS
+       ====================================================== */
+
+    @keyframes rotation {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ======================================================
+       TABLETTE
+       ====================================================== */
+
+    @media (max-width: 900px) {
+
+      .grille-modules {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+    }
+
+    /* ======================================================
+       TELEPHONE PORTRAIT
+       ====================================================== */
+
+    @media (max-width: 620px) {
+
+      .barre-haute-contenu {
+        align-items: flex-start;
+      }
+
+      .marque-sous-titre {
+        display: none;
+      }
+
+      .identite-utilisateur {
+        display: none;
+      }
+
+      .contenu {
+        padding-top: 20px;
+      }
+
+      .zone-reinitialisation-demo {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bouton-reinitialiser-demo {
+        width: 100%;
+      }
+
+      .grille-modules {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+      }
+
+      .module {
+        min-height: 0;
+
+        padding: 18px;
+      }
+
+    }
+
+    /* ======================================================
+       TELEPHONE PAYSAGE
+       ====================================================== */
+
+    @media (
+      max-height: 600px
+    ) and (
+      orientation: landscape
+    ) {
+
+      .barre-haute {
+        padding-top:
+          max(8px, env(safe-area-inset-top));
+
+        padding-bottom: 8px;
+      }
+
+      .marque-embleme {
+        width: 40px;
+        height: 40px;
+
+        font-size: 22px;
+      }
+
+      .contenu {
+        padding-top: 16px;
+        padding-bottom: 16px;
+      }
+
+      .bienvenue {
+        margin-bottom: 15px;
+      }
+
+      .bienvenue h1 {
+        font-size: 27px;
+      }
+
+      .bienvenue p {
+        margin-top: 4px;
+      }
+
+      .grille-modules {
+        gap: 12px;
+      }
+
+      .module {
+        min-height: 145px;
+
+        padding: 16px;
+      }
+
+      .module-icone {
+        width: 40px;
+        height: 40px;
+
+        font-size: 21px;
+      }
+
+      .module h2 {
+        margin-top: 11px;
+
+        font-size: 17px;
+      }
+
+      .module p {
+        margin-bottom: 12px;
+      }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+
+      .spinner-page {
+        animation-duration: 1.8s;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ======================================================
+       ECRAN DE CHARGEMENT
+       ====================================================== -->
+
+  <div
+    id="chargementPage"
+    class="chargement-page"
+    aria-live="polite"
+  >
+
+    <div
+      class="chargement-embleme"
+      aria-hidden="true"
+    >
+      <img src="logo-mdn.png" alt="">
+    </div>
+
+    <strong>
+      MDN Sion
+    </strong>
+
+    <div
+      class="spinner-page"
+      aria-hidden="true"
+    ></div>
+
+    <p>
+      Vérification de votre session…
+    </p>
+
+  </div>
+
+
+  <!-- ======================================================
+       APPLICATION
+       ====================================================== -->
+
+  <div class="application">
+
+    <!-- ====================================================
+         ENTETE
+         ==================================================== -->
+
+    <header class="barre-haute">
+
+      <div class="barre-haute-contenu">
+
+        <div class="marque">
+
+          <div
+            class="marque-embleme"
+            aria-hidden="true"
+          >
+            <img src="logo-mdn.png" alt="">
+          </div>
+
+          <div class="marque-textes">
+
+            <p class="marque-titre">
+              MDN Sion
+            </p>
+
+            <p class="marque-sous-titre">
+              Marché de Noël de Sion
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="zone-utilisateur">
+
+          <div class="identite-utilisateur">
+
+            <div
+              id="prenomUtilisateur"
+              class="email-utilisateur"
+            >
+              —
+            </div>
+
+            <div
+              id="roleUtilisateur"
+              class="role-utilisateur"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <button
+            id="boutonModeDemo"
+            class="bouton-demo-entete"
+            type="button"
+            aria-pressed="false"
+            title="Activer le Mode Démo / Formation"
+          >
+            🎓 Démo
+          </button>
+
+
+          <button
+            id="boutonDeconnexion"
+            class="bouton-deconnexion"
+            type="button"
+          >
+            Déconnexion
+          </button>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- ====================================================
+         CONTENU
+         ==================================================== -->
+
+    <main class="contenu">
+
+      <section class="bienvenue">
+
+        <h1>
+          Accueil
+        </h1>
+
+        <p id="texteBienvenue">
+          Chargement de votre espace…
+        </p>
+
+      </section>
+
+
+      <div
+        id="messageAccueil"
+        class="message"
+        role="alert"
+        aria-live="polite"
+      >
+        <span id="texteMessageAccueil"></span>
+        <button id="fermerMessageAccueil" class="message-fermer" type="button" aria-label="Fermer le message">×</button>
+      </div>
+
+
+      <div
+        id="zoneReinitialisationDemo"
+        class="zone-reinitialisation-demo"
+      >
+
+        <div class="zone-reinitialisation-demo-texte">
+          <strong>🎓 Gestion de la formation</strong>
+          Efface uniquement les ventes, dons et mouvements Démo,
+          puis remet le stock de formation à 100 unités par article.
+        </div>
+
+        <button
+          id="boutonReinitialiserDemo"
+          class="bouton-reinitialiser-demo"
+          type="button"
+        >
+          ↻ Réinitialiser la Démo
+        </button>
+
+      </div>
+
+
+      <!-- ==================================================
+           MODULES
+           ================================================== -->
+
+      <section
+        class="grille-modules"
+        aria-label="Modules de l'application"
+      >
+
+        <!-- ================================================
+             CAISSE
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🛒
+            </div>
+
+            <span class="badge">
+              Caisse
+            </span>
+
+          </div>
+
+          <h2>
+            Caisse
+          </h2>
+
+          <p>
+            Ventes MDN et Fondation, paiements et opérations de caisse.
+          </p>
+
+          <button
+            id="boutonCaisse"
+            class="bouton-module"
+            type="button"
+            data-texte-reel="Ouvrir la caisse"
+            data-texte-demo="Démo - Ouvrir la caisse"
+          >
+            Ouvrir la caisse
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             VAISSELLE
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🍽️
+            </div>
+
+            <span class="badge">
+              Consignes
+            </span>
+
+          </div>
+
+          <h2>
+            Vaisselle &amp; Consignes
+          </h2>
+
+          <p>
+            Retraits, retours propres ou sales et gestion des contenants.
+          </p>
+
+          <button
+            id="boutonVaisselle"
+            class="bouton-module"
+            type="button"
+            data-texte-reel="Ouvrir Vaisselle & Consignes"
+            data-texte-demo="Démo - Ouvrir Vaisselle & Consignes"
+          >
+            Ouvrir Vaisselle & Consignes
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             PARTENAIRES
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              🏠
+            </div>
+
+            <span class="badge">
+              Partenaires
+            </span>
+
+          </div>
+
+          <h2>
+            Exposants / Partenaires
+          </h2>
+
+          <p>
+            Dossiers partenaires, comptes stands et QR internes.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             STOCKS
+             ================================================ -->
+
+        <article class="module">
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              📦
+            </div>
+
+            <span class="badge">
+              Stocks
+            </span>
+
+          </div>
+
+          <h2>
+            Stocks
+          </h2>
+
+          <p>
+            Articles, vaisselle, réserve MDN et mouvements opérationnels.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             CAISSE PHYSIQUE
+             Responsable + Administrateur
+             ================================================ -->
+
+        <article
+          id="moduleCaissePhysique"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              💰
+            </div>
+
+            <span class="badge">
+              Responsable+
+            </span>
+
+          </div>
+
+          <h2>
+            Caisse physique
+          </h2>
+
+          <p>
+            Ouverture, mouvements, comptage et clôture de la caisse partagée.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             SUIVI ET RAPPORTS
+             Responsable + Administrateur
+             ================================================ -->
+
+        <article
+          id="moduleRapports"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              📊
+            </div>
+
+            <span class="badge">
+              Responsable+
+            </span>
+
+          </div>
+
+          <h2>
+            Suivi &amp; Rapports
+          </h2>
+
+          <p>
+            Tableau de bord, dons, comptes stands, stocks et contrôles.
+          </p>
+
+          <button
+            id="boutonRapports"
+            class="bouton-module"
+            type="button"
+            data-texte-reel="Ouvrir les comptes stands"
+            data-texte-demo="Démo - Comptes stands"
+          >
+            Ouvrir les comptes stands
+          </button>
+
+        </article>
+
+
+        <!-- ================================================
+             ADMINISTRATION
+             Administrateur uniquement
+             ================================================ -->
+
+        <article
+          id="moduleAdministration"
+          class="module"
+        >
+
+          <div class="module-entete">
+
+            <div
+              class="module-icone"
+              aria-hidden="true"
+            >
+              ⚙️
+            </div>
+
+            <span class="badge">
+              Administrateur
+            </span>
+
+          </div>
+
+          <h2>
+            Administration
+          </h2>
+
+          <p>
+            Utilisateurs, éditions, référentiels, tarifs et paramètres.
+          </p>
+
+          <button
+            class="bouton-module"
+            type="button"
+            disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
+          >
+            Bientôt disponible
+          </button>
+
+        </article>
+
+      </section>
+
+    </main>
+
+
+    <!-- ====================================================
+         PIED DE PAGE
+         ==================================================== -->
+
+    <footer class="pied-page">
+      Application de gestion du Marché de Noël de Sion
+    </footer>
+
+  </div>
+
+
+  <!-- ======================================================
+       BIBLIOTHEQUE SUPABASE
+       ====================================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+  ></script>
+
+
+  <!-- ======================================================
+       CONFIGURATION MDN SION
+       ====================================================== -->
+
+  <script src="js/config.js"></script>
+
+
+  <!-- ======================================================
+       CLIENT SUPABASE
+       ====================================================== -->
+
+  <script src="js/supabase.js"></script>
+
+
+  <!-- ======================================================
+       AUTHENTIFICATION COMMUNE
+       IMPORTANT :
+       auth.js doit être chargé APRES supabase.js
+       ====================================================== -->
+
+  <script src="js/auth.js"></script>
+
+
+  <!-- ======================================================
+       LOGIQUE SPECIFIQUE DE L'ACCUEIL
+       ====================================================== -->
+
+  <script>
+    "use strict";
+
+    (function () {
+
+      /* ====================================================
+         ELEMENTS DE LA PAGE
+         ==================================================== */
+
+      const chargementPage =
+        document.getElementById(
+          "chargementPage"
+        );
+
+
+      const prenomUtilisateur =
+        document.getElementById(
+          "prenomUtilisateur"
+        );
+
+
+      const roleUtilisateur =
+        document.getElementById(
+          "roleUtilisateur"
+        );
+
+
+      const texteBienvenue =
+        document.getElementById(
+          "texteBienvenue"
+        );
+
+
+      const messageAccueil =
+        document.getElementById(
+          "messageAccueil"
+        );
+
+      const texteMessageAccueil =
+        document.getElementById("texteMessageAccueil");
+
+      const fermerMessageAccueil =
+        document.getElementById("fermerMessageAccueil");
+
+      let minuterieMessageAccueil = null;
+
+
+      const boutonDeconnexion =
+        document.getElementById(
+          "boutonDeconnexion"
+        );
+
+
+      const boutonCaisse =
+        document.getElementById(
+          "boutonCaisse"
+        );
+
+
+      const boutonVaisselle =
+        document.getElementById(
+          "boutonVaisselle"
+        );
+
+
+      const boutonModeDemo =
+        document.getElementById(
+          "boutonModeDemo"
+        );
+
+
+      const zoneReinitialisationDemo =
+        document.getElementById(
+          "zoneReinitialisationDemo"
+        );
+
+
+      const boutonReinitialiserDemo =
+        document.getElementById(
+          "boutonReinitialiserDemo"
+        );
+
+
+      const moduleCaissePhysique =
+        document.getElementById(
+          "moduleCaissePhysique"
+        );
+
+
+      const moduleRapports =
+        document.getElementById(
+          "moduleRapports"
+        );
+
+      const boutonRapports =
+        document.getElementById(
+          "boutonRapports"
+        );
+
+
+      const moduleAdministration =
+        document.getElementById(
+          "moduleAdministration"
+        );
+
+
+      /* ====================================================
+         MESSAGE
+         ==================================================== */
+
+      function masquerMessageAccueil() {
+        if (minuterieMessageAccueil) {
+          window.clearTimeout(minuterieMessageAccueil);
+          minuterieMessageAccueil = null;
+        }
+        messageAccueil.className = "message";
+      }
+
+      function afficherMessage(texte, type = "erreur") {
+        if (minuterieMessageAccueil) {
+          window.clearTimeout(minuterieMessageAccueil);
+        }
+        texteMessageAccueil.textContent = texte;
+        messageAccueil.className = "message visible " + type;
+        minuterieMessageAccueil = window.setTimeout(
+          masquerMessageAccueil,
+          type === "erreur" ? 10000 : 6000
+        );
+      }
+
+      fermerMessageAccueil.addEventListener(
+        "click",
+        masquerMessageAccueil
+      );
+
+
+      /* ====================================================
+         CHARGEMENT
+         ==================================================== */
+
+      function masquerChargement() {
+
+        chargementPage.classList.add(
+          "masque"
+        );
+
+      }
+
+
+      /* ====================================================
+         AFFICHAGE DES MODULES SELON LE ROLE
+         ==================================================== */
+
+      function appliquerDroits(
+        role
+      ) {
+
+        const peutSuperviser =
+          window.MDN_AUTH
+            .estResponsableOuAdministrateur(
+              role
+            );
+
+
+        const estAdministrateur =
+          window.MDN_AUTH
+            .estAdministrateur(
+              role
+            );
+
+
+        /*
+         * Caisse physique :
+         * Responsable ou Administrateur.
+         */
+
+        moduleCaissePhysique.classList.toggle(
+          "masque",
+          !peutSuperviser
+        );
+
+
+        /*
+         * Suivi & Rapports :
+         * Responsable ou Administrateur.
+         */
+
+        moduleRapports.classList.toggle(
+          "masque",
+          !peutSuperviser
+        );
+
+
+        /*
+         * Administration :
+         * Administrateur uniquement.
+         */
+
+        moduleAdministration.classList.toggle(
+          "masque",
+          !estAdministrateur
+        );
+
+
+        zoneReinitialisationDemo.classList.toggle(
+          "autorisee",
+          peutSuperviser
+        );
+
+      }
+
+
+      /* ====================================================
+         INITIALISATION DE L'ACCUEIL
+         ==================================================== */
+
+      async function initialiserAccueil() {
+
+        try {
+
+          /*
+           * Toute la vérification de sécurité est maintenant
+           * centralisée dans js/auth.js.
+           *
+           * Cette fonction vérifie :
+           * - la session Supabase ;
+           * - le compte interne MDN ;
+           * - le champ actif ;
+           * - le rôle.
+           */
+
+          const auth =
+            await window.MDN_AUTH
+              .protegerPage();
+
+
+          /*
+           * Si aucune authentification valide n'est obtenue,
+           * auth.js effectue la redirection vers connexion.html.
+           */
+
+          if (!auth) {
+            return;
+          }
+
+
+          /* ================================================
+             PRENOM
+             ================================================ */
+
+          const prenomAffiche =
+            auth.profil.prenom ||
+            auth.utilisateur.prenom ||
+            "Utilisateur";
+
+
+          prenomUtilisateur.textContent =
+            prenomAffiche;
+
+
+          /* ================================================
+             ROLE
+             ================================================ */
+
+          roleUtilisateur.textContent =
+            auth.libelleRole;
+
+
+          /* ================================================
+             MESSAGE D'ACCUEIL
+             ================================================ */
+
+          texteBienvenue.textContent =
+            "Connecté en tant que " +
+            auth.libelleRole +
+            ".";
+
+
+          /* ================================================
+             DROITS D'AFFICHAGE
+             ================================================ */
+
+          appliquerDroits(
+            auth.role
+          );
+
+
+          /* ================================================
+             AFFICHAGE DE LA PAGE
+             ================================================ */
+
+          masquerChargement();
+
+        } catch (erreur) {
+
+          console.error(
+            "[MDN Sion] Initialisation de l'accueil impossible :",
+            erreur
+          );
+
+
+          masquerChargement();
+
+
+          afficherMessage(
+            erreur?.message ||
+            "Impossible de charger votre espace utilisateur."
+          );
+
+
+          texteBienvenue.textContent =
+            "L'accès à l'application n'a pas pu être validé.";
+
+
+          /*
+           * Si le profil interne est invalide,
+           * auth.js a déjà fermé la session.
+           *
+           * On laisse quelques secondes pour lire
+           * le message avant de revenir à la connexion.
+           */
+
+          setTimeout(
+            function () {
+
+              window.location.replace(
+                "connexion.html"
+              );
+
+            },
+            3200
+          );
+
+        }
+
+      }
+
+
+      /* ====================================================
+         MODE DEMO GLOBAL DE L'ACCUEIL
+         ==================================================== */
+
+      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
+
+      let modeDemoActif =
+        sessionStorage.getItem(CLE_MODE_DEMO) === "1";
+
+
+      function actualiserModeDemoAccueil() {
+
+        document.body.classList.toggle(
+          "mode-demo",
+          modeDemoActif
+        );
+
+
+        boutonModeDemo.classList.toggle(
+          "actif",
+          modeDemoActif
+        );
+
+
+        boutonModeDemo.setAttribute(
+          "aria-pressed",
+          modeDemoActif ? "true" : "false"
+        );
+
+
+        boutonModeDemo.title =
+          modeDemoActif
+            ? "Désactiver le Mode Démo / Formation"
+            : "Activer le Mode Démo / Formation";
+
+
+        document.querySelectorAll(
+          ".bouton-module[data-texte-reel][data-texte-demo]"
+        ).forEach(function (bouton) {
+
+          bouton.textContent =
+            modeDemoActif
+              ? bouton.dataset.texteDemo
+              : bouton.dataset.texteReel;
+
+        });
+
+      }
+
+
+      boutonModeDemo.addEventListener(
+        "click",
+        function () {
+
+          modeDemoActif = !modeDemoActif;
+
+          if (modeDemoActif) {
+            sessionStorage.setItem(CLE_MODE_DEMO, "1");
+          } else {
+            sessionStorage.removeItem(CLE_MODE_DEMO);
+          }
+
+          actualiserModeDemoAccueil();
+
+        }
+      );
+
+
+      /* ====================================================
+         REINITIALISATION DU MODE DEMO
+         Responsable ou Administrateur uniquement
+         ==================================================== */
+
+      boutonReinitialiserDemo.addEventListener(
+        "click",
+        async function () {
+
+          if (!modeDemoActif) {
+            return;
+          }
+
+          const confirmation =
+            window.confirm(
+              "Réinitialiser complètement le Mode Démo ?\n\n" +
+              "Cette opération va supprimer uniquement les ventes, " +
+              "dons et mouvements de formation, puis remettre le stock " +
+              "Démo à 100 unités par article.\n\n" +
+              "Aucune donnée réelle ne sera modifiée."
+            );
+
+          if (!confirmation) {
+            return;
+          }
+
+          if (!window.MDN_SUPABASE) {
+            afficherMessage(
+              "Le client Supabase MDN n'est pas disponible."
+            );
+            return;
+          }
+
+          boutonReinitialiserDemo.disabled = true;
+          boutonReinitialiserDemo.textContent = "Réinitialisation…";
+
+          try {
+            const { data, error } =
+              await window.MDN_SUPABASE.rpc(
+                "reinitialiser_mode_demo"
+              );
+
+            if (error) {
+              throw error;
+            }
+
+            const ventesSupprimees =
+              Number(data?.ventes_demo_supprimees || 0);
+
+            const donsSupprimes =
+              Number(data?.dons_demo_supprimes || 0);
+
+            const articlesStock =
+              Number(data?.articles_stock_demo || 0);
+
+            afficherMessage(
+              "Mode Démo réinitialisé : " +
+              ventesSupprimees +
+              " vente(s) et " +
+              donsSupprimes +
+              " don(s) de formation supprimés. " +
+              articlesStock +
+              " article(s) remis à 100 unités. " +
+              "Aucune donnée réelle n'a été modifiée.",
+              "succes"
+            );
+
+            sessionStorage.setItem(CLE_MODE_DEMO, "1");
+            modeDemoActif = true;
+            actualiserModeDemoAccueil();
+
+          } catch (erreur) {
+            console.error(
+              "[MDN Sion] Réinitialisation du Mode Démo impossible :",
+              erreur
+            );
+
+            afficherMessage(
+              erreur?.message ||
+              "Impossible de réinitialiser le Mode Démo."
+            );
+
+          } finally {
+            boutonReinitialiserDemo.disabled = false;
+            boutonReinitialiserDemo.textContent =
+              "↻ Réinitialiser la Démo";
+          }
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION CAISSE
+         ==================================================== */
+
+      boutonCaisse.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "caisse.html?mode=demo"
+              : "caisse.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION VAISSELLE & CONSIGNES
+         ==================================================== */
+
+      boutonVaisselle.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "retrait-vaisselle.html?mode=demo"
+              : "retrait-vaisselle.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION COMPTES STANDS
+         Responsable + Administrateur
+         ==================================================== */
+
+      boutonRapports.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "comptes-stands.html?mode=demo"
+              : "comptes-stands.html";
+
+        }
+      );
+
+
+      // Restaure immédiatement l’état Démo lors d’un retour depuis un module.
+      actualiserModeDemoAccueil();
+
+      /* ====================================================
+         DECONNEXION
+         ==================================================== */
+
+      boutonDeconnexion.addEventListener(
+        "click",
+        async function () {
+
+          boutonDeconnexion.disabled =
+            true;
+
+
+          boutonDeconnexion.textContent =
+            "Déconnexion…";
+
+          sessionStorage.removeItem(CLE_MODE_DEMO);
+
+
+          await window.MDN_AUTH
+            .deconnexion();
+
+        }
+      );
+
+
+      /* ====================================================
+         SURVEILLANCE DE LA SESSION
+         ==================================================== */
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
+      });
+
+
+      /* ====================================================
+         DEMARRAGE
+         ==================================================== */
+
+      initialiserAccueil();
+
+    })();
+  </script>
+
+</body>
+</html>
