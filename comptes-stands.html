@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>Comptes stands · MDN Sion</title>
+  <style>
+    :root{
+      --bleu:#00126b; --bleu2:#10258d; --rouge:#d13438; --vert:#107c10; --orange:#c85b00;
+      --or:#b8860b; --fond:#f4f6fb; --carte:#fff; --texte:#1f2937; --gris:#667085;
+      --bord:#d9deea; --ombre:0 10px 30px rgba(0,18,107,.10); --rayon:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--fond);color:var(--texte)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.55}
+    .loading{position:fixed;inset:0;z-index:9999;background:rgba(255,255,255,.94);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+    .loading.hide{display:none}.spinner{width:46px;height:46px;border:5px solid #dce2f3;border-top-color:var(--bleu);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .page{min-height:100vh;display:flex;flex-direction:column}
+    .topbar{background:var(--bleu);color:#fff;padding:14px clamp(14px,3vw,30px);display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.14)}
+    .topbar.demo{background:#6f5200}.back,.logout{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:12px;padding:10px 14px;font-weight:700}
+    .title{text-align:center;min-width:0}.title h1{margin:0;font-size:clamp(19px,2.5vw,29px)}.title .edition{margin-top:4px;font-size:13px;opacity:.86}
+    .identity{text-align:right;font-size:13px;font-weight:700;white-space:nowrap}.logout{margin-left:8px}
+    .demo-note{display:none;background:#fff3c4;border-bottom:1px solid #e5c75f;color:#5d4500;text-align:center;padding:10px 16px;font-weight:700}.demo-note.show{display:block}
+    main{width:min(1500px,100%);margin:0 auto;padding:22px clamp(12px,2.5vw,28px) 34px;flex:1}
+    .hero{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;margin-bottom:18px}.hero h2{margin:0 0 6px;color:var(--bleu);font-size:clamp(22px,3vw,32px)}.hero p{margin:0;color:var(--gris);line-height:1.45}.demo .hero h2{color:#6f5200}
+    .refresh{border:0;background:var(--bleu);color:#fff;padding:11px 16px;border-radius:12px;font-weight:800;white-space:nowrap}
+    .scenario{display:none;background:#fff9e8;border:1px solid #e8d18a;border-radius:var(--rayon);padding:16px;margin-bottom:18px}.scenario.show{display:block}.scenario h3{margin:0 0 10px;color:#6f5200}.scenario-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.scenario-card{border:1px solid #eadba8;background:#fff;border-radius:14px;padding:12px}.scenario-card strong{display:block;color:#6f5200;margin-bottom:4px}.scenario-card span{font-size:13px;color:var(--gris);line-height:1.35}
+    .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat{background:var(--carte);border:1px solid var(--bord);border-radius:16px;padding:14px;box-shadow:var(--ombre)}.stat .label{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--gris);font-weight:800}.stat .value{font-size:25px;font-weight:900;color:var(--bleu);margin-top:6px}.stat.money .value{font-size:20px}
+    .toolbar{background:#fff;border:1px solid var(--bord);border-radius:16px;padding:12px;display:grid;grid-template-columns:minmax(220px,1fr) repeat(2,minmax(150px,220px));gap:10px;margin-bottom:16px;box-shadow:var(--ombre)}
+    .toolbar input,.toolbar select{width:100%;border:1px solid #cbd2df;border-radius:11px;padding:11px 12px;background:#fff;color:var(--texte);outline:none}.toolbar input:focus,.toolbar select:focus{border-color:var(--bleu);box-shadow:0 0 0 3px rgba(0,18,107,.10)}
+    .panel{background:#fff;border:1px solid var(--bord);border-radius:var(--rayon);box-shadow:var(--ombre);overflow:hidden}.panel-head{padding:14px 16px;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between;gap:12px}.panel-head h3{margin:0;color:var(--bleu)}.count{font-size:13px;color:var(--gris);font-weight:700}
+    .accounts{display:grid}.account{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(135px,.7fr) minmax(135px,.7fr) minmax(150px,.75fr) auto;gap:14px;align-items:center;padding:15px 16px;border-bottom:1px solid #edf0f5}.account:last-child{border-bottom:0}.account:hover{background:#fafbfe}
+    .stand-title{font-weight:900;color:#18224d}.stand-sub{font-size:13px;color:var(--gris);margin-top:4px}.cell-label{font-size:11px;color:var(--gris);font-weight:800;text-transform:uppercase;margin-bottom:4px}.cell-value{font-weight:800}.amount.positive{color:var(--rouge)}.amount.negative{color:var(--vert)}.amount.zero{color:var(--bleu)}
+    .badge-status{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;white-space:nowrap}.s-ouvert{background:#e8eefc;color:#173a8f}.s-a_controler{background:#fff0d7;color:#985000}.s-a_facturer{background:#ffe4e4;color:#a51f24}.s-facture{background:#eee7ff;color:#6034a5}.s-solde{background:#e2f4e2;color:#146b14}
+    .action{border:0;border-radius:11px;padding:10px 13px;font-weight:900;white-space:nowrap}.action.invoice{background:var(--vert);color:#fff}.action.info{background:#edf1fb;color:var(--bleu)}
+    .empty{padding:36px 20px;text-align:center;color:var(--gris)}.empty strong{display:block;color:var(--bleu);font-size:18px;margin-bottom:6px}
+    .toast{position:fixed;right:18px;bottom:18px;z-index:5000;max-width:min(440px,calc(100vw - 36px));background:#172033;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;box-shadow:0 16px 40px rgba(0,0,0,.25);display:none}.toast.show{display:block}.toast.success{background:#145c22}.toast.error{background:#8e2024}.toast button{position:absolute;right:9px;top:8px;border:0;background:transparent;color:#fff;font-size:22px}
+    .modal{position:fixed;inset:0;z-index:4000;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.modal-card{width:min(560px,100%);background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.3);overflow:hidden}.modal-head{padding:17px 20px;background:var(--bleu);color:#fff;display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}.modal-close{border:0;background:transparent;color:#fff;font-size:25px}.modal-body{padding:20px}.modal-body p{line-height:1.5}.invoice-summary{background:#f5f7fc;border:1px solid var(--bord);border-radius:14px;padding:14px;margin:14px 0}.invoice-summary div{display:flex;justify-content:space-between;gap:15px;padding:5px 0}.invoice-summary strong:last-child{color:var(--bleu)}.modal-body textarea{width:100%;min-height:85px;resize:vertical;border:1px solid #cbd2df;border-radius:11px;padding:10px}.confirm-line{display:flex;gap:9px;align-items:flex-start;margin-top:14px;font-size:13px}.modal-actions{padding:14px 20px 20px;display:flex;justify-content:flex-end;gap:10px}.cancel,.confirm{border:0;border-radius:11px;padding:11px 15px;font-weight:900}.cancel{background:#e9edf5;color:#25314f}.confirm{background:var(--vert);color:#fff}
+    footer{text-align:center;color:#7b8496;padding:18px;font-size:12px}
+    @media(max-width:1050px){.scenario-grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}.account{grid-template-columns:minmax(200px,1.5fr) repeat(2,minmax(120px,.7fr));}.account .mode-cell{display:none}.account .action-cell{grid-column:1/-1}.action{width:100%}}
+    @media(max-width:760px){.topbar{grid-template-columns:auto 1fr}.identity-wrap{grid-column:1/-1;display:flex;justify-content:center;align-items:center}.title h1{font-size:19px}.hero{flex-direction:column}.refresh{width:100%}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr}.account{grid-template-columns:1fr 1fr;gap:10px}.stand-cell{grid-column:1/-1}.account .mode-cell{display:block}.action-cell{grid-column:1/-1}.scenario-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){main{padding-left:10px;padding-right:10px}.back{padding:9px 10px}.stats{grid-template-columns:1fr 1fr}.stat{padding:12px}.stat .value{font-size:21px}.scenario-grid{grid-template-columns:1fr}.account{grid-template-columns:1fr}.stand-cell,.action-cell{grid-column:auto}.modal-actions{flex-direction:column}.modal-actions button{width:100%}}
+  </style>
+</head>
+<body>
+<div id="loading" class="loading"><div class="spinner"></div><strong>Chargement des comptes stands…</strong></div>
+<div class="page">
+  <header id="topbar" class="topbar">
+    <button id="back" class="back" type="button">← Retour</button>
+    <div class="title"><h1>📊 Comptes stands</h1><div id="edition" class="edition">MDN Sion</div></div>
+    <div class="identity-wrap"><span id="identity" class="identity"></span><button id="logout" class="logout" type="button">Déconnexion</button></div>
+  </header>
+  <div id="demoNote" class="demo-note">MODE DÉMO · Les données de démonstration sont séparées des données réelles.</div>
+  <main>
+    <section class="hero">
+      <div><h2 id="pageTitle">Suivi des comptes stands</h2><p id="pageIntro">Consulte les soldes, les statuts et les comptes clôturés pour facturation.</p></div>
+      <button id="refresh" class="refresh" type="button">↻ Actualiser</button>
+    </section>
+
+    <section id="scenario" class="scenario">
+      <h3>Scénarios du mode Démo</h3>
+      <div class="scenario-grid">
+        <div class="scenario-card"><strong>D01 · Associatif</strong><span>Compte soldé : comprendre un compte à 0 CHF, sa clôture et sa réouverture Démo.</span></div>
+        <div class="scenario-card"><strong>D02 · Métier de la bouche</strong><span>Paiement partiel : observer une dette, un règlement partiel et le reste à payer.</span></div>
+        <div class="scenario-card"><strong>D03 · Comité</strong><span>Paiement mixte : comprendre un règlement réparti entre plusieurs moyens de paiement.</span></div>
+        <div class="scenario-card"><strong>D04 · Restaurateur</strong><span>Facturation : montant figé à la clôture, statut « À facturer », puis passage à « Facturé ».</span></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><div class="label">Comptes</div><div id="statTotal" class="value">0</div></div>
+      <div class="stat"><div class="label">Ouverts</div><div id="statOpen" class="value">0</div></div>
+      <div class="stat"><div class="label">À facturer</div><div id="statInvoice" class="value">0</div></div>
+      <div class="stat"><div class="label">Facturés / soldés</div><div id="statClosed" class="value">0</div></div>
+      <div class="stat money"><div class="label">Montant à facturer</div><div id="statAmount" class="value">0.00 CHF</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" type="search" autocomplete="off" placeholder="Rechercher un stand, un nom ou une raison sociale…">
+      <select id="statusFilter"><option value="all">Tous les statuts</option><option value="ouvert">Compte ouvert</option><option value="a_controler">À contrôler</option><option value="a_facturer">À facturer</option><option value="facture">Facturé</option><option value="solde">Soldé</option></select>
+      <select id="paymentFilter"><option value="all">Tous les règlements</option><option value="direct">Règlement direct</option><option value="facture">Facturation</option></select>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h3>Comptes des stands</h3><span id="visibleCount" class="count">0 compte</span></div>
+      <div id="accounts" class="accounts"></div>
+    </section>
+  </main>
+  <footer>Application de gestion du Marché de Noël de Sion</footer>
+</div>
+
+<div id="toast" class="toast"><button id="toastClose" type="button">×</button><span id="toastText"></span></div>
+
+<div id="invoiceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="invoiceTitle">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="invoiceTitle">Marquer comme facturé</h3><button id="invoiceClose" class="modal-close" type="button">×</button></div>
+    <div class="modal-body">
+      <p>Cette action indique que la facture a été traitée administrativement. Elle ne modifie pas le montant figé lors de la clôture.</p>
+      <div class="invoice-summary">
+        <div><span>Stand</span><strong id="modalStand">—</strong></div>
+        <div><span>Partenaire</span><strong id="modalName">—</strong></div>
+        <div><span>Montant figé</span><strong id="modalAmount">0.00 CHF</strong></div>
+      </div>
+      <label for="invoiceComment"><strong>Commentaire</strong> <span style="color:#667085">(facultatif)</span></label>
+      <textarea id="invoiceComment" placeholder="Ex. : facture préparée et transmise au stand"></textarea>
+      <label class="confirm-line"><input id="invoiceCheck" type="checkbox"><span>Je confirme que ce compte doit passer du statut « À facturer » au statut « Facturé ».</span></label>
+    </div>
+    <div class="modal-actions"><button id="invoiceCancel" class="cancel" type="button">Annuler</button><button id="invoiceConfirm" class="confirm" type="button" disabled>Confirmer comme facturé</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script>
+"use strict";
+(function(){
+  const $=id=>document.getElementById(id);
+  const loading=$("loading"),topbar=$("topbar"),demoNote=$("demoNote"),edition=$("edition"),identity=$("identity"),accounts=$("accounts"),search=$("search"),statusFilter=$("statusFilter"),paymentFilter=$("paymentFilter"),scenario=$("scenario");
+  const invoiceModal=$("invoiceModal"),invoiceCheck=$("invoiceCheck"),invoiceConfirm=$("invoiceConfirm"),invoiceComment=$("invoiceComment");
+  let client=null,demo=false,rows=[],selected=null;
+
+  function money(v){return `${Number(v||0).toLocaleString("fr-CH",{minimumFractionDigits:2,maximumFractionDigits:2})} CHF`}
+  function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+  function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
+  function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
+  function msg(text,type="error"){$("toastText").textContent=text;$("toast").className=`toast show ${type}`;clearTimeout(msg.timer);msg.timer=setTimeout(()=>$("toast").classList.remove("show"),5000)}
+  function avecDelai(promise,ms,message){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))])}
+
+  function normalizeReal(r){
+    return {id:r.participation_id,numero:r.numero_stand||"—",nom:r.partenaire_nom||r.raison_sociale||"Partenaire",raison:r.raison_sociale||"",type:r.type_partenaire||"—",mode:r.mode_reglement_habituel||"direct",statut:r.statut_compte||"ouvert",solde:Number(r.solde_restant||0),totalFacture:Number(r.total_facture||0),totalPaye:Number(r.total_paye||0),credit:Number(r.total_credit_compte||0),dateCloture:r.date_cloture_compte||null,montantFige:null,raw:r};
+  }
+  async function normalizeDemo(s){
+    let solde=0,totalFacture=0,totalPaye=0,credit=0;
+    try{
+      const {data:r,error}=await client.rpc("charger_compte_stand_paiement_demo",{p_stand_demo_id:s.id});
+      if(error)throw error;
+      if(r?.ok){solde=Number(r.compte?.solde_restant||0);totalFacture=Number(r.compte?.total_facture||0);totalPaye=Number(r.compte?.total_paye||0);credit=Number(r.compte?.total_credit_compte||0)}
+    }catch(e){console.warn("Compte Démo non détaillé",s.numero_stand,e)}
+    return {id:s.id,numero:s.numero_stand||"—",nom:s.nom||s.raison_sociale||"Stand Démo",raison:s.raison_sociale||"",type:s.type_partenaire||"—",mode:s.mode_reglement_habituel||"direct",statut:s.statut_compte||"ouvert",solde,totalFacture,totalPaye,credit,dateCloture:s.date_cloture_compte||null,montantFige:s.montant_cloture_facturation==null?null:Number(s.montant_cloture_facturation),raw:s};
+  }
+
+  async function loadRows(){
+    if(demo){
+      const {data,error}=await avecDelai(client.from("stands_vaisselle_demo").select("*").eq("actif",true).order("numero_stand",{ascending:true}),12000,"Le chargement des comptes Démo prend trop de temps.");
+      if(error)throw error;
+      rows=await Promise.all((data||[]).map(normalizeDemo));
+      const year=(data||[])[0]?.edition_id?"":""; edition.textContent="MDN Sion · Démo";
+    }else{
+      const {data,error}=await avecDelai(client.from("vue_comptes_stands").select("*").order("numero_stand",{ascending:true}),12000,"Le chargement des comptes stands prend trop de temps.");
+      if(error)throw error;
+      rows=(data||[]).map(normalizeReal);
+      edition.textContent="MDN Sion";
+    }
+    render();
+  }
+
+  function filtered(){
+    const q=search.value.trim().toLocaleLowerCase("fr");
+    return rows.filter(r=>{
+      const hay=`${r.numero} ${r.nom} ${r.raison} ${r.type}`.toLocaleLowerCase("fr");
+      return (!q||hay.includes(q))&&(statusFilter.value==="all"||r.statut===statusFilter.value)&&(paymentFilter.value==="all"||r.mode===paymentFilter.value);
+    });
+  }
+  function renderStats(){
+    $("statTotal").textContent=rows.length;
+    $("statOpen").textContent=rows.filter(r=>r.statut==="ouvert"||r.statut==="a_controler").length;
+    $("statInvoice").textContent=rows.filter(r=>r.statut==="a_facturer").length;
+    $("statClosed").textContent=rows.filter(r=>r.statut==="facture"||r.statut==="solde").length;
+    const amount=rows.filter(r=>r.statut==="a_facturer").reduce((a,r)=>a+Number(r.montantFige??Math.max(0,r.solde)),0);
+    $("statAmount").textContent=money(amount);
+  }
+  function amountText(r){
+    if(r.statut==="a_facturer"||r.statut==="facture")return money(r.montantFige??Math.max(0,r.solde));
+    if(r.solde<0)return `Crédit ${money(Math.abs(r.solde))}`;
+    if(r.solde>0)return `À régler ${money(r.solde)}`;
+    return money(0);
+  }
+  function amountClass(r){return r.solde>0?"positive":r.solde<0?"negative":"zero"}
+  function actionHtml(r){
+    if(r.statut==="a_facturer")return `<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`;
+    if(demo){
+      const descriptions={D01:"Compte soldé / clôturé",D02:"Paiement partiel",D03:"Paiement mixte",D04:r.statut==="facture"?"Facturation terminée":"Facturation"};
+      return `<button class="action info" type="button" disabled>${esc(descriptions[r.numero]||statusLabel(r.statut))}</button>`;
+    }
+    return `<button class="action info" type="button" disabled>${esc(statusLabel(r.statut))}</button>`;
+  }
+  function render(){
+    renderStats(); const list=filtered(); $("visibleCount").textContent=`${list.length} compte${list.length>1?"s":""}`;
+    if(!list.length){accounts.innerHTML=`<div class="empty"><strong>${rows.length?"Aucun compte ne correspond aux filtres.":demo?"Aucun stand Démo disponible.":"Aucun compte stand réel pour le moment."}</strong><span>${rows.length?"Modifie la recherche ou les filtres.":demo?"Vérifie les données de démonstration.":"La page est prête : les comptes apparaîtront dès que des participations seront créées."}</span></div>`;return}
+    accounts.innerHTML=list.map(r=>`<article class="account">
+      <div class="stand-cell"><div class="stand-title">${esc(r.numero)} · ${esc(r.nom)}</div><div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div></div>
+      <div><div class="cell-label">Statut</div><span class="badge-status s-${esc(r.statut)}">${esc(statusLabel(r.statut))}</span></div>
+      <div><div class="cell-label">Solde / facture</div><div class="cell-value amount ${amountClass(r)}">${esc(amountText(r))}</div></div>
+      <div class="mode-cell"><div class="cell-label">Règlement</div><div class="cell-value">${esc(paymentLabel(r.mode))}</div></div>
+      <div class="action-cell">${actionHtml(r)}</div>
+    </article>`).join("");
+    accounts.querySelectorAll("[data-invoice]").forEach(b=>b.addEventListener("click",()=>openInvoice(b.dataset.invoice)));
+  }
+
+  function openInvoice(id){
+    selected=rows.find(r=>r.id===id); if(!selected)return;
+    $("modalStand").textContent=selected.numero; $("modalName").textContent=selected.nom; $("modalAmount").textContent=money(selected.montantFige??Math.max(0,selected.solde));
+    invoiceComment.value="";invoiceCheck.checked=false;invoiceConfirm.disabled=true;invoiceModal.classList.add("show");
+  }
+  function closeInvoice(){invoiceModal.classList.remove("show");selected=null}
+  async function markInvoiced(){
+    if(!selected||!invoiceCheck.checked)return;
+    invoiceConfirm.disabled=true; invoiceConfirm.textContent="Enregistrement…";
+    try{
+      const fn=demo?"changer_statut_compte_stand_demo":"changer_statut_compte_stand";
+      const args=demo?{p_stand_demo_id:selected.id,p_nouveau_statut:"facture",p_commentaire:invoiceComment.value.trim()||null}:{p_participation_id:selected.id,p_nouveau_statut:"facture",p_commentaire:invoiceComment.value.trim()||null};
+      const {data,error}=await avecDelai(client.rpc(fn,args),12000,"La modification du statut prend trop de temps.");
+      if(error)throw error;if(!data?.ok)throw new Error("Le statut du compte n'a pas été modifié.");
+      closeInvoice();await loadRows();msg(`${selected?.numero||"Le compte"} est maintenant marqué comme facturé.`,"success");
+    }catch(e){console.error(e);msg(e?.message||"Impossible de marquer ce compte comme facturé.")}
+    finally{invoiceConfirm.textContent="Confirmer comme facturé";invoiceConfirm.disabled=!invoiceCheck.checked}
+  }
+
+  function events(){
+    search.addEventListener("input",render);statusFilter.addEventListener("change",render);paymentFilter.addEventListener("change",render);
+    $("refresh").onclick=async()=>{try{await loadRows();msg("Comptes actualisés.","success")}catch(e){msg(e?.message||"Actualisation impossible.")}};
+    $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
+    $("logout").onclick=async()=>{sessionStorage.removeItem("mdn_mode_demo_actif");await window.MDN_AUTH.deconnexion()};
+    $("toastClose").onclick=()=>$("toast").classList.remove("show");
+    $("invoiceClose").onclick=closeInvoice;$("invoiceCancel").onclick=closeInvoice;invoiceModal.onclick=e=>{if(e.target===invoiceModal)closeInvoice()};
+    invoiceCheck.onchange=()=>invoiceConfirm.disabled=!invoiceCheck.checked;invoiceConfirm.onclick=markInvoiced;
+  }
+
+  async function init(){
+    try{
+      const p=new URLSearchParams(location.search);demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
+      if(demo)sessionStorage.setItem("mdn_mode_demo_actif","1");
+      topbar.classList.toggle("demo",demo);demoNote.classList.toggle("show",demo);scenario.classList.toggle("show",demo);
+      document.body.classList.toggle("demo",demo);$("pageTitle").textContent=demo?"Suivi des comptes stands · Démo":"Suivi des comptes stands";
+      $("pageIntro").textContent=demo?"Explore les quatre scénarios D01 à D04 sans mélanger les données avec l'exploitation réelle.":"Consulte les soldes, les statuts et les comptes clôturés pour facturation.";
+      if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
+      const auth=await avecDelai(window.MDN_AUTH.protegerPage(["responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
+      if(!auth)return;
+      const first=String(auth.profil?.prenom||"Utilisateur").trim();const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");identity.textContent=`${first} · ${role}`;
+      client=window.MDN_SUPABASE;if(!client)throw new Error("Client Supabase indisponible.");events();await loadRows();window.MDN_AUTH.surveillerSession({redirigerApresDeconnexion:true});
+    }catch(e){console.error("Initialisation Comptes stands :",e);msg(e?.message||"Impossible de charger les comptes stands.")}
+    finally{loading.classList.add("hide")}
+  }
+  const security=setTimeout(()=>{if(!loading.classList.contains("hide")){loading.classList.add("hide");msg("Le chargement prend anormalement longtemps. Recharge la page.")}},15000);
+  init().finally(()=>clearTimeout(security));
+})();
+</script>
+</body>
+</html>
