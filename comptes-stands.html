@@ -768,8 +768,16 @@ footer {
     return `${Number(v||0).toLocaleString("fr-CH",{minimumFractionDigits:2,maximumFractionDigits:2})} CHF`
   }
   function esc(v) {
-    return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;
-    ",'"':"&quot;"}[c]))}
+    return String(v ?? "").replace(/[&<>'"]/g, function(c) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      }[c];
+    });
+  }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
   function msg(text,type="error"){$("toastText").textContent=text;$("toast").className=`toast show ${type}`;clearTimeout(msg.timer);msg.timer=setTimeout(()=>$("toast").classList.remove("show"),5000)}
@@ -910,10 +918,7 @@ function render() {
   accounts.innerHTML=list.map(r=>`<article class="account">
 <div class="stand-cell">
 <div class="stand-title">${esc(r.numero)} · ${esc(r.nom)}</div>
-<div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · $ {
-    esc(r.raison)
-  }
-  `:""}</div>
+<div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div>
 </div>
 <div>
 <div class="cell-label">Statut</div>
