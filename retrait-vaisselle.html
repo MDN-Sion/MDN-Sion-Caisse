@@ -2322,10 +2322,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             }
 
             if(demo){
+                closeAccount.style.display="none";
                 closeAccount.disabled=true;
-                closeAccount.textContent="Clôture hors Démo";
-                closeAccount.title="La clôture définitive n'est pas exécutée en mode Démo";
+                closeAccount.textContent="Clôturer le compte";
+                closeAccount.title="";
             }else{
+                closeAccount.style.display="inline-flex";
                 const invoiceMode=String(r.compte?.mode_reglement_habituel||"")==="facture";
                 const canClose=Boolean(r.peut_cloturer)&&(solde===0||(invoiceMode&&solde>0));
                 closeAccount.disabled=!canClose;
@@ -2895,6 +2897,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         try{
             const p=new URLSearchParams(location.search);
             demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
+            closeAccount.style.display=demo?"none":"inline-flex";
             topbar.classList.toggle("demo",demo);
             demoNote.classList.toggle("show",demo);
             document.querySelector(".title h1").textContent=demo
