@@ -1824,7 +1824,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const closeAccountConfirm=$("closeAccountConfirm");
     let client=null,data=null,stand=null,filter="retrait",returnFilter="sale",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
     let accountData=null;
-    const demoClosedStandIds=new Set();
     let paymentKey=null;
     let refundKey=null;
     const selectedPaymentMethods=new Set();
@@ -2308,7 +2307,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
 
     function accountClosed(){
-        if(demo&&stand&&demoClosedStandIds.has(stand.id))return true;
+        if(demo)return false;
         const c=accountData?.compte||{};
         return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||["a_facturer","facture","solde"].includes(String(c.statut_compte||""));
     }
@@ -2350,16 +2349,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 }
                 payAccount.disabled=true;
                 payAccount.title="Compte clôturé";
-                closeAccount.style.display="inline-flex";
-                if(demo){
-                    closeAccount.disabled=false;
-                    closeAccount.textContent="Rouvrir le compte Démo";
-                    closeAccount.title="Rouvrir ce compte fictif pour poursuivre les exercices";
-                }else{
-                    closeAccount.disabled=true;
-                    closeAccount.textContent="Compte clôturé";
-                    closeAccount.title="Ce compte est déjà clôturé";
-                }
+                closeAccount.disabled=true;
+                closeAccount.textContent="Compte clôturé";
+                closeAccount.title="Ce compte est déjà clôturé";
                 return;
             }
 
@@ -2389,19 +2381,25 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                         :"Régler tout ou partie du compte";
             }
 
-            closeAccount.style.display="inline-flex";
-            const invoiceMode=String(r.compte?.mode_reglement_habituel||"")==="facture";
-            const autoriseCloture=demo?true:Boolean(r.peut_cloturer);
-            const canClose=autoriseCloture&&(solde===0||(invoiceMode&&solde>0));
-            closeAccount.disabled=!canClose;
-            closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
-            closeAccount.title=solde<0
-                ?"Le crédit doit être remboursé avant la clôture"
-                :invoiceMode&&solde>0
-                    ?"Figer le solde et clôturer le compte pour facturation"
-                    :solde===0
-                        ?(demo?"Clôturer ce compte Démo":"Clôturer définitivement ce compte")
-                        :"Le compte doit être soldé avant la clôture";
+            if(demo){
+                closeAccount.style.display="none";
+                closeAccount.disabled=true;
+                closeAccount.textContent="Clôturer le compte";
+                closeAccount.title="";
+            }else{
+                closeAccount.style.display="inline-flex";
+                const invoiceMode=String(r.compte?.mode_reglement_habituel||"")==="facture";
+                const canClose=Boolean(r.peut_cloturer)&&(solde===0||(invoiceMode&&solde>0));
+                closeAccount.disabled=!canClose;
+                closeAccount.textContent=invoiceMode&&solde>0?"Clôturer pour facturation":"Clôturer le compte";
+                closeAccount.title=solde<0
+                    ?"Le crédit doit être remboursé avant la clôture"
+                    :invoiceMode&&solde>0
+                        ?"Figer le solde et clôturer le compte pour facturation"
+                        :solde===0
+                            ?"Clôturer définitivement ce compte"
+                            :"Le compte doit être soldé avant la clôture";
+            }
         }
         catch(e){
             console.error(e);
@@ -2632,109 +2630,30 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function openCloseAccount(){
         if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
-
-        if(accountClosed()){
-            if(!demo)return msg("Ce compte est déjà clôturé.");
-            reopenDemoAccount();
-            return;
-        }
-
+        if(demo)return msg("La clôture définitive du compte n'est pas exécutée en mode Démo.");
+        if(accountClosed())return msg("Ce compte est déjà clôturé.");
         const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
         const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
         if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte.");
         if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture.");
-        if(!demo&&!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
-
+        if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
         const forInvoice=invoiceMode&&solde>0;
         closeAccountModalTitle.textContent=forInvoice?"Clôturer pour facturation":"Confirmer la clôture";
-        closeAccountStand.textContent=standName(stand);
-        closeAccountMode.textContent=invoiceMode?"Facture":"Règlement direct";
-        closeAccountBalance.textContent=money(solde);
-        closeAccountInvoiceRow.hidden=!forInvoice;
-        closeAccountInvoice.textContent=money(solde);
-        closeAccountWarning.textContent=forInvoice
-            ?`Après confirmation, le compte sera clôturé et ${money(solde)} seront figés à facturer. Aucune nouvelle opération ne pourra être enregistrée.`
-            :demo
-                ?"Après confirmation, le compte Démo sera clôturé et aucune nouvelle opération ne pourra être enregistrée. Il pourra être rouvert pour poursuivre l'entraînement."
-                :"Après confirmation, le compte sera clôturé définitivement. Aucune nouvelle opération ne pourra être enregistrée.";
-        closeAccountCheck.checked=false;
-        closeAccountConfirm.disabled=true;
-        closeAccountConfirm.textContent=forInvoice?"Confirmer la facturation":"Confirmer la clôture";
-        closeAccountModal.classList.add("show");
-        closeAccountModal.setAttribute("aria-hidden","false");
+        closeAccountStand.textContent=standName(stand); closeAccountMode.textContent=invoiceMode?"Facture":"Règlement direct"; closeAccountBalance.textContent=money(solde);
+        closeAccountInvoiceRow.hidden=!forInvoice; closeAccountInvoice.textContent=money(solde);
+        closeAccountWarning.textContent=forInvoice?`Après confirmation, le compte sera clôturé et ${money(solde)} seront figés à facturer. Aucune nouvelle opération ne pourra être enregistrée.`:"Après confirmation, le compte sera clôturé définitivement. Aucune nouvelle opération ne pourra être enregistrée.";
+        closeAccountCheck.checked=false; closeAccountConfirm.disabled=true; closeAccountConfirm.textContent=forInvoice?"Confirmer la facturation":"Confirmer la clôture";
+        closeAccountModal.classList.add("show"); closeAccountModal.setAttribute("aria-hidden","false");
     }
-
-    function closeCloseAccountModal(){
-        closeAccountModal.classList.remove("show");
-        closeAccountModal.setAttribute("aria-hidden","true");
-        closeAccountCheck.checked=false;
-        closeAccountConfirm.disabled=true;
-    }
-
-    async function reopenDemoAccount(){
-        if(!demo||!stand)return;
-        if(!confirm("Rouvrir ce compte Démo ?\n\nCette action est réservée à l'entraînement."))return;
-        closeAccount.disabled=true;
-        closeAccount.textContent="Réouverture…";
-        try{
-            const {data:r,error}=await client.rpc("rouvrir_compte_stand_demo",{p_stand_demo_id:stand.id});
-            if(error)throw error;
-            if(!r?.ok)throw new Error("Réouverture non confirmée par le serveur.");
-            demoClosedStandIds.delete(stand.id);
-            msg("Compte Démo rouvert.",true);
-            await loadAccount();
-            renderSummary();
-        }catch(e){
-            console.error(e);
-            msg(e?.message||"Impossible de rouvrir le compte Démo.");
-            await loadAccount();
-        }
-    }
-
+    function closeCloseAccountModal(){closeAccountModal.classList.remove("show");closeAccountModal.setAttribute("aria-hidden","true");closeAccountCheck.checked=false;closeAccountConfirm.disabled=true;}
     async function confirmCloseStandAccount(){
-        if(!stand||!accountData)return;
-        if(!closeAccountCheck.checked)return;
-        if(accountClosed()){
-            closeCloseAccountModal();
-            return msg("Ce compte est déjà clôturé.");
-        }
-
-        const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
-        const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
-        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte.");
-        if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture.");
-        if(!demo&&!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
-
-        closeAccountConfirm.disabled=true;
-        closeAccountConfirm.textContent="Clôture…";
-
-        try{
-            const rpcName=demo?"cloturer_compte_stand_demo":"cloturer_compte_stand";
-            const rpcArgs=demo
-                ?{p_stand_demo_id:stand.id,p_commentaire:"Clôture Démo confirmée depuis Vaisselle & Consignes"}
-                :{p_participation_id:stand.id,p_commentaire:"Clôture confirmée depuis Vaisselle & Consignes"};
-            const {data:r,error}=await client.rpc(rpcName,rpcArgs);
-            if(error)throw error;
-            if(!r?.ok)throw new Error("Clôture non confirmée par le serveur.");
-            if(demo)demoClosedStandIds.add(stand.id);
-            closeCloseAccountModal();
-            const nouveauStatut=String(r.nouveau_statut||r.statut_compte||"");
-            const montantFacture=Number(r.montant_a_facturer??r.montant_cloture_facturation??solde);
-            msg(
-                nouveauStatut==="a_facturer"
-                    ?`Compte clôturé. ${money(montantFacture)} à facturer.`
-                    :(demo?"Compte Démo clôturé.":"Compte clôturé."),
-                true
-            );
-            await loadAccount();
-            renderSummary();
-        }catch(e){
-            console.error(e);
-            msg(e?.message||"Impossible de clôturer le compte.");
-            closeAccountConfirm.disabled=!closeAccountCheck.checked;
-            closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";
-            await loadAccount();
-        }
+        if(!stand||!accountData)return; if(demo)return closeCloseAccountModal(); if(!closeAccountCheck.checked)return;
+        if(accountClosed()){closeCloseAccountModal();return msg("Ce compte est déjà clôturé.");}
+        const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100; const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
+        if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte."); if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture."); if(!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
+        closeAccountConfirm.disabled=true; closeAccountConfirm.textContent="Clôture…";
+        try{const {data:r,error}=await client.rpc("cloturer_compte_stand",{p_participation_id:stand.id,p_commentaire:"Clôture confirmée depuis Vaisselle & Consignes"}); if(error)throw error; if(!r?.ok)throw new Error("Clôture non confirmée par le serveur."); closeCloseAccountModal(); msg(r.nouveau_statut==="a_facturer"?`Compte clôturé. ${money(r.montant_a_facturer||solde)} à facturer.`:"Compte clôturé.",true); await loadAccount(); renderSummary();}
+        catch(e){console.error(e);msg(e?.message||"Impossible de clôturer le compte.");closeAccountConfirm.disabled=!closeAccountCheck.checked;closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";await loadAccount();}
     }
 
     function searchStands(){
