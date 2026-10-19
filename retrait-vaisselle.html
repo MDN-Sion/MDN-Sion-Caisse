@@ -2331,6 +2331,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         accountBalance.textContent="Chargement…";
         accountBalance.classList.remove("credit");
         payAccount.classList.remove("refund");
+        payAccount.style.display="inline-flex";
         payAccount.textContent="Régler le compte";
         payAccount.disabled=true;
         closeAccount.disabled=true;
@@ -2362,10 +2363,19 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 }
                 payAccount.disabled=true;
                 payAccount.title="Compte clôturé";
-                closeAccount.style.display="inline-flex";
-                closeAccount.disabled=true;
-                closeAccount.textContent="Compte clôturé";
-                closeAccount.title="Ce compte est déjà clôturé";
+                if(demo){
+                    payAccount.style.display="none";
+                    closeAccount.style.display="inline-flex";
+                    closeAccount.disabled=false;
+                    closeAccount.textContent="Rouvrir le compte Démo";
+                    closeAccount.title="Rouvrir ce compte Démo pour poursuivre les exercices";
+                }else{
+                    payAccount.style.display="none";
+                    closeAccount.style.display="inline-flex";
+                    closeAccount.disabled=true;
+                    closeAccount.textContent="Compte clôturé";
+                    closeAccount.title="Ce compte est déjà clôturé";
+                }
                 return;
             }
 
@@ -2636,9 +2646,28 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         }
     }
 
-    function openCloseAccount(){
+    async function openCloseAccount(){
         if(!stand||!accountData)return msg("Sélectionne d'abord un stand.");
-        if(accountClosed())return msg("Ce compte est déjà clôturé.");
+        if(accountClosed()){
+            if(!demo)return msg("Ce compte est déjà clôturé.");
+            if(!window.confirm("Rouvrir ce compte Démo ?\n\nCette action est réservée à l’entraînement et permettra de poursuivre les exercices sur ce stand."))return;
+            closeAccount.disabled=true;
+            closeAccount.textContent="Réouverture…";
+            try{
+                const {data:r,error}=await client.rpc("rouvrir_compte_stand_demo",{p_stand_demo_id:stand.id});
+                if(error)throw error;
+                if(!r?.ok)throw new Error("Réouverture non confirmée par le serveur.");
+                msg("Compte Démo rouvert.",true);
+                await loadAccount();
+                renderSummary();
+            }
+            catch(e){
+                console.error(e);
+                msg(e?.message||"Impossible de rouvrir le compte Démo.");
+                await loadAccount();
+            }
+            return;
+        }
         const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
         const invoiceMode=String(accountData.compte?.mode_reglement_habituel||"")==="facture";
         if(solde<0)return msg("Le crédit doit être remboursé avant de clôturer le compte.");
