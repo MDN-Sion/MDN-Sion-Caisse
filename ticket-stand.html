@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>Récapitulatif du stand · MDN Sion</title>
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+  <style>
+    :root {
+      --bleu: #00126b;
+      --vert: #107c10;
+      --rouge: #b42318;
+      --fond: #f4f6fb;
+      --bord: #e1e5ee;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--fond);
+      color: #1d2939;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .page {
+      width: min(760px, calc(100% - 24px));
+      margin: 20px auto;
+    }
+
+    .ticket {
+      background: #fff;
+      border: 1px solid var(--bord);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 18, 107, .08);
+    }
+
+    header {
+      padding: 22px;
+      text-align: center;
+      border-bottom: 1px dashed #cfd5df;
+    }
+
+    header img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--bleu);
+      font-size: 24px;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: #667085;
+    }
+
+    .demo {
+      display: none;
+      margin: 14px 18px 0;
+      padding: 10px 12px;
+      text-align: center;
+      border: 1px solid #e6c36a;
+      border-radius: 12px;
+      background: #fff5d6;
+      color: #694b00;
+      font-weight: 900;
+    }
+
+    .demo.show {
+      display: block;
+    }
+
+    .content {
+      padding: 18px;
+    }
+
+    .identity,
+    .totals {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .totals {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin: 16px 0;
+    }
+
+    .box,
+    .total {
+      padding: 12px;
+      border: 1px solid var(--bord);
+      border-radius: 12px;
+      background: #fafbfc;
+    }
+
+    .box span,
+    .total span {
+      display: block;
+      color: #667085;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .box strong,
+    .total strong {
+      color: var(--bleu);
+    }
+
+    h2 {
+      margin: 22px 0 10px;
+      color: var(--bleu);
+      font-size: 18px;
+    }
+
+    .movement {
+      padding: 12px 0;
+      border-top: 1px dashed #d0d5dd;
+    }
+
+    .movement-head,
+    .balance,
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .movement-title {
+      font-weight: 900;
+    }
+
+    .movement-meta,
+    .detail {
+      color: #667085;
+      font-size: 12px;
+    }
+
+    .movement-amount {
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .movement-amount.debit {
+      color: var(--rouge);
+    }
+
+    .movement-amount.credit {
+      color: var(--vert);
+    }
+
+    .detail {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .balance {
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px dotted #d0d5dd;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .actions {
+      padding: 0 18px 18px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 11px;
+      background: var(--bleu);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .message {
+      padding: 30px 18px;
+      text-align: center;
+      color: #667085;
+    }
+
+    footer {
+      padding: 16px;
+      text-align: center;
+      color: #667085;
+      font-size: 12px;
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        width: calc(100% - 12px);
+        margin: 6px auto;
+      }
+
+      .totals {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .movement-head {
+        flex-direction: column;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        width: 100%;
+        margin: 0;
+      }
+
+      .ticket {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .actions {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <article class="ticket">
+      <header>
+        <img src="logo-mdn.png" alt="MDN Sion">
+        <h1>Récapitulatif du stand</h1>
+        <div id="subtitle" class="subtitle">Marché de Noël de Sion</div>
+      </header>
+
+      <div id="demoBanner" class="demo">MODE DÉMO – Aucune donnée réelle</div>
+
+      <div id="content" class="content">
+        <div class="message">Chargement du récapitulatif…</div>
+      </div>
+
+      <div class="actions">
+        <button id="print" type="button">Imprimer / Enregistrer en PDF</button>
+      </div>
+
+      <footer>Récapitulatif généré à partir des mouvements enregistrés sur le compte du stand.</footer>
+    </article>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script>
+    "use strict";
+
+    (function() {
+      const $ = id => document.getElementById(id);
+
+      function esc(value) {
+        return String(value ?? "").replace(/[&<>'"]/g, c => ({
+          "&":"&amp;",
+          "<":"&lt;",
+          ">":"&gt;",
+          "'":"&#39;",
+          '"':"&quot;"
+        })[c]);
+      }
+
+      function money(value) {
+        return `${Number(value || 0).toLocaleString("fr-CH", {
+          minimumFractionDigits:2,
+          maximumFractionDigits:2
+        })} CHF`;
+      }
+
+      function formatDate(value) {
+        if(!value) return "—";
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("fr-FR", {
+          dateStyle:"short",
+          timeStyle:"short"
+        });
+      }
+
+      function movementLabel(type) {
+        return ({
+          retrait:"Retrait",
+          retour_propre:"Retour propre",
+          retour_sale:"Retour sale",
+          paiement:"Paiement",
+          remboursement_credit:"Remboursement du crédit",
+          cloture_compte:"Clôture du compte",
+          cloture_facturation:"Clôture pour facturation"
+        })[type] || type || "Mouvement";
+      }
+
+      function details(movement) {
+        const d = movement.detail || {};
+        const rows = [];
+
+        (Array.isArray(d.vaisselle) ? d.vaisselle : []).forEach((item,index) => {
+          const nom = item.nom || item.nom_vaisselle || item.libelle || item.vaisselle_nom || `Article ${index + 1}`;
+          const qte = item.quantite_unites ?? item.quantite ?? item.qte ?? "—";
+          const montant = item.montant_total ?? item.total ?? null;
+          rows.push(`<div class="detail-row"><span>${esc(nom)} · quantité ${esc(qte)}</span><strong>${montant == null ? "" : esc(money(montant))}</strong></div>`);
+        });
+
+        (Array.isArray(d.contenants) ? d.contenants : []).forEach((item,index) => {
+          const nom = item.nom || item.libelle || item.type_contenant || item.usage_contenant || `Contenant ${index + 1}`;
+          rows.push(`<div class="detail-row"><span>${esc(nom)}</span><strong>Quantité ${esc(item.quantite ?? item.qte ?? "—")}</strong></div>`);
+        });
+
+        (Array.isArray(d.moyens) ? d.moyens : []).forEach(item => {
+          rows.push(`<div class="detail-row"><span>${esc(item.nom || item.libelle || item.code || item.moyen || "Paiement")}</span><strong>${esc(money(item.montant || 0))}</strong></div>`);
+        });
+
+        return rows.join("");
+      }
+
+      function render(data) {
+        const i = data.identite || {};
+        const c = data.compte || {};
+        const movements = Array.isArray(data.mouvements) ? data.mouvements : [];
+        let running = 0;
+
+        $("subtitle").textContent = `Marché de Noël de Sion${i.edition_annee ? ` · ${i.edition_annee}` : ""}`;
+
+        const history = movements.map(m => {
+          running += Number(m.mouvement_delta_solde || 0);
+          const debit = Number(m.montant_debit || 0);
+          const credit = Number(m.montant_credit || 0);
+          const amount = debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0);
+          const cls = debit > 0 ? "debit" : credit > 0 ? "credit" : "";
+
+          return `<div class="movement">
+            <div class="movement-head">
+              <div>
+                <div class="movement-title">${esc(movementLabel(m.type))}</div>
+                <div class="movement-meta">${esc(formatDate(m.date))} · ${esc(m.reference || "—")}</div>
+              </div>
+              <div class="movement-amount ${cls}">${esc(amount)}</div>
+            </div>
+            <div class="detail">${details(m)}</div>
+            <div class="balance"><span>Solde après mouvement</span><strong>${esc(money(running))}</strong></div>
+          </div>`;
+        }).join("");
+
+        $("content").innerHTML = `
+          <div class="identity">
+            <div class="box"><span>Stand</span><strong>${esc(i.numero_stand || "—")}</strong></div>
+            <div class="box"><span>Exposant</span><strong>${esc(i.partenaire_nom || "—")}</strong></div>
+            <div class="box"><span>Type</span><strong>${esc(i.type_partenaire || "—")}</strong></div>
+            <div class="box"><span>Statut du compte</span><strong>${esc(c.statut_compte || i.statut_compte || "—")}</strong></div>
+          </div>
+          <div class="totals">
+            <div class="total"><span>Facturé</span><strong>${esc(money(c.total_facture || 0))}</strong></div>
+            <div class="total"><span>Crédité</span><strong>${esc(money(c.total_credit_compte || 0))}</strong></div>
+            <div class="total"><span>Payé</span><strong>${esc(money(c.total_paye || 0))}</strong></div>
+            <div class="total"><span>Solde</span><strong>${esc(money(c.solde_restant || 0))}</strong></div>
+          </div>
+          <h2>Mouvements du compte</h2>
+          <div>${history || `<div class="message">Aucun mouvement enregistré.</div>`}</div>`;
+      }
+
+      async function init() {
+        try {
+          const client = window.MDN_SUPABASE;
+          if(!client) throw new Error("Connexion au service indisponible.");
+
+          const params = new URLSearchParams(location.search);
+          const demoPayload = params.get("demo");
+          const token = params.get("token");
+          let fn;
+          let args;
+
+          if(demoPayload) {
+            fn = "ticket_compte_exposant_demo";
+            args = {p_qr_payload:demoPayload};
+            $("demoBanner").classList.add("show");
+          }
+          else if(token) {
+            fn = "ticket_compte_exposant";
+            args = {p_token:token};
+          }
+          else {
+            throw new Error("QR du stand absent ou invalide.");
+          }
+
+          const {data,error} = await client.rpc(fn,args);
+          if(error) throw error;
+          if(!data?.ok) throw new Error("Le récapitulatif n’a pas été confirmé par le serveur.");
+          render(data);
+        }
+        catch(e) {
+          console.error(e);
+          $("content").innerHTML = `<div class="message"><strong>Impossible d’ouvrir ce récapitulatif.</strong><br><br>${esc(e?.message || "QR invalide ou expiré.")}</div>`;
+        }
+      }
+
+      $("print").onclick = () => window.print();
+      init();
+    })();
+  </script>
+</body>
+</html>
