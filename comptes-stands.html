@@ -615,6 +615,12 @@ footer {
 @media(max-width:760px){.history-summary{grid-template-columns:1fr 1fr}.movement-head{grid-template-columns:1fr 1fr}.action-row{width:100%}.action-row .action{flex:1 1 145px}}
 @media(max-width:430px){.history-summary,.movement-head{grid-template-columns:1fr}.detail-line,.running-balance{flex-direction:column;gap:3px}.movement-amount{text-align:left}}
 
+
+.detail-product { margin: 8px 0 12px; padding: 10px 0; border-top: 1px dashed #d0d5dd; }
+.detail-product:first-child { border-top: 0; }
+.detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; color:#172b6a; }
+.detail-subtotal { margin-top:5px; padding-top:5px; border-top:1px dotted #d0d5dd; font-weight:800; }
+.detail-comment { margin-bottom:8px; }
 </style>
 </head>
 <body>
@@ -981,15 +987,82 @@ function render() {
 }
 function movementLabel(type){return ({retrait:"Retrait",retour_propre:"Retour propre",retour_sale:"Retour sale",paiement:"Paiement",remboursement_credit:"Remboursement du crédit",cloture_compte:"Clôture du compte",cloture_facturation:"Clôture pour facturation"})[type]||type||"Mouvement"}
 function formatDate(v){if(!v)return "—";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}
-function detailLines(m){
-  const d=m.detail||{};const out=[];
-  if(d.commentaire)out.push(`<div class="detail-line"><span>Commentaire</span><strong>${esc(d.commentaire)}</strong></div>`);
-  (Array.isArray(d.vaisselle)?d.vaisselle:[]).forEach((x,i)=>{const nom=x.nom||x.nom_vaisselle||x.libelle||x.vaisselle_nom||`Article ${i+1}`;const q=x.quantite_unites??x.quantite??x.qte??"—";const mt=x.montant_total??x.total??null;out.push(`<div class="detail-line"><span>${esc(nom)} · quantité ${esc(q)}</span><strong>${mt==null?"":esc(money(mt))}</strong></div>`)});
-  (Array.isArray(d.contenants)?d.contenants:[]).forEach((x,i)=>{const nom=x.nom||x.libelle||x.type_contenant||x.usage_contenant||`Contenant ${i+1}`;out.push(`<div class="detail-line"><span>${esc(nom)}</span><strong>Quantité ${esc(x.quantite??x.qte??"—")}</strong></div>`)});
-  (Array.isArray(d.moyens)?d.moyens:[]).forEach(x=>out.push(`<div class="detail-line"><span>${esc(x.nom||x.libelle||x.code||x.moyen||"Paiement")}</span><strong>${esc(money(x.montant||0))}</strong></div>`));
-  (Array.isArray(d.affectation_retour)?d.affectation_retour:[]).forEach(x=>{if(Number(x.montant_credit_compte||0)>0)out.push(`<div class="detail-line"><span>Crédit porté au compte</span><strong>${esc(money(x.montant_credit_compte))}</strong></div>`);if(Number(x.montant_rembourse||0)>0)out.push(`<div class="detail-line"><span>Remboursé immédiatement</span><strong>${esc(money(x.montant_rembourse))}</strong></div>`);if(Number(x.montant_don||0)>0)out.push(`<div class="detail-line"><span>Don</span><strong>${esc(money(x.montant_don))}</strong></div>`)});
-  if(d.montant_cloture_facturation!=null)out.push(`<div class="detail-line"><span>Montant figé pour facturation</span><strong>${esc(money(d.montant_cloture_facturation))}</strong></div>`);
-  return out.join("")||`<div class="detail-line"><span>Détail</span><strong>Aucun détail supplémentaire</strong></div>`;
+function detailLines(m) {
+  const d = m.detail || {};
+  const out = [];
+  const isReturn = m.type === "retour_propre" || m.type === "retour_sale";
+
+  if(d.commentaire) {
+    out.push(`<div class="detail-line detail-comment"><span>Commentaire</span><strong>${esc(d.commentaire)}</strong></div>`);
+  }
+
+  (Array.isArray(d.vaisselle) ? d.vaisselle : []).forEach((x, i) => {
+    const nom = x.nom || x.nom_vaisselle || x.libelle || x.vaisselle_nom || `Article ${i + 1}`;
+    const q = Number(x.quantite_unites ?? x.quantite ?? x.qte ?? 0);
+    const standard = Number(x.quantite_standard || 0);
+    const nbComplets = Number(x.nombre_caisses_completes || 0);
+    const consigne = Number(x.consigne_unitaire_appliquee || 0);
+    const lavage = Number(x.lavage_unitaire_applique || x.lavage_unitaire_appliquee || 0);
+    const montantConsigne = Number(x.montant_consigne || 0);
+    const montantLavage = Number(x.montant_lavage || 0);
+    const montantTotal = Number(x.montant_total || 0);
+    const conditionnement = String(x.type_conditionnement || "").toLowerCase();
+
+    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+
+    if(nbComplets > 0 && standard > 0) {
+      const mot = conditionnement === "sachet" ? "sachet" : "caisse";
+      out.push(`<div class="detail-line"><span>${esc(nbComplets)} ${mot}${nbComplets > 1 ? "s" : ""} × ${esc(standard)} = ${esc(nbComplets * standard)} unités</span><strong></strong></div>`);
+    }
+
+    if(montantConsigne > 0 || (!isReturn && consigne > 0)) {
+      out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne remboursée" : "consigne"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
+    }
+
+    if(montantLavage > 0 || (!isReturn && lavage > 0)) {
+      out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage remboursé" : "lavage"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
+    }
+
+    out.push(`<div class="detail-line detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+  });
+
+  (Array.isArray(d.contenants) ? d.contenants : []).forEach((x, i) => {
+    const nom = x.nom || x.libelle || x.type_contenant || x.usage_contenant || `Contenant ${i + 1}`;
+    const q = Number(x.quantite ?? x.qte ?? 0);
+    const consigne = Number(x.consigne_unitaire_appliquee || 0);
+    const lavage = Number(x.lavage_unitaire_applique || x.lavage_unitaire_appliquee || 0);
+    const montantConsigne = Number(x.montant_consigne || 0);
+    const montantLavage = Number(x.montant_lavage || 0);
+    const montantTotal = Number(x.montant_total || 0);
+
+    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+
+    if(montantConsigne > 0 || (!isReturn && consigne > 0)) {
+      out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne contenant remboursée" : "consigne contenant"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
+    }
+
+    if(montantLavage > 0 || (!isReturn && lavage > 0)) {
+      out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage contenant remboursé" : "lavage contenant"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
+    }
+
+    out.push(`<div class="detail-line detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+  });
+
+  (Array.isArray(d.moyens) ? d.moyens : []).forEach(x => {
+    out.push(`<div class="detail-line"><span>${esc(x.nom || x.libelle || x.code || x.moyen || "Paiement")}</span><strong>${esc(money(x.montant || 0))}</strong></div>`);
+  });
+
+  (Array.isArray(d.affectation_retour) ? d.affectation_retour : []).forEach(x => {
+    if(Number(x.montant_credit_compte || 0) > 0) out.push(`<div class="detail-line"><span>Crédit porté au compte</span><strong>${esc(money(x.montant_credit_compte))}</strong></div>`);
+    if(Number(x.montant_rembourse || 0) > 0) out.push(`<div class="detail-line"><span>Remboursé immédiatement</span><strong>${esc(money(x.montant_rembourse))}</strong></div>`);
+    if(Number(x.montant_don || 0) > 0) out.push(`<div class="detail-line"><span>Don</span><strong>${esc(money(x.montant_don))}</strong></div>`);
+  });
+
+  if(d.montant_cloture_facturation != null) {
+    out.push(`<div class="detail-line"><span>Montant figé pour facturation</span><strong>${esc(money(d.montant_cloture_facturation))}</strong></div>`);
+  }
+
+  return out.join("") || `<div class="detail-line"><span>Détail</span><strong>Aucun détail supplémentaire</strong></div>`;
 }
 function balanceClass(value){
   const n=Number(value||0);
@@ -999,17 +1072,17 @@ function balanceClass(value){
 }
 function historyHtml(data){
   const i=data.identite||{},c=data.compte||{},ms=Array.isArray(data.mouvements)?data.mouvements:[];let solde=0;
-  const cards=ms.map(m=>{solde+=Number(m.mouvement_delta_solde||0);const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);const cls=d>0?"debit":cr>0?"credit":"";return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`}).join("");
+  const cards=ms.map(m=>{solde=Number(m.solde_apres_mouvement ?? (solde+Number(m.mouvement_delta_solde||0)));const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);const cls=d>0?"debit":cr>0?"credit":"";return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`}).join("");
   return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(c.total_facture||0))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte||0))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement enregistré pour ce stand.</div>`}</div>`;
 }
 async function openHistory(id){
   const r=rows.find(x=>x.id===id);if(!r)return;$("historyTitle").textContent=`Historique · ${r.numero} · ${r.nom}`;$("historyBody").innerHTML=`<div class="history-empty">Chargement de l’historique…</div>`;$("historyModal").classList.add("show");
-  try{const fn=demo?"charger_historique_compte_stand_demo":"charger_historique_compte_stand";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");$("historyBody").innerHTML=historyHtml(data)}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
+  try{const fn=demo?"charger_historique_compte_stand_demo_v2":"charger_historique_compte_stand_v2";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");$("historyBody").innerHTML=historyHtml(data)}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
 }
 function closeHistory(){$("historyModal").classList.remove("show")}
 async function openQr(id){
   if(!demo)return;const r=rows.find(x=>x.id===id);if(!r)return;$("qrStand").textContent=`${r.numero} · ${r.nom}`;$("qrCode").innerHTML="";$("qrLink").textContent="Préparation du QR…";$("qrModal").classList.add("show");
-  try{const {data,error}=await avecDelai(client.rpc("charger_historique_compte_stand_demo",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps.");if(error)throw error;const payload=data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M})}catch(e){console.error(e);$("qrCode").innerHTML="";$("qrLink").textContent=e?.message||"Impossible de générer le QR Démo."}
+  try{const {data,error}=await avecDelai(client.rpc("charger_historique_compte_stand_demo_v2",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps.");if(error)throw error;const payload=data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M})}catch(e){console.error(e);$("qrCode").innerHTML="";$("qrLink").textContent=e?.message||"Impossible de générer le QR Démo."}
 }
 function closeQr(){$("qrModal").classList.remove("show")}
 function openInvoice(id) {
