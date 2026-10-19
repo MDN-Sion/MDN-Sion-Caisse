@@ -2580,7 +2580,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 renderCatalog();
             };
         });
-        $("back").onclick=()=>location.href=demo?"vaisselle.html?mode=demo":"vaisselle.html";
+        $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
         $("logout").onclick=async()=>{
             sessionStorage.removeItem("mdn_mode_demo_actif");
             await window.MDN_AUTH.deconnexion()
