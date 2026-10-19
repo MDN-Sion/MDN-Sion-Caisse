@@ -1470,11 +1470,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     display:grid !important;
     grid-template-columns:minmax(0,1fr) auto;
     align-items:center;
+    gap:8px 12px;
     width:100%;
     margin-top:7px;
     padding:7px 0 0;
     border-top:1px solid #e4e7eb;
     background:transparent;
+    container-type:inline-size;
 }
 .account-balance{
     min-width:0;
@@ -1486,14 +1488,45 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 }
 .account-balance span{font-size:12px}
 .account-balance strong{font-size:17px;white-space:nowrap}
-.pay-account{
+.account-actions{
+    min-width:0;
+    max-width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.pay-account,
+.close-account{
+    min-width:0;
+    max-width:100%;
     min-height:36px;
     padding:7px 11px;
     white-space:nowrap;
 }
+
+/* Le bandeau du compte s'adapte à sa propre largeur :
+   dès que la colonne de droite devient étroite, les actions
+   passent sous le solde au lieu de se chevaucher. */
+@container (max-width:430px){
+    .account-strip.show{
+        grid-template-columns:minmax(0,1fr);
+    }
+    .account-actions{
+        width:100%;
+        justify-content:stretch;
+    }
+    .pay-account,
+    .close-account{
+        width:100%;
+    }
+}
+
 @media (max-width:760px){
-    .account-strip.show{grid-template-columns:1fr}
-    .pay-account{width:100%;margin-top:7px}
+    .account-strip.show{grid-template-columns:minmax(0,1fr)}
+    .account-actions{width:100%;justify-content:stretch}
+    .pay-account,.close-account{width:100%}
 }
 
 </style>
@@ -2297,7 +2330,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
             if(solde<0){
                 accountBalance.textContent=`Crédit ${money(Math.abs(solde))}`;
-                payAccount.textContent="Rembourser le crédit";
+                payAccount.textContent="Rembourser";
                 payAccount.classList.add("refund");
                 payAccount.disabled=!r.peut_rembourser;
                 payAccount.title=r.peut_rembourser
