@@ -1546,7 +1546,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        </strong>
       </div>
       <button class="validate" disabled="" id="validate">
-       Valider sur le compte artisan
+       Valider sur le compte du stand
       </button>
       <div class="demo-note" id="demoNote">
        Mode Démo : stands, opérations, paiements et QR fictifs. Aucune donnée réelle n'est modifiée.
@@ -1594,7 +1594,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   <div aria-hidden="true" class="modal" id="paymentModal">
    <div class="modalcard payment-card">
     <div class="modalhead">
-     <h3>Régler le compte artisan</h3>
+     <h3>Régler le compte du stand</h3>
      <button class="close" id="paymentClose">×</button>
     </div>
     <div class="payment-body">
@@ -1699,6 +1699,23 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const type=String(stand.type_partenaire||"");
         return Boolean((data.regles_retour||[]).find(r=>r.vaisselle_id===a.id&&String(r.type_partenaire||"")===type)?.retour_propre_unite_autorise)
     }
+    function properUnitRefundsWash(a){
+        if(!stand)return false;
+        const type=String(stand.type_partenaire||"");
+        return Boolean((data.regles_retour||[]).find(r=>
+            r.vaisselle_id===a.id
+            && String(r.type_partenaire||"")===type
+        )?.retour_propre_unite_rembourse_lavage)
+    }
+    function packagingType(a){
+        return String(a?.type_conditionnement||"caisse").toLocaleLowerCase("fr")==="sachet"?"sachet":"caisse"
+    }
+    function packagingLabels(a){
+        const sachet=packagingType(a)==="sachet";
+        return sachet
+            ?{singulier:"sachet",pluriel:"sachets",titre:"Sachet"}
+            :{singulier:"caisse",pluriel:"caisses",titre:"Caisse"}
+    }
     function initState(){
         state.vaisselle={
         }
@@ -1732,90 +1749,43 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     function card(a, t, field) {
         const e = state.vaisselle[a.id][t];
         const std = n(a.quantite_standard);
-        const isCase = field === "caisses";
-        const allow =
-            isCase
-            || t !== "retour_propre"
-            || properUnit(a);
+        const isPackage = field === "caisses";
+        const labels = packagingLabels(a);
+        const allow = isPackage || t !== "retour_propre" || properUnit(a);
 
         const rule =
-            t === "retour_propre"
-            && !isCase
-            && !allow
-                ? (
-                    stand
-                        ? "Retour propre à l’unité non autorisé"
-                        : "Choisir le stand pour les unités propres"
-                )
+            t === "retour_propre" && !isPackage && !allow
+                ? (stand ? "Retour propre à l’unité non autorisé" : "Choisir le stand pour les unités propres")
                 : "";
 
-        const subtitle =
-            isCase
-                ? (
-                    std
-                        ? `1 caisse = ${std} unités`
-                        : "Conditionnement non défini"
-                )
-                : "Saisie directe des unités";
+        const subtitle = isPackage
+            ? (std ? `1 ${labels.singulier} = ${std} unités` : "Conditionnement non défini")
+            : "Saisie directe des unités";
 
         return `
             <div
-                class="card ${opClass(t)} ${isCase ? "case-card" : "unit-card"} ${allow ? "" : "disabled"}"
+                class="card ${opClass(t)} ${isPackage ? "case-card" : "unit-card"} ${allow ? "" : "disabled"}"
                 data-clickable="${allow ? "true" : "false"}"
                 data-card-kind="dish"
                 data-card-id="${a.id}"
                 data-card-type="${t}"
                 data-card-field="${field}"
             >
-                <h3>
-                    ${esc(a.nom)}
-                </h3>
-
+                <h3>${esc(a.nom)}</h3>
                 <div class="meta">
-                    <strong>
-                        ${isCase ? "Caisse" : "Unité"}
-                    </strong>
-                    <br>
+                    <strong>${isPackage ? labels.titre : "Unité"}</strong><br>
                     ${esc(subtitle)}
                 </div>
-
                 <div class="stepper">
-                    <button
-                        class="step"
-                        type="button"
-                        data-step="-1"
-                        ${allow ? "" : "disabled"}
-                    >
-                        −
-                    </button>
-
+                    <button class="step" type="button" data-step="-1" ${allow ? "" : "disabled"}>−</button>
                     <input
-                        class="qty"
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        value="${e[field] || 0}"
-                        data-kind="dish"
-                        data-id="${a.id}"
-                        data-type="${t}"
-                        data-field="${field}"
-                        ${allow ? "" : "disabled"}
+                        class="qty" type="number" min="0" step="1" inputmode="numeric"
+                        value="${e[field] || 0}" data-kind="dish" data-id="${a.id}"
+                        data-type="${t}" data-field="${field}" ${allow ? "" : "disabled"}
                     >
-
-                    <button
-                        class="step"
-                        type="button"
-                        data-step="1"
-                        ${allow ? "" : "disabled"}
-                    >
-                        +
-                    </button>
+                    <button class="step" type="button" data-step="1" ${allow ? "" : "disabled"}>+</button>
                 </div>
-
-                <div class="rule">
-                    ${esc(rule)}
-                </div>
+                <div class="rule">${esc(rule)}</div>
             </div>
         `;
     }
@@ -1884,63 +1854,30 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function section(t) {
         const articles = data.vaisselle || [];
+        const articlesCaisses = articles.filter(a => packagingType(a) === "caisse");
+        const articlesSachets = articles.filter(a => packagingType(a) === "sachet");
 
-        const tuilesCaisses = articles
-            .map((article) => {
-                return card(
-                    article,
-                    t,
-                    "caisses"
-                );
-            })
-            .join("");
-
+        const tuilesCaisses = articlesCaisses.map(a => card(a,t,"caisses")).join("");
+        const tuilesSachets = articlesSachets.map(a => card(a,t,"caisses")).join("");
         const tuileCaisseVide = emptyCard(t);
+        const tuilesUnites = articles.map(a => card(a,t,"unites")).join("");
 
-        const tuilesUnites = articles
-            .map((article) => {
-                return card(
-                    article,
-                    t,
-                    "unites"
-                );
-            })
-            .join("");
-
-        let titreCaisses = "";
-        let titreUnites = "";
-
-        if (t === "retrait") {
-            titreCaisses = "📤 Retrait Caisse";
-            titreUnites = "📤 Retrait Unité";
-        } else if (t === "retour_sale") {
-            titreCaisses = "📥 Retours Caisse Sale";
-            titreUnites = "📥 Retours Unité Sale";
-        } else {
-            titreCaisses = "📥 Retours Caisse Propre";
-            titreUnites = "📥 Retours Unité Propre";
-        }
+        const titres = t === "retrait"
+            ? {caisses:"📤 Retrait en caisse",sachets:"📤 Retrait en sachet",unites:"📤 Retrait à l’unité"}
+            : t === "retour_sale"
+                ? {caisses:"📥 Retours en caisses sales",sachets:"📥 Retours en sachets sales",unites:"📥 Retours à l’unité (sales)"}
+                : {caisses:"📥 Retours en caisses propres",sachets:"📥 Retours en sachets propres",unites:"📥 Retours à l’unité (propres)"};
 
         return `
             <section class="section ${opClass(t)}">
-                <div class="section-title">
-                    <span class="dot"></span>
-                    ${titreCaisses}
-                </div>
+                <div class="section-title"><span class="dot"></span>${titres.caisses}</div>
+                <div class="cards">${tuilesCaisses}${tuileCaisseVide}</div>
 
-                <div class="cards">
-                    ${tuilesCaisses}
-                    ${tuileCaisseVide}
-                </div>
+                <div class="section-title sous-section-title"><span class="dot"></span>${titres.sachets}</div>
+                <div class="cards">${tuilesSachets}</div>
 
-                <div class="section-title sous-section-title">
-                    <span class="dot"></span>
-                    ${titreUnites}
-                </div>
-
-                <div class="cards">
-                    ${tuilesUnites}
-                </div>
+                <div class="section-title sous-section-title"><span class="dot"></span>${titres.unites}</div>
+                <div class="cards">${tuilesUnites}</div>
             </section>
         `;
     }
@@ -2070,63 +2007,59 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         return e.caisses*n(a.quantite_standard)+e.unites
     }
     function calc(){
-        const sections={
-            retrait:[],retour_sale:[],retour_propre:[]
-        }
-        ;
+        const sections={retrait:[],retour_sale:[],retour_propre:[]};
         let billed=0,credited=0;
-        const c=(data.contenants||[])[0]||null;
+        const c=(data.contenants||[]).find(x=>String(x.nom||"").toLocaleLowerCase("fr")==="caisse")||(data.contenants||[])[0]||null;
+
         for(const a of data.vaisselle||[]){
             for(const t of types){
-                const e=state.vaisselle[a.id][t],std=n(a.quantite_standard),q=e.caisses*std+e.unites;
+                const e=state.vaisselle[a.id][t];
+                const std=n(a.quantite_standard);
+                const packageQty=e.caisses*std;
+                const unitQty=e.unites;
+                const q=packageQty+unitQty;
                 if(!q)continue;
-                const cons=Number(a.consigne_unitaire||0),wash=Number(a.lavage_unitaire||0);
-                let amount=0;
-                if(t==="retrait"){
-                    amount=q*(cons+wash);
-                    billed+=amount
-                }
-                else{
-                    amount=q*cons;
-                    credited+=amount
-                }
+
+                const cons=Number(a.consigne_unitaire||0);
+                const wash=Number(a.lavage_unitaire||0);
+                let consAmount=q*cons;
+                let washQty=0;
+
+                if(t==="retrait") washQty=q;
+                else if(t==="retour_propre") washQty=packageQty+(properUnitRefundsWash(a)?unitQty:0);
+
+                const washAmount=washQty*wash;
+                const amount=consAmount+washAmount;
+                if(t==="retrait") billed+=amount; else credited+=amount;
+
                 sections[t].push({
-                    kind:"dish",name:a.nom,q,caisses:e.caisses,unites:e.unites,std,cons,wash,amount,id:a.id
-                }
-                )
+                    kind:"dish",name:a.nom,q,caisses:e.caisses,unites:e.unites,std,cons,wash,
+                    consAmount,washQty,washAmount,amount,id:a.id,conditionnement:packagingType(a)
+                });
             }
         }
+
         if(c){
             for(const t of types){
                 let full=0;
-                for(const a of data.vaisselle||[])full+=state.vaisselle[a.id][t].caisses;
-                const empty=t==="retour_propre"?0:(state.caissesVides[t]||0),total=full+empty;
+                for(const a of data.vaisselle||[]){
+                    if(packagingType(a)==="caisse") full+=state.vaisselle[a.id][t].caisses;
+                }
+                const empty=t==="retour_propre"?0:(state.caissesVides[t]||0);
+                const total=full+empty;
                 if(!total)continue;
+
                 const cons=Number(c.consigne||0),wash=Number(c.lavage||0);
-                let amount=0;
-                if(t==="retrait"){
-                    amount=total*(cons+wash);
-                    billed+=amount
-                }
-                else{
-                    const rc=t==="retour_propre"
-        ?Boolean(c.retour_propre_rembourse_consigne)
-        :Boolean(c.retour_sale_rembourse_consigne);
-    const rw=t==="retour_propre"
-        ?Boolean(c.retour_propre_rembourse_lavage)
-        :Boolean(c.retour_sale_rembourse_lavage);
-                    amount=total*((rc?cons:0)+(rw?wash:0));
-                    credited+=amount
-                }
-                sections[t].push({
-                    kind:"container",name:"Caisse",full,empty,q:total,cons,wash,amount
-                }
-                )
+                const rc=t==="retrait"?true:t==="retour_propre"?Boolean(c.retour_propre_rembourse_consigne):Boolean(c.retour_sale_rembourse_consigne);
+                const rw=t==="retrait"?true:t==="retour_propre"?Boolean(c.retour_propre_rembourse_lavage):Boolean(c.retour_sale_rembourse_lavage);
+                const consAmount=total*(rc?cons:0);
+                const washAmount=total*(rw?wash:0);
+                const amount=consAmount+washAmount;
+                if(t==="retrait") billed+=amount; else credited+=amount;
+                sections[t].push({kind:"container",name:"Caisse",full,empty,q:total,cons,wash,consAmount,washAmount,amount});
             }
         }
-        return{
-            sections,billed,credited
-        }
+        return{sections,billed,credited};
     }
     function removeItem(t,item){
         if(item.kind==="dish"){
@@ -2148,96 +2081,49 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             const arr=c.sections[t];
             if(!arr.length)continue;
             count+=arr.length;
-            html+=`<div class="sumsec">
-            <div class="sumtitle ${opClass(t)}">${opLabel(t)}</div>`;
-            for(let idx=0;
-            idx<arr.length;
-            idx++){
-                const x=arr[idx];
+            html+=`<div class="sumsec"><div class="sumtitle ${opClass(t)}">${opLabel(t)}</div>`;
+            for(const x of arr){
                 if(x.kind==="dish"){
+                    const labels=x.conditionnement==="sachet"
+                        ?{singulier:"sachet",pluriel:"sachets"}
+                        :{singulier:"caisse",pluriel:"caisses"};
                     html+=`<div class="item">
-                    <div class="itemhead">
-                    <span>${esc(x.name)} · ${x.q}</span>
-                    <button class="remove" data-rm="${t}|${x.id}|dish">×</button>
-                    </div>`;
-                    if(x.caisses)html+=`<div class="detail">
-                    <span>${nombreLibelle(x.caisses,"caisse","caisses")} × ${x.std} = ${nombreLibelle(x.caisses*x.std,"unité","unités")}</span>
-                    <span>
-                    </span>
-                    </div>`;
-                    html+=`<div class="detail">
-                    <span>${x.q} × ${money(x.cons)} consigne</span>
-                    <span>${money(x.q*x.cons)}</span>
-                    </div>`;
-                    if(t==="retrait")html+=`<div class="detail">
-                    <span>${x.q} × ${money(x.wash)} lavage</span>
-                    <span>${money(x.q*x.wash)}</span>
-                    </div>`;
-                    html+=`<div class="subtotal">
-                    <span>${t==="retrait"?"Facturé":"Crédit estimé"}</span>
-                    <span>${money(x.amount)}</span>
-                    </div>
-                    </div>`
-                }
-                else{
+                        <div class="itemhead"><span>${esc(x.name)} · ${x.q}</span><button class="remove" data-rm="${t}|${x.id}|dish">×</button></div>`;
+                    if(x.caisses) html+=`<div class="detail"><span>${nombreLibelle(x.caisses,labels.singulier,labels.pluriel)} × ${x.std} = ${nombreLibelle(x.caisses*x.std,"unité","unités")}</span><span></span></div>`;
+                    html+=`<div class="detail"><span>${x.q} × ${money(x.cons)} consigne</span><span>${money(x.consAmount)}</span></div>`;
+                    if(x.washQty>0) html+=`<div class="detail"><span>${x.washQty} × ${money(x.wash)} lavage</span><span>${money(x.washAmount)}</span></div>`;
+                    html+=`<div class="subtotal"><span>Sous-total</span><span>${money(x.amount)}</span></div></div>`;
+                }else{
                     html+=`<div class="item">
-                    <div class="itemhead">
-                    <span>Caisse${x.q>1?"s":""} · ${x.q}</span>
-                    <button class="remove" data-rm="${t}|container|container">×</button>
-                    </div>`;
-                    if(x.full)html+=`<div class="detail">
-                    <span>${nombreLibelle(x.full,"caisse","caisses")} avec vaisselle</span>
-                    <span>
-                    </span>
-                    </div>`;
-                    if(x.empty)html+=`<div class="detail">
-                    <span>${nombreLibelle(x.empty,"caisse vide","caisses vides")}</span>
-                    <span>
-                    </span>
-                    </div>`;
-                    html+=`<div class="detail">
-                    <span>${x.q} × ${money(x.cons)} consigne caisse</span>
-                    <span>${money(x.q*x.cons)}</span>
-                    </div>${t==="retrait"?`<div class="detail">
-                    <span>${x.q} × ${money(x.wash)} lavage caisse</span>
-                    <span>${money(x.q*x.wash)}</span>
-                    </div>`:""}<div class="subtotal">
-                    <span>${t==="retrait"?"Facturé":"Crédit estimé"}</span>
-                    <span>${money(x.amount)}</span>
-                    </div>
-                    </div>`
+                        <div class="itemhead"><span>Caisse${x.q>1?"s":""} · ${x.q}</span><button class="remove" data-rm="${t}|container|container">×</button></div>`;
+                    if(x.empty) html+=`<div class="detail"><span>${nombreLibelle(x.empty,"caisse vide","caisses vides")}</span><span></span></div>`;
+                    if(x.consAmount>0) html+=`<div class="detail"><span>${x.q} × ${money(x.cons)} consigne caisse</span><span>${money(x.consAmount)}</span></div>`;
+                    if(x.washAmount>0) html+=`<div class="detail"><span>${x.q} × ${money(x.wash)} lavage caisse</span><span>${money(x.washAmount)}</span></div>`;
+                    html+=`<div class="subtotal"><span>Sous-total</span><span>${money(x.amount)}</span></div></div>`;
                 }
             }
-            html+=`</div>`
+            html+=`</div>`;
         }
         summary.innerHTML=count?html:`<div class="empty">Aucune opération saisie.<br>Utilise les touches à gauche.</div>`;
         invoice.textContent=money(c.billed);
         credit.textContent=money(c.credited);
-        const balance=c.billed-c.credited;
-        net.textContent=(balance>=0?"À payer ":"À créditer ")+money(Math.abs(balance));
+        const balance=Math.round((c.billed-c.credited)*100)/100;
+        net.textContent=balance===0?`Solde ${money(0)}`:(balance>0?"À payer ":"À créditer ")+money(Math.abs(balance));
         net.classList.toggle("credit",balance<0);
         summary.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{
             const[t,id,kind]=b.dataset.rm.split("|");
             if(kind==="dish"){
                 state.vaisselle[id][t].caisses=0;
-                state.vaisselle[id][t].unites=0
-            }
-            else{
-                let full=false;
-                for(const a of data.vaisselle||[])if(state.vaisselle[a.id][t].caisses>0)full=true;
-                if(full){
-                    msg("Les caisses liées aux caisses complètes de vaisselle se retirent en supprimant les caisses de vaisselle concernées.");
-                    state.caissesVides[t]=0
-                }
-                else state.caissesVides[t]=0
+                state.vaisselle[id][t].unites=0;
+            }else{
+                state.caissesVides[t]=0;
             }
             renderCatalog();
-            renderSummary()
-        }
-        ));
+            renderSummary();
+        }));
         const on=Boolean(stand&&count);
         validate.disabled=!on;
-        validate.classList.toggle("on",on)
+        validate.classList.toggle("on",on);
     }
     function paymentIcon(code){
         const value=String(code||"").toLocaleLowerCase("fr");
@@ -2267,7 +2153,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     : {p_participation_id:stand.id}
             );
             if(error)throw error;
-            if(!r?.ok)throw new Error("Compte artisan non chargé.");
+            if(!r?.ok)throw new Error("Compte du stand non chargé.");
             if(!stand||r.compte?.participation_id!==stand.id)return;
             accountData=r;
             const solde=Number(r.compte?.solde_restant||0);
@@ -2292,7 +2178,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             console.error(e);
             accountBalance.textContent="Indisponible";
             payAccount.disabled=true;
-            msg(e?.message||"Impossible de charger le compte artisan.");
+            msg(e?.message||"Impossible de charger le compte du stand.");
         }
     }
 
@@ -2385,7 +2271,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         if(accountDue()<=0)return msg("Ce compte n'a aucun montant à payer.");
         paymentKey=uuid();
         const paymentTitle=paymentModal.querySelector(".modalhead h3");
-        if(paymentTitle)paymentTitle.textContent=demo?"Régler le compte Démo":"Régler le compte artisan";
+        if(paymentTitle)paymentTitle.textContent=demo?"Régler le compte Démo":"Régler le compte du stand";
         selectedPaymentMethods.clear();
         renderPayment();
         paymentModal.classList.add("show");
@@ -2497,33 +2383,36 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
     function buildOperation(t){
         const lines=[],containers=[];
-        const c=(data.contenants||[])[0]||null;
-        let full=0;
+        const c=(data.contenants||[]).find(x=>String(x.nom||"").toLocaleLowerCase("fr")==="caisse")||(data.contenants||[])[0]||null;
+        let fullCases=0;
         for(const a of data.vaisselle||[]){
-            const e=state.vaisselle[a.id][t],std=n(a.quantite_standard),inCases=e.caisses*std,total=inCases+e.unites;
+            const e=state.vaisselle[a.id][t];
+            const std=n(a.quantite_standard);
+            const inCompletePackages=e.caisses*std;
+            const total=inCompletePackages+e.unites;
             if(!total)continue;
-            if(t==="retour_propre"&&e.unites>0&&!properUnit(a))throw new Error(`Retour propre à l'unité non autorisé pour « ${a.nom} » avec ce stand.`);
+            if(t==="retour_propre"&&e.unites>0&&!properUnit(a))
+                throw new Error(`Retour propre à l'unité non autorisé pour « ${a.nom} » avec ce stand.`);
+
             lines.push({
-                vaisselle_id:a.id,quantite_unites:total,nombre_caisses_completes:e.caisses,quantite_en_caisses_completes:inCases,quantite_en_caisses_partielles:0,quantite_hors_caisses:e.unites
-            }
-            );
-            full+=e.caisses
+                vaisselle_id:a.id,
+                quantite_unites:total,
+                nombre_caisses_completes:e.caisses,
+                quantite_en_caisses_completes:inCompletePackages,
+                quantite_en_caisses_partielles:0,
+                quantite_hors_caisses:e.unites
+            });
+
+            if(packagingType(a)==="caisse") fullCases+=e.caisses;
         }
-        if(c&&full)containers.push({
-            type_contenant_id:c.id,quantite:full,usage_contenant:"avec_vaisselle"
-        }
-        );
-        if(c&&t!=="retour_propre"&&state.caissesVides[t])containers.push({
-            type_contenant_id:c.id,quantite:state.caissesVides[t],usage_contenant:"vide"
-        }
-        );
+        if(c&&fullCases) containers.push({type_contenant_id:c.id,quantite:fullCases,usage_contenant:"avec_vaisselle"});
+        if(c&&t!=="retour_propre"&&state.caissesVides[t])
+            containers.push({type_contenant_id:c.id,quantite:state.caissesVides[t],usage_contenant:"vide"});
         if(!lines.length&&!containers.length)return null;
-        return{
-            type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants:containers
-        }
+        return{type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants:containers};
     }
     async function save(){
-        if(!stand)return msg("Sélectionne d'abord le stand / artisan.");
+        if(!stand)return msg("Sélectionne d'abord le stand.");
         let ops;
         try{
             ops=types.map(buildOperation).filter(Boolean)
@@ -2580,7 +2469,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             msg(e?.message||"Impossible d'enregistrer la session.")
         }
         finally{
-            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte artisan";
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
             renderSummary()
         }
     }
@@ -2726,7 +2615,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             document.querySelector(".title h1").textContent=demo
                 ?"🍽️ Vaisselle & Consignes · MODE DÉMO"
                 :"🍽️ Vaisselle & Consignes";
-            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte artisan";
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
             if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
             const auth=await window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]);
             if(!auth)return;
