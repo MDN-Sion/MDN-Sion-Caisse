@@ -611,15 +611,17 @@ footer {
 .action.history{background:#eef2ff;color:#00126b;border-color:#c7d2fe}
 .action.qr{background:#fff8e8;color:#7a5200;border-color:#e6c36a}
 .history-modal-card{width:min(980px,calc(100vw - 28px));max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
-.history-body{overflow:auto;padding:18px}.history-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}.history-summary>div{background:#f7f8fc;border:1px solid #e3e6ef;border-radius:12px;padding:12px}.history-summary span{display:block;color:#667085;font-size:12px;margin-bottom:4px}.history-summary strong{color:#00126b}.amount-factured{color:#b42318!important}.amount-credited{color:#107c10!important}.amount-paid{color:#175cd3!important}.amount-balance-debt{color:#b42318!important}.amount-balance-credit{color:#107c10!important}.amount-balance-zero{color:#00126b!important}.history-list{display:grid;gap:10px}.movement{border:1px solid #e3e6ef;border-radius:14px;overflow:hidden}.movement-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px 14px;background:#f8f9fc}.movement-title{font-weight:800;color:#172b6a}.movement-meta{color:#667085;font-size:12px}.movement-amount{text-align:right;font-weight:900}.movement-amount.debit{color:#b42318}.movement-amount.credit{color:#107c10}.movement-detail{padding:12px 14px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:12px;font-size:13px}.running-balance{margin-top:9px;padding-top:9px;border-top:1px dashed #d0d5dd}.running-balance strong{color:#00126b}.history-empty{text-align:center;padding:24px;color:#667085}.qr-modal-card{width:min(460px,calc(100vw - 28px))}.qr-body{text-align:center;padding:18px}.qr-demo-warning{background:#fff5d6;border:1px solid #e6c36a;color:#694b00;border-radius:12px;padding:10px;font-weight:800}.qr-link{font-size:12px;color:#667085;overflow-wrap:anywhere}.qr-box{margin:16px auto;display:flex;justify-content:center;min-height:220px}
+.history-body{overflow:auto;padding:14px}.history-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}.history-summary>div{background:#f7f8fc;border:1px solid #e3e6ef;border-radius:12px;padding:12px}.history-summary span{display:block;color:#667085;font-size:12px;margin-bottom:4px}.history-summary strong{color:#00126b}.amount-factured{color:#b42318!important}.amount-credited{color:#107c10!important}.amount-paid{color:#175cd3!important}.amount-balance-debt{color:#b42318!important}.amount-balance-credit{color:#107c10!important}.amount-balance-zero{color:#00126b!important}.history-list{display:grid;gap:7px}.movement{border:1px solid #e3e6ef;border-radius:14px;overflow:hidden}.movement-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:9px 12px;background:#f8f9fc}.movement-title{font-weight:800;color:#172b6a}.movement-meta{color:#667085;font-size:12px}.movement-amount{text-align:right;font-weight:900}.movement-amount.debit{color:#b42318}.movement-amount.credit{color:#107c10}.movement-detail{padding:8px 12px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:12px;font-size:13px}.running-balance{margin-top:9px;padding-top:9px;border-top:1px dashed #d0d5dd}.running-balance strong{color:#00126b}.history-empty{text-align:center;padding:24px;color:#667085}.qr-modal-card{width:min(460px,calc(100vw - 28px))}.qr-body{text-align:center;padding:18px}.qr-demo-warning{background:#fff5d6;border:1px solid #e6c36a;color:#694b00;border-radius:12px;padding:10px;font-weight:800}.qr-link{font-size:12px;color:#667085;overflow-wrap:anywhere}.qr-box{margin:16px auto;display:flex;justify-content:center;min-height:220px}
 @media(max-width:760px){.history-summary{grid-template-columns:1fr 1fr}.movement-head{grid-template-columns:1fr 1fr}.action-row{width:100%}.action-row .action{flex:1 1 145px}}
 @media(max-width:430px){.history-summary,.movement-head{grid-template-columns:1fr}.detail-line,.running-balance{flex-direction:column;gap:3px}.movement-amount{text-align:left}}
 
 
-.detail-product { margin: 8px 0 12px; padding: 10px 0; border-top: 1px dashed #d0d5dd; }
+.detail-product { margin: 4px 0 7px; padding: 5px 0; border-top: 1px dashed #d0d5dd; }
 .detail-product:first-child { border-top: 0; }
-.detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; color:#172b6a; }
-.detail-subtotal { margin-top:5px; padding-top:5px; border-top:1px dotted #d0d5dd; font-weight:800; }
+.detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:3px; color:#172b6a; }
+.detail-subtotal { margin-top:3px; padding-top:3px; border-top:1px dotted #d0d5dd; font-weight:800; }
+.detail-subtotal.subtotal-debit strong{color:#d92d20}.detail-subtotal.subtotal-credit strong{color:#16a34a}
+.history-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.history-filters select{width:100%;min-height:40px;border:1px solid #d0d5dd;border-radius:9px;padding:0 10px;background:#fff;color:#172b6a;font-weight:700}@media(max-width:620px){.history-filters{grid-template-columns:1fr}}
 .detail-comment { margin-bottom:8px; }
 </style>
 </head>
@@ -1008,7 +1010,7 @@ function detailLines(m) {
     const montantTotal = Number(x.montant_total || 0);
     const conditionnement = String(x.type_conditionnement || "").toLowerCase();
 
-    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong></div>`);
 
     if(nbComplets > 0 && standard > 0) {
       const mot = conditionnement === "sachet" ? "sachet" : "caisse";
@@ -1023,7 +1025,7 @@ function detailLines(m) {
       out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage remboursé" : "lavage"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
     }
 
-    out.push(`<div class="detail-line detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+    out.push(`<div class="detail-line detail-subtotal ${isReturn ? "subtotal-credit" : "subtotal-debit"}"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
   });
 
   (Array.isArray(d.contenants) ? d.contenants : []).forEach((x, i) => {
@@ -1035,7 +1037,7 @@ function detailLines(m) {
     const montantLavage = Number(x.montant_lavage || 0);
     const montantTotal = Number(x.montant_total || 0);
 
-    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+    out.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong></div>`);
 
     if(montantConsigne > 0 || (!isReturn && consigne > 0)) {
       out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne contenant remboursée" : "consigne contenant"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
@@ -1045,7 +1047,7 @@ function detailLines(m) {
       out.push(`<div class="detail-line"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage contenant remboursé" : "lavage contenant"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
     }
 
-    out.push(`<div class="detail-line detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
+    out.push(`<div class="detail-line detail-subtotal ${isReturn ? "subtotal-credit" : "subtotal-debit"}"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
   });
 
   (Array.isArray(d.moyens) ? d.moyens : []).forEach(x => {
@@ -1070,14 +1072,37 @@ function balanceClass(value){
   if(n<-0.004)return "amount-balance-credit";
   return "amount-balance-zero";
 }
-function historyHtml(data){
-  const i=data.identite||{},c=data.compte||{},ms=Array.isArray(data.mouvements)?data.mouvements:[];let solde=0;
-  const cards=ms.map(m=>{solde=Number(m.solde_apres_mouvement ?? (solde+Number(m.mouvement_delta_solde||0)));const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);const cls=d>0?"debit":cr>0?"credit":"";return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`}).join("");
-  return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(c.total_facture||0))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte||0))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement enregistré pour ce stand.</div>`}</div>`;
+function historyDayKey(value){
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return "";
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
+let currentHistoryData=null;
+let currentHistoryDay="all";
+let currentHistoryType="all";
+function historyHtml(data){
+  const i=data.identite||{},c=data.compte||{},all=Array.isArray(data.mouvements)?data.mouvements:[];
+  const days=[...new Set(all.map(m=>historyDayKey(m.date)).filter(Boolean))].sort();
+  const types=[...new Set(all.map(m=>m.type).filter(Boolean))];
+  const ms=all.filter(m=>(currentHistoryDay==="all"||historyDayKey(m.date)===currentHistoryDay)&&(currentHistoryType==="all"||m.type===currentHistoryType));
+  let solde=0;
+  const cards=ms.map(m=>{
+    solde=Number(m.solde_apres_mouvement ?? (solde+Number(m.mouvement_delta_solde||0)));
+    const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);
+    const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);
+    const cls=d>0?"debit":cr>0?"credit":"";
+    return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
+  }).join("");
+  return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(c.total_facture||0))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte||0))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-filters"><select id="historyDayFilter"><option value="all">Tous les jours</option>${days.map(day=>`<option value="${esc(day)}" ${currentHistoryDay===day?"selected":""}>${esc(new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}))}</option>`).join("")}</select><select id="historyTypeFilter"><option value="all">Tous les mouvements</option>${types.map(type=>`<option value="${esc(type)}" ${currentHistoryType===type?"selected":""}>${esc(movementLabel(type))}</option>`).join("")}</select></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement pour ce filtre.</div>`}</div>`;
+}
+function bindHistoryFilters(){
+  $("historyDayFilter")?.addEventListener("change",e=>{currentHistoryDay=e.target.value;$("historyBody").innerHTML=historyHtml(currentHistoryData);bindHistoryFilters()});
+  $("historyTypeFilter")?.addEventListener("change",e=>{currentHistoryType=e.target.value;$("historyBody").innerHTML=historyHtml(currentHistoryData);bindHistoryFilters()});
+}
+
 async function openHistory(id){
   const r=rows.find(x=>x.id===id);if(!r)return;$("historyTitle").textContent=`Historique · ${r.numero} · ${r.nom}`;$("historyBody").innerHTML=`<div class="history-empty">Chargement de l’historique…</div>`;$("historyModal").classList.add("show");
-  try{const fn=demo?"charger_historique_compte_stand_demo_v2":"charger_historique_compte_stand_v2";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");$("historyBody").innerHTML=historyHtml(data)}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
+  try{const fn=demo?"charger_historique_compte_stand_demo_v2":"charger_historique_compte_stand_v2";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");currentHistoryData=data;currentHistoryDay="all";currentHistoryType="all";$("historyBody").innerHTML=historyHtml(data);bindHistoryFilters()}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
 }
 function closeHistory(){$("historyModal").classList.remove("show")}
 async function openQr(id){
