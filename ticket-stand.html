@@ -260,6 +260,10 @@
         display: none;
       }
     }
+  
+    .detail-product { margin: 8px 0 12px; padding: 9px 0; border-top: 1px dashed #d0d5dd; }
+    .detail-product-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:6px; color:#172b6a; }
+    .detail-subtotal { margin-top:5px; padding-top:5px; border-top:1px dotted #d0d5dd; font-weight:800; }
   </style>
 </head>
 <body>
@@ -334,6 +338,16 @@
         return "amount-balance-zero";
       }
 
+      function statusLabel(value) {
+        return ({
+          ouvert:"Compte ouvert",
+          a_controler:"À contrôler",
+          a_facturer:"À facturer",
+          facture:"Facturé",
+          solde:"Soldé"
+        })[value] || value || "—";
+      }
+
       function movementLabel(type) {
         return ({
           retrait:"Retrait",
@@ -349,17 +363,51 @@
       function details(movement) {
         const d = movement.detail || {};
         const rows = [];
+        const isReturn = movement.type === "retour_propre" || movement.type === "retour_sale";
 
         (Array.isArray(d.vaisselle) ? d.vaisselle : []).forEach((item,index) => {
           const nom = item.nom || item.nom_vaisselle || item.libelle || item.vaisselle_nom || `Article ${index + 1}`;
-          const qte = item.quantite_unites ?? item.quantite ?? item.qte ?? "—";
-          const montant = item.montant_total ?? item.total ?? null;
-          rows.push(`<div class="detail-row"><span>${esc(nom)} · quantité ${esc(qte)}</span><strong>${montant == null ? "" : esc(money(montant))}</strong></div>`);
+          const q = Number(item.quantite_unites ?? item.quantite ?? item.qte ?? 0);
+          const standard = Number(item.quantite_standard || 0);
+          const nbComplets = Number(item.nombre_caisses_completes || 0);
+          const consigne = Number(item.consigne_unitaire_appliquee || 0);
+          const lavage = Number(item.lavage_unitaire_applique || item.lavage_unitaire_appliquee || 0);
+          const montantConsigne = Number(item.montant_consigne || 0);
+          const montantLavage = Number(item.montant_lavage || 0);
+          const montantTotal = Number(item.montant_total || 0);
+          const conditionnement = String(item.type_conditionnement || "").toLowerCase();
+
+          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+
+          if(nbComplets > 0 && standard > 0) {
+            const mot = conditionnement === "sachet" ? "sachet" : "caisse";
+            rows.push(`<div class="detail-row"><span>${esc(nbComplets)} ${mot}${nbComplets > 1 ? "s" : ""} × ${esc(standard)} = ${esc(nbComplets * standard)} unités</span><strong></strong></div>`);
+          }
+
+          if(montantConsigne > 0 || (!isReturn && consigne > 0)) {
+            rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne remboursée" : "consigne"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
+          }
+
+          if(montantLavage > 0 || (!isReturn && lavage > 0)) {
+            rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage remboursé" : "lavage"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
+          }
+
+          rows.push(`<div class="detail-row detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
         });
 
         (Array.isArray(d.contenants) ? d.contenants : []).forEach((item,index) => {
           const nom = item.nom || item.libelle || item.type_contenant || item.usage_contenant || `Contenant ${index + 1}`;
-          rows.push(`<div class="detail-row"><span>${esc(nom)}</span><strong>Quantité ${esc(item.quantite ?? item.qte ?? "—")}</strong></div>`);
+          const q = Number(item.quantite ?? item.qte ?? 0);
+          const consigne = Number(item.consigne_unitaire_appliquee || 0);
+          const lavage = Number(item.lavage_unitaire_applique || item.lavage_unitaire_appliquee || 0);
+          const montantConsigne = Number(item.montant_consigne || 0);
+          const montantLavage = Number(item.montant_lavage || 0);
+          const montantTotal = Number(item.montant_total || 0);
+
+          rows.push(`<div class="detail-product"><div class="detail-product-title"><strong>${esc(nom)} · ${esc(q)}</strong><strong>${esc(money(montantTotal))}</strong></div>`);
+          if(montantConsigne > 0 || (!isReturn && consigne > 0)) rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(consigne.toFixed(2))} CHF ${isReturn ? "consigne contenant remboursée" : "consigne contenant"}</span><strong>${esc(money(montantConsigne))}</strong></div>`);
+          if(montantLavage > 0 || (!isReturn && lavage > 0)) rows.push(`<div class="detail-row"><span>${esc(q)} × ${esc(lavage.toFixed(2))} CHF ${isReturn ? "lavage contenant remboursé" : "lavage contenant"}</span><strong>${esc(money(montantLavage))}</strong></div>`);
+          rows.push(`<div class="detail-row detail-subtotal"><span>Sous-total</span><strong>${esc(money(montantTotal))}</strong></div></div>`);
         });
 
         (Array.isArray(d.moyens) ? d.moyens : []).forEach(item => {
@@ -378,7 +426,7 @@
         $("subtitle").textContent = `Marché de Noël de Sion${i.edition_annee ? ` · ${i.edition_annee}` : ""}`;
 
         const history = movements.map(m => {
-          running += Number(m.mouvement_delta_solde || 0);
+          running = Number(m.solde_apres_mouvement ?? (running + Number(m.mouvement_delta_solde || 0)));
           const debit = Number(m.montant_debit || 0);
           const credit = Number(m.montant_credit || 0);
           const amount = debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0);
@@ -402,7 +450,7 @@
             <div class="box"><span>Stand</span><strong>${esc(i.numero_stand || "—")}</strong></div>
             <div class="box"><span>Exposant</span><strong>${esc(i.partenaire_nom || "—")}</strong></div>
             <div class="box"><span>Type</span><strong>${esc(i.type_partenaire || "—")}</strong></div>
-            <div class="box"><span>Statut du compte</span><strong>${esc(c.statut_compte || i.statut_compte || "—")}</strong></div>
+            <div class="box"><span>Statut du compte</span><strong>${esc(statusLabel(c.statut_compte || i.statut_compte))}</strong></div>
           </div>
           <div class="totals">
             <div class="total"><span>Facturé</span><strong class="amount-factured">${esc(money(c.total_facture || 0))}</strong></div>
@@ -426,12 +474,12 @@
           let args;
 
           if(demoPayload) {
-            fn = "ticket_compte_exposant_demo";
+            fn = "ticket_compte_exposant_demo_v2";
             args = {p_qr_payload:demoPayload};
             $("demoBanner").classList.add("show");
           }
           else if(token) {
-            fn = "ticket_compte_exposant";
+            fn = "ticket_compte_exposant_v2";
             args = {p_token:token};
           }
           else {
