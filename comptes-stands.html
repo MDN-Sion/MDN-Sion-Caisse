@@ -136,20 +136,63 @@
   }
   async function normalizeDemo(s){
     let solde=0,totalFacture=0,totalPaye=0,credit=0;
+    let statut=s.statut_compte||"ouvert";
+    let dateCloture=s.date_cloture_compte||null;
+    let montantFige=s.montant_cloture_facturation==null?null:Number(s.montant_cloture_facturation);
+    let dateClotureFacturation=s.date_cloture_facturation||null;
+    let mode=s.mode_reglement_habituel||"direct";
     try{
       const {data:r,error}=await client.rpc("charger_compte_stand_paiement_demo",{p_stand_demo_id:s.id});
       if(error)throw error;
-      if(r?.ok){solde=Number(r.compte?.solde_restant||0);totalFacture=Number(r.compte?.total_facture||0);totalPaye=Number(r.compte?.total_paye||0);credit=Number(r.compte?.total_credit_compte||0)}
+      if(r?.ok){
+        const c=r.compte||{};
+        solde=Number(c.solde_restant||0);
+        totalFacture=Number(c.total_facture||0);
+        totalPaye=Number(c.total_paye||0);
+        credit=Number(c.total_credit_compte||0);
+        statut=c.statut_compte||statut;
+        dateCloture=c.date_cloture_compte||dateCloture;
+        dateClotureFacturation=c.date_cloture_facturation||dateClotureFacturation;
+        if(c.montant_cloture_facturation!=null)montantFige=Number(c.montant_cloture_facturation);
+        mode=c.mode_reglement_habituel||mode;
+      }
+
+      /* Même lecture ciblée que la page Vaisselle validée : elle complète
+         les informations de clôture sans dépendre d'un SELECT global RLS. */
+      const {data:etat,error:etatError}=await client
+        .from("stands_vaisselle_demo")
+        .select("statut_compte,date_cloture_compte,montant_cloture_facturation,date_cloture_facturation")
+        .eq("id",s.id)
+        .maybeSingle();
+      if(etatError)throw etatError;
+      if(etat){
+        statut=etat.statut_compte||statut;
+        dateCloture=etat.date_cloture_compte||dateCloture;
+        dateClotureFacturation=etat.date_cloture_facturation||dateClotureFacturation;
+        if(etat.montant_cloture_facturation!=null)montantFige=Number(etat.montant_cloture_facturation);
+      }
     }catch(e){console.warn("Compte Démo non détaillé",s.numero_stand,e)}
-    return {id:s.id,numero:s.numero_stand||"—",nom:s.nom||s.raison_sociale||"Stand Démo",raison:s.raison_sociale||"",type:s.type_partenaire||"—",mode:s.mode_reglement_habituel||"direct",statut:s.statut_compte||"ouvert",solde,totalFacture,totalPaye,credit,dateCloture:s.date_cloture_compte||null,montantFige:s.montant_cloture_facturation==null?null:Number(s.montant_cloture_facturation),raw:s};
+    return {id:s.id,numero:s.numero_stand||"—",nom:s.nom||s.raison_sociale||"Stand Démo",raison:s.raison_sociale||"",type:s.type_partenaire||"—",mode,statut,solde,totalFacture,totalPaye,credit,dateCloture,dateClotureFacturation,montantFige,raw:s};
   }
 
   async function loadRows(){
     if(demo){
-      const {data,error}=await avecDelai(client.from("stands_vaisselle_demo").select("*").eq("actif",true).order("numero_stand",{ascending:true}),12000,"Le chargement des comptes Démo prend trop de temps.");
+      /* IMPORTANT : on charge la liste Démo avec la RPC déjà utilisée et
+         validée dans retrait-vaisselle.html. Un SELECT global direct sur
+         stands_vaisselle_demo peut être filtré par les règles RLS et renvoyer
+         zéro ligne sans erreur, ce qui provoquait l'écran vide. */
+      const response=await avecDelai(
+        client.rpc("charger_ecran_retrait_vaisselle_demo"),
+        12000,
+        "Le chargement des comptes Démo prend trop de temps."
+      );
+      const data=response?.data;
+      const error=response?.error;
       if(error)throw error;
-      rows=await Promise.all((data||[]).map(normalizeDemo));
-      const year=(data||[])[0]?.edition_id?"":""; edition.textContent="MDN Sion · Démo";
+      if(!data?.edition?.id)throw new Error("Aucune édition Démo active.");
+      const stands=(data.stands||[]).filter(s=>s.actif!==false);
+      rows=await Promise.all(stands.map(normalizeDemo));
+      edition.textContent=`MDN Sion ${data.edition.annee||""} · Démo`;
     }else{
       const {data,error}=await avecDelai(client.from("vue_comptes_stands").select("*").order("numero_stand",{ascending:true}),12000,"Le chargement des comptes stands prend trop de temps.");
       if(error)throw error;
