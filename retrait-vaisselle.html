@@ -2375,7 +2375,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                     payAccount.style.display="none";
                     closeAccount.style.display="inline-flex";
                     closeAccount.disabled=false;
-                    closeAccount.textContent="Rouvrir le compte Démo";
+                    closeAccount.textContent="Rouvrir cpt démo";
                     closeAccount.title="Rouvrir ce compte Démo pour poursuivre les exercices";
                 }else{
                     payAccount.style.display="none";
@@ -2422,7 +2422,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 payAccount.style.display="none";
                 closeAccount.style.display="inline-flex";
                 closeAccount.disabled=!canClose;
-                closeAccount.textContent="Clôturer pour facturation";
+                closeAccount.textContent="Clôture pour facturer";
                 closeAccount.title="Figer le solde et clôturer le compte pour facturation";
             }else if(solde===0){
                 payAccount.style.display="none";
@@ -2693,7 +2693,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         if(!invoiceMode&&solde!==0)return msg("Le compte doit être soldé avant sa clôture.");
         if(!demo&&!accountData.peut_cloturer)return msg("Tu n'es pas autorisé à clôturer ce compte.");
         const forInvoice=invoiceMode&&solde>0;
-        closeAccountModalTitle.textContent=forInvoice?"Clôturer pour facturation":"Confirmer la clôture";
+        closeAccountModalTitle.textContent=forInvoice?"Clôture pour facturer":"Confirmer la clôture";
         closeAccountStand.textContent=standName(stand); closeAccountMode.textContent=invoiceMode?"Facture":"Règlement direct"; closeAccountBalance.textContent=money(solde);
         closeAccountInvoiceRow.hidden=!forInvoice; closeAccountInvoice.textContent=money(solde);
         closeAccountWarning.textContent=forInvoice
