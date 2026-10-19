@@ -1493,8 +1493,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     max-width:100%;
     display:flex;
     align-items:center;
-    width:100%;
-    justify-content:stretch;
+    width:auto;
+    justify-content:flex-end;
     gap:8px;
     flex-wrap:wrap;
 }
@@ -1504,9 +1504,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     max-width:100%;
     min-height:36px;
     padding:7px 11px;
-    white-space:nowrap;
-    flex:1 1 100%;
-    width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    text-align:center;
+    justify-content:center;
+    flex:0 1 auto;
+    width:auto;
 }
 
 /* Le bandeau du compte s'adapte à sa propre largeur :
@@ -1523,13 +1526,14 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     .pay-account,
     .close-account{
         width:100%;
+        flex:1 1 100%;
     }
 }
 
 @media (max-width:760px){
     .account-strip.show{grid-template-columns:minmax(0,1fr)}
     .account-actions{width:100%;justify-content:stretch}
-    .pay-account,.close-account{width:100%}
+    .pay-account,.close-account{width:100%;flex:1 1 100%}
 }
 
 /* CONFIRMATION DE CLÔTURE DU COMPTE */
