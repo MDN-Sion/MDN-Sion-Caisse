@@ -872,23 +872,22 @@ footer {
         mode=c.mode_reglement_habituel||mode;
       }
 
-      /* Même lecture ciblée que la page Vaisselle validée : elle complète
-         les informations de clôture sans dépendre d'un SELECT global RLS. */
-    const {
-      data:etat,error:etatError
-    }
-    =await client
-    .from("stands_vaisselle_demo")
-    .select("statut_compte,date_cloture_compte,montant_cloture_facturation,date_cloture_facturation")
-    .eq("id",s.id)
-    .maybeSingle();
-    if(etatError)throw etatError;
-    if(etat) {
-      statut=etat.statut_compte||statut;
-      dateCloture=etat.date_cloture_compte||dateCloture;
-      dateClotureFacturation=etat.date_cloture_facturation||dateClotureFacturation;
-      if(etat.montant_cloture_facturation!=null)montantFige=Number(etat.montant_cloture_facturation);
-    }
+      /* État de clôture Démo : utiliser la RPC sécurisée du Script 62.
+         Le SELECT direct sur stands_vaisselle_demo peut être filtré par les RLS
+         et laisser le compte affiché comme ouvert alors qu'il est déjà clôturé. */
+      const {data:etat,error:etatError}=await client.rpc(
+        "charger_etat_cloture_stand_demo",
+        {p_stand_demo_id:s.id}
+      );
+      if(etatError)throw etatError;
+      if(etat?.ok){
+        statut=etat.statut_compte||statut;
+        dateCloture=etat.date_cloture_compte||dateCloture;
+        dateClotureFacturation=etat.date_cloture_facturation||dateClotureFacturation;
+        if(etat.montant_cloture_facturation!=null){
+          montantFige=Number(etat.montant_cloture_facturation);
+        }
+      }
   }
   catch(e) {
     console.warn("Compte Démo non détaillé",s.numero_stand,e)
