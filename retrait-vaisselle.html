@@ -2315,7 +2315,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function accountClosed(){
         const c=accountData?.compte||{};
-        return Boolean(c.date_cloture_compte||c.date_cloture_facturation);
+        return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||["a_facturer","facture","solde"].includes(String(c.statut_compte||""));
     }
 
     async function chargerClotureDemo(){
@@ -2722,52 +2722,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(!r?.ok)throw new Error("Clôture non confirmée par le serveur.");
             closeCloseAccountModal();
             msg(invoiceMode&&solde>0?`Compte clôturé. ${money(solde)} à facturer.`:(demo?"Compte Démo clôturé.":"Compte clôturé."),true);
-
-            // La clôture vient d'être confirmée par le serveur :
-            // on met immédiatement l'état local à jour pour éviter
-            // de laisser affiché le bouton de clôture une seconde fois.
-            if(accountData?.compte){
-                accountData.compte.date_cloture_compte =
-                    r?.date_cloture_compte ||
-                    accountData.compte.date_cloture_compte ||
-                    new Date().toISOString();
-
-                if(invoiceMode&&solde>0){
-                    accountData.compte.statut_compte="a_facturer";
-                    accountData.compte.montant_cloture_facturation =
-                        Number(r?.montant_cloture_facturation ?? solde);
-                }else{
-                    accountData.compte.statut_compte="solde";
-                }
-            }
-
+            await loadAccount();
             renderSummary();
-
-            // La clôture vient d'être confirmée par le serveur.
-            // On affiche immédiatement et explicitement l'état clôturé,
-            // sans relancer loadAccount() qui réinitialisait l'affichage
-            // avec l'ancien état du compte.
-            accountBalance.classList.remove("credit");
-            payAccount.style.display="none";
-            payAccount.disabled=true;
-            payAccount.title="Compte clôturé";
-            closeAccount.style.display="inline-flex";
-
-            if(invoiceMode&&solde>0){
-                accountBalance.textContent=`À facturer ${money(solde)}`;
-            }else{
-                accountBalance.textContent="Compte clôturé";
-            }
-
-            if(demo){
-                closeAccount.disabled=false;
-                closeAccount.textContent="Rouvrir cpt démo";
-                closeAccount.title="Rouvrir ce compte Démo pour poursuivre les exercices";
-            }else{
-                closeAccount.disabled=true;
-                closeAccount.textContent="Compte clôturé";
-                closeAccount.title="Ce compte est déjà clôturé";
-            }
         }
         catch(e){console.error(e);msg(e?.message||"Impossible de clôturer le compte.");closeAccountConfirm.disabled=!closeAccountCheck.checked;closeAccountConfirm.textContent=invoiceMode&&solde>0?"Confirmer la facturation":"Confirmer la clôture";await loadAccount();}
     }
@@ -2862,32 +2818,22 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
         try{
             let r=null;
-            if(demo){
-                const results=[];
-                for(const op of ops){
-                    const {data:one,error}=await client.rpc("valider_operation_vaisselle_demo",{
-                        p_idempotency_key:op.idempotency_key,
+            const response=await client.rpc(
+                demo ? "valider_passage_vaisselle_demo" : "valider_passage_vaisselle",
+                demo
+                    ? {
                         p_stand_demo_id:stand.id,
-                        p_type_operation:op.type_operation,
-                        p_lignes_vaisselle:op.lignes_vaisselle,
-                        p_contenants:op.contenants,
+                        p_operations:ops,
                         p_commentaire:null
-                    });
-                    if(error)throw error;
-                    if(!one?.ok)throw new Error("Validation Démo non confirmée par le serveur.");
-                    results.push(one);
-                }
-                r={ok:true,operations:results};
-            }
-            else{
-                const response=await client.rpc("valider_session_vaisselle",{
-                    p_participation_id:stand.id,
-                    p_operations:ops,
-                    p_commentaire:null
-                });
-                if(response.error)throw response.error;
-                r=response.data;
-            }
+                    }
+                    : {
+                        p_participation_id:stand.id,
+                        p_operations:ops,
+                        p_commentaire:null
+                    }
+            );
+            if(response.error)throw response.error;
+            r=response.data;
             if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
             msg(
                 demo
