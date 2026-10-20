@@ -237,7 +237,19 @@
       }
 
       .movement-head {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .movement-head > div:first-child {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .movement-amount {
+        margin-left: auto;
+        text-align: right;
+        flex: 0 0 auto;
       }
     }
 
