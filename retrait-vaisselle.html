@@ -1555,6 +1555,18 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .close-confirm-button:disabled{border-color:#d5d7da;background:#d5d7da;color:#888;cursor:default}
 @media (max-width:520px){.close-confirm-row{grid-template-columns:1fr}.close-confirm-row strong{text-align:left}.close-confirm-actions{grid-template-columns:1fr}}
 
+/* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64 */
+.passage-confirm-card{width:min(760px,calc(100vw - 24px));max-height:94vh;display:flex;flex-direction:column}
+.passage-confirm-body{padding:16px;overflow:auto}
+.passage-confirm-stand{padding:11px 12px;border:1px solid #e0e2e5;border-radius:11px;background:#f7f8f9;margin-bottom:10px}
+.passage-confirm-detail{max-height:260px;overflow:auto;border:1px solid #e0e2e5;border-radius:11px;padding:10px;background:#fff}
+.passage-confirm-totals{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin:10px 0;padding:10px 12px;border-radius:11px;background:#f7f8f9}.passage-confirm-totals strong{text-align:right}
+.signature-label{display:block;font-weight:900;margin:12px 0 6px}.signature-wrap{border:2px solid #cfd4da;border-radius:12px;background:#fff;overflow:hidden}.signature-canvas{display:block;width:100%;height:170px;touch-action:none;cursor:crosshair}
+.signature-tools{display:flex;justify-content:flex-end;margin-top:6px}.signature-clear{border:1px solid #d3d7dc;background:#fff;border-radius:9px;padding:7px 12px;font-weight:800}
+.passage-confirm-check{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px;border:1px solid #d8dce1;border-radius:10px;font-size:12px;line-height:1.35}.passage-confirm-check input{width:18px;height:18px;flex:0 0 auto;accent-color:#8b0000}
+.passage-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.passage-confirm-actions button{min-height:46px;border-radius:11px;font-weight:900}.passage-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.passage-confirm-save{border:0;background:#17834a;color:#fff}.passage-confirm-save:disabled{background:#cfd2d6;color:#888;cursor:not-allowed}
+@media(max-width:560px){.passage-confirm-card{max-height:97vh}.passage-confirm-detail{max-height:190px}.signature-canvas{height:145px}.passage-confirm-actions{grid-template-columns:1fr}}
+
 </style>
  </head>
  <body>
@@ -1775,7 +1787,23 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
    </div>
   </div>
   <div aria-hidden="true" class="modal" id="closeAccountModal"><div class="modalcard close-confirm-card"><div class="modalhead"><h3 id="closeAccountModalTitle">Confirmer la clôture</h3><button class="close" id="closeAccountModalClose" type="button">×</button></div><div class="close-confirm-body"><div class="close-confirm-summary"><div class="close-confirm-row"><span>Stand</span><strong id="closeAccountStand">—</strong></div><div class="close-confirm-row"><span>Type de règlement</span><strong id="closeAccountMode">—</strong></div><div class="close-confirm-row"><span>Solde actuel</span><strong id="closeAccountBalance">CHF 0.00</strong></div><div class="close-confirm-row" id="closeAccountInvoiceRow" hidden><span>Montant figé à facturer</span><strong class="invoice-value" id="closeAccountInvoice">CHF 0.00</strong></div></div><p class="close-warning" id="closeAccountWarning">Après confirmation, le compte sera clôturé et aucune nouvelle opération ne pourra être enregistrée.</p><label class="close-check"><input id="closeAccountCheck" type="checkbox"/><span>Je confirme avoir vérifié le compte du stand et souhaite le clôturer définitivement.</span></label><div class="close-confirm-actions"><button class="close-confirm-cancel" id="closeAccountCancel" type="button">Annuler</button><button class="close-confirm-button" disabled id="closeAccountConfirm" type="button">Confirmer la clôture</button></div></div></div></div>
-   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+ 
+  <div aria-hidden="true" class="modal" id="passageConfirmModal">
+   <div class="modalcard passage-confirm-card">
+    <div class="modalhead"><h3>Confirmer le passage du stand</h3><button class="close" id="passageConfirmClose" type="button">×</button></div>
+    <div class="passage-confirm-body">
+     <div class="passage-confirm-stand"><strong id="passageConfirmStand">—</strong><br><small id="passageConfirmType">—</small></div>
+     <div class="passage-confirm-detail" id="passageConfirmDetail"></div>
+     <div class="passage-confirm-totals"><span>Retraits facturés</span><strong id="passageConfirmInvoice">0.00 CHF</strong><span>Retours crédités</span><strong id="passageConfirmCredit">0.00 CHF</strong><span>Impact du passage</span><strong id="passageConfirmNet">0.00 CHF</strong></div>
+     <label class="signature-label">Signature du stand</label>
+     <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
+     <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
+     <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
+     <div class="passage-confirm-actions"><button class="passage-confirm-cancel" id="passageConfirmCancel" type="button">Annuler</button><button class="passage-confirm-save" id="passageConfirmSave" type="button" disabled>Confirmer et enregistrer</button></div>
+    </div>
+   </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
@@ -2809,39 +2837,76 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         if(!lines.length&&!containers.length)return null;
         return{type_operation:t,idempotency_key:keys[t],lignes_vaisselle:lines,contenants:containers};
     }
-    async function save(){
+    let pendingOps=null;
+    let signatureHasInk=false;
+    function updatePassageConfirmButton(){
+        $("passageConfirmSave").disabled=!(signatureHasInk&&$("passageConfirmCheck").checked);
+    }
+    function resizeSignatureCanvas(){
+        const canvas=$("passageSignature");
+        const rect=canvas.getBoundingClientRect();
+        const ratio=Math.max(1,window.devicePixelRatio||1);
+        canvas.width=Math.max(1,Math.round(rect.width*ratio));
+        canvas.height=Math.max(1,Math.round(rect.height*ratio));
+        const ctx=canvas.getContext("2d");
+        ctx.setTransform(ratio,0,0,ratio,0,0);
+        ctx.lineWidth=2.2;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#111";
+        signatureHasInk=false;updatePassageConfirmButton();
+    }
+    function closePassageConfirm(){
+        $("passageConfirmModal").classList.remove("show");
+        $("passageConfirmModal").setAttribute("aria-hidden","true");
+        pendingOps=null;
+    }
+    function openPassageConfirm(){
         if(!stand)return msg("Sélectionne d'abord le stand.");
         if(accountClosed())return msg("Ce compte est clôturé. Aucune nouvelle opération ne peut être enregistrée.");
-        let ops;
-        try{
-            ops=types.map(buildOperation).filter(Boolean)
-        }
-        catch(e){
-            return msg(e.message)
-        }
-        if(!ops.length)return msg("Aucune opération à enregistrer.");
+        try{pendingOps=types.map(buildOperation).filter(Boolean)}catch(e){return msg(e.message)}
+        if(!pendingOps.length)return msg("Aucune opération à enregistrer.");
+        $("passageConfirmStand").textContent=standName(stand);
+        $("passageConfirmType").textContent=stand.type_partenaire||"";
+        $("passageConfirmDetail").innerHTML=summary.innerHTML;
+        $("passageConfirmInvoice").textContent=invoice.textContent;
+        $("passageConfirmCredit").textContent=credit.textContent;
+        $("passageConfirmNet").textContent=net.textContent;
+        $("passageConfirmCheck").checked=false;signatureHasInk=false;
+        $("passageConfirmModal").classList.add("show");
+        $("passageConfirmModal").setAttribute("aria-hidden","false");
+        requestAnimationFrame(resizeSignatureCanvas);
+    }
+    async function performSignedSave(){
+        if(!stand||!pendingOps?.length)return msg("Aucun passage à confirmer.");
+        if(!signatureHasInk)return msg("La signature du stand est obligatoire.");
+        if(!$("passageConfirmCheck").checked)return msg("La confirmation du stand est obligatoire.");
+        const ops=pendingOps;
+        const signatureData=$("passageSignature").toDataURL("image/png");
         validate.disabled=true;
         validate.classList.remove("on");
         validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
         try{
             let r=null;
             const response=await client.rpc(
-                demo ? "valider_passage_vaisselle_demo" : "valider_passage_vaisselle",
+                demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe",
                 demo
                     ? {
                         p_stand_demo_id:stand.id,
                         p_operations:ops,
+                        p_signature_data:signatureData,
                         p_commentaire:null
                     }
                     : {
                         p_participation_id:stand.id,
                         p_operations:ops,
+                        p_signature_data:signatureData,
                         p_commentaire:null
                     }
             );
             if(response.error)throw response.error;
             r=response.data;
             if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
+            $("passageConfirmModal").classList.remove("show");
+            $("passageConfirmModal").setAttribute("aria-hidden","true");
+            pendingOps=null;
             msg(
                 demo
                     ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
@@ -3005,7 +3070,21 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         refundModal.onclick=e=>{
             if(e.target===refundModal)closeRefund();
         };
-        validate.onclick=save;
+        validate.onclick=openPassageConfirm;
+        $("passageConfirmClose").onclick=closePassageConfirm;
+        $("passageConfirmCancel").onclick=closePassageConfirm;
+        $("passageConfirmCheck").onchange=updatePassageConfirmButton;
+        $("passageSignatureClear").onclick=resizeSignatureCanvas;
+        $("passageConfirmSave").onclick=performSignedSave;
+        $("passageConfirmModal").onclick=e=>{if(e.target===$("passageConfirmModal"))closePassageConfirm();};
+        {
+            const canvas=$("passageSignature");let drawing=false,last=null;
+            const point=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+            canvas.addEventListener("pointerdown",e=>{drawing=true;last=point(e);canvas.setPointerCapture?.(e.pointerId);e.preventDefault()});
+            canvas.addEventListener("pointermove",e=>{if(!drawing)return;const p=point(e),ctx=canvas.getContext("2d");ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;signatureHasInk=true;updatePassageConfirmButton();e.preventDefault()});
+            const stop=e=>{drawing=false;last=null;e?.preventDefault?.()};
+            canvas.addEventListener("pointerup",stop);canvas.addEventListener("pointercancel",stop);canvas.addEventListener("pointerleave",e=>{if(e.buttons===0)stop(e)});
+        }
         $("toastClose").onclick=()=>toast.classList.remove("show");
         document.addEventListener("click",e=>{
             if(!e.target.closest(".standbar"))results.classList.remove("show")
