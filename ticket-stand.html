@@ -378,6 +378,15 @@
         })[value] || value || "—";
       }
 
+      function accountStatusLabel(compte, identite) {
+        const statut = compte?.statut_compte || identite?.statut_compte || "";
+        if(statut === "facture") return "Facturé";
+        if(statut === "a_facturer") return "À facturer";
+        const dateCloture = compte?.date_cloture_compte || identite?.date_cloture_compte || null;
+        if(dateCloture) return "Compte clôturé";
+        return statusLabel(statut);
+      }
+
       function movementLabel(type) {
         return ({
           retrait:"Retrait",
@@ -535,7 +544,7 @@
             <div class="box"><span>Stand</span><strong>${esc(i.numero_stand || "—")}</strong></div>
             <div class="box"><span>Exposant</span><strong>${esc(i.partenaire_nom || "—")}</strong></div>
             <div class="box"><span>Type</span><strong>${esc(i.type_partenaire || "—")}</strong></div>
-            <div class="box"><span>Statut du compte</span><strong>${esc(statusLabel(c.statut_compte || i.statut_compte))}</strong></div>
+            <div class="box"><span>Statut du compte</span><strong>${esc(accountStatusLabel(c, i))}</strong></div>
           </div>
           <div class="totals">
             <div class="total"><span>Facturé</span><strong class="amount-factured">${esc(money(c.total_facture || 0))}</strong></div>
