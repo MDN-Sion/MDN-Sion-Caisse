@@ -1117,7 +1117,7 @@ function historyHtml(data){
     const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);
     const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);
     const cls=d>0?"debit":cr>0?"credit":"";
-    return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-meta">${esc(formatDate(m.date))}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
+    return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
   };
 
   let passageNumero=0;
