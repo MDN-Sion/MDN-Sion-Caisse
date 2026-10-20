@@ -1125,15 +1125,24 @@ function historyHtml(data){
     return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
   };
 
-  let passageNumero=0;
+  const passageNumeros=new Map();
+  let numeroPassageGlobal=0;
+  passageOrder.forEach(key=>{
+    const mouvementsComplets=groups.get(key);
+    const isPassage=key.startsWith("passage:") && mouvementsComplets.some(m=>["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
+    if(isPassage){
+      numeroPassageGlobal+=1;
+      passageNumeros.set(key,numeroPassageGlobal);
+    }
+  });
+
   const cards=filteredPassageOrder.map((key,index)=>{
     const mouvementsComplets=groups.get(key);
     const mouvements=currentHistoryType==="all"
       ? mouvementsComplets
       : mouvementsComplets.filter(m=>m.type===currentHistoryType);
-    const isPassage=key.startsWith("passage:") && mouvementsComplets.some(m=>["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
-    if(isPassage)passageNumero+=1;
-    const label=isPassage?`Passage ${passageNumero}`:movementLabel(mouvements[0]?.type);
+    const isPassage=passageNumeros.has(key);
+    const label=isPassage?`Passage ${passageNumeros.get(key)}`:movementLabel(mouvements[0]?.type);
     const date=mouvements[0]?.date?formatDate(mouvements[0].date):"";
     return `<section class="passage-group ${index%2===0?"passage-a":"passage-b"}"><div class="passage-title"><span>${esc(label)}</span><span>${esc(date)}</span></div>${mouvements.map(movementCard).join("")}</section>`;
   }).join("");
