@@ -458,9 +458,8 @@
           if(Number.isNaN(d.getTime())) return "";
           return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         };
-        // Le filtre de type s’applique au PASSAGE et non à chaque mouvement isolé.
-        // Un passage contenant plusieurs types (retrait + retour, par exemple)
-        // reste donc complet dans chacun des relevés auxquels il correspond.
+        // On conserve le regroupement par passage, mais le filtre de type
+        // n’affiche que les mouvements correspondant au type sélectionné.
         const movements = allMovements.filter(m =>
           selectedDay === "all" || dayKey(m.date) === selectedDay
         );
@@ -508,8 +507,11 @@
 
         let passageNumero = 0;
         const history = filteredPassageOrder.map((key,index) => {
-          const group = groups.get(key);
-          const isPassage = key.startsWith("passage:") && group.some(m => ["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
+          const groupComplet = groups.get(key);
+          const group = selectedType === "all"
+            ? groupComplet
+            : groupComplet.filter(m => m.type === selectedType);
+          const isPassage = key.startsWith("passage:") && groupComplet.some(m => ["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
           if(isPassage) passageNumero += 1;
           const label = isPassage ? `Passage ${passageNumero}` : movementLabel(group[0]?.type);
           const dateLabel = group[0]?.date ? formatDate(group[0].date) : "";
