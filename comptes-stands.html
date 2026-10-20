@@ -637,6 +637,10 @@ footer {
 .passage-group .movement-head{background:rgba(248,249,252,.78)}
 @media print{.passage-group.passage-b{background:#f2f6fb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.passage-group{break-inside:avoid}}
 
+/* SQL 64 : confirmation compacte + signature à la demande */
+.passage-confirmation{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:7px 3px 2px;padding-top:7px;border-top:1px dashed #cbd2df;font-size:12px;color:#146b14;font-weight:800;text-transform:none;letter-spacing:0}.signature-link{border:0;background:transparent;color:#00126b;text-decoration:underline;padding:0;font-weight:900}.signature-modal-card{width:min(560px,calc(100vw - 28px))}.signature-view{padding:18px;text-align:center}.signature-view img{display:block;max-width:100%;max-height:260px;margin:12px auto;border:1px solid #d9deea;border-radius:12px;background:#fff}.signature-time{color:#667085;font-size:13px}.qr-access{margin:12px 0;padding:12px;border:1px solid #e6c36a;border-radius:12px;background:#fff8e8}.qr-access strong{display:block;font-size:24px;letter-spacing:.16em;color:#00126b;margin-top:5px}.qr-access small{display:block;color:#667085;margin-top:5px}
+@media print{.signature-link{display:none}.passage-confirmation{color:#1f2937}}
+
 </style>
 </head>
 <body>
@@ -795,17 +799,25 @@ footer {
     </div>
   </div>
 </div>
+<div id="signatureModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="signatureTitle">
+  <div class="modal-card signature-modal-card">
+    <div class="modal-head"><h3 id="signatureTitle">Signature du stand</h3><button id="signatureClose" class="modal-close" type="button">×</button></div>
+    <div class="signature-view"><div id="signatureTime" class="signature-time">Chargement…</div><img id="signatureImage" alt="Signature du stand" hidden></div>
+    <div class="modal-actions"><button id="signatureDone" class="confirm" type="button">Fermer</button></div>
+  </div>
+</div>
 <div id="qrModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
   <div class="modal-card qr-modal-card">
     <div class="modal-head">
-      <h3 id="qrTitle">QR du stand Démo</h3>
+      <h3 id="qrTitle">Accès au relevé du stand</h3>
       <button id="qrClose" class="modal-close" type="button">×</button>
     </div>
     <div class="qr-body">
-      <div class="qr-demo-warning">MODE DÉMO – Aucune donnée réelle</div>
+      <div id="qrModeWarning" class="qr-demo-warning">MODE DÉMO – Aucune donnée réelle</div>
       <p><strong id="qrStand">—</strong></p>
       <div id="qrCode" class="qr-box"></div>
       <div id="qrLink" class="qr-link"></div>
+      <div class="qr-access"><span>Code d’accès au relevé</span><strong id="qrAccessCode">------</strong><small>Ce code est demandé après le scan du QR. L’ouverture de cette fenêtre génère un nouveau code.</small></div>
     </div>
     <div class="modal-actions"><button id="qrDone" class="confirm" type="button">Fermer</button></div>
   </div>
@@ -964,9 +976,7 @@ function amountClass(r) {
 function actionHtml(r) {
   const buttons=[];
   buttons.push(`<button class="action history" data-history="${esc(r.id)}" type="button">Voir les mouvements</button>`);
-  if(demo){
-    buttons.push(`<button class="action qr" data-qr="${esc(r.id)}" type="button">QR du stand</button>`);
-  }
+  buttons.push(`<button class="action qr" data-qr="${esc(r.id)}" type="button">${demo?"QR du stand":"Code d’accès ticket"}</button>`);
   if(r.statut==="a_facturer"){
     buttons.push(`<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`);
   }
@@ -1083,7 +1093,7 @@ function detailLines(m) {
     out.push(`<div class="detail-line"><span>Montant figé pour facturation</span><strong>${esc(money(d.montant_cloture_facturation))}</strong></div>`);
   }
 
-  return out.join("") || `<div class="detail-line"><span>Détail</span><strong>Aucun détail supplémentaire</strong></div>`;
+  return out.join("");
 }
 function balanceClass(value){
   const n=Number(value||0);
@@ -1149,7 +1159,11 @@ function historyHtml(data){
     const isPassage=passageNumeros.has(key);
     const label=isPassage?`Passage ${passageNumeros.get(key)}`:movementLabel(mouvements[0]?.type);
     const date=mouvements[0]?.date?formatDate(mouvements[0].date):"";
-    return `<section class="passage-group ${index%2===0?"passage-a":"passage-b"}"><div class="passage-title"><span>${esc(label)}</span><span>${esc(date)}</span></div>${mouvements.map(movementCard).join("")}</section>`;
+    const confirmation=mouvementsComplets.map(m=>m.confirmation).find(Boolean);
+    const confirmationHtml=isPassage&&confirmation?.confirme_at
+      ? `<div class="passage-confirmation"><span>✓ Confirmé par le stand à ${esc(new Date(confirmation.confirme_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}))}</span><button class="signature-link" type="button" data-signature="${esc(mouvementsComplets[0]?.passage_id||"")}">Voir la signature</button></div>`
+      : "";
+    return `<section class="passage-group ${index%2===0?"passage-a":"passage-b"}"><div class="passage-title"><span>${esc(label)}</span><span>${esc(date)}</span></div>${mouvements.map(movementCard).join("")}${confirmationHtml}</section>`;
   }).join("");
 
   return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(c.total_facture||0))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte||0))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-filters"><select id="historyDayFilter"><option value="all">Tous les jours</option>${days.map(day=>`<option value="${esc(day)}" ${currentHistoryDay===day?"selected":""}>${esc(new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}))}</option>`).join("")}</select><select id="historyTypeFilter"><option value="all">Tous les mouvements</option>${types.map(type=>`<option value="${esc(type)}" ${currentHistoryType===type?"selected":""}>${esc(movementLabel(type))}</option>`).join("")}</select></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement pour ce filtre.</div>`}</div>`;
@@ -1157,7 +1171,14 @@ function historyHtml(data){
 function bindHistoryFilters(){
   $("historyDayFilter")?.addEventListener("change",e=>{currentHistoryDay=e.target.value;$("historyBody").innerHTML=historyHtml(currentHistoryData);bindHistoryFilters()});
   $("historyTypeFilter")?.addEventListener("change",e=>{currentHistoryType=e.target.value;$("historyBody").innerHTML=historyHtml(currentHistoryData);bindHistoryFilters()});
+  $("historyBody")?.querySelectorAll("[data-signature]").forEach(b=>b.addEventListener("click",()=>openSignature(b.dataset.signature)));
 }
+async function openSignature(passageId){
+  if(!passageId)return;
+  $("signatureImage").hidden=true;$("signatureImage").removeAttribute("src");$("signatureTime").textContent="Chargement de la signature…";$("signatureModal").classList.add("show");
+  try{const {data,error}=await avecDelai(client.rpc("charger_signature_passage_vaisselle",{p_passage_id:passageId,p_demo:demo}),12000,"Le chargement de la signature prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Signature non confirmée par le serveur.");$("signatureTime").textContent=`Confirmé le ${formatDate(data.confirme_at)}`;$("signatureImage").src=data.signature_data;$("signatureImage").hidden=false}catch(e){console.error(e);$("signatureTime").textContent=e?.message||"Impossible de charger la signature."}
+}
+function closeSignature(){$("signatureModal").classList.remove("show")}
 
 async function openHistory(id){
   const r=rows.find(x=>x.id===id);if(!r)return;$("historyTitle").textContent=`Historique · ${r.numero} · ${r.nom}`;$("historyBody").innerHTML=`<div class="history-empty">Chargement de l’historique…</div>`;$("historyModal").classList.add("show");
@@ -1165,8 +1186,24 @@ async function openHistory(id){
 }
 function closeHistory(){$("historyModal").classList.remove("show")}
 async function openQr(id){
-  if(!demo)return;const r=rows.find(x=>x.id===id);if(!r)return;$("qrStand").textContent=`${r.numero} · ${r.nom}`;$("qrCode").innerHTML="";$("qrLink").textContent="Préparation du QR…";$("qrModal").classList.add("show");
-  try{const {data,error}=await avecDelai(client.rpc("charger_historique_compte_stand_demo_v3",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps.");if(error)throw error;const payload=data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M})}catch(e){console.error(e);$("qrCode").innerHTML="";$("qrLink").textContent=e?.message||"Impossible de générer le QR Démo."}
+  const r=rows.find(x=>x.id===id);if(!r)return;
+  $("qrStand").textContent=`${r.numero} · ${r.nom}`;$("qrCode").innerHTML="";$("qrLink").textContent=demo?"Préparation du QR…":"Le QR exposant existant reste inchangé.";$("qrAccessCode").textContent="------";$("qrModeWarning").style.display=demo?"block":"none";$("qrModal").classList.add("show");
+  try{
+    if(demo){
+      const [hist,code]=await Promise.all([
+        avecDelai(client.rpc("charger_historique_compte_stand_demo_v3",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps."),
+        avecDelai(client.rpc("regenerer_code_acces_ticket_stand_demo",{p_stand_demo_id:id}),12000,"La génération du code d’accès prend trop de temps.")
+      ]);
+      if(hist.error)throw hist.error;if(code.error)throw code.error;
+      const payload=hist.data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");
+      const accessCode=code.data?.code_acces;if(!accessCode)throw new Error("Code d’accès indisponible.");
+      const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;$("qrAccessCode").textContent=accessCode;
+      if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M});
+    }else{
+      const {data,error}=await avecDelai(client.rpc("regenerer_code_acces_ticket_stand",{p_participation_id:id}),12000,"La génération du code d’accès prend trop de temps.");
+      if(error)throw error;if(!data?.code_acces)throw new Error("Code d’accès indisponible.");$("qrAccessCode").textContent=data.code_acces;
+    }
+  }catch(e){console.error(e);$("qrCode").innerHTML="";$("qrAccessCode").textContent="------";$("qrLink").textContent=e?.message||"Impossible de préparer l’accès au relevé."}
 }
 function closeQr(){$("qrModal").classList.remove("show")}
 function openInvoice(id) {
@@ -1249,6 +1286,9 @@ function events() {
   $("historyDone").onclick=closeHistory;
   $("historyPrint").onclick=()=>window.print();
   $("historyModal").onclick=x=>{if(x.target===$("historyModal"))closeHistory()};
+  $("signatureClose").onclick=closeSignature;
+  $("signatureDone").onclick=closeSignature;
+  $("signatureModal").onclick=x=>{if(x.target===$("signatureModal"))closeSignature()};
   $("qrClose").onclick=closeQr;
   $("qrDone").onclick=closeQr;
   $("qrModal").onclick=x=>{if(x.target===$("qrModal"))closeQr()};
