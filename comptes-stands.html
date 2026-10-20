@@ -842,6 +842,12 @@ footer {
     });
   }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
+function accountStatusLabel(r){
+  if(r?.statut==="facture") return "Facturé";
+  if(r?.statut==="a_facturer") return "À facturer";
+  if(r?.dateCloture) return "Compte clôturé";
+  return statusLabel(r?.statut);
+}
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
   function msg(text,type="error"){$("toastText").textContent=text;$("toast").className=`toast show ${type}`;clearTimeout(msg.timer);msg.timer=setTimeout(()=>$("toast").classList.remove("show"),5000)}
   function avecDelai(promise,ms,message){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))])}
@@ -984,7 +990,7 @@ function render() {
 </div>
 <div>
 <div class="cell-label">Statut</div>
-<span class="badge-status s-${esc(r.statut)}">${esc(statusLabel(r.statut))}</span>
+<span class="badge-status s-${esc(r.statut)}">${esc(accountStatusLabel(r))}</span>
 </div>
 <div>
 <div class="cell-label">Solde / facture</div>
