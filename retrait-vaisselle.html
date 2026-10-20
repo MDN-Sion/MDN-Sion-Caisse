@@ -1439,6 +1439,10 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     flex-basis:auto !important;
     display:block !important;
     padding:10px 12px !important;
+    /* Le conteneur de référence doit être le parent du bandeau compte.
+       Ainsi le bouton passe dessous selon la largeur réelle de la colonne droite,
+       même sur un ordinateur avec une fenêtre large. */
+    container-type:inline-size;
 }
 .selected.show{
     display:grid !important;
@@ -1476,7 +1480,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     padding:7px 0 0;
     border-top:1px solid #e4e7eb;
     background:transparent;
-    container-type:inline-size;
 }
 .account-balance{
     min-width:0;
