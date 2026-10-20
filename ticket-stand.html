@@ -505,15 +505,24 @@
           </div>`;
         };
 
-        let passageNumero = 0;
+        const passageNumeros = new Map();
+        let numeroPassageGlobal = 0;
+        passageOrder.forEach(key => {
+          const groupComplet = groups.get(key);
+          const isPassage = key.startsWith("passage:") && groupComplet.some(m => ["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
+          if(isPassage) {
+            numeroPassageGlobal += 1;
+            passageNumeros.set(key, numeroPassageGlobal);
+          }
+        });
+
         const history = filteredPassageOrder.map((key,index) => {
           const groupComplet = groups.get(key);
           const group = selectedType === "all"
             ? groupComplet
             : groupComplet.filter(m => m.type === selectedType);
-          const isPassage = key.startsWith("passage:") && groupComplet.some(m => ["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
-          if(isPassage) passageNumero += 1;
-          const label = isPassage ? `Passage ${passageNumero}` : movementLabel(group[0]?.type);
+          const isPassage = passageNumeros.has(key);
+          const label = isPassage ? `Passage ${passageNumeros.get(key)}` : movementLabel(group[0]?.type);
           const dateLabel = group[0]?.date ? formatDate(group[0].date) : "";
           return `<section class="passage-group ${index % 2 === 0 ? "passage-a" : "passage-b"}">
             <div class="passage-title"><span>${esc(label)}</span><span>${esc(dateLabel)}</span></div>
