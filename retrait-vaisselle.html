@@ -2321,15 +2321,18 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     async function chargerClotureDemo(){
         if(!demo||!stand||!accountData)return;
-        const {data:etat,error}=await client
-            .from("stands_vaisselle_demo")
-            .select("statut_compte,date_cloture_compte,montant_cloture_facturation,date_cloture_facturation")
-            .eq("id",stand.id)
-            .maybeSingle();
+        const {data:etat,error}=await client.rpc("charger_etat_cloture_stand_demo",{
+            p_stand_demo_id:stand.id
+        });
         if(error)throw error;
-        if(etat){
-            accountData.compte={...(accountData.compte||{}),...etat};
-        }
+        if(!etat?.ok)throw new Error(etat?.message||"État de clôture Démo indisponible.");
+        accountData.compte={
+            ...(accountData.compte||{}),
+            statut_compte:etat.statut_compte,
+            date_cloture_compte:etat.date_cloture_compte,
+            montant_cloture_facturation:etat.montant_cloture_facturation,
+            date_cloture_facturation:etat.date_cloture_facturation
+        };
     }
 
     async function loadAccount(){
