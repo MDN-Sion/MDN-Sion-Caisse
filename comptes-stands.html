@@ -1098,9 +1098,8 @@ function historyHtml(data){
   const i=data.identite||{},c=data.compte||{},all=Array.isArray(data.mouvements)?data.mouvements:[];
   const days=[...new Set(all.map(m=>historyDayKey(m.date)).filter(Boolean))].sort();
   const types=[...new Set(all.map(m=>m.type).filter(Boolean))];
-  // On groupe d’abord les mouvements par passage AVANT d’appliquer le filtre de type.
-  // Ainsi, si un même passage contient par exemple un retrait ET un retour sale,
-  // le passage apparaît dans chacun des relevés concernés et reste affiché en entier.
+  // On conserve le regroupement par passage, mais le filtre de type
+  // n’affiche que les mouvements correspondant au type sélectionné.
   const dayMovements=all.filter(m=>currentHistoryDay==="all"||historyDayKey(m.date)===currentHistoryDay);
   const passageOrder=[];
   const groups=new Map();
@@ -1128,8 +1127,11 @@ function historyHtml(data){
 
   let passageNumero=0;
   const cards=filteredPassageOrder.map((key,index)=>{
-    const mouvements=groups.get(key);
-    const isPassage=key.startsWith("passage:") && mouvements.some(m=>["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
+    const mouvementsComplets=groups.get(key);
+    const mouvements=currentHistoryType==="all"
+      ? mouvementsComplets
+      : mouvementsComplets.filter(m=>m.type===currentHistoryType);
+    const isPassage=key.startsWith("passage:") && mouvementsComplets.some(m=>["retrait","retour_propre","retour_sale","solde_initial"].includes(m.type));
     if(isPassage)passageNumero+=1;
     const label=isPassage?`Passage ${passageNumero}`:movementLabel(mouvements[0]?.type);
     const date=mouvements[0]?.date?formatDate(mouvements[0].date):"";
