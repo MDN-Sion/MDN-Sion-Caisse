@@ -2315,7 +2315,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function accountClosed(){
         const c=accountData?.compte||{};
-        return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||["a_facturer","facture","solde"].includes(String(c.statut_compte||""));
+        return Boolean(c.date_cloture_compte||c.date_cloture_facturation);
     }
 
     async function chargerClotureDemo(){
@@ -2362,9 +2362,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             accountBalance.classList.toggle("credit",solde<0);
 
             if(closed){
-                const status=String(r.compte?.statut_compte||"");
+                const status=String(accountData.compte?.statut_compte||"");
                 if(status==="a_facturer"||status==="facture"){
-                    const frozen=Number(r.compte?.montant_cloture_facturation??Math.max(0,solde));
+                    const frozen=Number(accountData.compte?.montant_cloture_facturation??Math.max(0,solde));
                     accountBalance.textContent=`À facturer ${money(frozen)}`;
                 }else{
                     accountBalance.textContent="Compte clôturé";
