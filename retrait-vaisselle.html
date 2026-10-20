@@ -2315,7 +2315,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     function accountClosed(){
         const c=accountData?.compte||{};
-        return Boolean(c.date_cloture_compte||c.date_cloture_facturation);
+        const statut=String(c.statut_compte||"");
+        return Boolean(c.date_cloture_compte||c.date_cloture_facturation)||statut==="a_facturer"||statut==="facture";
     }
 
     async function chargerClotureDemo(){
