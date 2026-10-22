@@ -284,7 +284,7 @@ main {
 }
 .account {
   display:grid;
-  grid-template-columns:minmax(220px,1.5fr) minmax(125px,.65fr) minmax(125px,.65fr) minmax(135px,.7fr) minmax(150px,.75fr) auto;
+  grid-template-columns:minmax(220px,1.5fr) minmax(135px,.7fr) minmax(135px,.7fr) minmax(150px,.75fr) auto;
   gap:14px;
   align-items:center;
   padding:15px 16px;
@@ -641,6 +641,16 @@ footer {
 .passage-confirmation{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:7px 3px 2px;padding-top:7px;border-top:1px dashed #cbd2df;font-size:12px;color:#146b14;font-weight:800;text-transform:none;letter-spacing:0}.signature-link{border:0;background:transparent;color:#00126b;text-decoration:underline;padding:0;font-weight:900}.signature-modal-card{width:min(560px,calc(100vw - 28px))}.signature-view{padding:18px;text-align:center}.signature-view img{display:block;max-width:100%;max-height:260px;margin:12px auto;border:1px solid #d9deea;border-radius:12px;background:#fff}.signature-time{color:#667085;font-size:13px}.qr-access{margin:12px 0;padding:12px;border:1px solid #e6c36a;border-radius:12px;background:#fff8e8}.qr-access strong{display:block;font-size:24px;letter-spacing:.16em;color:#00126b;margin-top:5px}.qr-access small{display:block;color:#667085;margin-top:5px}
 @media print{.signature-link{display:none}.passage-confirmation{color:#1f2937}}
 
+/* Script 65 : code d’accès permanent + modification Administrateur */
+.qr-code-admin{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #eadba8;text-align:left}
+.qr-code-admin.show{display:block}
+.qr-code-admin label{display:block;font-size:12px;font-weight:900;color:#5d4500;margin-bottom:7px}
+.qr-code-edit-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.qr-code-edit-row input{width:100%;min-height:42px;border:1px solid #cbd2df;border-radius:10px;padding:0 10px;text-align:center;font-size:18px;font-weight:900;letter-spacing:.12em}
+.qr-code-edit-row button{border:0;border-radius:10px;background:var(--bleu);color:#fff;padding:9px 12px;font-weight:900}
+.qr-code-help{display:block;margin-top:6px;color:#667085;font-size:11px;line-height:1.35}
+@media(max-width:480px){.qr-code-edit-row{grid-template-columns:1fr}.qr-code-edit-row button{width:100%}}
+
 </style>
 </head>
 <body>
@@ -817,7 +827,7 @@ footer {
       <p><strong id="qrStand">—</strong></p>
       <div id="qrCode" class="qr-box"></div>
       <div id="qrLink" class="qr-link"></div>
-      <div class="qr-access"><span>Code d’accès au relevé</span><strong id="qrAccessCode">------</strong><small>Ce code est demandé après le scan du QR. L’ouverture de cette fenêtre génère un nouveau code.</small></div>
+      <div class="qr-access"><span>Code d’accès au relevé</span><strong id="qrAccessCode">------</strong><small>Ce code reste identique jusqu’à sa modification volontaire par un Administrateur.</small><div id="qrCodeAdmin" class="qr-code-admin"><label for="qrNewAccessCode">Modifier le code d’accès</label><div class="qr-code-edit-row"><input id="qrNewAccessCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="6 chiffres"><button id="qrSaveAccessCode" type="button">Enregistrer le nouveau code</button></div><small class="qr-code-help">Administrateur uniquement. L’ancien code cessera immédiatement de fonctionner.</small></div></div>
     </div>
     <div class="modal-actions"><button id="qrDone" class="confirm" type="button">Fermer</button></div>
   </div>
@@ -838,7 +848,7 @@ footer {
   const $=id=>document.getElementById(id);
   const loading=$("loading"),topbar=$("topbar"),demoNote=$("demoNote"),edition=$("edition"),identity=$("identity"),accounts=$("accounts"),search=$("search"),statusFilter=$("statusFilter"),paymentFilter=$("paymentFilter"),scenario=$("scenario");
   const invoiceModal=$("invoiceModal"),invoiceCheck=$("invoiceCheck"),invoiceConfirm=$("invoiceConfirm"),invoiceComment=$("invoiceComment");
-  let client=null,demo=false,rows=[],selected=null;
+  let client=null,demo=false,rows=[],selected=null,currentRole="",currentQrStandId=null;
   function money(v) {
     return `${Number(v||0).toLocaleString("fr-CH",{minimumFractionDigits:2,maximumFractionDigits:2})} CHF`
   }
@@ -855,9 +865,9 @@ footer {
   }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
 function accountStatusLabel(r){
-  return r?.dateCloture ? "Compte clôturé" : "Compte ouvert";
-}
-function accountSituationLabel(r){
+  if(r?.statut==="facture") return "Facturé";
+  if(r?.statut==="a_facturer") return "À facturer";
+  if(r?.dateCloture) return "Compte clôturé";
   return statusLabel(r?.statut);
 }
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
@@ -999,12 +1009,8 @@ function render() {
 <div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div>
 </div>
 <div>
-<div class="cell-label">Statut du compte</div>
-<span class="badge-status s-${esc(r.dateCloture ? "solde" : "ouvert")}">${esc(accountStatusLabel(r))}</span>
-</div>
-<div>
-<div class="cell-label">Situation</div>
-<span class="badge-status s-${esc(r.statut)}">${esc(accountSituationLabel(r))}</span>
+<div class="cell-label">Statut</div>
+<span class="badge-status s-${esc(r.statut)}">${esc(accountStatusLabel(r))}</span>
 </div>
 <div>
 <div class="cell-label">Solde / facture</div>
@@ -1191,25 +1197,70 @@ async function openHistory(id){
 function closeHistory(){$("historyModal").classList.remove("show")}
 async function openQr(id){
   const r=rows.find(x=>x.id===id);if(!r)return;
-  $("qrStand").textContent=`${r.numero} · ${r.nom}`;$("qrCode").innerHTML="";$("qrLink").textContent=demo?"Préparation du QR…":"Le QR exposant existant reste inchangé.";$("qrAccessCode").textContent="------";$("qrModeWarning").style.display=demo?"block":"none";$("qrModal").classList.add("show");
+  currentQrStandId=id;
+  const isAdmin=currentRole==="administrateur";
+  $("qrStand").textContent=`${r.numero} · ${r.nom}`;
+  $("qrCode").innerHTML="";
+  $("qrLink").textContent=demo?"Préparation du QR…":"Le QR exposant existant reste inchangé.";
+  $("qrAccessCode").textContent="------";
+  $("qrNewAccessCode").value="";
+  $("qrCodeAdmin").classList.toggle("show",isAdmin);
+  $("qrModeWarning").style.display=demo?"block":"none";
+  $("qrModal").classList.add("show");
   try{
     if(demo){
       const [hist,code]=await Promise.all([
         avecDelai(client.rpc("charger_historique_compte_stand_demo_v3",{p_stand_demo_id:id}),12000,"Le chargement du QR Démo prend trop de temps."),
-        avecDelai(client.rpc("regenerer_code_acces_ticket_stand_demo",{p_stand_demo_id:id}),12000,"La génération du code d’accès prend trop de temps.")
+        avecDelai(client.rpc("obtenir_code_acces_ticket_stand_demo",{p_stand_demo_id:id}),12000,"Le chargement du code d’accès prend trop de temps.")
       ]);
       if(hist.error)throw hist.error;if(code.error)throw code.error;
       const payload=hist.data?.identite?.qr_payload;if(!payload)throw new Error("QR Démo indisponible pour ce stand.");
       const accessCode=code.data?.code_acces;if(!accessCode)throw new Error("Code d’accès indisponible.");
-      const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);$("qrLink").textContent=url.href;$("qrAccessCode").textContent=accessCode;
-      if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M});
+      const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("demo",payload);
+      $("qrLink").textContent=url.href;
+      $("qrAccessCode").textContent=accessCode;
+      if(typeof window.QRCode!=="function")throw new Error("Le module QR code est indisponible.");
+      new window.QRCode($("qrCode"),{text:url.href,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M});
     }else{
-      const {data,error}=await avecDelai(client.rpc("regenerer_code_acces_ticket_stand",{p_participation_id:id}),12000,"La génération du code d’accès prend trop de temps.");
-      if(error)throw error;if(!data?.code_acces)throw new Error("Code d’accès indisponible.");$("qrAccessCode").textContent=data.code_acces;
+      const {data,error}=await avecDelai(client.rpc("obtenir_code_acces_ticket_stand",{p_participation_id:id}),12000,"Le chargement du code d’accès prend trop de temps.");
+      if(error)throw error;
+      if(!data?.code_acces)throw new Error("Code d’accès indisponible.");
+      $("qrAccessCode").textContent=data.code_acces;
     }
-  }catch(e){console.error(e);$("qrCode").innerHTML="";$("qrAccessCode").textContent="------";$("qrLink").textContent=e?.message||"Impossible de préparer l’accès au relevé."}
+  }catch(e){
+    console.error(e);
+    $("qrCode").innerHTML="";
+    $("qrAccessCode").textContent="------";
+    $("qrLink").textContent=e?.message||"Impossible de préparer l’accès au relevé.";
+  }
 }
-function closeQr(){$("qrModal").classList.remove("show")}
+async function saveQrAccessCode(){
+  if(currentRole!=="administrateur"||!currentQrStandId)return;
+  const input=$("qrNewAccessCode");
+  const button=$("qrSaveAccessCode");
+  const code=String(input.value||"").replace(/\D/g,"").slice(0,6);
+  input.value=code;
+  if(code.length!==6){msg("Le nouveau code doit contenir exactement 6 chiffres.");input.focus();return;}
+  button.disabled=true;
+  button.textContent="Enregistrement…";
+  try{
+    const fn=demo?"modifier_code_acces_ticket_stand_demo":"modifier_code_acces_ticket_stand";
+    const args=demo?{p_stand_demo_id:currentQrStandId,p_code_acces:code}:{p_participation_id:currentQrStandId,p_code_acces:code};
+    const {data,error}=await avecDelai(client.rpc(fn,args),12000,"La modification du code d’accès prend trop de temps.");
+    if(error)throw error;
+    if(!data?.ok||!data?.code_acces)throw new Error("Le nouveau code n’a pas été confirmé par le serveur.");
+    $("qrAccessCode").textContent=data.code_acces;
+    input.value="";
+    msg("Code d’accès modifié. L’ancien code n’est plus valable.","success");
+  }catch(e){
+    console.error(e);
+    msg(e?.message||"Impossible de modifier le code d’accès.");
+  }finally{
+    button.disabled=false;
+    button.textContent="Enregistrer le nouveau code";
+  }
+}
+function closeQr(){$("qrModal").classList.remove("show");currentQrStandId=null}
 function openInvoice(id) {
   selected=rows.find(r=>r.id===id);
   if(!selected)return;
@@ -1295,6 +1346,8 @@ function events() {
   $("signatureModal").onclick=x=>{if(x.target===$("signatureModal"))closeSignature()};
   $("qrClose").onclick=closeQr;
   $("qrDone").onclick=closeQr;
+  $("qrSaveAccessCode").onclick=saveQrAccessCode;
+  $("qrNewAccessCode").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6)});
   $("qrModal").onclick=x=>{if(x.target===$("qrModal"))closeQr()};
 }
 async function init() {
@@ -1312,6 +1365,7 @@ async function init() {
     const auth=await avecDelai(window.MDN_AUTH.protegerPage(["responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
     if(!auth)return;
     const first=String(auth.profil?.prenom||"Utilisateur").trim();
+    currentRole=String(auth.profil?.role||"").trim().toLowerCase();
     const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
     identity.textContent=`${first} · ${role}`;
     client=window.MDN_SUPABASE;
