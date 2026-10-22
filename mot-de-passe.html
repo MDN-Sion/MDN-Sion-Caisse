@@ -1197,7 +1197,39 @@
 
         try {
 
-          const {
+          /*
+           * IMPORTANT :
+           * Lors d'une récupération de mot de passe, Supabase peut
+           * transmettre la session dans le fragment d'URL (#...)
+           * ou via un code PKCE (?code=...).
+           *
+           * On laisse d'abord le client Supabase traiter l'URL avant
+           * de conclure qu'aucune session de récupération n'existe.
+           */
+
+          const url =
+            new URL(window.location.href);
+
+          const code =
+            url.searchParams.get("code");
+
+          if (code) {
+
+            const {
+              error: erreurEchangeCode
+            } =
+              await client.auth.exchangeCodeForSession(
+                code
+              );
+
+            if (erreurEchangeCode) {
+              throw erreurEchangeCode;
+            }
+
+          }
+
+
+          let {
             data,
             error
           } =
@@ -1215,6 +1247,96 @@
               data.session &&
               data.session.user
             );
+
+
+          /*
+           * Le traitement du lien de récupération peut terminer
+           * juste après le chargement initial de la page.
+           * Si nécessaire, on attend brièvement l'événement Auth
+           * avant d'afficher une erreur.
+           */
+
+          if (!sessionDisponible) {
+
+            await new Promise(function (resolve) {
+
+              let termine = false;
+
+              const terminer =
+                function () {
+
+                  if (termine) {
+                    return;
+                  }
+
+                  termine = true;
+
+                  clearTimeout(delai);
+
+                  if (
+                    abonnement &&
+                    abonnement.data &&
+                    abonnement.data.subscription
+                  ) {
+                    abonnement.data.subscription.unsubscribe();
+                  }
+
+                  resolve();
+                };
+
+
+              const abonnement =
+                client.auth.onAuthStateChange(
+                  function (
+                    evenement,
+                    session
+                  ) {
+
+                    if (
+                      session &&
+                      session.user
+                    ) {
+
+                      sessionDisponible = true;
+                      terminer();
+
+                    }
+
+                  }
+                );
+
+
+              const delai =
+                setTimeout(
+                  terminer,
+                  1200
+                );
+
+            });
+
+
+            if (!sessionDisponible) {
+
+              const resultatSession =
+                await client.auth.getSession();
+
+              if (resultatSession.error) {
+                throw resultatSession.error;
+              }
+
+              data =
+                resultatSession.data;
+
+              sessionDisponible =
+                Boolean(
+                  data &&
+                  data.session &&
+                  data.session.user
+                );
+
+            }
+
+          }
 
 
           if (!sessionDisponible) {
@@ -1239,6 +1361,25 @@
             boutonEnregistrer.disabled = true;
 
             return;
+
+          }
+
+
+          /*
+           * Une fois la session récupérée, on retire de l'adresse
+           * les paramètres sensibles du lien sans recharger la page.
+           */
+
+          if (
+            window.location.search ||
+            window.location.hash
+          ) {
+
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
 
           }
 
