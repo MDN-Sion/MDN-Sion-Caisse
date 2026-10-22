@@ -1908,6 +1908,103 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         gap: 4px;
     }
 }
+
+
+/* =========================================================
+   AJUSTEMENT RESPONSIVE TABLETTES — iPad A16 / iPad Pro 12,9
+   - Onglets Retrait / Retours stables en portrait et paysage.
+   - Stepper − / quantité / + strictement contenu dans la carte.
+   ========================================================= */
+.tabs {
+    justify-content: flex-start;
+}
+
+.tabs > .tab {
+    flex: 0 0 auto;
+    width: 112px;
+    min-width: 112px;
+    padding-left: 12px;
+    padding-right: 12px;
+    text-align: center;
+}
+
+.stepper {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    column-gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    overflow: visible;
+}
+
+.stepper .step,
+.stepper .qty {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+.stepper .step {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Tablettes en portrait : deux onglets identiques et bien cadrés. */
+@media (min-width: 681px) and (max-width: 1100px) and (orientation: portrait) {
+    .tabs > .tab {
+        width: 112px;
+        min-width: 112px;
+    }
+
+    .stepper {
+        grid-template-columns: 40px minmax(0, 1fr) 40px;
+        column-gap: 6px;
+    }
+}
+
+/* Tablettes en paysage : conserve les onglets à la même largeur. */
+@media (min-width: 681px) and (max-width: 1400px) and (orientation: landscape) {
+    .tabs > .tab {
+        width: 112px;
+        min-width: 112px;
+    }
+
+    .stepper {
+        grid-template-columns: 36px minmax(0, 1fr) 36px;
+        column-gap: 5px;
+    }
+}
+
+/* Grand iPad / écrans larges : évite tout chevauchement du stepper
+   même lorsque cinq cartes sont affichées sur une ligne. */
+@media (min-width: 1101px) {
+    .stepper {
+        grid-template-columns: 36px minmax(0, 1fr) 36px;
+        column-gap: 5px;
+    }
+}
+
+/* Téléphones : on conserve le comportement compact déjà validé. */
+@media (max-width: 680px) {
+    .tabs > .tab {
+        width: auto;
+        min-width: 0;
+        flex: 1 1 0;
+    }
+
+    .stepper {
+        grid-template-columns: 34px minmax(0, 1fr) 34px;
+        column-gap: 4px;
+    }
+}
 </style>
  </head>
  <body>
