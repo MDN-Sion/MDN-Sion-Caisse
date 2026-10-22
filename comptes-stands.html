@@ -284,7 +284,7 @@ main {
 }
 .account {
   display:grid;
-  grid-template-columns:minmax(220px,1.5fr) minmax(135px,.7fr) minmax(135px,.7fr) minmax(150px,.75fr) auto;
+  grid-template-columns:minmax(220px,1.5fr) minmax(125px,.65fr) minmax(125px,.65fr) minmax(135px,.7fr) minmax(150px,.75fr) auto;
   gap:14px;
   align-items:center;
   padding:15px 16px;
@@ -855,9 +855,9 @@ footer {
   }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
 function accountStatusLabel(r){
-  if(r?.statut==="facture") return "Facturé";
-  if(r?.statut==="a_facturer") return "À facturer";
-  if(r?.dateCloture) return "Compte clôturé";
+  return r?.dateCloture ? "Compte clôturé" : "Compte ouvert";
+}
+function accountSituationLabel(r){
   return statusLabel(r?.statut);
 }
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
@@ -999,8 +999,12 @@ function render() {
 <div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div>
 </div>
 <div>
-<div class="cell-label">Statut</div>
-<span class="badge-status s-${esc(r.statut)}">${esc(accountStatusLabel(r))}</span>
+<div class="cell-label">Statut du compte</div>
+<span class="badge-status s-${esc(r.dateCloture ? "solde" : "ouvert")}">${esc(accountStatusLabel(r))}</span>
+</div>
+<div>
+<div class="cell-label">Situation</div>
+<span class="badge-status s-${esc(r.statut)}">${esc(accountSituationLabel(r))}</span>
 </div>
 <div>
 <div class="cell-label">Solde / facture</div>
