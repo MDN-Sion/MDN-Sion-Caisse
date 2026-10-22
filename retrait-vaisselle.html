@@ -1556,20 +1556,23 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 @media (max-width:520px){.close-confirm-row{grid-template-columns:1fr}.close-confirm-row strong{text-align:left}.close-confirm-actions{grid-template-columns:1fr}}
 
 /* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64 */
-.passage-confirm-card{width:min(980px,calc(100vw - 24px));max-height:96vh;display:flex;flex-direction:column}
-.passage-confirm-body{padding:10px 14px;overflow:auto}
-.passage-confirm-stand{padding:7px 11px;border:1px solid #e0e2e5;border-radius:10px;background:#f7f8f9;margin-bottom:7px}
-.passage-confirm-detail{border:1px solid #e0e2e5;border-radius:10px;padding:6px 9px;background:#fff}
+.passage-confirm-card{width:min(1080px,calc(100vw - 24px));height:min(760px,96vh);max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
+.passage-confirm-body{padding:10px 14px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;min-height:0;flex:1;overflow:hidden}
+.passage-confirm-stand{padding:7px 11px;border:1px solid #e0e2e5;border-radius:10px;background:#f7f8f9}
+.passage-confirm-columns{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,.85fr);gap:12px;min-height:0;overflow:hidden}
+.passage-confirm-left{min-width:0;min-height:0;overflow:auto;padding-right:2px}
+.passage-confirm-right{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;padding-right:2px}
+.passage-confirm-detail{border:1px solid #e0e2e5;border-radius:10px;padding:6px 9px;background:#fff;min-height:100%}
 /* La confirmation est en lecture seule : aucun bouton de suppression ici. */
-.passage-confirm-detail .remove,.passage-confirm-detail [data-rm]{display:none!important}
+.passage-confirm-detail .remove,.passage-confirm-detail [data-rm],.passage-confirm-detail button{display:none!important}
 .passage-confirm-detail .op{padding:6px 0}
 .passage-confirm-detail .item{padding:4px 0}
-.passage-confirm-totals{display:grid;grid-template-columns:1fr auto;gap:3px 12px;margin:7px 0;padding:7px 11px;border-radius:10px;background:#f7f8f9}.passage-confirm-totals strong{text-align:right}
-.signature-label{display:block;font-weight:900;margin:7px 0 4px}.signature-wrap{border:2px solid #cfd4da;border-radius:10px;background:#fff;overflow:hidden}.signature-canvas{display:block;width:100%;height:82px;touch-action:none;cursor:crosshair}
+.passage-confirm-totals{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:0 0 8px;padding:9px 11px;border-radius:10px;background:#f7f8f9}.passage-confirm-totals strong{text-align:right}
+.signature-label{display:block;font-weight:900;margin:2px 0 4px}.signature-wrap{border:2px solid #cfd4da;border-radius:10px;background:#fff;overflow:hidden}.signature-canvas{display:block;width:100%;height:118px;touch-action:none;cursor:crosshair}
 .signature-tools{display:flex;justify-content:flex-end;margin-top:5px}.signature-clear{border:1px solid #d3d7dc;background:#fff;border-radius:9px;padding:6px 11px;font-weight:800}
-.passage-confirm-check{display:flex;gap:9px;align-items:flex-start;margin-top:7px;padding:7px 8px;border:1px solid #d8dce1;border-radius:10px;font-size:12px;line-height:1.3}.passage-confirm-check input{width:18px;height:18px;flex:0 0 auto;accent-color:#8b0000}
-.passage-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:7px}.passage-confirm-actions button{min-height:42px;border-radius:10px;font-weight:900}.passage-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.passage-confirm-save{border:0;background:#17834a;color:#fff}.passage-confirm-save:disabled{background:#cfd2d6;color:#888;cursor:not-allowed}
-@media(max-width:560px){.passage-confirm-card{max-height:98vh}.signature-canvas{height:88px}.passage-confirm-actions{grid-template-columns:1fr}}
+.passage-confirm-check{display:flex;gap:9px;align-items:flex-start;margin-top:8px;padding:8px;border:1px solid #d8dce1;border-radius:10px;font-size:12px;line-height:1.3}.passage-confirm-check input{width:18px;height:18px;flex:0 0 auto;accent-color:#8b0000}
+.passage-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:0}.passage-confirm-actions button{min-height:42px;border-radius:10px;font-weight:900}.passage-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.passage-confirm-save{border:0;background:#17834a;color:#fff}.passage-confirm-save:disabled{background:#cfd2d6;color:#888;cursor:not-allowed}
+@media(max-width:760px){.passage-confirm-card{width:min(980px,calc(100vw - 16px));height:auto;max-height:98vh}.passage-confirm-body{display:block;overflow:auto}.passage-confirm-stand{margin-bottom:7px}.passage-confirm-columns{display:block;overflow:visible}.passage-confirm-left,.passage-confirm-right{overflow:visible;padding:0}.passage-confirm-detail{min-height:0}.passage-confirm-totals{margin:7px 0}.signature-canvas{height:88px}.passage-confirm-actions{margin-top:7px;grid-template-columns:1fr}}
 
 </style>
  </head>
@@ -1797,12 +1800,18 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     <div class="modalhead"><h3>Confirmer le passage du stand</h3><button class="close" id="passageConfirmClose" type="button">×</button></div>
     <div class="passage-confirm-body">
      <div class="passage-confirm-stand"><strong id="passageConfirmStand">—</strong><br><small id="passageConfirmType">—</small></div>
-     <div class="passage-confirm-detail" id="passageConfirmDetail"></div>
-     <div class="passage-confirm-totals"><span>Retraits facturés</span><strong id="passageConfirmInvoice">0.00 CHF</strong><span>Retours crédités</span><strong id="passageConfirmCredit">0.00 CHF</strong><span>Impact du passage</span><strong id="passageConfirmNet">0.00 CHF</strong></div>
-     <label class="signature-label">Signature du stand</label>
-     <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
-     <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
-     <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
+     <div class="passage-confirm-columns">
+      <div class="passage-confirm-left">
+       <div class="passage-confirm-detail" id="passageConfirmDetail"></div>
+      </div>
+      <div class="passage-confirm-right">
+       <div class="passage-confirm-totals"><span>Retraits facturés</span><strong id="passageConfirmInvoice">0.00 CHF</strong><span>Retours crédités</span><strong id="passageConfirmCredit">0.00 CHF</strong><span>Impact du passage</span><strong id="passageConfirmNet">0.00 CHF</strong></div>
+       <label class="signature-label">Signature du stand</label>
+       <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
+       <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
+       <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
+      </div>
+     </div>
      <div class="passage-confirm-actions"><button class="passage-confirm-cancel" id="passageConfirmCancel" type="button">Annuler</button><button class="passage-confirm-save" id="passageConfirmSave" type="button" disabled>Confirmer et enregistrer</button></div>
     </div>
    </div>
