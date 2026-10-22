@@ -865,10 +865,25 @@ footer {
   }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
 function accountStatusLabel(r){
-  if(r?.statut==="facture") return "Facturé";
+  return r?.dateCloture ? "Compte clôturé" : "Compte ouvert";
+}
+function accountSituationLabel(r){
   if(r?.statut==="a_facturer") return "À facturer";
-  if(r?.dateCloture) return "Compte clôturé";
-  return statusLabel(r?.statut);
+  if(r?.statut==="facture") return "Facturé";
+  if(r?.statut==="a_controler") return "À contrôler";
+  const solde=Number(r?.solde||0);
+  if(solde>0.004) return "À régler";
+  if(solde<-0.004) return "Crédit à rembourser";
+  return "Soldé";
+}
+function situationClass(r){
+  if(r?.statut==="a_facturer") return "a_facturer";
+  if(r?.statut==="facture") return "facture";
+  if(r?.statut==="a_controler") return "a_controler";
+  const solde=Number(r?.solde||0);
+  if(solde>0.004) return "a_facturer";
+  if(solde<-0.004) return "a_controler";
+  return "solde";
 }
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
   function msg(text,type="error"){$("toastText").textContent=text;$("toast").className=`toast show ${type}`;clearTimeout(msg.timer);msg.timer=setTimeout(()=>$("toast").classList.remove("show"),5000)}
@@ -1009,8 +1024,12 @@ function render() {
 <div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div>
 </div>
 <div>
-<div class="cell-label">Statut</div>
-<span class="badge-status s-${esc(r.statut)}">${esc(accountStatusLabel(r))}</span>
+<div class="cell-label">Statut du compte</div>
+<span class="badge-status s-${esc(r.dateCloture ? "solde" : "ouvert")}">${esc(accountStatusLabel(r))}</span>
+</div>
+<div>
+<div class="cell-label">Situation</div>
+<span class="badge-status s-${esc(situationClass(r))}">${esc(accountSituationLabel(r))}</span>
 </div>
 <div>
 <div class="cell-label">Solde / facture</div>
