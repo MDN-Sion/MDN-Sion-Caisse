@@ -1555,56 +1555,323 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .close-confirm-button:disabled{border-color:#d5d7da;background:#d5d7da;color:#888;cursor:default}
 @media (max-width:520px){.close-confirm-row{grid-template-columns:1fr}.close-confirm-row strong{text-align:left}.close-confirm-actions{grid-template-columns:1fr}}
 
-/* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64 */
-.passage-confirm-card{width:min(1080px,calc(100vw - 24px));height:min(760px,96vh);max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
-.passage-confirm-body{padding:10px 14px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;min-height:0;flex:1;overflow:hidden}
-.passage-confirm-stand{padding:7px 11px;border:1px solid #e0e2e5;border-radius:10px;background:#f7f8f9}
-.passage-confirm-columns{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,.85fr);gap:12px;min-height:0;overflow:hidden}
-.passage-confirm-left{min-width:0;min-height:0;overflow:auto;padding-right:2px}
-.passage-confirm-right{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;padding-right:2px}
-.passage-confirm-detail{border:1px solid #e0e2e5;border-radius:10px;padding:6px 9px;background:#fff;min-height:100%}
+/* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64
+   Responsive basé sur la zone réellement visible du navigateur. */
+#passageConfirmModal{
+    padding:clamp(6px,1.5vh,16px);
+    overflow:hidden;
+}
+.passage-confirm-card{
+    width:min(1080px,calc(100vw - 24px));
+    height:min(760px,calc(var(--mdn-visible-height,100dvh) - 16px));
+    max-height:calc(var(--mdn-visible-height,100dvh) - 16px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+.passage-confirm-card .modalhead{
+    flex:0 0 auto;
+}
+.passage-confirm-body{
+    padding:10px 14px;
+    display:grid;
+    grid-template-rows:auto minmax(0,1fr);
+    gap:8px;
+    min-height:0;
+    flex:1;
+    overflow:hidden;
+}
+.passage-confirm-stand{
+    padding:7px 11px;
+    border:1px solid #e0e2e5;
+    border-radius:10px;
+    background:#f7f8f9;
+}
+.passage-confirm-columns{
+    display:grid;
+    grid-template-columns:minmax(0,1.45fr) minmax(330px,.85fr);
+    gap:12px;
+    min-height:0;
+    overflow:hidden;
+}
+.passage-confirm-left{
+    min-width:0;
+    min-height:0;
+    overflow:auto;
+    overscroll-behavior:contain;
+    padding-right:2px;
+}
+.passage-confirm-right{
+    min-width:0;
+    min-height:0;
+    overflow:auto;
+    overscroll-behavior:contain;
+    display:flex;
+    flex-direction:column;
+    padding-right:2px;
+}
+.passage-confirm-detail{
+    border:1px solid #e0e2e5;
+    border-radius:10px;
+    padding:6px 9px;
+    background:#fff;
+    min-height:100%;
+}
 /* La confirmation est en lecture seule : aucun bouton de suppression ici. */
-.passage-confirm-detail .remove,.passage-confirm-detail [data-rm],.passage-confirm-detail button{display:none!important}
+.passage-confirm-detail .remove,
+.passage-confirm-detail [data-rm],
+.passage-confirm-detail button{
+    display:none!important;
+}
 .passage-confirm-detail .op{padding:6px 0}
 .passage-confirm-detail .item{padding:4px 0}
-.passage-confirm-totals{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:0 0 8px;padding:9px 11px;border-radius:10px;background:#f7f8f9}.passage-confirm-totals strong{text-align:right}
-.signature-label{display:block;font-weight:900;margin:2px 0 4px}.signature-wrap{border:2px solid #cfd4da;border-radius:10px;background:#fff;overflow:hidden}.signature-canvas{display:block;width:100%;height:118px;touch-action:none;cursor:crosshair}
-.signature-tools{display:flex;justify-content:flex-end;margin-top:5px}.signature-clear{border:1px solid #d3d7dc;background:#fff;border-radius:9px;padding:6px 11px;font-weight:800}
-.passage-confirm-check{display:flex;gap:9px;align-items:flex-start;margin-top:8px;padding:8px;border:1px solid #d8dce1;border-radius:10px;font-size:12px;line-height:1.3}.passage-confirm-check input{width:18px;height:18px;flex:0 0 auto;accent-color:#8b0000}
-.passage-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.passage-confirm-actions button{min-height:42px;border-radius:10px;font-weight:900}.passage-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.passage-confirm-save{border:0;background:#17834a;color:#fff}.passage-confirm-save:disabled{background:#cfd2d6;color:#888;cursor:not-allowed}
-@media(max-width:760px){
- .passage-confirm-card{width:calc(100vw - 12px);height:min(96dvh,760px);max-height:96dvh}
- .passage-confirm-body{padding:8px 10px;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
- .passage-confirm-stand{margin:0;padding:7px 10px}
- .passage-confirm-columns{display:grid;grid-template-columns:1fr;grid-template-rows:minmax(150px,34vh) auto;gap:8px;overflow:hidden}
- .passage-confirm-left{min-height:0;overflow:auto;padding:0}
- .passage-confirm-right{min-height:0;overflow:auto;padding:0}
- .passage-confirm-detail{min-height:0;height:100%;overflow:auto;padding:5px 8px}
- .passage-confirm-detail .op{padding:4px 0}
- .passage-confirm-detail .item{padding:3px 0}
- .passage-confirm-totals{margin:0 0 6px;padding:7px 9px;gap:2px 8px}
- .signature-label{margin:0 0 3px}
- .signature-canvas{height:76px}
- .signature-tools{margin-top:4px}
- .signature-clear{padding:5px 9px}
- .passage-confirm-check{margin-top:6px;padding:7px;font-size:11px}
- .passage-confirm-actions{margin-top:6px;grid-template-columns:1fr 1fr;gap:7px}
- .passage-confirm-actions button{min-height:40px}
+.passage-confirm-totals{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:4px 12px;
+    margin:0 0 8px;
+    padding:9px 11px;
+    border-radius:10px;
+    background:#f7f8f9;
 }
-@media(max-width:430px){
- .passage-confirm-card{width:calc(100vw - 8px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}
- .passage-confirm-card .modalhead{padding:10px 12px}
- .passage-confirm-card .modalhead h3{font-size:18px}
- .passage-confirm-body{padding:7px 8px;gap:6px}
- .passage-confirm-stand{font-size:14px}
- .passage-confirm-columns{grid-template-rows:minmax(130px,31vh) auto;gap:6px}
- .passage-confirm-detail{font-size:12px}
- .passage-confirm-totals{font-size:13px}
- .signature-label{font-size:15px}
- .signature-canvas{height:64px}
- .passage-confirm-check{font-size:10.5px;line-height:1.2}
- .passage-confirm-actions{grid-template-columns:1fr}
- .passage-confirm-actions button{min-height:38px}
+.passage-confirm-totals strong{
+    text-align:right;
+    white-space:nowrap;
+}
+.signature-label{
+    display:block;
+    flex:0 0 auto;
+    font-weight:900;
+    margin:2px 0 4px;
+}
+.signature-wrap{
+    flex:0 0 auto;
+    min-height:92px;
+    border:2px solid #cfd4da;
+    border-radius:10px;
+    background:#fff;
+    overflow:hidden;
+}
+.signature-canvas{
+    display:block;
+    width:100%;
+    height:118px;
+    min-height:92px;
+    touch-action:none;
+    cursor:crosshair;
+}
+.signature-tools{
+    display:flex;
+    flex:0 0 auto;
+    justify-content:flex-end;
+    margin-top:5px;
+}
+.signature-clear{
+    border:1px solid #d3d7dc;
+    background:#fff;
+    border-radius:9px;
+    padding:6px 11px;
+    font-weight:800;
+}
+.passage-confirm-check{
+    display:flex;
+    flex:0 0 auto;
+    gap:9px;
+    align-items:flex-start;
+    margin-top:8px;
+    padding:8px;
+    border:1px solid #d8dce1;
+    border-radius:10px;
+    font-size:12px;
+    line-height:1.3;
+}
+.passage-confirm-check input{
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
+    accent-color:#8b0000;
+}
+/* Les deux actions restent dans la colonne de droite et sont empilées. */
+.passage-confirm-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:7px;
+    margin-top:8px;
+    flex:0 0 auto;
+}
+.passage-confirm-actions button{
+    width:100%;
+    min-height:40px;
+    border-radius:10px;
+    font-weight:900;
+    white-space:normal;
+}
+.passage-confirm-cancel{
+    border:1px solid #d3d7dc;
+    background:#fff;
+}
+.passage-confirm-save{
+    border:0;
+    background:#17834a;
+    color:#fff;
+}
+.passage-confirm-save:disabled{
+    background:#cfd2d6;
+    color:#888;
+    cursor:not-allowed;
+}
+
+/* Téléphone / petite largeur en portrait : une seule colonne.
+   La hauteur vient toujours de la zone réellement visible du navigateur. */
+@media(max-width:760px) and (orientation:portrait){
+    #passageConfirmModal{padding:6px}
+    .passage-confirm-card{
+        width:calc(100vw - 12px);
+        height:calc(var(--mdn-visible-height,100dvh) - 12px);
+        max-height:calc(var(--mdn-visible-height,100dvh) - 12px);
+    }
+    .passage-confirm-card .modalhead{padding:10px 12px}
+    .passage-confirm-card .modalhead h3{font-size:18px}
+    .passage-confirm-body{
+        padding:8px 10px;
+        gap:7px;
+        overflow:auto;
+        overscroll-behavior:contain;
+    }
+    .passage-confirm-stand{padding:7px 10px}
+    .passage-confirm-columns{
+        display:flex;
+        flex-direction:column;
+        min-height:auto;
+        overflow:visible;
+        gap:8px;
+    }
+    .passage-confirm-left{
+        flex:0 0 auto;
+        max-height:42vh;
+        overflow:auto;
+        padding:0;
+    }
+    .passage-confirm-right{
+        flex:0 0 auto;
+        overflow:visible;
+        padding:0;
+    }
+    .passage-confirm-detail{
+        min-height:0;
+        height:auto;
+        padding:5px 8px;
+    }
+    .passage-confirm-detail .op{padding:4px 0}
+    .passage-confirm-detail .item{padding:3px 0}
+    .passage-confirm-totals{margin:0 0 6px;padding:7px 9px;gap:2px 8px}
+    .signature-label{margin:0 0 3px}
+    .signature-wrap{min-height:88px}
+    .signature-canvas{height:96px;min-height:88px}
+    .signature-tools{margin-top:4px}
+    .signature-clear{padding:5px 9px}
+    .passage-confirm-check{margin-top:6px;padding:7px;font-size:11px}
+    .passage-confirm-actions{margin-top:7px;gap:7px}
+    .passage-confirm-actions button{min-height:40px}
+}
+
+/* Téléphone/tablette en paysage avec peu de hauteur :
+   deux colonnes, chacune défile indépendamment. La signature ne peut plus
+   être écrasée jusqu'à devenir une simple ligne. */
+@media(orientation:landscape) and (max-height:700px){
+    #passageConfirmModal{padding:5px}
+    .passage-confirm-card{
+        width:min(1180px,calc(100vw - 10px));
+        height:calc(var(--mdn-visible-height,100dvh) - 10px);
+        max-height:calc(var(--mdn-visible-height,100dvh) - 10px);
+        border-radius:14px;
+    }
+    .passage-confirm-card .modalhead{
+        padding:7px 12px;
+        min-height:42px;
+    }
+    .passage-confirm-card .modalhead h3{font-size:18px}
+    .passage-confirm-body{
+        padding:7px 10px 8px;
+        gap:6px;
+    }
+    .passage-confirm-stand{
+        padding:5px 9px;
+        line-height:1.2;
+    }
+    .passage-confirm-columns{
+        grid-template-columns:minmax(0,1.45fr) minmax(290px,.85fr);
+        gap:9px;
+    }
+    .passage-confirm-left,
+    .passage-confirm-right{
+        min-height:0;
+        overflow:auto;
+    }
+    .passage-confirm-detail{
+        min-height:100%;
+        padding:4px 7px;
+        font-size:11px;
+    }
+    .passage-confirm-detail .op{padding:3px 0}
+    .passage-confirm-detail .item{padding:2px 0}
+    .passage-confirm-totals{
+        margin:0 0 4px;
+        padding:5px 8px;
+        gap:1px 7px;
+        font-size:12px;
+    }
+    .signature-label{
+        margin:0 0 2px;
+        font-size:14px;
+    }
+    .signature-wrap{
+        min-height:74px;
+    }
+    .signature-canvas{
+        height:82px;
+        min-height:74px;
+    }
+    .signature-tools{margin-top:3px}
+    .signature-clear{
+        padding:4px 8px;
+        font-size:12px;
+    }
+    .passage-confirm-check{
+        margin-top:4px;
+        padding:6px;
+        gap:7px;
+        font-size:10.5px;
+        line-height:1.2;
+    }
+    .passage-confirm-check input{
+        width:17px;
+        height:17px;
+    }
+    .passage-confirm-actions{
+        margin-top:5px;
+        gap:5px;
+    }
+    .passage-confirm-actions button{
+        min-height:34px;
+        padding:5px 8px;
+        font-size:12px;
+    }
+}
+
+/* Très petit téléphone portrait. */
+@media(max-width:430px) and (orientation:portrait){
+    .passage-confirm-card .modalhead h3{font-size:17px}
+    .passage-confirm-body{padding:7px 8px;gap:6px}
+    .passage-confirm-stand{font-size:14px}
+    .passage-confirm-left{max-height:39vh}
+    .passage-confirm-detail{font-size:12px}
+    .passage-confirm-totals{font-size:13px}
+    .signature-label{font-size:15px}
+    .signature-wrap{min-height:78px}
+    .signature-canvas{height:84px;min-height:78px}
+    .passage-confirm-check{font-size:10.5px;line-height:1.2}
+    .passage-confirm-actions button{min-height:38px}
 }
 
 </style>
@@ -1856,6 +2123,21 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   <script>
 (()=>{
     "use strict";
+
+    // Hauteur réellement visible : s’adapte aux barres de Safari, Chrome,
+    // Android, iPadOS et aux changements portrait/paysage.
+    function syncVisibleViewport(){
+        const viewport=window.visualViewport;
+        const height=viewport?.height||window.innerHeight||document.documentElement.clientHeight;
+        document.documentElement.style.setProperty("--mdn-visible-height",`${Math.round(height)}px`);
+    }
+    syncVisibleViewport();
+    window.addEventListener("resize",syncVisibleViewport,{passive:true});
+    window.addEventListener("orientationchange",()=>setTimeout(syncVisibleViewport,60),{passive:true});
+    if(window.visualViewport){
+        window.visualViewport.addEventListener("resize",syncVisibleViewport,{passive:true});
+        window.visualViewport.addEventListener("scroll",syncVisibleViewport,{passive:true});
+    }
     const $=id=>document.getElementById(id);
     const app=$("app");
     const topbar=$("top");
@@ -2917,6 +3199,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         $("passageConfirmCredit").textContent=credit.textContent;
         $("passageConfirmNet").textContent=net.textContent;
         $("passageConfirmCheck").checked=false;signatureHasInk=false;
+        syncVisibleViewport();
         $("passageConfirmModal").classList.add("show");
         $("passageConfirmModal").setAttribute("aria-hidden","false");
         requestAnimationFrame(resizeSignatureCanvas);
