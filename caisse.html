@@ -2977,97 +2977,158 @@
 
 
         /*
-         * 1. Edition active.
-         * La base garantit qu'une seule édition peut avoir est_active = true.
+         * MODE DÉMO PROTÉGÉ
+         *
+         * Le compte Démo dédié est volontairement exclu des politiques
+         * RLS des tables réelles. Il ne lit donc pas directement :
+         * - editions ;
+         * - edition_articles ;
+         * - referentiel_articles ;
+         * - categories_articles.
+         *
+         * Le catalogue de formation est fourni par une RPC dédiée,
+         * strictement réservée à la session Démo.
+         */
+        if (modeDemo) {
+
+          const {
+            data: catalogueDemo,
+            error: erreurCatalogueDemo
+          } =
+            await client.rpc(
+              "charger_catalogue_caisse_demo"
+            );
+
+
+          if (erreurCatalogueDemo) {
+            throw erreurCatalogueDemo;
+          }
+
+
+          const editionDemo =
+            catalogueDemo?.edition || null;
+
+
+          if (!editionDemo) {
+
+            informationEdition.textContent =
+              "Aucune édition disponible";
+
+            articlesCaisse = [];
+
+            afficherEtatArticles(
+              "⚠️",
+              "Aucune édition disponible",
+              "Aucune édition n'est encore configurée pour alimenter le catalogue de formation."
+            );
+
+            return;
+          }
+
+
+          informationEdition.textContent =
+            "DÉMO · MDN Sion " +
+            editionDemo.annee;
+
+
+          const articlesDemo =
+            Array.isArray(catalogueDemo?.articles)
+              ? catalogueDemo.articles
+              : [];
+
+
+          articlesCaisse =
+            articlesDemo.map(function (article) {
+
+              return {
+                editionArticleId:
+                  article.edition_article_id,
+
+                articleId:
+                  article.article_id,
+
+                nom:
+                  article.nom,
+
+                description:
+                  article.description,
+
+                photoPath:
+                  article.photo_path || null,
+
+                beneficiaire:
+                  article.beneficiaire,
+
+                categorie:
+                  article.categorie || null,
+
+                prix:
+                  Number(article.prix),
+
+                gestionStock:
+                  article.gestion_stock === true,
+
+                seuilStock:
+                  Number(article.seuil_stock || 0),
+
+                ordreAffichage:
+                  Number(article.ordre_affichage || 0)
+              };
+
+            });
+
+
+          afficherArticles();
+
+          return;
+        }
+
+
+        /*
+         * MODE RÉEL
+         *
+         * Le fonctionnement validé reste inchangé :
+         * lecture directe de l'édition active et du catalogue réel
+         * selon les RLS existantes.
          */
         let edition = null;
 
 
-        if (modeDemo) {
-
-          /*
-           * MODE DÉMO PROTÉGÉ
-           *
-           * La Démo ne doit pas être bloquée parce qu'aucune édition
-           * réelle n'est actuellement marquée comme active.
-           *
-           * Priorité :
-           * 1. édition active si elle existe ;
-           * 2. sinon dernière édition configurée.
-           *
-           * Aucune écriture n'est effectuée dans l'univers réel.
-           */
-          const {
-            data: editionsDemo,
-            error: erreurEditionsDemo
-          } =
-            await client
-              .from("editions")
-              .select("id, annee, nom, statut, est_active")
-              .order("est_active", {
-                ascending: false
-              })
-              .order("annee", {
-                ascending: false
-              })
-              .limit(1);
+        /*
+         * MODE RÉEL
+         *
+         * On conserve strictement la règle existante :
+         * seule l'édition réellement active peut être utilisée.
+         */
+        const {
+          data: editionActive,
+          error: erreurEditionActive
+        } =
+          await client
+            .from("editions")
+            .select("id, annee, nom, statut, est_active")
+            .eq("est_active", true)
+            .maybeSingle();
 
 
-          if (erreurEditionsDemo) {
-            throw erreurEditionsDemo;
-          }
-
-
-          edition =
-            Array.isArray(editionsDemo) &&
-            editionsDemo.length > 0
-              ? editionsDemo[0]
-              : null;
-
-        } else {
-
-          /*
-           * MODE RÉEL
-           *
-           * On conserve strictement la règle existante :
-           * seule l'édition réellement active peut être utilisée.
-           */
-          const {
-            data: editionActive,
-            error: erreurEditionActive
-          } =
-            await client
-              .from("editions")
-              .select("id, annee, nom, statut, est_active")
-              .eq("est_active", true)
-              .maybeSingle();
-
-
-          if (erreurEditionActive) {
-            throw erreurEditionActive;
-          }
-
-
-          edition =
-            editionActive || null;
+        if (erreurEditionActive) {
+          throw erreurEditionActive;
         }
+
+
+        edition =
+          editionActive || null;
 
 
         if (!edition) {
 
           informationEdition.textContent =
-            modeDemo
-              ? "Aucune édition disponible"
-              : "Aucune édition active";
+            "Aucune édition active";
 
           afficherEtatArticles(
             "⚠️",
-            modeDemo
-              ? "Aucune édition disponible"
-              : "Aucune édition active",
-            modeDemo
-              ? "Aucune édition n'est encore configurée pour alimenter le catalogue de formation."
-              : "Active une édition dans l'administration avant d'utiliser la caisse."
+            "Aucune édition active",
+            "Active une édition dans l'administration avant d'utiliser la caisse."
           );
 
           return;
@@ -3075,9 +3136,7 @@
 
 
         informationEdition.textContent =
-          modeDemo
-            ? "DÉMO · MDN Sion " + edition.annee
-            : "MDN Sion " + edition.annee;
+          "MDN Sion " + edition.annee;
 
 
         /*
