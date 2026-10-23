@@ -1753,11 +1753,7 @@
       let validationPaiementEnCours = false;
       let cleIdempotenceEncaissement = null;
 
-      const parametresPage =
-        new URLSearchParams(window.location.search);
-
-      const modeDemo =
-        parametresPage.get("mode") === "demo";
+      let modeDemo = false;
 
 
       function masquerChargement() {
@@ -2984,31 +2980,94 @@
          * 1. Edition active.
          * La base garantit qu'une seule édition peut avoir est_active = true.
          */
-        const {
-          data: edition,
-          error: erreurEdition
-        } =
-          await client
-            .from("editions")
-            .select("id, annee, nom, statut, est_active")
-            .eq("est_active", true)
-            .maybeSingle();
+        let edition = null;
 
 
-        if (erreurEdition) {
-          throw erreurEdition;
+        if (modeDemo) {
+
+          /*
+           * MODE DÉMO PROTÉGÉ
+           *
+           * La Démo ne doit pas être bloquée parce qu'aucune édition
+           * réelle n'est actuellement marquée comme active.
+           *
+           * Priorité :
+           * 1. édition active si elle existe ;
+           * 2. sinon dernière édition configurée.
+           *
+           * Aucune écriture n'est effectuée dans l'univers réel.
+           */
+          const {
+            data: editionsDemo,
+            error: erreurEditionsDemo
+          } =
+            await client
+              .from("editions")
+              .select("id, annee, nom, statut, est_active")
+              .order("est_active", {
+                ascending: false
+              })
+              .order("annee", {
+                ascending: false
+              })
+              .limit(1);
+
+
+          if (erreurEditionsDemo) {
+            throw erreurEditionsDemo;
+          }
+
+
+          edition =
+            Array.isArray(editionsDemo) &&
+            editionsDemo.length > 0
+              ? editionsDemo[0]
+              : null;
+
+        } else {
+
+          /*
+           * MODE RÉEL
+           *
+           * On conserve strictement la règle existante :
+           * seule l'édition réellement active peut être utilisée.
+           */
+          const {
+            data: editionActive,
+            error: erreurEditionActive
+          } =
+            await client
+              .from("editions")
+              .select("id, annee, nom, statut, est_active")
+              .eq("est_active", true)
+              .maybeSingle();
+
+
+          if (erreurEditionActive) {
+            throw erreurEditionActive;
+          }
+
+
+          edition =
+            editionActive || null;
         }
 
 
         if (!edition) {
 
           informationEdition.textContent =
-            "Aucune édition active";
+            modeDemo
+              ? "Aucune édition disponible"
+              : "Aucune édition active";
 
           afficherEtatArticles(
             "⚠️",
-            "Aucune édition active",
-            "Active une édition dans l'administration avant d'utiliser la caisse."
+            modeDemo
+              ? "Aucune édition disponible"
+              : "Aucune édition active",
+            modeDemo
+              ? "Aucune édition n'est encore configurée pour alimenter le catalogue de formation."
+              : "Active une édition dans l'administration avant d'utiliser la caisse."
           );
 
           return;
@@ -3395,11 +3454,41 @@
             auth.libelleRole;
 
 
+          /*
+           * Le Mode Démo est déterminé uniquement par la session
+           * Supabase reconnue côté serveur.
+           *
+           * Le paramètre ?mode=demo ne donne aucun droit et ne peut
+           * plus activer la Démo depuis un compte réel.
+           */
+          const {
+            data: etatSessionDemo,
+            error: erreurEtatSessionDemo
+          } =
+            await window.MDN_SUPABASE.rpc(
+              "etat_session_demo"
+            );
+
+
+          if (erreurEtatSessionDemo) {
+            throw erreurEtatSessionDemo;
+          }
+
+
+          modeDemo =
+            etatSessionDemo?.mode_demo === true;
+
+
           if (modeDemo) {
             application.classList.add("mode-demo");
             bandeauDemo.classList.add("visible");
             titreCaisse.textContent = "🎓 Caisse — Mode Démo";
             document.title = "Caisse Démo - MDN Sion";
+          } else {
+            application.classList.remove("mode-demo");
+            bandeauDemo.classList.remove("visible");
+            titreCaisse.textContent = "🛒 Caisse";
+            document.title = "Caisse - MDN Sion";
           }
 
 
