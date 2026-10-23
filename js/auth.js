@@ -124,6 +124,50 @@
 
 
   /* ============================================================
+     MODE DEMO
+     ============================================================ */
+
+  async function obtenirEtatSessionDemo() {
+
+    const client =
+      obtenirClientSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await client.rpc(
+        "etat_session_demo"
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    return data || null;
+
+  }
+
+
+  async function estSessionDemo() {
+
+    const etat =
+      await obtenirEtatSessionDemo();
+
+
+    return Boolean(
+      etat &&
+      etat.authentifie === true &&
+      etat.mode_demo === true
+    );
+
+  }
+
+
+  /* ============================================================
      PROFIL INTERNE MDN
      ============================================================ */
 
@@ -148,17 +192,19 @@
 
 
     /*
-     * On récupère maintenant également :
+     * On récupère :
      *
+     * - id
+     * - auth_user_id
+     * - email
      * - prenom
      * - nom
+     * - role
+     * - actif
+     * - is_demo
      *
-     * Cela permet aux différentes pages MDN
-     * d'afficher par exemple :
-     *
-     * Aymeric · Administrateur
-     *
-     * au lieu de l'adresse e-mail.
+     * is_demo permet de distinguer le compte
+     * technique dédié au mode Démo des comptes réels.
      */
 
     const {
@@ -168,7 +214,7 @@
       await client
         .from("utilisateurs")
         .select(
-          "id, auth_user_id, email, prenom, nom, role, actif"
+          "id, auth_user_id, email, prenom, nom, role, actif, is_demo"
         )
         .eq(
           "auth_user_id",
@@ -296,6 +342,27 @@
 
 
     /*
+     * On demande au serveur si la session
+     * actuellement ouverte est la session
+     * dédiée au mode Démo.
+     *
+     * On ne se fie pas à une variable JavaScript
+     * ou à un paramètre placé dans l'URL.
+     */
+
+    const etatSessionDemo =
+      await obtenirEtatSessionDemo();
+
+
+    const modeDemo =
+      Boolean(
+        etatSessionDemo &&
+        etatSessionDemo.authentifie === true &&
+        etatSessionDemo.mode_demo === true
+      );
+
+
+    /*
      * Recherche du profil interne MDN.
      */
 
@@ -348,6 +415,11 @@
     /*
      * Objet commun retourné aux différentes
      * pages de l'application.
+     *
+     * modeDemo vaut :
+     *
+     * true  = session Démo dédiée
+     * false = session réelle
      */
 
     return {
@@ -367,7 +439,13 @@
       libelleRole:
         libelleRole(
           profilCourant.role
-        )
+        ),
+
+      modeDemo:
+        modeDemo,
+
+      etatSessionDemo:
+        etatSessionDemo
 
     };
 
@@ -732,6 +810,12 @@
 
     obtenirProfil:
       obtenirProfil,
+
+    obtenirEtatSessionDemo:
+      obtenirEtatSessionDemo,
+
+    estSessionDemo:
+      estSessionDemo,
 
     deconnexion:
       deconnexion,
