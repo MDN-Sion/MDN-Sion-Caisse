@@ -119,21 +119,11 @@
 
       margin-bottom: 18px;
 
-      border-radius: 20px;
-
-      background:
-        linear-gradient(
-          145deg,
-          #9f0000,
-          #750000
-        );
-
+      border-radius: 0;
+      background: transparent;
       color: #ffffff;
-
       font-size: 0;
-
-      box-shadow:
-        0 10px 25px rgba(123, 0, 0, 0.22);
+      box-shadow: none;
     }
 
     .embleme img {
@@ -483,6 +473,14 @@
     .entete-reinitialisation {
       margin-bottom: 20px;
       text-align: center;
+    }
+
+    .logo-demo {
+      width: 72px;
+      height: 72px;
+      display: block;
+      object-fit: contain;
+      margin: 0 auto 13px;
     }
 
     .icone-reinitialisation {
@@ -1028,7 +1026,7 @@
   >
     <section class="carte-reinitialisation">
       <header class="entete-reinitialisation">
-        <div class="icone-reinitialisation" aria-hidden="true">▶</div>
+        <img class="logo-demo" src="logo-mdn.png" alt="Marché de Noël de Sion">
         <h2 id="titreDemo">Mode Démo</h2>
         <p>
           Saisis le code d’accès Démo. Aucune donnée réelle n’est utilisée.
