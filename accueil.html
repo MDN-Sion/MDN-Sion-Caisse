@@ -985,22 +985,7 @@
             </div>
 
           </div>
-
-
-          <button
-            id="boutonModeDemo"
-            class="bouton-demo-entete"
-            type="button"
-            aria-pressed="true"
-            title="Session Démo protégée"
-            disabled
-            hidden
-          >
-            🎓 MODE DÉMO
-          </button>
-
-
-          <button
+<button
             id="boutonDeconnexion"
             class="bouton-deconnexion"
             type="button"
@@ -1496,15 +1481,7 @@
         document.getElementById(
           "boutonVaisselle"
         );
-
-
-      const boutonModeDemo =
-        document.getElementById(
-          "boutonModeDemo"
-        );
-
-
-      const zoneReinitialisationDemo =
+const zoneReinitialisationDemo =
         document.getElementById(
           "zoneReinitialisationDemo"
         );
@@ -1807,47 +1784,7 @@
           "mode-demo",
           modeDemoActif
         );
-
-
-        /*
-         * Le bouton n'est plus un interrupteur.
-         *
-         * - compte réel : totalement masqué ;
-         * - session Démo dédiée : visible uniquement comme
-         *   indicateur "MODE DÉMO", désactivé.
-         */
-
-        boutonModeDemo.hidden =
-          !sessionDemoDediee;
-
-
-        boutonModeDemo.classList.toggle(
-          "actif",
-          sessionDemoDediee
-        );
-
-
-        boutonModeDemo.setAttribute(
-          "aria-pressed",
-          sessionDemoDediee
-            ? "true"
-            : "false"
-        );
-
-
-        boutonModeDemo.textContent =
-          "🎓 MODE DÉMO";
-
-
-        boutonModeDemo.title =
-          "Session Démo protégée";
-
-
-        boutonModeDemo.disabled =
-          true;
-
-
-        document.querySelectorAll(
+document.querySelectorAll(
           ".bouton-module[data-texte-reel][data-texte-demo]"
         ).forEach(function (bouton) {
 
