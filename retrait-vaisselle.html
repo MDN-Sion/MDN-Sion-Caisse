@@ -51,6 +51,37 @@ button{
 .top.demo{
     background:#8a6800
 }
+
+.demo-protected-banner{
+    display:none;
+    flex:0 0 auto;
+    padding:8px 14px;
+    border-bottom:1px solid #d7b33e;
+    background:#fff0a8;
+    color:#5f4900;
+    text-align:center;
+    font-size:13px;
+    font-weight:950;
+    line-height:1.25;
+}
+
+.demo-protected-banner.show{
+    display:block;
+}
+
+@media(max-height:700px) and (orientation:landscape){
+    .demo-protected-banner{
+        padding:5px 10px;
+        font-size:11px;
+    }
+}
+
+@media(max-width:680px){
+    .demo-protected-banner{
+        padding:6px 8px;
+        font-size:10.5px;
+    }
+}
 .headbtn{
     height:50px;
     border:1px solid #ffffff88;
@@ -2035,6 +2066,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
      Déconnexion
     </button>
    </header>
+
+   <div class="demo-protected-banner" id="demoProtectedBanner">
+    🎓 MODE DÉMO / FORMATION — Aucune opération réelle ne sera enregistrée
+   </div>
+
    <main class="main">
     <section class="panel catalog">
      <div class="tabs">
@@ -3487,9 +3523,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 renderCatalog();
             };
         });
-        $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
+        $("back").onclick=()=>location.href="accueil.html";
         $("logout").onclick=async()=>{
-            sessionStorage.removeItem("mdn_mode_demo_actif");
             await window.MDN_AUTH.deconnexion()
         }
         ;
@@ -3563,24 +3598,56 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     async function init(){
         try{
-            const p=new URLSearchParams(location.search);
-            demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
             closeAccount.style.display="inline-flex";
+
+            if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
+
+            const auth=await avecDelai(
+                window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),
+                12000,
+                "La vérification de la connexion prend trop de temps. Recharge la page."
+            );
+
+            if(!auth)return;
+
+            /*
+             * Le Mode Démo n'est plus activable par URL ou sessionStorage.
+             * Il dépend uniquement de la session Démo dédiée reconnue
+             * côté serveur et transmise par js/auth.js.
+             */
+            demo=Boolean(auth.modeDemo);
+
             topbar.classList.toggle("demo",demo);
             demoNote.classList.toggle("show",demo);
+            $("demoProtectedBanner").classList.toggle("show",demo);
+
             document.querySelector(".title h1").textContent=demo
                 ?"🍽️ Vaisselle & Consignes · MODE DÉMO"
                 :"🍽️ Vaisselle & Consignes";
-            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
-            if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
-            const auth=await avecDelai(window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
-            if(!auth)return;
+
+            validate.textContent=demo
+                ?"Valider sur le compte Démo"
+                :"Valider sur le compte du stand";
+
             const first=String(auth.profil?.prenom||"Utilisateur").trim();
-            const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
+            const role=window.MDN_AUTH.libelleRole
+                ?window.MDN_AUTH.libelleRole(auth.profil?.role)
+                :String(auth.profil?.role||"");
+
             $("identity").textContent=`${first} · ${role}`;
+
             client=window.MDN_SUPABASE;
             if(!client)throw new Error("Client Supabase indisponible.");
-            const response=await avecDelai(client.rpc(demo?"charger_ecran_retrait_vaisselle_demo":"charger_ecran_retrait_vaisselle"),12000,"Le chargement des données de vaisselle prend trop de temps. Recharge la page.");
+
+            const response=await avecDelai(
+                client.rpc(
+                    demo
+                        ?"charger_ecran_retrait_vaisselle_demo"
+                        :"charger_ecran_retrait_vaisselle"
+                ),
+                12000,
+                "Le chargement des données de vaisselle prend trop de temps. Recharge la page."
+            );
             const d=response?.data;
             const error=response?.error;
             if(error)throw error;
