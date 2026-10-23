@@ -991,10 +991,12 @@
             id="boutonModeDemo"
             class="bouton-demo-entete"
             type="button"
-            aria-pressed="false"
-            title="Activer le Mode Démo / Formation"
+            aria-pressed="true"
+            title="Session Démo protégée"
+            disabled
+            hidden
           >
-            🎓 Démo
+            🎓 MODE DÉMO
           </button>
 
 
@@ -1683,9 +1685,9 @@
             if (!erreurEtatDemo && etatDemo?.mode_demo === true) {
               sessionDemoDediee = true;
               modeDemoActif = true;
-              sessionStorage.setItem(CLE_MODE_DEMO, "1");
-              actualiserModeDemoAccueil();
             }
+
+            actualiserModeDemoAccueil();
           }
 
 
@@ -1782,18 +1784,24 @@
 
 
       /* ====================================================
-         MODE DEMO GLOBAL DE L'ACCUEIL
+         MODE DEMO PROTEGE DE L'ACCUEIL
+
+         Le Mode Démo ne peut plus être activé ou désactivé
+         depuis un compte réel.
+
+         Il est actif uniquement lorsque la session Supabase
+         est reconnue côté serveur comme session Démo dédiée.
          ==================================================== */
 
-      const CLE_MODE_DEMO = "mdn_mode_demo_actif";
-
       let sessionDemoDediee = false;
-
-      let modeDemoActif =
-        sessionStorage.getItem(CLE_MODE_DEMO) === "1";
+      let modeDemoActif = false;
 
 
       function actualiserModeDemoAccueil() {
+
+        modeDemoActif =
+          sessionDemoDediee === true;
+
 
         document.body.classList.toggle(
           "mode-demo",
@@ -1801,29 +1809,42 @@
         );
 
 
+        /*
+         * Le bouton n'est plus un interrupteur.
+         *
+         * - compte réel : totalement masqué ;
+         * - session Démo dédiée : visible uniquement comme
+         *   indicateur "MODE DÉMO", désactivé.
+         */
+
+        boutonModeDemo.hidden =
+          !sessionDemoDediee;
+
+
         boutonModeDemo.classList.toggle(
           "actif",
-          modeDemoActif
+          sessionDemoDediee
         );
 
 
         boutonModeDemo.setAttribute(
           "aria-pressed",
-          modeDemoActif ? "true" : "false"
+          sessionDemoDediee
+            ? "true"
+            : "false"
         );
 
 
         boutonModeDemo.textContent =
-          modeDemoActif ? "🎓 MODE DÉMO" : "🎓 Démo";
+          "🎓 MODE DÉMO";
+
 
         boutonModeDemo.title =
-          sessionDemoDediee
-            ? "Session Démo protégée"
-            : (modeDemoActif
-                ? "Désactiver le Mode Démo / Formation"
-                : "Activer le Mode Démo / Formation");
+          "Session Démo protégée";
 
-        boutonModeDemo.disabled = sessionDemoDediee;
+
+        boutonModeDemo.disabled =
+          true;
 
 
         document.querySelectorAll(
@@ -1838,28 +1859,6 @@
         });
 
       }
-
-
-      boutonModeDemo.addEventListener(
-        "click",
-        function () {
-
-          if (sessionDemoDediee) {
-            return;
-          }
-
-          modeDemoActif = !modeDemoActif;
-
-          if (modeDemoActif) {
-            sessionStorage.setItem(CLE_MODE_DEMO, "1");
-          } else {
-            sessionStorage.removeItem(CLE_MODE_DEMO);
-          }
-
-          actualiserModeDemoAccueil();
-
-        }
-      );
 
 
       /* ====================================================
@@ -1929,8 +1928,9 @@
               "succes"
             );
 
-            sessionStorage.setItem(CLE_MODE_DEMO, "1");
-            modeDemoActif = true;
+            modeDemoActif =
+              sessionDemoDediee === true;
+
             actualiserModeDemoAccueil();
 
           } catch (erreur) {
@@ -1988,7 +1988,9 @@
       );
 
 
-      // Restaure immédiatement l’état Démo lors d’un retour depuis un module.
+      // État initial : réel par défaut.
+      // Une session Démo ne sera activée qu'après validation serveur
+      // dans initialiserAccueil().
       actualiserModeDemoAccueil();
 
       /* ====================================================
@@ -2005,9 +2007,6 @@
 
           boutonDeconnexion.textContent =
             "Déconnexion…";
-
-          sessionStorage.removeItem(CLE_MODE_DEMO);
-
 
           await window.MDN_AUTH
             .deconnexion();
