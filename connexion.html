@@ -846,6 +846,16 @@
       </div>
 
 
+      <div style="margin:22px 0 16px;display:flex;align-items:center;gap:12px;color:#888;font-size:12px;font-weight:700;">
+        <span style="height:1px;background:#ddd;flex:1;"></span>
+        <span>OU</span>
+        <span style="height:1px;background:#ddd;flex:1;"></span>
+      </div>
+
+      <button id="boutonAccesDemo" class="bouton-secondaire" type="button" style="width:100%;min-height:48px;color:#850000;border-color:#8b0000;">
+        Accéder à la démo
+      </button>
+
       <footer class="pied">
         Accès réservé aux utilisateurs autorisés.
       </footer>
@@ -952,6 +962,30 @@
   </div>
 
 
+  <div id="fenetreDemo" class="fenetre-reinitialisation" role="dialog" aria-modal="true" aria-labelledby="titreDemo" aria-hidden="true">
+    <section class="carte-reinitialisation">
+      <header class="entete-reinitialisation">
+        <div class="icone-reinitialisation" aria-hidden="true">▶</div>
+        <h2 id="titreDemo">Mode Démo</h2>
+        <p>Saisis le code d’accès Démo. Aucune donnée réelle n’est utilisée.</p>
+      </header>
+
+      <div id="messageDemo" class="message-reinitialisation" role="status" aria-live="polite"></div>
+
+      <form id="formDemo" novalidate>
+        <div class="champ-reinitialisation">
+          <label for="codeDemo">Code d’accès Démo</label>
+          <input id="codeDemo" name="codeDemo" type="password" autocomplete="off" placeholder="Code d’accès" required>
+        </div>
+        <div class="actions-reinitialisation">
+          <button id="boutonAnnulerDemo" class="bouton-secondaire" type="button">Annuler</button>
+          <button id="boutonConnexionDemo" class="bouton-reinitialisation" type="submit">Ouvrir la démo</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+
   <!-- ======================================================
        BIBLIOTHEQUE SUPABASE
        ====================================================== -->
@@ -1055,6 +1089,14 @@
         document.getElementById(
           "boutonEnvoyerReinitialisation"
         );
+
+      const boutonAccesDemo = document.getElementById("boutonAccesDemo");
+      const fenetreDemo = document.getElementById("fenetreDemo");
+      const formDemo = document.getElementById("formDemo");
+      const codeDemo = document.getElementById("codeDemo");
+      const messageDemo = document.getElementById("messageDemo");
+      const boutonAnnulerDemo = document.getElementById("boutonAnnulerDemo");
+      const boutonConnexionDemo = document.getElementById("boutonConnexionDemo");
 
 
       function afficherMessage(
@@ -1447,6 +1489,167 @@
 
         }
       );
+
+
+      /* ====================================================
+         ACCES AU MODE DEMO
+         ==================================================== */
+
+      function afficherMessageDemo(texte, type = "erreur") {
+        messageDemo.textContent = texte;
+        messageDemo.className = "message-reinitialisation visible " + type;
+      }
+
+      function masquerMessageDemo() {
+        messageDemo.textContent = "";
+        messageDemo.className = "message-reinitialisation";
+      }
+
+      function ouvrirDemo() {
+        masquerMessageDemo();
+        codeDemo.value = "";
+        fenetreDemo.classList.add("visible");
+        fenetreDemo.setAttribute("aria-hidden", "false");
+        setTimeout(function () { codeDemo.focus(); }, 0);
+      }
+
+      function fermerDemo() {
+        fenetreDemo.classList.remove("visible");
+        fenetreDemo.setAttribute("aria-hidden", "true");
+        codeDemo.value = "";
+        masquerMessageDemo();
+        boutonAccesDemo.focus();
+      }
+
+      function definirChargementDemo(actif) {
+        codeDemo.disabled = actif;
+        boutonAnnulerDemo.disabled = actif;
+        boutonConnexionDemo.disabled = actif;
+        boutonAccesDemo.disabled = actif;
+        boutonConnexionDemo.textContent = actif ? "Connexion…" : "Ouvrir la démo";
+      }
+
+      boutonAccesDemo.addEventListener("click", ouvrirDemo);
+      boutonAnnulerDemo.addEventListener("click", fermerDemo);
+
+      fenetreDemo.addEventListener("click", function (evenement) {
+        if (evenement.target === fenetreDemo && !boutonConnexionDemo.disabled) {
+          fermerDemo();
+        }
+      });
+
+      formDemo.addEventListener("submit", async function (evenement) {
+        evenement.preventDefault();
+        masquerMessageDemo();
+
+        const code = codeDemo.value.trim();
+
+        if (!code) {
+          afficherMessageDemo("Saisis le code d’accès Démo.");
+          codeDemo.focus();
+          return;
+        }
+
+        definirChargementDemo(true);
+
+        try {
+          if (!client) {
+            throw new Error("Le client Supabase MDN n'est pas disponible.");
+          }
+
+          const configuration = window.MDN_CONFIG || {};
+          const supabaseUrl = String(
+            configuration.SUPABASE_URL ||
+            configuration.supabaseUrl ||
+            ""
+          ).replace(/\\/+$/, "");
+
+          if (!supabaseUrl) {
+            throw new Error("L'adresse Supabase n'est pas disponible.");
+          }
+
+          const reponse = await fetch(
+            supabaseUrl + "/functions/v1/connexion-demo",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ code: code })
+            }
+          );
+
+          let resultat = null;
+
+          try {
+            resultat = await reponse.json();
+          } catch (_) {
+            resultat = null;
+          }
+
+          if (
+            !reponse.ok ||
+            !resultat ||
+            resultat.ok !== true ||
+            resultat.mode_demo !== true ||
+            !resultat.access_token ||
+            !resultat.refresh_token
+          ) {
+            throw new Error(
+              resultat?.message || "Impossible d’ouvrir le mode Démo."
+            );
+          }
+
+          const { data, error } = await client.auth.setSession({
+            access_token: resultat.access_token,
+            refresh_token: resultat.refresh_token
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          if (!data || !data.session || !data.user) {
+            throw new Error("La session Démo n'a pas pu être installée.");
+          }
+
+          const {
+            data: etatDemo,
+            error: erreurEtatDemo
+          } = await client.rpc("etat_session_demo");
+
+          if (erreurEtatDemo) {
+            throw erreurEtatDemo;
+          }
+
+          if (
+            !etatDemo ||
+            etatDemo.authentifie !== true ||
+            etatDemo.mode_demo !== true
+          ) {
+            await client.auth.signOut();
+            throw new Error(
+              "La session ouverte n'est pas reconnue comme une session Démo."
+            );
+          }
+
+          afficherMessageDemo(
+            "Mode Démo activé. Ouverture de l’application…",
+            "info"
+          );
+
+          window.location.replace("accueil.html");
+
+        } catch (erreur) {
+          console.error("[MDN Sion] Échec de connexion au mode Démo :", erreur);
+          afficherMessageDemo(
+            erreur?.message || "Impossible d’ouvrir le mode Démo."
+          );
+        } finally {
+          definirChargementDemo(false);
+        }
+      });
+
 
       boutonAfficherMotDePasse.addEventListener(
         "click",
