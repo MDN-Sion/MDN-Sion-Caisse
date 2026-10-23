@@ -684,6 +684,41 @@
       color: #8a6a00;
     }
 
+
+    /* ======================================================
+       SESSION DÉMO DÉDIÉE — HABILLAGE DORÉ
+       ====================================================== */
+    body.mode-demo {
+      background: linear-gradient(145deg, #8d6d00 0%, #c39a16 48%, #6f5600 100%);
+    }
+
+    body.mode-demo .barre-haute {
+      background: rgba(92, 69, 0, 0.52);
+      border-bottom-color: rgba(255, 255, 255, 0.24);
+    }
+
+    body.mode-demo .module-icone {
+      background: #fff6d6;
+      color: #8d6d00;
+    }
+
+    body.mode-demo .module h2 {
+      color: #8d6d00;
+    }
+
+    body.mode-demo .badge {
+      background: #fff6d6;
+      color: #7a5e00;
+    }
+
+    body.mode-demo .bouton-demo-entete {
+      border-color: #ffe08a;
+      background: linear-gradient(145deg, #d3a400, #a97e00);
+      color: #ffffff;
+      cursor: default;
+      box-shadow: 0 0 0 2px rgba(255, 224, 138, 0.16);
+    }
+
     /* ======================================================
        PIED DE PAGE
        ====================================================== */
@@ -1287,13 +1322,13 @@
           </p>
 
           <button
-            id="boutonRapports"
             class="bouton-module"
             type="button"
-            data-texte-reel="Ouvrir les comptes stands"
-            data-texte-demo="Démo - Comptes stands"
+            disabled
+            data-texte-reel="Bientôt disponible"
+            data-texte-demo="Démo - Bientôt disponible"
           >
-            Ouvrir les comptes stands
+            Bientôt disponible
           </button>
 
         </article>
@@ -1490,11 +1525,6 @@
           "moduleRapports"
         );
 
-      const boutonRapports =
-        document.getElementById(
-          "boutonRapports"
-        );
-
 
       const moduleAdministration =
         document.getElementById(
@@ -1602,7 +1632,7 @@
 
         zoneReinitialisationDemo.classList.toggle(
           "autorisee",
-          peutSuperviser
+          peutSuperviser || sessionDemoDediee
         );
 
       }
@@ -1641,6 +1671,23 @@
             return;
           }
 
+          /* ================================================
+             SESSION DÉMO DÉDIÉE
+             La session issue de connexion-demo est reconnue
+             côté serveur par etat_session_demo().
+             ================================================ */
+          if (window.MDN_SUPABASE) {
+            const { data: etatDemo, error: erreurEtatDemo } =
+              await window.MDN_SUPABASE.rpc("etat_session_demo");
+
+            if (!erreurEtatDemo && etatDemo?.mode_demo === true) {
+              sessionDemoDediee = true;
+              modeDemoActif = true;
+              sessionStorage.setItem(CLE_MODE_DEMO, "1");
+              actualiserModeDemoAccueil();
+            }
+          }
+
 
           /* ================================================
              PRENOM
@@ -1669,9 +1716,9 @@
              ================================================ */
 
           texteBienvenue.textContent =
-            "Connecté en tant que " +
-            auth.libelleRole +
-            ".";
+            sessionDemoDediee
+              ? "MODE DÉMO — aucune donnée réelle n’est utilisée."
+              : ("Connecté en tant que " + auth.libelleRole + ".");
 
 
           /* ================================================
@@ -1740,6 +1787,8 @@
 
       const CLE_MODE_DEMO = "mdn_mode_demo_actif";
 
+      let sessionDemoDediee = false;
+
       let modeDemoActif =
         sessionStorage.getItem(CLE_MODE_DEMO) === "1";
 
@@ -1764,10 +1813,17 @@
         );
 
 
+        boutonModeDemo.textContent =
+          modeDemoActif ? "🎓 MODE DÉMO" : "🎓 Démo";
+
         boutonModeDemo.title =
-          modeDemoActif
-            ? "Désactiver le Mode Démo / Formation"
-            : "Activer le Mode Démo / Formation";
+          sessionDemoDediee
+            ? "Session Démo protégée"
+            : (modeDemoActif
+                ? "Désactiver le Mode Démo / Formation"
+                : "Activer le Mode Démo / Formation");
+
+        boutonModeDemo.disabled = sessionDemoDediee;
 
 
         document.querySelectorAll(
@@ -1787,6 +1843,10 @@
       boutonModeDemo.addEventListener(
         "click",
         function () {
+
+          if (sessionDemoDediee) {
+            return;
+          }
 
           modeDemoActif = !modeDemoActif;
 
@@ -1923,24 +1983,6 @@
             modeDemoActif
               ? "retrait-vaisselle.html?mode=demo"
               : "retrait-vaisselle.html";
-
-        }
-      );
-
-
-      /* ====================================================
-         NAVIGATION COMPTES STANDS
-         Responsable + Administrateur
-         ==================================================== */
-
-      boutonRapports.addEventListener(
-        "click",
-        function () {
-
-          window.location.href =
-            modeDemoActif
-              ? "comptes-stands.html?mode=demo"
-              : "comptes-stands.html";
 
         }
       );
