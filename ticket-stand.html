@@ -515,7 +515,53 @@
       function render(data) {
         const i = data.identite || {};
         const c = data.compte || {};
-        const allMovements = Array.isArray(data.mouvements) ? data.mouvements : [];
+        const rawMovements = Array.isArray(data.mouvements) ? data.mouvements : [];
+
+        // Les opérations annulées arrivent avec la ligne historique d'origine
+        // + une ligne marquée "annule". On ne garde qu'une seule représentation :
+        // la ligne annulée, qui reste visible mais n'a plus aucun impact financier.
+        const cancelledByReference = new Map(
+          rawMovements
+            .filter(m => String(m.detail?.statut || "").toLowerCase() === "annule" && m.reference)
+            .map(m => [String(m.reference), m])
+        );
+
+        const cancelledOriginals = rawMovements.filter(m =>
+          m.reference &&
+          cancelledByReference.has(String(m.reference)) &&
+          String(m.detail?.statut || "").toLowerCase() !== "annule"
+        );
+
+        const allMovements = rawMovements.filter(m =>
+          !(
+            m.reference &&
+            cancelledByReference.has(String(m.reference)) &&
+            String(m.detail?.statut || "").toLowerCase() !== "annule"
+          )
+        );
+
+        // Corrige les compteurs Facturé / Crédité en retirant l'ancien impact
+        // des opérations qui ont été annulées.
+        const totalFactureAffiche = Number(c.total_facture || 0) -
+          cancelledOriginals.reduce((sum,m) => sum + Number(m.montant_debit || 0), 0);
+
+        const totalCreditAffiche = Number(c.total_credit_compte || 0) -
+          cancelledOriginals.reduce((sum,m) => sum + Number(m.montant_credit || 0), 0);
+
+        // Recalcule tous les "Solde après mouvement" dans l'ordre chronologique.
+        // Une opération annulée reste affichée, mais son impact est strictement nul.
+        let soldeRecalcule = 0;
+        allMovements.forEach(m => {
+          const cancelled = String(m.detail?.statut || "").toLowerCase() === "annule";
+          if(!cancelled) {
+            soldeRecalcule += Number(
+              m.mouvement_delta_solde ??
+              (Number(m.montant_debit || 0) - Number(m.montant_credit || 0))
+            );
+          }
+          m.__solde_affiche = soldeRecalcule;
+        });
+
         const selectedDay = window.ticketHistoryDay || "all";
         const selectedType = window.ticketHistoryType || "all";
         const dayKey = value => {
@@ -551,7 +597,7 @@
         );
 
         const movementHtml = m => {
-          const running = Number(m.solde_apres_mouvement ?? 0);
+          const running = Number(m.__solde_affiche ?? m.solde_apres_mouvement ?? 0);
           const debit = Number(m.montant_debit || 0);
           const credit = Number(m.montant_credit || 0);
 
@@ -618,8 +664,8 @@
             <div class="box"><span>Situation</span><strong>${esc(accountSituationLabel(c, i))}</strong></div>
           </div>
           <div class="totals">
-            <div class="total"><span>Facturé</span><strong class="amount-factured">${esc(money(c.total_facture || 0))}</strong></div>
-            <div class="total"><span>Crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte || 0))}</strong></div>
+            <div class="total"><span>Facturé</span><strong class="amount-factured">${esc(money(totalFactureAffiche))}</strong></div>
+            <div class="total"><span>Crédité</span><strong class="amount-credited">${esc(money(totalCreditAffiche))}</strong></div>
             <div class="total"><span>Payé</span><strong class="amount-paid">${esc(money(c.total_paye || 0))}</strong></div>
             <div class="total"><span>Solde</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant || 0))}</strong></div>
           </div>
