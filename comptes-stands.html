@@ -651,6 +651,26 @@ footer {
 .qr-code-help{display:block;margin-top:6px;color:#667085;font-size:11px;line-height:1.35}
 @media(max-width:480px){.modal{padding:6px}.qr-modal-card{width:100%;max-height:calc(100dvh - 12px);border-radius:14px}.qr-body{padding:8px 10px 6px}.qr-box{min-height:160px}.qr-box img,.qr-box canvas{width:160px!important;height:160px!important}.qr-code-edit-row{grid-template-columns:1fr}.qr-code-edit-row button{width:100%}}
 
+.movement.movement-cancelled{
+  background:#fff0f0 !important;
+  border:1px solid #e8a8a8;
+  box-shadow:inset 4px 0 0 #b42318;
+}
+.movement.movement-cancelled .movement-head{background:#ffe4e4}
+.cancelled-badge{
+  display:inline-block;margin-top:5px;padding:3px 8px;border-radius:999px;
+  background:#b42318;color:#fff;font-size:11px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.03em
+}
+.cancelled-reason{
+  margin:7px 0 3px;padding:7px 9px;border-radius:9px;
+  background:#fff7f7;color:#7a1d16;font-size:12px;font-weight:700
+}
+@media print{
+  .movement.movement-cancelled,.movement.movement-cancelled .movement-head{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact
+  }
+}
 </style>
 </head>
 <body>
@@ -1164,9 +1184,13 @@ function historyHtml(data){
   const movementCard=m=>{
     const solde=Number(m.solde_apres_mouvement ?? 0);
     const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);
-    const amount=d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0);
-    const cls=d>0?"debit":cr>0?"credit":"";
-    return `<article class="movement"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div></div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
+    const cancelled=String(m.detail?.statut||"").toLowerCase()==="annule";
+    const amount=cancelled?"ANNULÉE":(d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0));
+    const cls=cancelled?"":(d>0?"debit":cr>0?"credit":"");
+    const cancelledInfo=cancelled
+      ? `<div class="cancelled-badge">Opération annulée</div><div class="cancelled-reason">Motif : ${esc(m.detail?.motif_correction||"Non précisé")}</div>`
+      : "";
+    return `<article class="movement ${cancelled?"movement-cancelled":""}"><div class="movement-head"><div><div class="movement-title">${esc(movementLabel(m.type))}</div><div class="movement-meta">${esc(m.reference||"—")}</div>${cancelled?`<div class="cancelled-badge">Opération annulée</div>`:""}</div><div class="movement-amount ${cls}">${esc(amount)}</div></div><div class="movement-detail">${detailLines(m)}${cancelledInfo}<div class="running-balance"><span>Solde après ce mouvement</span><strong class="${balanceClass(solde)}">${esc(money(solde))}</strong></div></div></article>`;
   };
 
   const passageNumeros=new Map();
