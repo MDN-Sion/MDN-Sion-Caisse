@@ -514,13 +514,70 @@
        MODULES
        ====================================================== */
 
+    .carrousel-modules {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
     .grille-modules {
-      display: grid;
-
-      grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
       gap: 18px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      overscroll-behavior-x: contain;
+      touch-action: pan-x pan-y;
+      padding: 2px;
+    }
+
+    .grille-modules::-webkit-scrollbar {
+      display: none;
+    }
+
+    .grille-modules .module {
+      flex: 0 0 calc((100% - 36px) / 3);
+      scroll-snap-align: start;
+    }
+
+    .bouton-carrousel {
+      flex: 0 0 46px;
+      width: 46px;
+      min-height: 170px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .bouton-carrousel:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .bouton-carrousel:disabled {
+      opacity: 0.28;
+      cursor: default;
+    }
+
+    body.mode-demo .bouton-carrousel {
+      border-color: rgba(255, 238, 173, 0.72);
+      background: rgba(255, 246, 214, 0.16);
+    }
+
+    body.mode-demo .bouton-carrousel:hover:not(:disabled) {
+      background: rgba(255, 246, 214, 0.28);
     }
 
     .module {
@@ -754,9 +811,8 @@
 
     @media (max-width: 900px) {
 
-      .grille-modules {
-        grid-template-columns:
-          repeat(2, minmax(0, 1fr));
+      .grille-modules .module {
+        flex-basis: calc((100% - 18px) / 2);
       }
 
     }
@@ -792,10 +848,24 @@
         width: 100%;
       }
 
-      .grille-modules {
-        grid-template-columns: 1fr;
+      .carrousel-modules {
+        gap: 8px;
+      }
 
+      .grille-modules {
         gap: 14px;
+      }
+
+      .grille-modules .module {
+        flex-basis: 100%;
+      }
+
+      .bouton-carrousel {
+        flex-basis: 38px;
+        width: 38px;
+        min-height: 150px;
+        border-radius: 13px;
+        font-size: 28px;
       }
 
       .module {
@@ -1055,11 +1125,26 @@
       <!-- ==================================================
            MODULES
            ================================================== -->
-
-      <section
-        class="grille-modules"
-        aria-label="Modules de l'application"
+      <div
+        class="carrousel-modules"
+        aria-label="Navigation des modules"
       >
+
+        <button
+          id="boutonCarrouselPrecedent"
+          class="bouton-carrousel"
+          type="button"
+          aria-label="Modules précédents"
+          title="Modules précédents"
+        >
+          ‹
+        </button>
+
+        <section
+          id="carrouselModules"
+          class="grille-modules"
+          aria-label="Modules de l'application"
+        >
 
         <!-- ================================================
              CAISSE
@@ -1366,7 +1451,20 @@
 
         </article>
 
-      </section>
+      
+        </section>
+
+        <button
+          id="boutonCarrouselSuivant"
+          class="bouton-carrousel"
+          type="button"
+          aria-label="Modules suivants"
+          title="Modules suivants"
+        >
+          ›
+        </button>
+
+      </div>
 
     </main>
 
@@ -1471,6 +1569,22 @@
         );
 
 
+      const carrouselModules =
+        document.getElementById(
+          "carrouselModules"
+        );
+
+      const boutonCarrouselPrecedent =
+        document.getElementById(
+          "boutonCarrouselPrecedent"
+        );
+
+      const boutonCarrouselSuivant =
+        document.getElementById(
+          "boutonCarrouselSuivant"
+        );
+
+
       const boutonCaisse =
         document.getElementById(
           "boutonCaisse"
@@ -1515,6 +1629,102 @@ const zoneReinitialisationDemo =
         document.getElementById(
           "moduleAdministration"
         );
+
+
+      /* ====================================================
+         CARROUSEL DES MODULES
+         Présentation uniquement : aucune logique métier modifiée.
+         ==================================================== */
+
+      function modulesVisiblesCarrousel() {
+        return Array.from(
+          carrouselModules.querySelectorAll(".module")
+        ).filter(function (module) {
+          return (
+            !module.classList.contains("masque") &&
+            module.offsetParent !== null
+          );
+        });
+      }
+
+      function largeurPasCarrousel() {
+        const modules = modulesVisiblesCarrousel();
+
+        if (!modules.length) {
+          return carrouselModules.clientWidth;
+        }
+
+        const styles =
+          window.getComputedStyle(carrouselModules);
+
+        const gap =
+          parseFloat(
+            styles.columnGap ||
+            styles.gap ||
+            "0"
+          ) || 0;
+
+        return (
+          modules[0].getBoundingClientRect().width +
+          gap
+        );
+      }
+
+      function actualiserBoutonsCarrousel() {
+        const marge = 4;
+
+        const maxScroll =
+          Math.max(
+            0,
+            carrouselModules.scrollWidth -
+            carrouselModules.clientWidth
+          );
+
+        boutonCarrouselPrecedent.disabled =
+          carrouselModules.scrollLeft <= marge;
+
+        boutonCarrouselSuivant.disabled =
+          carrouselModules.scrollLeft >=
+          (maxScroll - marge);
+      }
+
+      function deplacerCarrousel(direction) {
+        carrouselModules.scrollBy({
+          left:
+            largeurPasCarrousel() *
+            direction,
+          behavior: "smooth"
+        });
+      }
+
+      boutonCarrouselPrecedent.addEventListener(
+        "click",
+        function () {
+          deplacerCarrousel(-1);
+        }
+      );
+
+      boutonCarrouselSuivant.addEventListener(
+        "click",
+        function () {
+          deplacerCarrousel(1);
+        }
+      );
+
+      carrouselModules.addEventListener(
+        "scroll",
+        actualiserBoutonsCarrousel,
+        { passive: true }
+      );
+
+      window.addEventListener(
+        "resize",
+        function () {
+          window.requestAnimationFrame(
+            actualiserBoutonsCarrousel
+          );
+        }
+      );
 
 
       /* ====================================================
@@ -1618,6 +1828,10 @@ const zoneReinitialisationDemo =
         zoneReinitialisationDemo.classList.toggle(
           "autorisee",
           peutSuperviser || sessionDemoDediee
+        );
+
+        window.requestAnimationFrame(
+          actualiserBoutonsCarrousel
         );
 
       }
@@ -1989,6 +2203,10 @@ document.querySelectorAll(
          ==================================================== */
 
       initialiserAccueil();
+
+      window.requestAnimationFrame(
+        actualiserBoutonsCarrousel
+      );
 
     })();
   </script>
