@@ -865,25 +865,10 @@ footer {
   }
   function statusLabel(v){return ({ouvert:"Compte ouvert",a_controler:"À contrôler",a_facturer:"À facturer",facture:"Facturé",solde:"Soldé"})[v]||v||"—"}
 function accountStatusLabel(r){
-  return r?.dateCloture ? "Compte clôturé" : "Compte ouvert";
-}
-function accountSituationLabel(r){
-  if(r?.statut==="a_facturer") return "À facturer";
   if(r?.statut==="facture") return "Facturé";
-  if(r?.statut==="a_controler") return "À contrôler";
-  const solde=Number(r?.solde||0);
-  if(solde>0.004) return "À régler";
-  if(solde<-0.004) return "Crédit à rembourser";
-  return "Soldé";
-}
-function situationClass(r){
-  if(r?.statut==="a_facturer") return "a_facturer";
-  if(r?.statut==="facture") return "facture";
-  if(r?.statut==="a_controler") return "a_controler";
-  const solde=Number(r?.solde||0);
-  if(solde>0.004) return "a_facturer";
-  if(solde<-0.004) return "a_controler";
-  return "solde";
+  if(r?.statut==="a_facturer") return "À facturer";
+  if(r?.dateCloture) return "Compte clôturé";
+  return statusLabel(r?.statut);
 }
   function paymentLabel(v){return v==="facture"?"Facturation":"Règlement direct"}
   function msg(text,type="error"){$("toastText").textContent=text;$("toast").className=`toast show ${type}`;clearTimeout(msg.timer);msg.timer=setTimeout(()=>$("toast").classList.remove("show"),5000)}
@@ -1024,12 +1009,8 @@ function render() {
 <div class="stand-sub">${esc(r.type)}${r.raison&&r.raison!==r.nom?` · ${esc(r.raison)}`:""}</div>
 </div>
 <div>
-<div class="cell-label">Statut du compte</div>
-<span class="badge-status s-${esc(r.dateCloture ? "solde" : "ouvert")}">${esc(accountStatusLabel(r))}</span>
-</div>
-<div>
-<div class="cell-label">Situation</div>
-<span class="badge-status s-${esc(situationClass(r))}">${esc(accountSituationLabel(r))}</span>
+<div class="cell-label">Statut</div>
+<span class="badge-status s-${esc(r.statut)}">${esc(accountStatusLabel(r))}</span>
 </div>
 <div>
 <div class="cell-label">Solde / facture</div>
@@ -1046,7 +1027,7 @@ function render() {
   accounts.querySelectorAll("[data-qr]").forEach(b=>b.addEventListener("click",()=>openQr(b.dataset.qr)));
 }
 function movementLabel(type){return ({retrait:"Retrait",retour_propre:"Retour propre",retour_sale:"Retour sale",paiement:"Paiement",remboursement_credit:"Remboursement du crédit",cloture_compte:"Clôture du compte",cloture_facturation:"Clôture pour facturation"})[type]||type||"Mouvement"}
-function formatDate(v){if(!v)return "—";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}
+function formatDate(v){if(!v)return "—";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("fr-CH",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Zurich"})}
 function detailLines(m) {
   const d = m.detail || {};
   const out = [];
@@ -1217,7 +1198,7 @@ function closeHistory(){$("historyModal").classList.remove("show")}
 async function openQr(id){
   const r=rows.find(x=>x.id===id);if(!r)return;
   currentQrStandId=id;
-  const isAdmin=currentRole==="administrateur"||demo;
+  const isAdmin=currentRole==="administrateur";
   $("qrStand").textContent=`${r.numero} · ${r.nom}`;
   $("qrCode").innerHTML="";
   $("qrLink").textContent=demo?"Préparation du QR…":"Le QR exposant existant reste inchangé.";
@@ -1254,7 +1235,7 @@ async function openQr(id){
   }
 }
 async function saveQrAccessCode(){
-  if((currentRole!=="administrateur"&&!demo)||!currentQrStandId)return;
+  if(currentRole!=="administrateur"||!currentQrStandId)return;
   const input=$("qrNewAccessCode");
   const button=$("qrSaveAccessCode");
   const code=String(input.value||"").replace(/\D/g,"").slice(0,6);
@@ -1341,8 +1322,9 @@ function events() {
     }
   }
   ;
-  $("back").onclick=()=>location.href="accueil.html";
+  $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
   $("logout").onclick=async()=> {
+    sessionStorage.removeItem("mdn_mode_demo_actif");
     await window.MDN_AUTH.deconnexion()
   }
   ;
@@ -1370,39 +1352,20 @@ function events() {
 }
 async function init() {
   try {
-    if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
-    const auth=await avecDelai(
-      window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),
-      12000,
-      "La vérification de la connexion prend trop de temps. Recharge la page."
-    );
-    if(!auth)return;
-
-    const etatDemo=auth.etatSessionDemo
-      || (window.MDN_AUTH.obtenirEtatSessionDemo
-        ? await avecDelai(
-            window.MDN_AUTH.obtenirEtatSessionDemo(),
-            12000,
-            "La vérification du mode Démo prend trop de temps."
-          )
-        : null);
-
-    demo=Boolean(auth.modeDemo || etatDemo?.mode_demo);
-
-    const first=String(auth.profil?.prenom||"Utilisateur").trim();
-    currentRole=String(auth.profil?.role||"").trim().toLowerCase();
-
-    if(!demo && !["responsable","administrateur"].includes(currentRole)){
-      location.replace("accueil.html");
-      return;
-    }
-
+    const p=new URLSearchParams(location.search);
+    demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
+    if(demo)sessionStorage.setItem("mdn_mode_demo_actif","1");
     topbar.classList.toggle("demo",demo);
     demoNote.classList.toggle("show",demo);
     scenario.classList.toggle("show",demo);
     document.body.classList.toggle("demo",demo);
     $("pageTitle").textContent=demo?"Suivi des comptes stands · Démo":"Suivi des comptes stands";
     $("pageIntro").textContent=demo?"Explore les quatre scénarios D01 à D04 sans mélanger les données avec l'exploitation réelle.":"Consulte les soldes, les statuts et les comptes clôturés pour facturation.";
+    if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
+    const auth=await avecDelai(window.MDN_AUTH.protegerPage(["responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
+    if(!auth)return;
+    const first=String(auth.profil?.prenom||"Utilisateur").trim();
+    currentRole=String(auth.profil?.role||"").trim().toLowerCase();
     const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
     identity.textContent=`${first} · ${role}`;
     client=window.MDN_SUPABASE;
