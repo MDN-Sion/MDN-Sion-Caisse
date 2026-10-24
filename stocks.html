@@ -380,6 +380,27 @@
       text-align: left;
     }
 
+    /* La colonne Article reste visible pendant le défilement horizontal. */
+    .table-stocks th:first-child,
+    .table-stocks td:first-child {
+      position: sticky;
+      left: 0;
+    }
+
+    .table-stocks th:first-child {
+      z-index: 4;
+      background: #f7f7f7;
+    }
+
+    .table-stocks td:first-child {
+      z-index: 1;
+      background: #fff;
+    }
+
+    .table-stocks tbody tr:hover td:first-child {
+      background: #fffafa;
+    }
+
     td {
       padding: 9px 8px;
       border-bottom: 1px solid #eeeeee;
@@ -397,15 +418,19 @@
     }
 
     .ligne-contenant {
-      background: #f7fcf9;
+      background: #fff;
     }
 
     .ligne-contenant td {
-      border-top: 2px solid #dce8df;
+      border-top: 1px solid #eeeeee;
     }
 
     .ligne-contenant .article-cell strong {
-      color: #13723f;
+      color: #333;
+    }
+
+    .table-stocks tbody .ligne-contenant:hover td:first-child {
+      background: #fffafa;
     }
 
     .article-cell {
@@ -1432,10 +1457,7 @@
               <td>—</td>
               <td>—</td>
               <td>—</td>
-
-              <td>
-                <span class="badge-stock ok">Disponible</span>
-              </td>
+              <td>—</td>
             </tr>
           `;
         }).join("");
