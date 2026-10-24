@@ -2512,6 +2512,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     let correctionKey=null;
     let correctionWorkOperation=null;
     let correctionWorkAction=null;
+    let correctionPendingMotif=null;
     let accountData=null;
     let paymentKey=null;
     let refundKey=null;
@@ -3152,6 +3153,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         correctionWorkAction=null;
         correctionOperation=null;
         correctionKey=null;
+        correctionPendingMotif=null;
         correctionWorkBanner.classList.remove("show");
         initState();
         renderCatalog();
@@ -3194,12 +3196,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
         correctionWorkConfirm.disabled=true;
         const ancienTexte=correctionWorkConfirm.textContent;
-        correctionWorkConfirm.textContent=action==="modifier"?"Préparation…":"Annulation…";
 
         try{
-            await annulerOperationCorrection(op,motif);
-
             if(action==="annuler"){
+                correctionWorkConfirm.textContent="Annulation…";
+                await annulerOperationCorrection(op,motif);
                 const numero=op.numero_operation||"";
                 leaveCorrectionWork();
                 await loadAccount();
@@ -3207,22 +3208,51 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 return;
             }
 
-            // En modification, l'ancienne opération est annulée,
-            // mais on conserve à l'écran les quantités corrigées.
-            correctionWorkOperation=null;
-            correctionWorkAction=null;
-            correctionOperation=null;
-            correctionKey=null;
-            correctionWorkBanner.classList.remove("show");
+            // MODIFICATION :
+            // On NE TOUCHE PAS encore à l'opération originale.
+            // On construit d'abord la nouvelle opération corrigée.
+            let ops=[];
+            try{
+                ops=types.map(buildOperation).filter(Boolean);
+            }catch(e){
+                throw e;
+            }
 
-            await loadAccount();
-            renderCatalog();
-            renderSummary();
+            // Si la correction met toutes les quantités à zéro,
+            // il n'y a logiquement aucune nouvelle opération à créer :
+            // la modification équivaut donc à une annulation.
+            if(!ops.length){
+                correctionWorkConfirm.textContent="Annulation…";
+                await annulerOperationCorrection(op,motif);
+                const numero=op.numero_operation||"";
+                leaveCorrectionWork();
+                await loadAccount();
+                msg(`L'opération ${numero} a été annulée : la modification ne contient plus aucune quantité.`,true);
+                return;
+            }
 
-            msg("Ancienne opération annulée. Vérifie le récapitulatif puis signe et valide le passage corrigé.",true);
+            // On conserve le motif et l'opération originale jusqu'à la signature.
+            // L'annulation + le nouvel enregistrement seront faits atomiquement
+            // par le SQL n°82 dans performSignedSave().
+            correctionPendingMotif=motif;
+            pendingOps=ops;
 
-            // On réutilise exactement le circuit de validation/signature existant.
-            openPassageConfirm();
+            $("passageConfirmStand").textContent=standName(stand);
+            $("passageConfirmType").textContent=stand.type_partenaire||"";
+            $("passageConfirmDetail").innerHTML=summary.innerHTML;
+            $("passageConfirmDetail").querySelectorAll("button").forEach(button=>button.remove());
+            $("passageConfirmInvoice").textContent=invoice.textContent;
+            $("passageConfirmCredit").textContent=credit.textContent;
+            $("passageConfirmNet").textContent=net.textContent;
+            $("passageConfirmCheck").checked=false;
+            signatureHasInk=false;
+            syncVisibleViewport();
+            $("passageConfirmModal").classList.add("show");
+            $("passageConfirmModal").setAttribute("aria-hidden","false");
+            requestAnimationFrame(resizeSignatureCanvas);
+
+            correctionWorkConfirm.textContent=ancienTexte;
+            correctionWorkConfirm.disabled=false;
 
         }catch(e){
             console.error(e);
@@ -3846,21 +3876,53 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
         try{
             let r=null;
+            const modificationEnCours=!!(
+                correctionWorkOperation &&
+                correctionWorkAction==="modifier" &&
+                correctionPendingMotif
+            );
+
             const response=await client.rpc(
-                demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe",
-                demo
-                    ? {
-                        p_stand_demo_id:stand.id,
-                        p_operations:ops,
-                        p_signature_data:signatureData,
-                        p_commentaire:null
-                    }
-                    : {
-                        p_participation_id:stand.id,
-                        p_operations:ops,
-                        p_signature_data:signatureData,
-                        p_commentaire:null
-                    }
+                modificationEnCours
+                    ? (demo ? "modifier_operation_vaisselle_demo_signe" : "modifier_operation_vaisselle_signe")
+                    : (demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe"),
+                modificationEnCours
+                    ? (
+                        demo
+                            ? {
+                                p_operation_id:correctionWorkOperation.id,
+                                p_motif:correctionPendingMotif,
+                                p_idempotency_key:correctionKey||uuid(),
+                                p_stand_demo_id:stand.id,
+                                p_operations:ops,
+                                p_signature_data:signatureData,
+                                p_commentaire:null
+                            }
+                            : {
+                                p_operation_id:correctionWorkOperation.id,
+                                p_motif:correctionPendingMotif,
+                                p_idempotency_key:correctionKey||uuid(),
+                                p_participation_id:stand.id,
+                                p_operations:ops,
+                                p_signature_data:signatureData,
+                                p_commentaire:null
+                            }
+                    )
+                    : (
+                        demo
+                            ? {
+                                p_stand_demo_id:stand.id,
+                                p_operations:ops,
+                                p_signature_data:signatureData,
+                                p_commentaire:null
+                            }
+                            : {
+                                p_participation_id:stand.id,
+                                p_operations:ops,
+                                p_signature_data:signatureData,
+                                p_commentaire:null
+                            }
+                    )
             );
             if(response.error)throw response.error;
             r=response.data;
@@ -3868,12 +3930,32 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             $("passageConfirmModal").classList.remove("show");
             $("passageConfirmModal").setAttribute("aria-hidden","true");
             pendingOps=null;
+            const etaitModification=!!(
+                correctionWorkOperation &&
+                correctionWorkAction==="modifier" &&
+                correctionPendingMotif
+            );
+
             msg(
-                demo
-                    ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
-                    :`Enregistré sur le compte de ${standName(stand)}.`,
+                etaitModification
+                    ? `Modification enregistrée sur le compte de ${standName(stand)}.`
+                    : (
+                        demo
+                            ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
+                            :`Enregistré sur le compte de ${standName(stand)}.`
+                    ),
                 true
             );
+
+            if(etaitModification){
+                correctionWorkOperation=null;
+                correctionWorkAction=null;
+                correctionOperation=null;
+                correctionPendingMotif=null;
+                correctionKey=null;
+                correctionWorkBanner.classList.remove("show");
+            }
+
             initState();
             renderCatalog();
             renderSummary();
