@@ -2999,7 +2999,7 @@
         const totalArticlesClassiques = arrondirMontant(
           panierCaisse.reduce(function (total, ligne) {
             if (estLigneGobelet(ligne)) return total;
-            return total + (ligne.prix * ligne.quantite);
+            return total + (prixUnitaireLigne(ligne) * ligne.quantite);
           }, 0)
         );
 
