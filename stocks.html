@@ -1143,8 +1143,8 @@
         <aside class="panneau panneau-historique">
           <div class="historique-entete">
             <div>
-              <h2>Historique des mouvements</h2>
-              <p>Derniers mouvements du stock vaisselle</p>
+              <h2>Historique des opérations</h2>
+              <p>Dernières opérations du stock vaisselle</p>
             </div>
 
             <button id="boutonActualiser" class="bouton-actualiser" type="button" title="Actualiser">
@@ -1779,7 +1779,7 @@
           });
           if (error) throw error;
           const d = data || {};
-          const lignes = Array.isArray(d.lignes) ? d.lignes : [];
+          const lignes = Array.isArray(d.lignes_vaisselle) ? d.lignes_vaisselle : (Array.isArray(d.lignes) ? d.lignes : []);
           const op = d.operation || d;
           contenuModalDetail.innerHTML = `
             <div class="detail-sections">
@@ -1791,7 +1791,7 @@
               </section>
               <section class="detail-carte">
                 <h3>Détail par article</h3>
-                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Trajet</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(libelleEmplacement(x.emplacement_source))} → ${echapperHtml(libelleEmplacement(x.emplacement_destination))}</td><td><strong>${formatNombre(x.quantite)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
+                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Conditionnement</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){const partiels=Array.isArray(x.conditionnements_partiels)?x.conditionnements_partiels:[];const physique=[];if(entier(x.nombre_conditionnements_complets)>0)physique.push(formatNombre(x.nombre_conditionnements_complets)+" complet(s)");if(partiels.length>0)physique.push(formatNombre(partiels.length)+" partiel(s) ("+partiels.map(function(q){return formatNombre(q);}).join(", ")+")");return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
               </section>
             </div>`;
         } catch (erreur) {
