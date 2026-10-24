@@ -2764,6 +2764,9 @@
                 : "operation_gobelet_caisse_paiement";
             }
             if (ligne.typeOperationGobelet === "retour" && montantRembourseEspecesRetour !== null) {
+              // La RPC dédiée au retour net n'accepte pas p_type_operation :
+              // elle est, par définition, réservée aux retours Gobelet.
+              delete parametres.p_type_operation;
               parametres.p_montant_rembourse_especes = arrondirMontant(montantRembourseEspecesRetour);
               nomRpc = modeDemo
                 ? "operation_gobelet_caisse_demo_retour_net"
