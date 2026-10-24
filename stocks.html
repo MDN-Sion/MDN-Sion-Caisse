@@ -765,6 +765,11 @@
     }
     .livraison-table .col-total { text-align:right; font-weight:900; }
     .aide-partiels { display:block; margin-top:3px; color:#888; font-size:9px; white-space:normal; }
+    .liste-partiels { display:flex; flex-direction:column; gap:6px; }
+    .ligne-partiel { display:grid; grid-template-columns:minmax(0,1fr) 34px; gap:6px; align-items:center; }
+    .ligne-partiel input { min-width:0; }
+    .supprimer-partiel { width:34px; min-width:34px; height:36px; border:1px solid #e2c7c7; border-radius:9px; background:#fff7f7; color:#9b0000; cursor:pointer; font-weight:900; }
+    .ajouter-partiel { margin-top:6px; min-height:32px; padding:5px 9px; border:1px dashed #b9b9b9; border-radius:9px; background:#fff; color:#555; cursor:pointer; font-weight:800; font-size:10px; }
     .modal-note {
       margin: 12px 0; padding: 10px 12px; border-radius: 11px;
       background:#fff8df; border:1px solid #ecd98b; color:#5c4900;
@@ -1158,7 +1163,7 @@
         </div>
 
         <div class="modal-note">
-          Toute la vaisselle doit être dans un conditionnement. Saisis le nombre de caisses/sachets complets et, s’il y en a, le contenu réel de chaque conditionnement partiel. Exemple : <strong>300, 180</strong>.
+          Toute la vaisselle doit être dans un conditionnement. Saisis le nombre de caisses/sachets complets puis ajoute chaque conditionnement partiel séparément avec sa quantité réelle.
         </div>
 
         <div class="tableau-cadre">
@@ -1476,14 +1481,41 @@
         });
       }
 
-      function analyserPartiels(texte, standard) {
-        const brut = String(texte || "").trim();
-        if (!brut) return [];
-        const valeurs = brut.split(/[;,]+/).map(function (v) { return Number(v.trim()); });
-        if (valeurs.some(function (v) { return !Number.isInteger(v) || v <= 0 || v >= standard; })) {
-          throw new Error("Chaque conditionnement partiel doit contenir entre 1 et " + (standard - 1) + " unités.");
-        }
+      function valeursPartielsLigne(tr) {
+        const standard = entier(tr.dataset.standard);
+        const valeurs = [];
+        tr.querySelectorAll(".livraison-partiel").forEach(function (input) {
+          const brut = String(input.value || "").trim();
+          if (!brut) return;
+          const valeur = Number(brut);
+          if (!Number.isInteger(valeur) || valeur <= 0 || valeur >= standard) {
+            throw new Error("Chaque conditionnement partiel doit contenir entre 1 et " + (standard - 1) + " unités.");
+          }
+          valeurs.push(valeur);
+        });
         return valeurs;
+      }
+
+      function ajouterChampPartiel(tr, valeur) {
+        const type = String(tr.dataset.typeConditionnement || "conditionnement").toLowerCase();
+        const standard = entier(tr.dataset.standard);
+        const liste = tr.querySelector(".liste-partiels");
+        const index = liste.querySelectorAll(".ligne-partiel").length + 1;
+        const ligne = document.createElement("div");
+        ligne.className = "ligne-partiel";
+        ligne.innerHTML = `
+          <input class="livraison-partiel" type="number" min="1" max="${standard - 1}" step="1"
+                 value="${valeur ? echapperHtml(valeur) : ""}"
+                 placeholder="${type === "caisse" ? "Caisse" : "Sachet"} partiel ${index}"
+                 aria-label="${type} partiel ${index}">
+          <button class="supprimer-partiel" type="button" title="Supprimer ce ${type} partiel" aria-label="Supprimer ce ${type} partiel">×</button>
+        `;
+        liste.appendChild(ligne);
+        ligne.querySelector("input").addEventListener("input", recalculerTotauxLivraison);
+        ligne.querySelector(".supprimer-partiel").addEventListener("click", function () {
+          ligne.remove();
+          recalculerTotauxLivraison();
+        });
       }
 
       function recalculerTotauxLivraison() {
@@ -1492,7 +1524,7 @@
           const complets = Math.max(0, entier(tr.querySelector(".livraison-complets").value));
           let partiels = [];
           try {
-            partiels = analyserPartiels(tr.querySelector(".livraison-partiels").value, standard);
+            partiels = valeursPartielsLigne(tr);
           } catch (_) {
             tr.querySelector(".livraison-total").textContent = "!";
             return;
@@ -1511,14 +1543,18 @@
         corpsLivraison.innerHTML = lignes.map(function (ligne) {
           const type = String(ligne.type_conditionnement || "conditionnement").toLowerCase();
           const pluriel = type === "caisse" ? "caisses" : "sachets";
+          const singulierMaj = type === "caisse" ? "Caisse" : "Sachet";
           return `
-            <tr data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}" data-standard="${entier(ligne.quantite_standard)}">
+            <tr data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}"
+                data-standard="${entier(ligne.quantite_standard)}"
+                data-type-conditionnement="${echapperHtml(type)}">
               <td><strong>${echapperHtml(ligne.article)}</strong></td>
               <td>${echapperHtml(libelleConditionnement(type, ligne.quantite_standard))}</td>
               <td><input class="livraison-complets" type="number" min="0" step="1" value="0" aria-label="${pluriel} complets"></td>
               <td>
-                <input class="livraison-partiels" type="text" inputmode="numeric" placeholder="Ex. 300, 180" aria-label="Contenu des ${pluriel} partiels">
-                <span class="aide-partiels">1 quantité par ${type} partiel</span>
+                <div class="liste-partiels"></div>
+                <button class="ajouter-partiel" type="button">+ Ajouter ${type === "caisse" ? "une caisse" : "un sachet"} partiel${type === "caisse" ? "le" : ""}</button>
+                <span class="aide-partiels">${singulierMaj} complet${type === "caisse" ? "e" : ""} = ${entier(ligne.quantite_standard)} unités ; un partiel doit être inférieur.</span>
               </td>
               <td class="col-total livraison-total">0</td>
             </tr>
@@ -1528,8 +1564,13 @@
         blocCaissesVides.style.display = destinationReserve ? "none" : "grid";
         if (destinationReserve) caissesVidesLivraison.value = "0";
 
-        corpsLivraison.querySelectorAll("input").forEach(function (input) {
-          input.addEventListener("input", recalculerTotauxLivraison);
+        corpsLivraison.querySelectorAll("tr[data-vaisselle-id]").forEach(function (tr) {
+          tr.querySelector(".livraison-complets").addEventListener("input", recalculerTotauxLivraison);
+          tr.querySelector(".ajouter-partiel").addEventListener("click", function () {
+            ajouterChampPartiel(tr, "");
+            const inputs = tr.querySelectorAll(".livraison-partiel");
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          });
         });
         recalculerTotauxLivraison();
       }
@@ -1556,7 +1597,7 @@
         corpsLivraison.querySelectorAll("tr[data-vaisselle-id]").forEach(function (tr) {
           const standard = entier(tr.dataset.standard);
           const complets = Math.max(0, entier(tr.querySelector(".livraison-complets").value));
-          const partiels = analyserPartiels(tr.querySelector(".livraison-partiels").value, standard);
+          const partiels = valeursPartielsLigne(tr);
           if (complets > 0 || partiels.length > 0) {
             lignes.push({
               vaisselle_id: tr.dataset.vaisselleId,
