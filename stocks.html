@@ -787,6 +787,30 @@
     .application.mode-demo ~ .modal-fond .bouton-modal.valider { border-color:#8a6800; background:#8a6800; }
     .bouton-modal:disabled { opacity:.5; cursor:not-allowed; }
 
+
+    /* SQL 93 — interactions et détails Stocks */
+    .ligne-stock-cliquable { cursor: pointer; }
+    .ligne-stock-cliquable:hover { background:#fff7f7; }
+    .mouvement { cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease; }
+    .mouvement:hover { border-color:#c9a7a7; box-shadow:0 4px 14px rgba(0,0,0,.07); }
+    .mouvement-statut { display:inline-flex; margin-top:6px; padding:3px 7px; border-radius:999px; font-size:8px; font-weight:900; background:#eef4f8; color:#42647d; }
+    .mouvement-statut.annulee { background:#fff0f0; color:#a11919; }
+    .mouvement-statut.corrigee { background:#fff8df; color:#765c00; }
+    .detail-sections { display:grid; gap:12px; }
+    .detail-carte { border:1px solid #e3e3e3; border-radius:13px; padding:12px; background:#fafafa; }
+    .detail-carte h3 { margin:0 0 9px; font-size:14px; color:#850000; }
+    .detail-grille { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    .detail-indicateur { padding:9px; border-radius:10px; background:#fff; border:1px solid #e7e7e7; }
+    .detail-indicateur span { display:block; color:#777; font-size:9px; font-weight:800; }
+    .detail-indicateur strong { display:block; margin-top:3px; font-size:17px; }
+    .detail-table { width:100%; min-width:520px; }
+    .detail-table th, .detail-table td { text-align:left; }
+    .detail-table td:last-child, .detail-table th:last-child { text-align:right; }
+    .detail-vide { padding:12px; color:#888; text-align:center; font-size:11px; }
+    .detail-meta { display:flex; flex-wrap:wrap; gap:6px 12px; color:#666; font-size:10px; line-height:1.4; }
+    .detail-commentaire { margin-top:8px; padding:8px 10px; border-radius:9px; background:#fff; border:1px solid #e7e7e7; font-size:10px; color:#555; }
+    @media (max-width:760px) { .detail-grille { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
     @media (max-width: 980px) {
       .resume-global {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1202,6 +1226,26 @@
     </section>
   </div>
 
+
+
+  <div id="modalDetail" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalDetail">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalDetail">Détail</h2>
+          <p id="sousTitreModalDetail">Stocks et historique</p>
+        </div>
+        <button id="fermerModalDetail" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div id="contenuModalDetail" class="modal-contenu">
+        <div class="detail-vide">Chargement…</div>
+      </div>
+      <div class="modal-actions">
+        <button id="fermerModalDetailBas" class="bouton-modal" type="button">Fermer</button>
+      </div>
+    </section>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
@@ -1235,6 +1279,12 @@
       const caissesVidesLivraison = document.getElementById("caissesVidesLivraison");
       const blocCaissesVides = document.getElementById("blocCaissesVides");
       const corpsLivraison = document.getElementById("corpsLivraison");
+      const modalDetail = document.getElementById("modalDetail");
+      const titreModalDetail = document.getElementById("titreModalDetail");
+      const sousTitreModalDetail = document.getElementById("sousTitreModalDetail");
+      const contenuModalDetail = document.getElementById("contenuModalDetail");
+      const fermerModalDetail = document.getElementById("fermerModalDetail");
+      const fermerModalDetailBas = document.getElementById("fermerModalDetailBas");
 
 
       const messageStocks = document.getElementById("messageStocks");
@@ -1414,7 +1464,7 @@
           const alerte = ligne.alerte_stock_tente === true;
 
           return `
-            <tr>
+            <tr class="ligne-stock-cliquable" data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}">
               <td class="article-cell">
                 <strong>${echapperHtml(ligne.article)}</strong>
                 <small>${echapperHtml(libelleConditionnement(
@@ -1657,61 +1707,116 @@
         }
       }
 
-      function afficherHistorique(mouvements) {
-        if (!Array.isArray(mouvements) || mouvements.length === 0) {
-          historiqueListe.innerHTML = `
-            <div class="historique-vide">
-              Aucun mouvement de stock pour le moment.
-            </div>
-          `;
+      function statutOperation(valeur) {
+        const v = String(valeur || "active").toLowerCase();
+        if (v === "annulee") return "Annulée";
+        if (v === "corrigee") return "Corrigée";
+        if (v === "correction") return "Correction";
+        return "Active";
+      }
+
+      function fermerDetail() {
+        modalDetail.classList.remove("visible");
+        modalDetail.setAttribute("aria-hidden", "true");
+      }
+
+      function ouvrirDetail(titre, sousTitre) {
+        titreModalDetail.textContent = titre;
+        sousTitreModalDetail.textContent = sousTitre || "";
+        contenuModalDetail.innerHTML = '<div class="detail-vide">Chargement…</div>';
+        modalDetail.classList.add("visible");
+        modalDetail.setAttribute("aria-hidden", "false");
+      }
+
+      async function afficherDetailArticle(vaisselleId) {
+        if (!editionCourante?.id || !vaisselleId) return;
+        const ligneStock = stocksCourants.find(function (x) { return x.vaisselle_id === vaisselleId; });
+        ouvrirDetail("📦 " + (ligneStock?.article || "Détail de l’article"), "Répartition actuelle et historique");
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("detail_article_stock_vaisselle", {
+            p_edition_id: editionCourante.id,
+            p_vaisselle_id: vaisselleId,
+            p_is_demo: modeDemo
+          });
+          if (error) throw error;
+          const d = data || {};
+          const stands = Array.isArray(d.stands) ? d.stands : (Array.isArray(d.ventilation_stands) ? d.ventilation_stands : []);
+          const hist = Array.isArray(d.historique) ? d.historique : [];
+          const stock = d.stock || d.etat_stock || d;
+          contenuModalDetail.innerHTML = `
+            <div class="detail-sections">
+              <section class="detail-carte">
+                <h3>Situation actuelle</h3>
+                <div class="detail-grille">
+                  <div class="detail-indicateur"><span>Stock MDN</span><strong>${formatNombre(stock.stock_mdn_tente ?? stock.stock_mdn ?? ligneStock?.stock_mdn_tente)}</strong></div>
+                  <div class="detail-indicateur"><span>Réserve MDN</span><strong>${formatNombre(stock.reserve_mdn ?? ligneStock?.reserve_mdn)}</strong></div>
+                  <div class="detail-indicateur"><span>Sur le marché</span><strong>${formatNombre(stock.chez_stands ?? stock.sur_le_marche ?? ligneStock?.chez_stands)}</strong></div>
+                  <div class="detail-indicateur"><span>Sales cumulés</span><strong>${formatNombre(stock.retours_sales_cumules ?? ligneStock?.retours_sales_cumules)}</strong></div>
+                </div>
+              </section>
+              <section class="detail-carte">
+                <h3>Ventilation par stand</h3>
+                ${stands.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Type</th><th>Quantité</th></tr></thead><tbody>${stands.map(function(x){return `<tr><td>${echapperHtml(x.nom_stand || x.stand || x.nom || x.raison_sociale || "Stand")}</td><td>${echapperHtml(x.type_stand || x.type || "—")}</td><td><strong>${formatNombre(x.quantite ?? x.quantite_actuelle ?? x.solde)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucun exemplaire actuellement détenu par un stand.</div>'}
+              </section>
+              <section class="detail-carte">
+                <h3>Historique de l’article</h3>
+                ${hist.length ? hist.map(function(x){return `<div class="mouvement"><div class="mouvement-haut"><div class="mouvement-article">${echapperHtml(libelleTypeMouvement(x.type_operation || x.type_mouvement))}</div><div class="mouvement-quantite">${formatNombre(x.quantite ?? x.quantite_totale)}</div></div><div class="mouvement-bas"><span>${echapperHtml(formatDateHeure(x.date_operation || x.date_mouvement || x.created_at))}</span><span>${echapperHtml(x.reference_externe || x.stand || "")}</span></div></div>`;}).join("") : '<div class="detail-vide">Aucun historique disponible pour cet article.</div>'}
+              </section>
+            </div>`;
+        } catch (erreur) {
+          console.error("[MDN Sion] Détail article impossible :", erreur);
+          contenuModalDetail.innerHTML = `<div class="detail-vide">${echapperHtml(erreur?.message || "Impossible de charger le détail de cet article.")}</div>`;
+        }
+      }
+
+      async function afficherDetailOperation(operationId) {
+        if (!editionCourante?.id || !operationId) return;
+        ouvrirDetail("🧾 Détail de l’opération", "Traçabilité de l’opération de stock");
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("detail_operation_stock_vaisselle", {
+            p_operation_id: operationId,
+            p_is_demo: modeDemo
+          });
+          if (error) throw error;
+          const d = data || {};
+          const lignes = Array.isArray(d.lignes) ? d.lignes : [];
+          const op = d.operation || d;
+          contenuModalDetail.innerHTML = `
+            <div class="detail-sections">
+              <section class="detail-carte">
+                <h3>${echapperHtml(libelleTypeMouvement(op.type_operation))}</h3>
+                <div class="detail-meta"><span>${echapperHtml(formatDateHeure(op.date_operation || op.created_at))}</span><span>Statut : <strong>${echapperHtml(statutOperation(op.statut))}</strong></span>${op.reference_externe ? `<span>Référence : ${echapperHtml(op.reference_externe)}</span>` : ""}</div>
+                ${op.commentaire ? `<div class="detail-commentaire">${echapperHtml(op.commentaire)}</div>` : ""}
+                ${op.motif_correction ? `<div class="detail-commentaire"><strong>Motif :</strong> ${echapperHtml(op.motif_correction)}</div>` : ""}
+              </section>
+              <section class="detail-carte">
+                <h3>Détail par article</h3>
+                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Trajet</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(libelleEmplacement(x.emplacement_source))} → ${echapperHtml(libelleEmplacement(x.emplacement_destination))}</td><td><strong>${formatNombre(x.quantite)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
+              </section>
+            </div>`;
+        } catch (erreur) {
+          console.error("[MDN Sion] Détail opération impossible :", erreur);
+          contenuModalDetail.innerHTML = `<div class="detail-vide">${echapperHtml(erreur?.message || "Impossible de charger le détail de cette opération.")}</div>`;
+        }
+      }
+
+      function afficherHistorique(operations) {
+        if (!Array.isArray(operations) || operations.length === 0) {
+          historiqueListe.innerHTML = '<div class="historique-vide">Aucune opération de stock pour le moment.</div>';
           return;
         }
-
-        historiqueListe.innerHTML = mouvements.map(function (mouvement) {
-          const source = libelleEmplacement(mouvement.emplacement_source);
-          const destination = libelleEmplacement(mouvement.emplacement_destination);
-
-          const reference =
-            mouvement.reference_type || mouvement.reference_id
-              ? [
-                  mouvement.reference_type,
-                  mouvement.reference_id
-                ].filter(Boolean).join(" · ")
-              : "";
-
-          const commentaire =
-            mouvement.commentaire || mouvement.motif || "";
-
+        historiqueListe.innerHTML = operations.map(function (operation) {
+          const quantite = operation.quantite_totale ?? operation.total_unites ?? operation.quantite ?? 0;
+          const commentaire = operation.commentaire || operation.motif_correction || "";
+          const statut = String(operation.statut || "active").toLowerCase();
           return `
-            <article class="mouvement">
-              <div class="mouvement-haut">
-                <div class="mouvement-article">
-                  ${echapperHtml(mouvement.article)}
-                </div>
-
-                <div class="mouvement-quantite">
-                  ${formatNombre(mouvement.quantite)}
-                </div>
-              </div>
-
-              <div class="mouvement-type">
-                ${echapperHtml(libelleTypeMouvement(mouvement.type_mouvement))}
-              </div>
-
-              <div class="mouvement-trajet">
-                ${echapperHtml(source)} → ${echapperHtml(destination)}
-              </div>
-
-              <div class="mouvement-bas">
-                <span>${echapperHtml(formatDateHeure(mouvement.date_mouvement || mouvement.created_at))}</span>
-                ${reference ? `<span>${echapperHtml(reference)}</span>` : ""}
-              </div>
-
-              ${commentaire
-                ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>`
-                : ""}
-            </article>
-          `;
+            <article class="mouvement" data-operation-id="${echapperHtml(operation.operation_id || operation.id || "")}">
+              <div class="mouvement-haut"><div class="mouvement-article">${echapperHtml(libelleTypeMouvement(operation.type_operation || operation.type_mouvement))}</div><div class="mouvement-quantite">${formatNombre(quantite)}</div></div>
+              <div class="mouvement-type">${echapperHtml(operation.reference_externe || operation.reference_type || "Opération de stock")}</div>
+              <span class="mouvement-statut ${statut}">${echapperHtml(statutOperation(statut))}</span>
+              <div class="mouvement-bas"><span>${echapperHtml(formatDateHeure(operation.date_operation || operation.date_mouvement || operation.created_at))}</span><span>Voir le détail ›</span></div>
+              ${commentaire ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>` : ""}
+            </article>`;
         }).join("");
       }
 
@@ -1801,7 +1906,7 @@
               p_is_demo: modeDemo
             }),
 
-            client.rpc("historique_mouvements_stock_vaisselle", {
+            client.rpc("historique_operations_stock_vaisselle", {
               p_edition_id: editionCourante.id,
               p_is_demo: modeDemo
             })
@@ -1851,6 +1956,20 @@
           boutonActualiser.disabled = false;
         }
       }
+
+      corpsTableStocks.addEventListener("click", function (event) {
+        const ligne = event.target.closest("tr[data-vaisselle-id]");
+        if (ligne) afficherDetailArticle(ligne.dataset.vaisselleId);
+      });
+
+      historiqueListe.addEventListener("click", function (event) {
+        const carte = event.target.closest("[data-operation-id]");
+        if (carte?.dataset.operationId) afficherDetailOperation(carte.dataset.operationId);
+      });
+
+      fermerModalDetail.addEventListener("click", fermerDetail);
+      fermerModalDetailBas.addEventListener("click", fermerDetail);
+      modalDetail.addEventListener("click", function (event) { if (event.target === modalDetail) fermerDetail(); });
 
       boutonRetour.addEventListener("click", function () {
         window.location.href = "accueil.html";
