@@ -815,6 +815,12 @@
     .detail-indicateur { padding:9px; border-radius:10px; background:#fff; border:1px solid #e7e7e7; }
     .detail-indicateur span { display:block; color:#777; font-size:9px; font-weight:800; }
     .detail-indicateur strong { display:block; margin-top:3px; font-size:17px; }
+    .detail-aide {
+      margin:-2px 0 10px;
+      color:#64748b;
+      font-size:.88rem;
+      line-height:1.4;
+    }
     .detail-table { width:100%; min-width:520px; }
     .detail-table th, .detail-table td { text-align:left; }
     .detail-table td:last-child, .detail-table th:last-child { text-align:right; }
@@ -1775,8 +1781,20 @@
                 </div>
               </section>
               <section class="detail-carte">
-                <h3>Ventilation par stand</h3>
-                ${stands.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Type</th><th>Quantité</th></tr></thead><tbody>${stands.map(function(x){return `<tr><td>${echapperHtml(x.nom_stand || x.stand || x.nom || x.raison_sociale || "Stand")}</td><td>${echapperHtml(x.type_stand || x.type || "—")}</td><td><strong>${formatNombre(x.quantite ?? x.quantite_actuelle ?? x.solde)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucun exemplaire actuellement détenu par un stand.</div>'}
+                <h3>Solde des mouvements par stand</h3>
+                <div class="detail-aide">
+                  Retraits − retours propres − retours sales enregistrés sur chaque stand.
+                  Ce solde est informatif et ne localise pas physiquement la vaisselle :
+                  une vaisselle peut être rendue dans un autre stand.
+                </div>
+                ${stands.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Type</th><th>Solde</th></tr></thead><tbody>${stands.map(function(x){
+                  const quantite = Number(x.quantite ?? x.quantite_actuelle ?? x.solde ?? 0);
+                  const signe = quantite > 0 ? "+" : "";
+                  const nomStand = x.numero_stand
+                    ? x.numero_stand + " · " + (x.raison_sociale || x.nom || x.nom_stand || "Stand")
+                    : (x.raison_sociale || x.nom || x.nom_stand || x.stand || "Stand");
+                  return `<tr><td>${echapperHtml(nomStand)}</td><td>${echapperHtml(x.type_partenaire || x.type_stand || x.type || "—")}</td><td><strong>${signe}${formatNombre(quantite)}</strong></td></tr>`;
+                }).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucun mouvement net enregistré par stand pour cet article.</div>'}
               </section>
               <section class="detail-carte">
                 <h3>Historique de l’article</h3>
