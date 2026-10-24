@@ -1722,6 +1722,40 @@
       }
     }
 
+  
+    .remboursement-especes-uniquement {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      margin: 8px 0 10px;
+    }
+    .remboursement-especes-uniquement span {
+      margin-left: auto;
+      color: #64748b;
+      font-size: .86rem;
+    }
+
+    @media (max-width: 760px) {
+      .bouton-remboursement-vente {
+        margin-top: 8px !important;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .remboursement-especes-uniquement {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .remboursement-especes-uniquement span {
+        width: 100%;
+        margin-left: 0;
+      }
+    }
+
   </style>
 </head>
 
@@ -1865,7 +1899,13 @@
           <div id="lignesVenteRemboursement" class="remboursement-lignes"></div>
 
           <label>Motif du remboursement
-            <input id="motifRemboursementVente" class="remboursement-champ" type="text" maxlength="200" placeholder="Motif obligatoire">
+            <select id="motifRemboursementVente" class="remboursement-champ remboursement-select">
+              <option value="">Sélectionner un motif</option>
+              <option value="Retour article">Retour article — réintégrer au stock</option>
+              <option value="Article défectueux">Article défectueux — ne pas réintégrer au stock</option>
+              <option value="Erreur de vente">Erreur de vente — réintégrer au stock</option>
+              <option value="Geste commercial">Geste commercial — ne pas réintégrer au stock</option>
+            </select>
           </label>
           <label>Commentaire
             <input id="commentaireRemboursementVente" class="remboursement-champ" type="text" maxlength="500" placeholder="Facultatif">
@@ -1876,17 +1916,16 @@
             <strong id="totalRemboursementVente">CHF 0.00</strong>
           </div>
 
-          <p class="encaissement-titre-section">Moyen(x) de remboursement</p>
-          <div class="remboursement-paiements">
-            <button class="remboursement-paiement" type="button" data-remboursement-moyen="especes">💵 Espèces</button>
-            <button class="remboursement-paiement" type="button" data-remboursement-moyen="carte">💳 Carte bancaire</button>
-            <button class="remboursement-paiement" type="button" data-remboursement-moyen="twint">📱 TWINT</button>
+          <p class="encaissement-titre-section">Mode de remboursement</p>
+          <div class="remboursement-especes-uniquement">
+            💵 <strong>Espèces uniquement</strong>
+            <span>Le montant est retiré du tiroir-caisse physique.</span>
           </div>
-          <div class="remboursement-montants">
-            <label>Espèces<input id="montantRemboursementEspecesVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
-            <label>Carte<input id="montantRemboursementCarteVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
-            <label>TWINT<input id="montantRemboursementTwintVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
-          </div>
+
+          <input id="montantRemboursementEspecesVente" type="hidden" value="0.00">
+          <input id="montantRemboursementCarteVente" type="hidden" value="0.00" disabled>
+          <input id="montantRemboursementTwintVente" type="hidden" value="0.00" disabled>
+
           <div id="erreurRemboursementVente" class="remboursement-erreur"></div>
         </div>
       </div>
@@ -3287,11 +3326,12 @@
             </div>
           </div>`;
         }).join("");
-        boutonsMoyenRemboursementVente.forEach(function (b) { b.classList.remove("selectionne"); });
-        [montantRemboursementEspecesVente, montantRemboursementCarteVente, montantRemboursementTwintVente].forEach(function (champ) {
-          champ.value = "0.00";
-          champ.disabled = true;
-        });
+        montantRemboursementEspecesVente.value = "0.00";
+        montantRemboursementEspecesVente.disabled = false;
+        montantRemboursementCarteVente.value = "0.00";
+        montantRemboursementCarteVente.disabled = true;
+        montantRemboursementTwintVente.value = "0.00";
+        montantRemboursementTwintVente.disabled = true;
         actualiserRemboursementVente();
       }
 
@@ -3304,9 +3344,25 @@
         return arrondirMontant(total);
       }
 
+      function appliquerRegleMotifRemboursement() {
+        const motif = String(motifRemboursementVente.value || "");
+        const reintegrer = motif === "Retour article" || motif === "Erreur de vente";
+        lignesVenteRemboursement.querySelectorAll(".reintegre-stock-remboursement").forEach(function (caseStock) {
+          caseStock.checked = reintegrer;
+          caseStock.disabled = true;
+        });
+      }
+
       function actualiserRemboursementVente() {
         const total = calculerTotalRemboursementVente();
         totalRemboursementVente.textContent = formaterCHF(total);
+        montantRemboursementEspecesVente.disabled = false;
+        montantRemboursementEspecesVente.value = total.toFixed(2);
+        montantRemboursementCarteVente.disabled = true;
+        montantRemboursementCarteVente.value = "0.00";
+        montantRemboursementTwintVente.disabled = true;
+        montantRemboursementTwintVente.value = "0.00";
+        appliquerRegleMotifRemboursement();
         const sommePaiements = arrondirMontant(
           Number(montantRemboursementEspecesVente.value || 0) +
           Number(montantRemboursementCarteVente.value || 0) +
@@ -3404,16 +3460,10 @@
           let q = Math.floor(Number(evenement.target.value || 0));
           q = Math.max(0, Math.min(max, q));
           evenement.target.value = q;
-          const actifs = boutonsMoyenRemboursementVente.filter(function (b) { return b.classList.contains("selectionne"); });
-          if (actifs.length === 1) {
-            const code = actifs[0].dataset.remboursementMoyen;
-            const champs = { especes: montantRemboursementEspecesVente, carte: montantRemboursementCarteVente, twint: montantRemboursementTwintVente };
-            champs[code].value = calculerTotalRemboursementVente().toFixed(2);
-          }
           actualiserRemboursementVente();
         }
       });
-      motifRemboursementVente.addEventListener("input", actualiserRemboursementVente);
+      motifRemboursementVente.addEventListener("change", actualiserRemboursementVente);
       [montantRemboursementEspecesVente, montantRemboursementCarteVente, montantRemboursementTwintVente].forEach(function (champ) {
         champ.addEventListener("input", actualiserRemboursementVente);
       });
