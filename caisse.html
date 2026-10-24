@@ -1695,6 +1695,42 @@
   </div>
 
 
+  <div id="modalRemboursementGobelets" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreRemboursementGobelets">
+    <section class="encaissement-carte">
+      <div class="encaissement-entete">
+        <h2 id="titreRemboursementGobelets">Remboursement à effectuer</h2>
+        <button id="fermerRemboursementGobelets" class="encaissement-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="encaissement-corps">
+        <div class="encaissement-total">
+          <span>Vente</span>
+          <strong id="totalVenteRemboursement">CHF 0.00</strong>
+        </div>
+
+        <div class="encaissement-total">
+          <span>Retour gobelet(s)</span>
+          <strong id="totalRetoursRemboursement">CHF 0.00</strong>
+        </div>
+
+        <div class="encaissement-total">
+          <span>À rembourser en espèces</span>
+          <strong id="montantRemboursementEspeces">CHF 0.00</strong>
+        </div>
+
+        <div class="encaissement-info">
+          La vente compense une partie du retour. Seule la différence ci-dessus doit être rendue en espèces au client.
+        </div>
+      </div>
+
+      <div class="encaissement-actions">
+        <button id="annulerRemboursementGobelets" class="encaissement-annuler" type="button">Annuler</button>
+        <button id="confirmerRemboursementGobelets" class="encaissement-continuer actif" type="button">Confirmer le remboursement</button>
+      </div>
+    </section>
+  </div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
@@ -1769,6 +1805,15 @@
       const boutonsMoyenPaiement = Array.from(
         document.querySelectorAll("[data-moyen-paiement]")
       );
+
+      const modalRemboursementGobelets = document.getElementById("modalRemboursementGobelets");
+      const fermerRemboursementGobelets = document.getElementById("fermerRemboursementGobelets");
+      const annulerRemboursementGobelets = document.getElementById("annulerRemboursementGobelets");
+      const confirmerRemboursementGobelets = document.getElementById("confirmerRemboursementGobelets");
+      const totalVenteRemboursement = document.getElementById("totalVenteRemboursement");
+      const totalRetoursRemboursement = document.getElementById("totalRetoursRemboursement");
+      const montantRemboursementEspeces = document.getElementById("montantRemboursementEspeces");
+      let resolveurConfirmationRemboursement = null;
 
       const etapeChoixPaiement = document.getElementById("etapeChoixPaiement");
       const etapeRepartitionPaiement = document.getElementById("etapeRepartitionPaiement");
@@ -3592,6 +3637,68 @@
         modifierQuantitePanier(bouton.dataset.articleId, bouton.dataset.actionPanier === "plus" ? 1 : -1);
       });
 
+      function calculerTotalVenteBruteAvantRetours() {
+        return arrondirMontant(
+          panierCaisse.reduce(function (total, ligne) {
+            if (estLigneGobelet(ligne)) {
+              return ligne.typeOperationGobelet === "vente"
+                ? total + (ligne.prix * ligne.quantite)
+                : total;
+            }
+            return total + (ligne.prix * ligne.quantite);
+          }, 0)
+        );
+      }
+
+
+      function terminerConfirmationRemboursement(confirme) {
+        modalRemboursementGobelets.classList.remove("visible");
+
+        if (resolveurConfirmationRemboursement) {
+          const resolveur = resolveurConfirmationRemboursement;
+          resolveurConfirmationRemboursement = null;
+          resolveur(confirme === true);
+        }
+      }
+
+
+      function demanderConfirmationRemboursementGobelets() {
+        const totalVenteBrute = calculerTotalVenteBruteAvantRetours();
+        const totalRetours = arrondirMontant(calculerTotalRetoursGobelets());
+        const remboursementEspeces = arrondirMontant(
+          Math.max(0, totalRetours - totalVenteBrute)
+        );
+
+        totalVenteRemboursement.textContent = formaterCHF(totalVenteBrute);
+        totalRetoursRemboursement.textContent = "− " + formaterCHF(totalRetours);
+        montantRemboursementEspeces.textContent = formaterCHF(remboursementEspeces);
+        modalRemboursementGobelets.classList.add("visible");
+
+        return new Promise(function (resolve) {
+          resolveurConfirmationRemboursement = resolve;
+        });
+      }
+
+
+      fermerRemboursementGobelets.addEventListener("click", function () {
+        terminerConfirmationRemboursement(false);
+      });
+
+      annulerRemboursementGobelets.addEventListener("click", function () {
+        terminerConfirmationRemboursement(false);
+      });
+
+      confirmerRemboursementGobelets.addEventListener("click", function () {
+        terminerConfirmationRemboursement(true);
+      });
+
+      modalRemboursementGobelets.addEventListener("click", function (evenement) {
+        if (evenement.target === modalRemboursementGobelets) {
+          terminerConfirmationRemboursement(false);
+        }
+      });
+
+
       boutonEncaisser.addEventListener("click", async function () {
         const contientAchatGobelet = panierCaisse.some(function (ligne) {
           return estLigneGobelet(ligne) && ligne.typeOperationGobelet === "vente";
@@ -3601,6 +3708,21 @@
           if (calculerTotalVenteClassique() > 0.005) {
             ouvrirFenetreEncaissement();
           } else {
+            const totalVenteBrute = calculerTotalVenteBruteAvantRetours();
+            const totalRetours = arrondirMontant(calculerTotalRetoursGobelets());
+            const remboursementEspeces = arrondirMontant(
+              Math.max(0, totalRetours - totalVenteBrute)
+            );
+
+            if (remboursementEspeces > 0.005) {
+              const remboursementConfirme =
+                await demanderConfirmationRemboursementGobelets();
+
+              if (!remboursementConfirme) {
+                return;
+              }
+            }
+
             moyenPaiementSelectionne = [];
             mettreMontantPaiement(montantEspeces, 0);
             mettreMontantPaiement(montantCarte, 0);
@@ -3653,6 +3775,14 @@
       document.addEventListener(
         "keydown",
         function (evenement) {
+          if (
+            evenement.key === "Escape" &&
+            modalRemboursementGobelets.classList.contains("visible")
+          ) {
+            terminerConfirmationRemboursement(false);
+            return;
+          }
+
           if (
             evenement.key === "Escape" &&
             modalEncaissement.classList.contains("visible")
