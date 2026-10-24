@@ -1444,6 +1444,55 @@
         animation-duration: 1.8s;
       }
     }
+  
+
+    /* ========================================================
+       REMBOURSEMENT D'UNE VENTE
+       ======================================================== */
+    .bouton-remboursement-vente{
+      margin-left:auto;
+      border:1px solid #b91c1c;
+      background:#fff;
+      color:#991b1b;
+      border-radius:10px;
+      padding:9px 13px;
+      font-weight:800;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .bouton-remboursement-vente:hover{background:#fff1f2}
+    .remboursement-carte{width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
+    .remboursement-recherche{display:flex;gap:8px;margin-bottom:12px}
+    .remboursement-recherche input,.remboursement-champ,.remboursement-select{
+      width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:#fff;font:inherit
+    }
+    .liste-ventes-remboursables{display:grid;gap:8px;max-height:48vh;overflow:auto}
+    .vente-remboursable{width:100%;text-align:left;border:1px solid #dbe3ec;border-radius:11px;background:#fff;padding:12px;cursor:pointer}
+    .vente-remboursable:hover{background:#f8fafc;border-color:#94a3b8}
+    .vente-remboursable strong{display:block;color:#0f172a}
+    .vente-remboursable span{display:block;color:#64748b;font-size:.88rem;margin-top:3px}
+    .remboursement-lignes{display:grid;gap:10px;margin:12px 0}
+    .remboursement-ligne{border:1px solid #dbe3ec;border-radius:11px;padding:11px;background:#fff}
+    .remboursement-ligne-entete{display:flex;justify-content:space-between;gap:12px;font-weight:800}
+    .remboursement-ligne-commandes{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:end;margin-top:9px}
+    .remboursement-stock{display:flex;align-items:center;gap:7px;font-size:.9rem;color:#334155;padding-bottom:9px}
+    .remboursement-total{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:12px;font-size:1.05rem}
+    .remboursement-total strong{font-size:1.25rem;color:#991b1b}
+    .remboursement-paiements{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+    .remboursement-paiement{border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:#fff;cursor:pointer;font-weight:700}
+    .remboursement-paiement.selectionne{border-color:#00126b;background:#eef2ff;color:#00126b}
+    .remboursement-montants{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .remboursement-montants label{font-size:.82rem;font-weight:700;color:#475569}
+    .remboursement-montants input{margin-top:4px}
+    .remboursement-actions-secondaires{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    .remboursement-info{font-size:.88rem;color:#64748b;margin:7px 0}
+    .remboursement-erreur{color:#b91c1c;font-weight:700;font-size:.9rem;min-height:20px}
+    @media(max-width:700px){
+      .bouton-remboursement-vente{margin-left:0;width:100%}
+      .remboursement-ligne-commandes,.remboursement-montants{grid-template-columns:1fr}
+      .remboursement-paiements{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 
@@ -1495,6 +1544,7 @@
             <button id="filtreTout" class="categorie active" type="button">Tout</button>
             <button id="filtreMDN" class="categorie" type="button">MDN</button>
             <button id="filtreFondation" class="categorie" type="button">Fondation</button>
+            <button id="boutonRembourserVente" class="bouton-remboursement-vente" type="button">↩ Rembourser une vente</button>
 
             <span id="informationEdition" class="information-edition">
               Édition…
@@ -1565,6 +1615,61 @@
 
     </main>
 
+  </div>
+
+
+
+
+  <div id="modalRemboursementVente" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreRemboursementVente">
+    <section class="encaissement-carte remboursement-carte">
+      <div class="encaissement-entete">
+        <h2 id="titreRemboursementVente">Rembourser une vente</h2>
+        <button id="fermerRemboursementVente" class="encaissement-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="encaissement-corps">
+        <div id="etapeListeVentesRemboursement">
+          <div class="remboursement-recherche">
+            <input id="rechercheVenteRemboursement" type="search" placeholder="Rechercher un numéro de vente…" autocomplete="off">
+          </div>
+          <div id="listeVentesRemboursables" class="liste-ventes-remboursables"></div>
+        </div>
+
+        <div id="etapeDetailRemboursement" hidden>
+          <button id="retourListeVentesRemboursement" class="encaissement-annuler" type="button">← Ventes</button>
+          <p id="infoVenteRemboursement" class="remboursement-info"></p>
+          <div id="lignesVenteRemboursement" class="remboursement-lignes"></div>
+
+          <label>Motif du remboursement
+            <input id="motifRemboursementVente" class="remboursement-champ" type="text" maxlength="200" placeholder="Motif obligatoire">
+          </label>
+          <label>Commentaire
+            <input id="commentaireRemboursementVente" class="remboursement-champ" type="text" maxlength="500" placeholder="Facultatif">
+          </label>
+
+          <div class="remboursement-total">
+            <span>Total à rembourser</span>
+            <strong id="totalRemboursementVente">CHF 0.00</strong>
+          </div>
+
+          <p class="encaissement-titre-section">Moyen(x) de remboursement</p>
+          <div class="remboursement-paiements">
+            <button class="remboursement-paiement" type="button" data-remboursement-moyen="especes">💵 Espèces</button>
+            <button class="remboursement-paiement" type="button" data-remboursement-moyen="carte">💳 Carte bancaire</button>
+            <button class="remboursement-paiement" type="button" data-remboursement-moyen="twint">📱 TWINT</button>
+          </div>
+          <div class="remboursement-montants">
+            <label>Espèces<input id="montantRemboursementEspecesVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
+            <label>Carte<input id="montantRemboursementCarteVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
+            <label>TWINT<input id="montantRemboursementTwintVente" class="remboursement-champ" type="number" min="0" step="0.01" value="0.00" disabled></label>
+          </div>
+          <div id="erreurRemboursementVente" class="remboursement-erreur"></div>
+        </div>
+      </div>
+      <div class="encaissement-actions">
+        <button id="annulerRemboursementVente" class="encaissement-annuler" type="button">Annuler</button>
+        <button id="confirmerRemboursementVente" class="encaissement-continuer" type="button" disabled>Confirmer le remboursement</button>
+      </div>
+    </section>
   </div>
 
 
@@ -1844,6 +1949,31 @@
       let cleIdempotenceEncaissement = null;
 
       let modeDemo = false;
+
+      const boutonRembourserVente = document.getElementById("boutonRembourserVente");
+      const modalRemboursementVente = document.getElementById("modalRemboursementVente");
+      const fermerRemboursementVente = document.getElementById("fermerRemboursementVente");
+      const annulerRemboursementVente = document.getElementById("annulerRemboursementVente");
+      const confirmerRemboursementVente = document.getElementById("confirmerRemboursementVente");
+      const retourListeVentesRemboursement = document.getElementById("retourListeVentesRemboursement");
+      const rechercheVenteRemboursement = document.getElementById("rechercheVenteRemboursement");
+      const listeVentesRemboursables = document.getElementById("listeVentesRemboursables");
+      const etapeListeVentesRemboursement = document.getElementById("etapeListeVentesRemboursement");
+      const etapeDetailRemboursement = document.getElementById("etapeDetailRemboursement");
+      const infoVenteRemboursement = document.getElementById("infoVenteRemboursement");
+      const lignesVenteRemboursement = document.getElementById("lignesVenteRemboursement");
+      const motifRemboursementVente = document.getElementById("motifRemboursementVente");
+      const commentaireRemboursementVente = document.getElementById("commentaireRemboursementVente");
+      const totalRemboursementVente = document.getElementById("totalRemboursementVente");
+      const erreurRemboursementVente = document.getElementById("erreurRemboursementVente");
+      const montantRemboursementEspecesVente = document.getElementById("montantRemboursementEspecesVente");
+      const montantRemboursementCarteVente = document.getElementById("montantRemboursementCarteVente");
+      const montantRemboursementTwintVente = document.getElementById("montantRemboursementTwintVente");
+      const boutonsMoyenRemboursementVente = Array.from(document.querySelectorAll("[data-remboursement-moyen]"));
+      let ventesRemboursables = [];
+      let venteRemboursementSelectionnee = null;
+      let remboursementVenteEnCours = false;
+
 
 
       function masquerChargement() {
@@ -2856,6 +2986,220 @@
           afficherPanier();
         }
       }
+
+
+
+      function formaterDateHeureSion(valeur) {
+        if (!valeur) return "";
+        return new Intl.DateTimeFormat("fr-CH", {
+          timeZone: "Europe/Zurich",
+          dateStyle: "short",
+          timeStyle: "short"
+        }).format(new Date(valeur));
+      }
+
+      function fermerModalRemboursementVente() {
+        if (remboursementVenteEnCours) return;
+        modalRemboursementVente.classList.remove("visible");
+        venteRemboursementSelectionnee = null;
+      }
+
+      function afficherListeVentesRemboursables() {
+        const recherche = String(rechercheVenteRemboursement.value || "").trim().toLowerCase();
+        const ventes = ventesRemboursables.filter(function (vente) {
+          return !recherche || String(vente.numero_vente || "").toLowerCase().includes(recherche);
+        });
+        if (!ventes.length) {
+          listeVentesRemboursables.innerHTML = '<div class="etat-vide"><p>Aucune vente remboursable trouvée.</p></div>';
+          return;
+        }
+        listeVentesRemboursables.innerHTML = ventes.map(function (vente) {
+          const lignes = Array.isArray(vente.lignes) ? vente.lignes : [];
+          const quantite = lignes.reduce(function (t, l) { return t + Number(l.quantite_remboursable || 0); }, 0);
+          return `<button class="vente-remboursable" type="button" data-vente-remboursement="${vente.id}">
+            <strong>${vente.numero_vente}</strong>
+            <span>${formaterDateHeureSion(vente.created_at)} · ${formaterCHF(vente.total_vente)} · ${quantite} article(s) encore remboursable(s)</span>
+          </button>`;
+        }).join("");
+      }
+
+      async function ouvrirModalRemboursementVente() {
+        if (!clientSupabaseCaisse || remboursementVenteEnCours) return;
+        modalRemboursementVente.classList.add("visible");
+        etapeListeVentesRemboursement.hidden = false;
+        etapeDetailRemboursement.hidden = true;
+        confirmerRemboursementVente.disabled = true;
+        listeVentesRemboursables.innerHTML = '<div class="etat-vide"><p>Chargement des ventes…</p></div>';
+        rechercheVenteRemboursement.value = "";
+        try {
+          const nomRpc = modeDemo ? "charger_ventes_remboursables_demo" : "charger_ventes_remboursables";
+          const { data, error } = await clientSupabaseCaisse.rpc(nomRpc, { p_limite: 50 });
+          if (error) throw error;
+          ventesRemboursables = Array.isArray(data?.ventes) ? data.ventes : [];
+          afficherListeVentesRemboursables();
+        } catch (erreur) {
+          console.error("[MDN Sion] Chargement des ventes remboursables impossible :", erreur);
+          listeVentesRemboursables.innerHTML = `<div class="remboursement-erreur">${String(erreur?.message || "Impossible de charger les ventes.")}</div>`;
+        }
+      }
+
+      function ouvrirDetailRemboursementVente(vente) {
+        venteRemboursementSelectionnee = vente;
+        etapeListeVentesRemboursement.hidden = true;
+        etapeDetailRemboursement.hidden = false;
+        motifRemboursementVente.value = "";
+        commentaireRemboursementVente.value = "";
+        erreurRemboursementVente.textContent = "";
+        infoVenteRemboursement.textContent = `${vente.numero_vente} · ${formaterDateHeureSion(vente.created_at)} · vente ${formaterCHF(vente.total_vente)}`;
+        lignesVenteRemboursement.innerHTML = (vente.lignes || []).map(function (ligne) {
+          const max = Number(ligne.quantite_remboursable || 0);
+          return `<div class="remboursement-ligne" data-ligne-remboursement="${ligne.ligne_vente_id}" data-prix="${Number(ligne.prix_unitaire || 0)}">
+            <div class="remboursement-ligne-entete"><span>${ligne.nom}</span><span>${formaterCHF(ligne.prix_unitaire)} / unité</span></div>
+            <div class="remboursement-info">Vendu : ${ligne.quantite_vendue} · Déjà remboursé : ${ligne.quantite_deja_remboursee} · Disponible : ${max}</div>
+            <div class="remboursement-ligne-commandes">
+              <label>Quantité<input class="remboursement-champ quantite-remboursement" type="number" min="0" max="${max}" step="1" value="0"></label>
+              ${ligne.gestion_stock ? '<label class="remboursement-stock"><input class="reintegre-stock-remboursement" type="checkbox" checked> Réintégrer les articles remboursés au stock</label>' : '<span class="remboursement-info">Article sans gestion de stock</span>'}
+            </div>
+          </div>`;
+        }).join("");
+        boutonsMoyenRemboursementVente.forEach(function (b) { b.classList.remove("selectionne"); });
+        [montantRemboursementEspecesVente, montantRemboursementCarteVente, montantRemboursementTwintVente].forEach(function (champ) {
+          champ.value = "0.00";
+          champ.disabled = true;
+        });
+        actualiserRemboursementVente();
+      }
+
+      function calculerTotalRemboursementVente() {
+        let total = 0;
+        lignesVenteRemboursement.querySelectorAll("[data-ligne-remboursement]").forEach(function (bloc) {
+          const q = Math.max(0, Number(bloc.querySelector(".quantite-remboursement")?.value || 0));
+          total += q * Number(bloc.dataset.prix || 0);
+        });
+        return arrondirMontant(total);
+      }
+
+      function actualiserRemboursementVente() {
+        const total = calculerTotalRemboursementVente();
+        totalRemboursementVente.textContent = formaterCHF(total);
+        const sommePaiements = arrondirMontant(
+          Number(montantRemboursementEspecesVente.value || 0) +
+          Number(montantRemboursementCarteVente.value || 0) +
+          Number(montantRemboursementTwintVente.value || 0)
+        );
+        const motifOk = String(motifRemboursementVente.value || "").trim().length > 0;
+        const paiementOk = total > 0 && Math.abs(sommePaiements - total) < 0.005;
+        erreurRemboursementVente.textContent = total > 0 && !paiementOk ? `Répartition : ${formaterCHF(sommePaiements)} sur ${formaterCHF(total)}` : "";
+        confirmerRemboursementVente.disabled = !(motifOk && paiementOk) || remboursementVenteEnCours;
+      }
+
+      function basculerMoyenRemboursement(code, bouton) {
+        const champs = { especes: montantRemboursementEspecesVente, carte: montantRemboursementCarteVente, twint: montantRemboursementTwintVente };
+        const champ = champs[code];
+        if (!champ) return;
+        const actif = !bouton.classList.contains("selectionne");
+        bouton.classList.toggle("selectionne", actif);
+        champ.disabled = !actif;
+        if (!actif) champ.value = "0.00";
+        const actifs = boutonsMoyenRemboursementVente.filter(function (b) { return b.classList.contains("selectionne"); });
+        if (actif && actifs.length === 1) champ.value = calculerTotalRemboursementVente().toFixed(2);
+        actualiserRemboursementVente();
+      }
+
+      async function confirmerRemboursementVenteSelectionne() {
+        if (!venteRemboursementSelectionnee || remboursementVenteEnCours) return;
+        const lignes = [];
+        lignesVenteRemboursement.querySelectorAll("[data-ligne-remboursement]").forEach(function (bloc) {
+          const quantite = Number(bloc.querySelector(".quantite-remboursement")?.value || 0);
+          if (quantite > 0) {
+            lignes.push({
+              ligne_vente_id: bloc.dataset.ligneRemboursement,
+              quantite: quantite,
+              reintegre_stock: Boolean(bloc.querySelector(".reintegre-stock-remboursement")?.checked),
+              commentaire: null
+            });
+          }
+        });
+        const paiements = [];
+        [
+          ["especes", montantRemboursementEspecesVente],
+          ["carte", montantRemboursementCarteVente],
+          ["twint", montantRemboursementTwintVente]
+        ].forEach(function ([code, champ]) {
+          const montant = arrondirMontant(champ.disabled ? 0 : Number(champ.value || 0));
+          if (montant > 0) paiements.push({ code: code, montant: montant });
+        });
+        remboursementVenteEnCours = true;
+        confirmerRemboursementVente.disabled = true;
+        confirmerRemboursementVente.textContent = "Enregistrement…";
+        try {
+          const nomRpc = modeDemo ? "rembourser_vente_demo" : "rembourser_vente";
+          const { data, error } = await clientSupabaseCaisse.rpc(nomRpc, {
+            p_idempotency_key: genererCleIdempotence(),
+            p_vente_id: venteRemboursementSelectionnee.id,
+            p_type_remboursement: "remboursement",
+            p_lignes: lignes,
+            p_paiements: paiements,
+            p_motif: String(motifRemboursementVente.value || "").trim(),
+            p_commentaire: String(commentaireRemboursementVente.value || "").trim() || null
+          });
+          if (error) throw error;
+          fermerModalRemboursementVente();
+          afficherMessage(`${modeDemo ? "Mode Démo : " : ""}Remboursement ${data?.numero_remboursement || ""} enregistré — ${formaterCHF(data?.montant_total || 0)}.`, "succes");
+          await chargerCatalogueCaisse();
+        } catch (erreur) {
+          console.error("[MDN Sion] Remboursement impossible :", erreur);
+          erreurRemboursementVente.textContent = erreur?.message || "Impossible d'enregistrer le remboursement.";
+        } finally {
+          remboursementVenteEnCours = false;
+          confirmerRemboursementVente.textContent = "Confirmer le remboursement";
+          actualiserRemboursementVente();
+        }
+      }
+
+      boutonRembourserVente.addEventListener("click", ouvrirModalRemboursementVente);
+      fermerRemboursementVente.addEventListener("click", fermerModalRemboursementVente);
+      annulerRemboursementVente.addEventListener("click", fermerModalRemboursementVente);
+      retourListeVentesRemboursement.addEventListener("click", function () {
+        etapeDetailRemboursement.hidden = true;
+        etapeListeVentesRemboursement.hidden = false;
+        venteRemboursementSelectionnee = null;
+        confirmerRemboursementVente.disabled = true;
+      });
+      rechercheVenteRemboursement.addEventListener("input", afficherListeVentesRemboursables);
+      listeVentesRemboursables.addEventListener("click", function (evenement) {
+        const bouton = evenement.target.closest("[data-vente-remboursement]");
+        if (!bouton) return;
+        const vente = ventesRemboursables.find(function (v) { return v.id === bouton.dataset.venteRemboursement; });
+        if (vente) ouvrirDetailRemboursementVente(vente);
+      });
+      lignesVenteRemboursement.addEventListener("input", function (evenement) {
+        if (evenement.target.classList.contains("quantite-remboursement")) {
+          const max = Number(evenement.target.max || 0);
+          let q = Math.floor(Number(evenement.target.value || 0));
+          q = Math.max(0, Math.min(max, q));
+          evenement.target.value = q;
+          const actifs = boutonsMoyenRemboursementVente.filter(function (b) { return b.classList.contains("selectionne"); });
+          if (actifs.length === 1) {
+            const code = actifs[0].dataset.remboursementMoyen;
+            const champs = { especes: montantRemboursementEspecesVente, carte: montantRemboursementCarteVente, twint: montantRemboursementTwintVente };
+            champs[code].value = calculerTotalRemboursementVente().toFixed(2);
+          }
+          actualiserRemboursementVente();
+        }
+      });
+      motifRemboursementVente.addEventListener("input", actualiserRemboursementVente);
+      [montantRemboursementEspecesVente, montantRemboursementCarteVente, montantRemboursementTwintVente].forEach(function (champ) {
+        champ.addEventListener("input", actualiserRemboursementVente);
+      });
+      boutonsMoyenRemboursementVente.forEach(function (bouton) {
+        bouton.addEventListener("click", function () { basculerMoyenRemboursement(bouton.dataset.remboursementMoyen, bouton); });
+      });
+      confirmerRemboursementVente.addEventListener("click", confirmerRemboursementVenteSelectionne);
+      modalRemboursementVente.addEventListener("click", function (evenement) {
+        if (evenement.target === modalRemboursementVente) fermerModalRemboursementVente();
+      });
+
 
       boutonVenteGobelet.addEventListener("click", function () {
         ajouterGobeletAuPanier("vente");
