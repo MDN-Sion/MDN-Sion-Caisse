@@ -2060,6 +2060,51 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         column-gap: 4px;
     }
 }
+
+/* =========================================================
+   MODIFICATION / ANNULATION VAISSELLE
+   Bouton placé à droite des onglets Retrait / Retours.
+   ========================================================= */
+.correction-top-button{
+    margin-left:auto;
+    min-height:38px;
+    padding:7px 15px;
+    white-space:nowrap;
+}
+.correction-op-actions{
+    gap:8px;
+    flex-wrap:wrap;
+}
+.correction-edit{
+    min-height:38px;
+    padding:7px 12px;
+    border:1px solid #8b0000;
+    border-radius:9px;
+    background:#8b0000;
+    color:#fff;
+    font-weight:800;
+    cursor:pointer;
+}
+.correction-delete{
+    min-height:38px;
+    padding:7px 12px;
+    border:1px solid #b26a00;
+    border-radius:9px;
+    background:#fff7e8;
+    color:#7a4600;
+    font-weight:800;
+    cursor:pointer;
+}
+@media(max-width:680px){
+    .correction-top-button{
+        flex:0 0 auto;
+        width:auto;
+        min-width:0;
+        padding:7px 10px;
+        font-size:13px;
+    }
+}
+
 </style>
  </head>
  <body>
@@ -2112,9 +2157,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         Propre
        </button>
       </div>
-      <span class="edition" id="edition">
-       MDN Sion
-      </span>
+      <button class="correct-account correction-top-button" disabled id="correctAccount" type="button" style="display:none">
+       Modifier / annuler
+      </button>
      </div>
      <div class="catalog-scroll" id="catalogScroll">
      </div>
@@ -2148,9 +2193,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         <strong id="accountBalance">CHF 0.00</strong>
        </div>
        <div class="account-actions">
-        <button class="correct-account" disabled id="correctAccount" type="button" style="display:none">
-         Corriger / annuler
-        </button>
         <button class="close-account" disabled id="closeAccount" type="button">
          Clôturer le compte
         </button>
@@ -2292,11 +2334,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   <div aria-hidden="true" class="modal" id="correctionModal">
    <div class="modalcard correction-card">
     <div class="modalhead">
-     <h3>Corriger / annuler une opération de vaisselle</h3>
+     <h3>Modifier / annuler une opération de vaisselle</h3>
      <button class="close" id="correctionClose" type="button">×</button>
     </div>
     <div class="correction-body">
-     <p class="correction-note">L'opération originale reste dans l'historique. Son annulation corrige automatiquement le compte et, en mode Réel, les mouvements de stock associés. Pour une correction, annule l'opération erronée puis ressaisis immédiatement la bonne opération.</p>
+     <p class="correction-note">Choisis « Modifier » pour reprendre automatiquement les quantités de l’opération dans l’écran de saisie, les ajuster puis les valider à nouveau. Choisis « Annuler » pour supprimer uniquement ses effets. L’opération originale reste toujours traçable dans l’historique.</p>
      <div class="correction-list" id="correctionList"></div>
      <div class="correction-form" id="correctionForm">
       <div class="correction-selected" id="correctionSelected"></div>
@@ -2358,7 +2400,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const topbar=$("top");
     const loading=$("loading");
     const catalog=$("catalogScroll");
-    const edition=$("edition");
     const search=$("search");
     const results=$("results");
     const searchZone=$("searchZone");
@@ -2414,6 +2455,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     let userRole="";
     let correctionOperations=[];
     let correctionOperation=null;
+    let correctionAction="annuler";
     let correctionKey=null;
     let accountData=null;
     let paymentKey=null;
@@ -2935,6 +2977,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         correctionModal.classList.remove("show");
         correctionModal.setAttribute("aria-hidden","true");
         correctionOperation=null;
+        correctionAction="annuler";
         correctionKey=null;
         correctionReason.value="";
         correctionForm.classList.remove("show");
@@ -2955,23 +2998,71 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 <div class="correction-op-detail">${correctionDetail(op)}</div>
                 ${finance}
                 ${op.motif_correction?`<div class="correction-op-detail"><strong>Motif :</strong> ${esc(op.motif_correction)}</div>`:""}
-                <div class="correction-op-actions">${valid?`<button class="correction-select" type="button" data-correction-id="${esc(op.id)}">Corriger / annuler</button>`:`<strong>Opération annulée</strong>`}</div>
+                <div class="correction-op-actions">${valid?`
+                    <button class="correction-edit" type="button" data-correction-edit="${esc(op.id)}">Modifier</button>
+                    <button class="correction-delete" type="button" data-correction-cancel="${esc(op.id)}">Annuler</button>
+                `:`<strong>Opération annulée</strong>`}</div>
             </div>`;
         }).join("");
-        correctionList.querySelectorAll("[data-correction-id]").forEach(button=>{
-            button.onclick=()=>selectCorrectionOperation(button.dataset.correctionId);
+        correctionList.querySelectorAll("[data-correction-edit]").forEach(button=>{
+            button.onclick=()=>selectCorrectionOperation(button.dataset.correctionEdit,"modifier");
+        });
+        correctionList.querySelectorAll("[data-correction-cancel]").forEach(button=>{
+            button.onclick=()=>selectCorrectionOperation(button.dataset.correctionCancel,"annuler");
         });
     }
-    function selectCorrectionOperation(id){
+    function selectCorrectionOperation(id,action="annuler"){
         const op=correctionOperations.find(x=>x.id===id);
         if(!op)return;
         correctionOperation=op;
+        correctionAction=action==="modifier"?"modifier":"annuler";
         correctionKey=uuid();
         correctionSelected.innerHTML=`<strong>${esc(operationTypeLabel(op.type_operation))}</strong> · ${esc(op.numero_operation||"")}<br>${correctionDetail(op)}`;
         correctionReason.value="";
         correctionConfirm.disabled=true;
+        correctionConfirm.textContent=correctionAction==="modifier"?"Préparer la modification":"Annuler cette opération";
         correctionForm.classList.add("show");
         correctionReason.focus();
+    }
+
+    function prefillOperationForModification(op){
+        initState();
+        const t=String(op?.type_operation||"");
+        if(!types.includes(t))return;
+
+        for(const ligne of (Array.isArray(op?.vaisselle)?op.vaisselle:[])){
+            const id=ligne.vaisselle_id;
+            if(!state.vaisselle[id])continue;
+            state.vaisselle[id][t].caisses=n(ligne.nombre_caisses_completes);
+            state.vaisselle[id][t].unites=n(
+                ligne.quantite_hors_caisses ??
+                ligne.quantite_unites_hors_conditionnement ??
+                0
+            );
+        }
+
+        let caissesVides=0;
+        for(const contenant of (Array.isArray(op?.contenants)?op.contenants:[])){
+            if(String(contenant.usage_contenant||"")==="vide"){
+                caissesVides+=n(contenant.quantite);
+            }
+        }
+        if(t!=="retour_propre")state.caissesVides[t]=caissesVides;
+
+        if(t==="retrait"){
+            filter="retrait";
+            document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retrait"));
+            $("returnSubtabs").hidden=true;
+        }else{
+            filter="retours";
+            returnFilter=t==="retour_propre"?"propre":"sale";
+            document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retours"));
+            document.querySelectorAll(".subtab").forEach(b=>b.classList.toggle("active",b.dataset.returnFilter===returnFilter));
+            $("returnSubtabs").hidden=false;
+        }
+
+        renderCatalog();
+        renderSummary();
     }
     async function openCorrectionModal(){
         if(!stand)return msg("Sélectionne d'abord le stand.");
@@ -3002,7 +3093,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         if(!motif)return msg("Le motif de correction est obligatoire.");
         if(!correctionKey)correctionKey=uuid();
         correctionConfirm.disabled=true;
-        correctionConfirm.textContent="Annulation…";
+        correctionConfirm.textContent=correctionAction==="modifier"?"Préparation…":"Annulation…";
         try{
             const {data:r,error}=await client.rpc(
                 demo?"annuler_operation_vaisselle_demo":"annuler_operation_vaisselle",
@@ -3010,30 +3101,27 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             );
             if(error)throw error;
             if(!r?.ok)throw new Error("Annulation non confirmée par le serveur.");
-            const type=correctionOperation.type_operation;
-            const numero=correctionOperation.numero_operation||"";
+            const opCorrigee=correctionOperation;
+            const numero=opCorrigee.numero_operation||"";
+            const action=correctionAction;
             closeCorrectionModal();
-            msg(`Opération ${numero} annulée. Tu peux maintenant saisir l'opération correcte.`,true);
-            initState();
-            if(type==="retrait"){
-                filter="retrait";
-                document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retrait"));
-                $("returnSubtabs").hidden=true;
+
+            if(action==="modifier"){
+                prefillOperationForModification(opCorrigee);
+                msg(`Opération ${numero} ouverte en modification. Ajuste les quantités puis valide le nouveau passage.`,true);
             }else{
-                filter="retours";
-                returnFilter=type==="retour_propre"?"propre":"sale";
-                document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retours"));
-                document.querySelectorAll(".subtab").forEach(b=>b.classList.toggle("active",b.dataset.returnFilter===returnFilter));
-                $("returnSubtabs").hidden=false;
+                initState();
+                renderCatalog();
+                renderSummary();
+                msg(`Opération ${numero} annulée.`,true);
             }
-            renderCatalog();
-            renderSummary();
+
             await loadAccount();
         }catch(e){
             console.error(e);
             msg(e?.message||"Impossible d'annuler cette opération.");
         }finally{
-            correctionConfirm.textContent="Annuler cette opération";
+            correctionConfirm.textContent=correctionAction==="modifier"?"Préparer la modification":"Annuler cette opération";
             if(correctionModal.classList.contains("show"))correctionConfirm.disabled=!String(correctionReason.value||"").trim();
         }
     }
@@ -3865,7 +3953,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(error)throw error;
             if(!d?.edition?.id)throw new Error("Aucune édition active.");
             data=d;
-            edition.textContent=`MDN Sion ${d.edition.annee||""}`;
             initState();
             events();
             renderCatalog();
