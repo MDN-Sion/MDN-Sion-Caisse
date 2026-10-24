@@ -3371,7 +3371,9 @@
         const motifOk = String(motifRemboursementVente.value || "").trim().length > 0;
         const paiementOk = total > 0 && Math.abs(sommePaiements - total) < 0.005;
         erreurRemboursementVente.textContent = total > 0 && !paiementOk ? `Répartition : ${formaterCHF(sommePaiements)} sur ${formaterCHF(total)}` : "";
-        confirmerRemboursementVente.disabled = !(motifOk && paiementOk) || remboursementVenteEnCours;
+        const remboursementValide = motifOk && paiementOk && !remboursementVenteEnCours;
+        confirmerRemboursementVente.disabled = !remboursementValide;
+        confirmerRemboursementVente.classList.toggle("actif", remboursementValide);
       }
 
       function basculerMoyenRemboursement(code, bouton) {
