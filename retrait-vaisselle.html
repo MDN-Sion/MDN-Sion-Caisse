@@ -2135,7 +2135,23 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   background:#fff6df;
 }
 .correction-work-banner.show{display:block}
-.correction-work-title{font-weight:900;color:#8b0000;margin-bottom:4px}
+.correction-work-title{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  column-gap:8px;
+  row-gap:2px;
+  font-weight:900;
+  color:#8b0000;
+  margin-bottom:4px
+}
+.correction-work-title .correction-work-mode,
+.correction-work-title .correction-work-reference{
+  display:inline;
+}
+.correction-work-title .correction-work-reference{
+  margin:0;
+}
 .correction-work-detail{font-size:13px;line-height:1.4;color:#5b4630}
 .correction-work-actions{display:grid;grid-template-columns:1fr 1.45fr;gap:8px;margin-top:10px}
 .correction-work-actions button{
@@ -3165,13 +3181,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const libelle=operationTypeLabel(t);
 
         if(correctionWorkAction==="modifier"){
-            correctionWorkTitle.innerHTML=`MODIFICATION<br><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
+            correctionWorkTitle.innerHTML=`<span class="correction-work-mode">MODIFICATION</span><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
             correctionWorkDetail.textContent="";
             correctionWorkDetail.style.display="none";
             correctionWorkConfirm.textContent="Valider";
             correctionWorkConfirm.classList.remove("annulation");
         }else{
-            correctionWorkTitle.innerHTML=`ANNULATION<br><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
+            correctionWorkTitle.innerHTML=`<span class="correction-work-mode">ANNULATION</span><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
             correctionWorkDetail.textContent="";
             correctionWorkDetail.style.display="none";
             correctionWorkConfirm.textContent="Confirmer";
