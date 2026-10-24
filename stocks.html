@@ -798,6 +798,10 @@
     .bouton-modal.valider { border-color:#8b0000; background:#8b0000; color:#fff; }
     .application.mode-demo ~ .modal-fond .bouton-modal.valider { border-color:#8a6800; background:#8a6800; }
     .bouton-modal:disabled { opacity:.5; cursor:not-allowed; }
+    .bouton-modal.danger { border-color:#a11919; background:#a11919; color:#fff; }
+    .bouton-modal.danger:hover:not(:disabled) { background:#7f1010; }
+    .bouton-modal.action-operation { margin-right:auto; }
+    .aide-annulation { margin:0 0 12px; padding:10px 12px; border:1px solid #f0d2d2; border-radius:10px; background:#fff7f7; color:#7f2020; font-size:11px; line-height:1.45; }
 
 
     /* SQL 93 — interactions et détails Stocks */
@@ -1259,7 +1263,31 @@
         <div class="detail-vide">Chargement…</div>
       </div>
       <div class="modal-actions">
+        <button id="annulerOperationStock" class="bouton-modal danger action-operation" type="button" hidden>Annuler l’opération</button>
         <button id="fermerModalDetailBas" class="bouton-modal" type="button">Fermer</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="modalAnnulationOperation" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalAnnulationOperation">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalAnnulationOperation">Annuler l’opération</h2>
+          <p>Une contre-opération traçable sera créée. L’opération d’origine restera dans l’historique.</p>
+        </div>
+        <button id="fermerModalAnnulationOperation" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="modal-contenu">
+        <p id="texteControleAnnulation" class="aide-annulation"></p>
+        <div class="champ">
+          <label for="motifAnnulationOperation">Motif de l’annulation *</label>
+          <textarea id="motifAnnulationOperation" placeholder="Indique le motif de l’annulation"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="abandonnerAnnulationOperation" class="bouton-modal" type="button">Retour</button>
+        <button id="confirmerAnnulationOperation" class="bouton-modal danger" type="button">Confirmer l’annulation</button>
       </div>
     </section>
   </div>
@@ -1303,7 +1331,14 @@
       const contenuModalDetail = document.getElementById("contenuModalDetail");
       const fermerModalDetail = document.getElementById("fermerModalDetail");
       const fermerModalDetailBas = document.getElementById("fermerModalDetailBas");
+      const annulerOperationStock = document.getElementById("annulerOperationStock");
 
+      const modalAnnulationOperation = document.getElementById("modalAnnulationOperation");
+      const fermerModalAnnulationOperation = document.getElementById("fermerModalAnnulationOperation");
+      const abandonnerAnnulationOperation = document.getElementById("abandonnerAnnulationOperation");
+      const confirmerAnnulationOperation = document.getElementById("confirmerAnnulationOperation");
+      const motifAnnulationOperation = document.getElementById("motifAnnulationOperation");
+      const texteControleAnnulation = document.getElementById("texteControleAnnulation");
 
       const messageStocks = document.getElementById("messageStocks");
       const texteMessageStocks = document.getElementById("texteMessageStocks");
@@ -1316,6 +1351,8 @@
       let stocksCourants = [];
       let conditionnementsCourants = [];
       let contenantsCourants = [];
+      let operationDetailCourante = null;
+      let controleAnnulationCourant = null;
 
       function masquerChargement() {
         chargementPage.classList.add("masque");
@@ -1726,24 +1763,115 @@
       }
 
       function statutOperation(valeur) {
-        const v = String(valeur || "active").toLowerCase();
-        if (v === "annulee") return "Annulée";
-        if (v === "corrigee") return "Corrigée";
+        const v = String(valeur || "valide").toLowerCase();
+        if (v === "annule" || v === "annulee") return "Annulée";
+        if (v === "corrige" || v === "corrigee") return "Corrigée";
         if (v === "correction") return "Correction";
-        return "Active";
+        if (v === "valide" || v === "active") return "Valide";
+        return valeur || "—";
       }
 
       function fermerDetail() {
+        operationDetailCourante = null;
+        controleAnnulationCourant = null;
+        annulerOperationStock.hidden = true;
         modalDetail.classList.remove("visible");
         modalDetail.setAttribute("aria-hidden", "true");
       }
 
       function ouvrirDetail(titre, sousTitre) {
+        operationDetailCourante = null;
+        controleAnnulationCourant = null;
+        annulerOperationStock.hidden = true;
         titreModalDetail.textContent = titre;
         sousTitreModalDetail.textContent = sousTitre || "";
         contenuModalDetail.innerHTML = '<div class="detail-vide">Chargement…</div>';
         modalDetail.classList.add("visible");
         modalDetail.setAttribute("aria-hidden", "false");
+      }
+
+      function fermerAnnulationOperation() {
+        modalAnnulationOperation.classList.remove("visible");
+        modalAnnulationOperation.setAttribute("aria-hidden", "true");
+        motifAnnulationOperation.value = "";
+        confirmerAnnulationOperation.disabled = false;
+        confirmerAnnulationOperation.textContent = "Confirmer l’annulation";
+      }
+
+      async function preparerAnnulationOperation() {
+        const op = operationDetailCourante;
+        if (!op?.id) return;
+
+        annulerOperationStock.disabled = true;
+        annulerOperationStock.textContent = "Vérification…";
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("controle_correction_annulation_stock_vaisselle", {
+            p_operation_id: op.id,
+            p_is_demo: modeDemo
+          });
+          if (error) throw error;
+
+          controleAnnulationCourant = data || {};
+
+          if (controleAnnulationCourant.annulation_directe_possible !== true) {
+            throw new Error(controleAnnulationCourant.raison || "Cette opération ne peut pas être annulée.");
+          }
+
+          const contenants = Array.isArray(op.contenants_vides) ? op.contenants_vides : [];
+          if (contenants.length > 0) {
+            throw new Error("Cette opération contient des contenants vides. Leur annulation n’est pas encore prise en charge par le moteur SQL 104.");
+          }
+
+          texteControleAnnulation.textContent = controleAnnulationCourant.raison || "Le contrôle de sécurité autorise l’annulation par contre-opération traçable.";
+          motifAnnulationOperation.value = "";
+          modalAnnulationOperation.classList.add("visible");
+          modalAnnulationOperation.setAttribute("aria-hidden", "false");
+          setTimeout(function () { motifAnnulationOperation.focus(); }, 0);
+        } catch (erreur) {
+          afficherMessage(erreur?.message || "Cette opération ne peut pas être annulée.");
+        } finally {
+          annulerOperationStock.disabled = false;
+          annulerOperationStock.textContent = "Annuler l’opération";
+        }
+      }
+
+      async function confirmerAnnulationStock() {
+        const op = operationDetailCourante;
+        const motif = String(motifAnnulationOperation.value || "").trim();
+
+        if (!op?.id) {
+          afficherMessage("Aucune opération n’est sélectionnée.");
+          return;
+        }
+
+        if (!motif) {
+          afficherMessage("Le motif de l’annulation est obligatoire.");
+          motifAnnulationOperation.focus();
+          return;
+        }
+
+        confirmerAnnulationOperation.disabled = true;
+        confirmerAnnulationOperation.textContent = "Annulation…";
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("annuler_operation_stock_vaisselle", {
+            p_operation_id: op.id,
+            p_motif: motif,
+            p_is_demo: modeDemo
+          });
+          if (error) throw error;
+
+          fermerAnnulationOperation();
+          fermerDetail();
+          await chargerStocks();
+          afficherMessage(data?.message || "Opération annulée. La contre-opération a été enregistrée dans l’historique.", "succes");
+        } catch (erreur) {
+          console.error("[MDN Sion] Annulation opération stock impossible :", erreur);
+          afficherMessage(erreur?.message || "Impossible d’annuler cette opération.");
+          confirmerAnnulationOperation.disabled = false;
+          confirmerAnnulationOperation.textContent = "Confirmer l’annulation";
+        }
       }
 
       async function afficherDetailArticle(vaisselleId) {
@@ -1872,6 +2000,12 @@
           const d = data || {};
           const lignes = Array.isArray(d.lignes_vaisselle) ? d.lignes_vaisselle : (Array.isArray(d.lignes) ? d.lignes : []);
           const op = d.operation || d;
+          operationDetailCourante = op;
+          operationDetailCourante.contenants_vides = Array.isArray(d.contenants_vides) ? d.contenants_vides : [];
+          const typeAnnulable = ["livraison_vaisselle", "transfert_reserve_operationnel"].includes(String(op.type_operation || ""));
+          const statutValide = String(op.statut || "valide").toLowerCase() === "valide";
+          const estOperationOriginale = !op.operation_originale_id;
+          annulerOperationStock.hidden = !(typeAnnulable && statutValide && estOperationOriginale);
           contenuModalDetail.innerHTML = `
             <div class="detail-sections">
               <section class="detail-carte">
@@ -1899,12 +2033,13 @@
         historiqueListe.innerHTML = operations.map(function (operation) {
           const quantite = operation.quantite_totale ?? operation.total_unites ?? operation.quantite ?? 0;
           const commentaire = operation.commentaire || operation.motif_correction || "";
-          const statut = String(operation.statut || "active").toLowerCase();
+          const statut = String(operation.statut || "valide").toLowerCase();
+          const classeStatut = statut === "annule" ? "annulee" : (statut === "corrige" ? "corrigee" : statut);
           return `
             <article class="mouvement" data-operation-id="${echapperHtml(operation.operation_id || operation.id || "")}">
               <div class="mouvement-haut"><div class="mouvement-article">${echapperHtml(libelleTypeMouvement(operation.type_operation || operation.type_mouvement))}</div><div class="mouvement-quantite">${formatNombre(quantite)}</div></div>
               <div class="mouvement-type">${echapperHtml(operation.reference_externe || operation.reference_type || "Opération de stock")}</div>
-              <span class="mouvement-statut ${statut}">${echapperHtml(statutOperation(statut))}</span>
+              <span class="mouvement-statut ${classeStatut}">${echapperHtml(statutOperation(statut))}</span>
               <div class="mouvement-bas"><span>${echapperHtml(formatDateHeure(operation.date_operation || operation.date_mouvement || operation.created_at))}</span><span>Voir le détail ›</span></div>
               ${commentaire ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>` : ""}
             </article>`;
@@ -2077,6 +2212,14 @@
       fermerModalDetail.addEventListener("click", fermerDetail);
       fermerModalDetailBas.addEventListener("click", fermerDetail);
       modalDetail.addEventListener("click", function (event) { if (event.target === modalDetail) fermerDetail(); });
+
+      annulerOperationStock.addEventListener("click", preparerAnnulationOperation);
+      fermerModalAnnulationOperation.addEventListener("click", fermerAnnulationOperation);
+      abandonnerAnnulationOperation.addEventListener("click", fermerAnnulationOperation);
+      confirmerAnnulationOperation.addEventListener("click", confirmerAnnulationStock);
+      modalAnnulationOperation.addEventListener("click", function (event) {
+        if (event.target === modalAnnulationOperation) fermerAnnulationOperation();
+      });
 
       boutonRetour.addEventListener("click", function () {
         window.location.href = "accueil.html";
