@@ -1780,6 +1780,39 @@
       }
     }
 
+  
+    /* =========================================================
+       REMISE / OFFERT — PANIER
+       ========================================================= */
+    .ligne-panier-prix-zone{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+    .bouton-prix-exceptionnel{min-height:30px;padding:5px 8px;border:1px solid #d6bcbc;border-radius:8px;background:#fff;color:#850000;cursor:pointer;font-size:11px;font-weight:850;white-space:nowrap}
+    .bouton-prix-exceptionnel:hover{background:#fff5f5;border-color:#8b0000}
+    .ligne-panier-prix-barre{text-decoration:line-through;color:#888}
+    .ligne-panier-prix-special{color:#850000;font-weight:900}
+    .ligne-panier-badge-prix{display:inline-flex;margin-top:5px;padding:3px 7px;border-radius:999px;background:#fff1f1;color:#850000;font-size:10px;font-weight:850}
+    .modal-prix-exceptionnel{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(20,20,20,.55);backdrop-filter:blur(2px)}
+    .modal-prix-exceptionnel.visible{display:flex}
+    .prix-exceptionnel-carte{width:min(100%,620px);max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #dedede;border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+    .prix-exceptionnel-corps{min-height:0;overflow-y:auto;padding:16px 18px}
+    .prix-exceptionnel-resume{padding:11px 13px;margin-bottom:12px;border-radius:11px;background:#f7f7f7;color:#444}
+    .prix-exceptionnel-resume strong{color:#850000}
+    .prix-exceptionnel-types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:12px}
+    .prix-exceptionnel-type{min-height:44px;padding:7px;border:1px solid #d6d6d6;border-radius:10px;background:#fff;color:#444;cursor:pointer;font-weight:800}
+    .prix-exceptionnel-type.selectionne{border-color:#8b0000;background:#fff1f1;color:#850000}
+    .prix-exceptionnel-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .prix-exceptionnel-champ label{display:block;margin-bottom:4px;color:#555;font-size:12px;font-weight:800}
+    .prix-exceptionnel-champ input,.prix-exceptionnel-champ select{width:100%;min-height:42px;padding:8px 10px;border:1px solid #cfcfcf;border-radius:9px;background:#fff;font:inherit}
+    .prix-exceptionnel-champ-large{grid-column:1/-1}
+    .prix-exceptionnel-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:13px;padding-top:12px;border-top:1px solid #e7e7e7}
+    .prix-exceptionnel-total strong{color:#850000;font-size:22px}
+    .prix-exceptionnel-erreur{min-height:20px;margin-top:8px;color:#b91c1c;font-size:12px;font-weight:750}
+    @media(max-width:700px){
+      .prix-exceptionnel-types{grid-template-columns:1fr 1fr}
+      .prix-exceptionnel-grille{grid-template-columns:1fr}
+      .prix-exceptionnel-champ-large{grid-column:auto}
+      .ligne-panier-bas{align-items:flex-end}
+    }
+
   </style>
 
   <style>
@@ -2040,6 +2073,66 @@
 
 
 
+
+
+  <div id="modalPrixExceptionnel" class="modal-prix-exceptionnel" role="dialog" aria-modal="true" aria-labelledby="titrePrixExceptionnel">
+    <section class="prix-exceptionnel-carte">
+      <div class="encaissement-entete">
+        <h2 id="titrePrixExceptionnel">Remise / Offert</h2>
+        <button id="fermerPrixExceptionnel" class="encaissement-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="prix-exceptionnel-corps">
+        <div id="resumePrixExceptionnel" class="prix-exceptionnel-resume"></div>
+
+        <div class="prix-exceptionnel-types">
+          <button class="prix-exceptionnel-type selectionne" type="button" data-type-prix="pourcentage">Remise %</button>
+          <button class="prix-exceptionnel-type" type="button" data-type-prix="montant">Remise CHF</button>
+          <button class="prix-exceptionnel-type" type="button" data-type-prix="special">Prix spécial</button>
+          <button class="prix-exceptionnel-type" type="button" data-type-prix="offert">Offert</button>
+        </div>
+
+        <div class="prix-exceptionnel-grille">
+          <div class="prix-exceptionnel-champ">
+            <label for="quantitePrixExceptionnel">Quantité concernée</label>
+            <input id="quantitePrixExceptionnel" type="number" min="1" step="1" value="1">
+          </div>
+
+          <div id="blocValeurPrixExceptionnel" class="prix-exceptionnel-champ">
+            <label id="labelValeurPrixExceptionnel" for="valeurPrixExceptionnel">Remise en %</label>
+            <input id="valeurPrixExceptionnel" type="number" min="0" step="0.01" inputmode="decimal">
+          </div>
+
+          <div class="prix-exceptionnel-champ prix-exceptionnel-champ-large">
+            <label for="motifPrixExceptionnel">Motif obligatoire</label>
+            <select id="motifPrixExceptionnel">
+              <option value="">Sélectionner un motif</option>
+              <option value="Geste commercial">Geste commercial</option>
+              <option value="Promotion">Promotion</option>
+              <option value="Partenaire / invité">Partenaire / invité</option>
+              <option value="Collaborateur / bénévole">Collaborateur / bénévole</option>
+              <option value="Article légèrement défectueux">Article légèrement défectueux</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+
+          <div class="prix-exceptionnel-champ prix-exceptionnel-champ-large">
+            <label for="commentairePrixExceptionnel">Commentaire</label>
+            <input id="commentairePrixExceptionnel" type="text" maxlength="500" placeholder="Facultatif">
+          </div>
+        </div>
+
+        <div class="prix-exceptionnel-total">
+          <span>Prix appliqué par unité</span>
+          <strong id="apercuPrixExceptionnel">CHF 0.00</strong>
+        </div>
+        <div id="erreurPrixExceptionnel" class="prix-exceptionnel-erreur"></div>
+      </div>
+      <div class="encaissement-actions">
+        <button id="annulerPrixExceptionnel" class="encaissement-annuler" type="button">Annuler</button>
+        <button id="appliquerPrixExceptionnel" class="encaissement-continuer" type="button" disabled>Appliquer</button>
+      </div>
+    </section>
+  </div>
 
   <div id="modalRemboursementVente" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreRemboursementVente">
     <section class="encaissement-carte remboursement-carte">
@@ -2370,6 +2463,8 @@
       let dossierActif = null;
       let clientSupabaseCaisse = null;
       let panierCaisse = [];
+      let lignePrixExceptionnelSelectionnee = null;
+      let typePrixExceptionnelSelectionne = "pourcentage";
       let moyenPaiementSelectionne = [];
       let validationPaiementEnCours = false;
       let cleIdempotenceEncaissement = null;
@@ -3139,7 +3234,18 @@
         const lignes = panierCaisse
           .filter(function (ligne) { return !estLigneGobelet(ligne); })
           .map(function (ligne) {
-            return { article_id: ligne.articleId, quantite: ligne.quantite };
+            const payload = {
+              article_id: ligne.articleId,
+              quantite: ligne.quantite
+            };
+
+            if (ligne.prixExceptionnel) {
+              payload.prix_applique = arrondirMontant(prixUnitaireLigne(ligne));
+              payload.motif_prix_exceptionnel = ligne.motifPrixExceptionnel;
+              payload.commentaire_prix_exceptionnel = ligne.commentairePrixExceptionnel || null;
+            }
+
+            return payload;
           });
 
         validationPaiementEnCours = true;
@@ -3312,6 +3418,7 @@
           ligne.quantite += 1;
         } else {
           panierCaisse.push({
+            clePanier: config.articleId,
             articleId: config.articleId,
             editionArticleId: null,
             nom: config.nom,
@@ -3695,9 +3802,25 @@
       }
 
 
+      function prixUnitaireLigne(ligne) {
+        return Number(
+          ligne && ligne.prixApplique !== undefined && ligne.prixApplique !== null
+            ? ligne.prixApplique
+            : ligne.prix
+        );
+      }
+
+      function cleLignePanier(ligne) {
+        return String(ligne.clePanier || ligne.articleId);
+      }
+
+      function genererCleLignePanier(articleId) {
+        return String(articleId) + "__" + genererCleIdempotence();
+      }
+
       function calculerTotalPanier() {
         return panierCaisse.reduce(function (total, ligne) {
-          return total + (ligne.prix * ligne.quantite);
+          return total + (prixUnitaireLigne(ligne) * ligne.quantite);
         }, 0);
       }
 
@@ -3708,7 +3831,7 @@
               ? total + (ligne.prix * ligne.quantite)
               : total;
           }
-          return total + (ligne.prix * ligne.quantite);
+          return total + (prixUnitaireLigne(ligne) * ligne.quantite);
         }, 0);
 
         return arrondirMontant(
@@ -3725,9 +3848,37 @@
         }, 0);
       }
 
+      function libellePrixLigne(ligne) {
+        if (estLigneGobelet(ligne)) {
+          return ligne.typeOperationGobelet === "vente"
+            ? "CHF 2.00 encaissés / unité"
+            : ligne.typeOperationGobelet === "retour"
+              ? "CHF 2.00 remboursés / unité"
+              : "Aucun mouvement d’argent";
+        }
+
+        const prixCatalogue = Number(ligne.prix);
+        const prixApplique = prixUnitaireLigne(ligne);
+
+        if (!ligne.prixExceptionnel) {
+          return formaterCHF(prixCatalogue) + " / unité";
+        }
+
+        const libelle = prixApplique === 0
+          ? "OFFERT"
+          : formaterCHF(prixApplique) + " / unité";
+
+        return '<span class="ligne-panier-prix-barre">' +
+          echapperHTML(formaterCHF(prixCatalogue)) +
+          '</span> <span class="ligne-panier-prix-special">' +
+          echapperHTML(libelle) +
+          '</span>';
+      }
+
       function afficherPanier() {
         const nombreArticles = panierCaisse.reduce(function (total, ligne) { return total + ligne.quantite; }, 0);
         synchroniserPastillesGobelets();
+
         if (panierCaisse.length === 0) {
           etatPanier.textContent = "Aucune vente en cours";
           panierContenu.innerHTML = '<div class="panier-vide">Le panier est vide.</div>';
@@ -3736,28 +3887,115 @@
           boutonEncaisser.classList.remove("actif");
           return;
         }
+
         etatPanier.textContent = nombreArticles + " article" + (nombreArticles > 1 ? "s" : "") + " dans le panier";
+
         panierContenu.innerHTML = `<div class="liste-panier">${panierCaisse.map(function (ligne) {
-          return `<div class="ligne-panier"><div class="ligne-panier-haut"><div class="ligne-panier-nom">${echapperHTML(ligne.nom)}</div><div class="ligne-panier-sous-total">${echapperHTML(formaterCHF(ligne.prix * ligne.quantite))}</div></div><div class="ligne-panier-bas"><div class="ligne-panier-prix">${echapperHTML(estLigneGobelet(ligne) ? (ligne.typeOperationGobelet === "vente" ? "CHF 2.00 encaissés / unité" : ligne.typeOperationGobelet === "retour" ? "CHF 2.00 remboursés / unité" : "Aucun mouvement d’argent") : formaterCHF(ligne.prix) + " / unité")}</div><div class="controle-quantite"><button class="bouton-quantite" type="button" data-action-panier="moins" data-article-id="${echapperHTML(ligne.articleId)}">−</button><span class="quantite-panier">${ligne.quantite}</span><button class="bouton-quantite" type="button" data-action-panier="plus" data-article-id="${echapperHTML(ligne.articleId)}">+</button></div></div></div>`;
+          const cle = cleLignePanier(ligne);
+          const sousTotal = prixUnitaireLigne(ligne) * ligne.quantite;
+          const badge = !estLigneGobelet(ligne) && ligne.prixExceptionnel
+            ? `<div class="ligne-panier-badge-prix">${echapperHTML(ligne.motifPrixExceptionnel || "Prix modifié")}</div>`
+            : "";
+          const boutonPrix = !estLigneGobelet(ligne)
+            ? `<button class="bouton-prix-exceptionnel" type="button" data-action-panier="prix" data-cle-panier="${echapperHTML(cle)}">Remise / Offert</button>`
+            : "";
+
+          return `<div class="ligne-panier">
+            <div class="ligne-panier-haut">
+              <div class="ligne-panier-nom">${echapperHTML(ligne.nom)}${badge}</div>
+              <div class="ligne-panier-sous-total">${echapperHTML(formaterCHF(sousTotal))}</div>
+            </div>
+            <div class="ligne-panier-bas">
+              <div class="ligne-panier-prix-zone">
+                <div class="ligne-panier-prix">${libellePrixLigne(ligne)}</div>
+                ${boutonPrix}
+              </div>
+              <div class="controle-quantite">
+                <button class="bouton-quantite" type="button" data-action-panier="moins" data-cle-panier="${echapperHTML(cle)}">−</button>
+                <span class="quantite-panier">${ligne.quantite}</span>
+                <button class="bouton-quantite" type="button" data-action-panier="plus" data-cle-panier="${echapperHTML(cle)}">+</button>
+              </div>
+            </div>
+          </div>`;
         }).join("")}</div>`;
+
         totalPanier.textContent = formaterCHF(calculerTotalPanier());
         boutonEncaisser.disabled = false;
         boutonEncaisser.classList.add("actif");
       }
 
       function ajouterArticleAuPanier(article) {
-        const ligne = panierCaisse.find(function (element) { return element.articleId === article.articleId; });
-        if (ligne) ligne.quantite += 1;
-        else panierCaisse.push({ articleId:article.articleId, editionArticleId:article.editionArticleId, nom:article.nom, prix:Number(article.prix), beneficiaire:article.beneficiaire, gestionStock:article.gestionStock, quantite:1 });
+        const ligne = panierCaisse.find(function (element) {
+          return !estLigneGobelet(element)
+            && element.articleId === article.articleId
+            && !element.prixExceptionnel;
+        });
+
+        if (ligne) {
+          ligne.quantite += 1;
+        } else {
+          panierCaisse.push({
+            clePanier: genererCleLignePanier(article.articleId),
+            articleId: article.articleId,
+            editionArticleId: article.editionArticleId,
+            nom: article.nom,
+            prix: Number(article.prix),
+            prixApplique: Number(article.prix),
+            beneficiaire: article.beneficiaire,
+            gestionStock: article.gestionStock,
+            quantite: 1,
+            prixExceptionnel: false,
+            motifPrixExceptionnel: null,
+            commentairePrixExceptionnel: null
+          });
+        }
+
         afficherPanier();
       }
 
-      function modifierQuantitePanier(articleId, variation) {
-        const ligne = panierCaisse.find(function (element) { return element.articleId === articleId; });
+      function modifierQuantitePanier(clePanier, variation) {
+        const ligne = panierCaisse.find(function (element) {
+          return cleLignePanier(element) === String(clePanier);
+        });
+
         if (!ligne) return;
+
         ligne.quantite += variation;
-        if (ligne.quantite <= 0) panierCaisse = panierCaisse.filter(function (element) { return element.articleId !== articleId; });
+
+        if (ligne.quantite <= 0) {
+          panierCaisse = panierCaisse.filter(function (element) {
+            return cleLignePanier(element) !== String(clePanier);
+          });
+        }
+
         afficherPanier();
+      }
+
+      function fusionnerLignesPanierCompatibles() {
+        const resultat = [];
+
+        panierCaisse.forEach(function (ligne) {
+          if (estLigneGobelet(ligne)) {
+            resultat.push(ligne);
+            return;
+          }
+
+          const existante = resultat.find(function (candidate) {
+            return !estLigneGobelet(candidate)
+              && candidate.articleId === ligne.articleId
+              && Number(prixUnitaireLigne(candidate)).toFixed(2) === Number(prixUnitaireLigne(ligne)).toFixed(2)
+              && String(candidate.motifPrixExceptionnel || "") === String(ligne.motifPrixExceptionnel || "")
+              && String(candidate.commentairePrixExceptionnel || "") === String(ligne.commentairePrixExceptionnel || "");
+          });
+
+          if (existante) {
+            existante.quantite += ligne.quantite;
+          } else {
+            resultat.push(ligne);
+          }
+        });
+
+        panierCaisse = resultat;
       }
 
       function brancherInteractionsCatalogue() {
@@ -4414,10 +4652,188 @@
       }
 
 
+      const modalPrixExceptionnel = document.getElementById("modalPrixExceptionnel");
+      const fermerPrixExceptionnel = document.getElementById("fermerPrixExceptionnel");
+      const annulerPrixExceptionnel = document.getElementById("annulerPrixExceptionnel");
+      const appliquerPrixExceptionnel = document.getElementById("appliquerPrixExceptionnel");
+      const resumePrixExceptionnel = document.getElementById("resumePrixExceptionnel");
+      const quantitePrixExceptionnel = document.getElementById("quantitePrixExceptionnel");
+      const blocValeurPrixExceptionnel = document.getElementById("blocValeurPrixExceptionnel");
+      const labelValeurPrixExceptionnel = document.getElementById("labelValeurPrixExceptionnel");
+      const valeurPrixExceptionnel = document.getElementById("valeurPrixExceptionnel");
+      const motifPrixExceptionnel = document.getElementById("motifPrixExceptionnel");
+      const commentairePrixExceptionnel = document.getElementById("commentairePrixExceptionnel");
+      const apercuPrixExceptionnel = document.getElementById("apercuPrixExceptionnel");
+      const erreurPrixExceptionnel = document.getElementById("erreurPrixExceptionnel");
+      const boutonsTypePrixExceptionnel = Array.from(document.querySelectorAll("[data-type-prix]"));
+
+      function fermerFenetrePrixExceptionnel() {
+        modalPrixExceptionnel.classList.remove("visible");
+        lignePrixExceptionnelSelectionnee = null;
+      }
+
+      function calculerPrixExceptionnelPropose() {
+        if (!lignePrixExceptionnelSelectionnee) return 0;
+
+        const prixCatalogue = Number(lignePrixExceptionnelSelectionnee.prix);
+        const valeur = Number(valeurPrixExceptionnel.value || 0);
+
+        if (typePrixExceptionnelSelectionne === "offert") return 0;
+        if (typePrixExceptionnelSelectionne === "pourcentage") {
+          return arrondirMontant(Math.max(0, prixCatalogue * (1 - (valeur / 100))));
+        }
+        if (typePrixExceptionnelSelectionne === "montant") {
+          return arrondirMontant(Math.max(0, prixCatalogue - valeur));
+        }
+        return arrondirMontant(Math.max(0, valeur));
+      }
+
+      function actualiserFenetrePrixExceptionnel() {
+        if (!lignePrixExceptionnelSelectionnee) return;
+
+        const quantiteMax = Number(lignePrixExceptionnelSelectionnee.quantite);
+        quantitePrixExceptionnel.max = String(quantiteMax);
+
+        boutonsTypePrixExceptionnel.forEach(function (bouton) {
+          bouton.classList.toggle("selectionne", bouton.dataset.typePrix === typePrixExceptionnelSelectionne);
+        });
+
+        const offert = typePrixExceptionnelSelectionne === "offert";
+        blocValeurPrixExceptionnel.style.display = offert ? "none" : "";
+
+        if (typePrixExceptionnelSelectionne === "pourcentage") {
+          labelValeurPrixExceptionnel.textContent = "Remise en %";
+          valeurPrixExceptionnel.placeholder = "Ex. 20";
+        } else if (typePrixExceptionnelSelectionne === "montant") {
+          labelValeurPrixExceptionnel.textContent = "Remise en CHF";
+          valeurPrixExceptionnel.placeholder = "Ex. 5.00";
+        } else if (typePrixExceptionnelSelectionne === "special") {
+          labelValeurPrixExceptionnel.textContent = "Prix spécial en CHF";
+          valeurPrixExceptionnel.placeholder = "Ex. 20.00";
+        }
+
+        const prixPropose = calculerPrixExceptionnelPropose();
+        apercuPrixExceptionnel.textContent = prixPropose === 0 ? "OFFERT" : formaterCHF(prixPropose);
+
+        const quantite = Number(quantitePrixExceptionnel.value || 0);
+        const motifOk = String(motifPrixExceptionnel.value || "").trim() !== "";
+        const quantiteOk = Number.isInteger(quantite) && quantite >= 1 && quantite <= quantiteMax;
+        const valeurOk = offert || (
+          Number.isFinite(Number(valeurPrixExceptionnel.value))
+          && String(valeurPrixExceptionnel.value).trim() !== ""
+          && Number(valeurPrixExceptionnel.value) >= 0
+        );
+        const prixDifferent = Number(prixPropose).toFixed(2) !== Number(lignePrixExceptionnelSelectionnee.prix).toFixed(2);
+
+        let erreur = "";
+        if (typePrixExceptionnelSelectionne === "pourcentage" && Number(valeurPrixExceptionnel.value) > 100) {
+          erreur = "La remise ne peut pas dépasser 100 %.";
+        } else if (typePrixExceptionnelSelectionne === "montant" && Number(valeurPrixExceptionnel.value) > Number(lignePrixExceptionnelSelectionnee.prix)) {
+          erreur = "La remise ne peut pas dépasser le prix de l’article.";
+        } else if (valeurOk && !prixDifferent) {
+          erreur = "Le prix appliqué doit être différent du prix catalogue.";
+        }
+
+        erreurPrixExceptionnel.textContent = erreur;
+        const valide = quantiteOk && motifOk && valeurOk && prixDifferent && !erreur;
+        appliquerPrixExceptionnel.disabled = !valide;
+        appliquerPrixExceptionnel.classList.toggle("actif", valide);
+      }
+
+      function ouvrirFenetrePrixExceptionnel(clePanier) {
+        const ligne = panierCaisse.find(function (element) {
+          return cleLignePanier(element) === String(clePanier);
+        });
+
+        if (!ligne || estLigneGobelet(ligne)) return;
+
+        lignePrixExceptionnelSelectionnee = ligne;
+        typePrixExceptionnelSelectionne = "pourcentage";
+        quantitePrixExceptionnel.value = "1";
+        valeurPrixExceptionnel.value = "";
+        motifPrixExceptionnel.value = "";
+        commentairePrixExceptionnel.value = "";
+        resumePrixExceptionnel.innerHTML =
+          "<strong>" + echapperHTML(ligne.nom) + "</strong><br>" +
+          "Prix catalogue : " + echapperHTML(formaterCHF(ligne.prix)) +
+          " · Quantité dans cette ligne : " + echapperHTML(String(ligne.quantite));
+
+        modalPrixExceptionnel.classList.add("visible");
+        actualiserFenetrePrixExceptionnel();
+      }
+
+      function appliquerModificationPrixExceptionnel() {
+        if (!lignePrixExceptionnelSelectionnee || appliquerPrixExceptionnel.disabled) return;
+
+        const ligneSource = lignePrixExceptionnelSelectionnee;
+        const quantiteConcernee = Number(quantitePrixExceptionnel.value);
+        const prixApplique = calculerPrixExceptionnelPropose();
+        const motif = String(motifPrixExceptionnel.value || "").trim();
+        const commentaire = String(commentairePrixExceptionnel.value || "").trim() || null;
+
+        const nouvelleLigne = {
+          clePanier: genererCleLignePanier(ligneSource.articleId),
+          articleId: ligneSource.articleId,
+          editionArticleId: ligneSource.editionArticleId,
+          nom: ligneSource.nom,
+          prix: Number(ligneSource.prix),
+          prixApplique: prixApplique,
+          beneficiaire: ligneSource.beneficiaire,
+          gestionStock: ligneSource.gestionStock,
+          quantite: quantiteConcernee,
+          prixExceptionnel: true,
+          motifPrixExceptionnel: motif,
+          commentairePrixExceptionnel: commentaire
+        };
+
+        ligneSource.quantite -= quantiteConcernee;
+
+        if (ligneSource.quantite <= 0) {
+          panierCaisse = panierCaisse.filter(function (element) {
+            return element !== ligneSource;
+          });
+        }
+
+        panierCaisse.push(nouvelleLigne);
+        fusionnerLignesPanierCompatibles();
+        fermerFenetrePrixExceptionnel();
+        afficherPanier();
+      }
+
+      boutonsTypePrixExceptionnel.forEach(function (bouton) {
+        bouton.addEventListener("click", function () {
+          typePrixExceptionnelSelectionne = bouton.dataset.typePrix;
+          valeurPrixExceptionnel.value = "";
+          actualiserFenetrePrixExceptionnel();
+        });
+      });
+
+      [quantitePrixExceptionnel, valeurPrixExceptionnel, motifPrixExceptionnel, commentairePrixExceptionnel]
+        .forEach(function (champ) {
+          champ.addEventListener("input", actualiserFenetrePrixExceptionnel);
+          champ.addEventListener("change", actualiserFenetrePrixExceptionnel);
+        });
+
+      fermerPrixExceptionnel.addEventListener("click", fermerFenetrePrixExceptionnel);
+      annulerPrixExceptionnel.addEventListener("click", fermerFenetrePrixExceptionnel);
+      appliquerPrixExceptionnel.addEventListener("click", appliquerModificationPrixExceptionnel);
+      modalPrixExceptionnel.addEventListener("click", function (evenement) {
+        if (evenement.target === modalPrixExceptionnel) fermerFenetrePrixExceptionnel();
+      });
+
       panierContenu.addEventListener("click", function (evenement) {
         const bouton = evenement.target.closest("[data-action-panier]");
         if (!bouton) return;
-        modifierQuantitePanier(bouton.dataset.articleId, bouton.dataset.actionPanier === "plus" ? 1 : -1);
+
+        if (bouton.dataset.actionPanier === "prix") {
+          ouvrirFenetrePrixExceptionnel(bouton.dataset.clePanier);
+          return;
+        }
+
+        modifierQuantitePanier(
+          bouton.dataset.clePanier,
+          bouton.dataset.actionPanier === "plus" ? 1 : -1
+        );
       });
 
       function calculerTotalVenteBruteAvantRetours() {
@@ -4428,7 +4844,7 @@
                 ? total + (ligne.prix * ligne.quantite)
                 : total;
             }
-            return total + (ligne.prix * ligne.quantite);
+            return total + (prixUnitaireLigne(ligne) * ligne.quantite);
           }, 0)
         );
       }
