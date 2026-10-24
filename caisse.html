@@ -2655,75 +2655,159 @@
         return;
       }
 
-      const filesClicsGobelets = {
-        vente: { quantite: 0, minuterie: null, compteur: compteurVenteGobelet },
-        retour: { quantite: 0, minuterie: null, compteur: compteurRetourGobelet },
-        don_consigne: { quantite: 0, minuterie: null, compteur: compteurDonConsigne }
+      const CONFIG_GOBELETS_PANIER = {
+        vente: {
+          articleId: "__gobelet_vente",
+          nom: "Achat gobelet",
+          prix: 2,
+          compteur: compteurVenteGobelet
+        },
+        retour: {
+          articleId: "__gobelet_retour",
+          nom: "Retour gobelet",
+          prix: -2,
+          compteur: compteurRetourGobelet
+        },
+        don_consigne: {
+          articleId: "__gobelet_don",
+          nom: "Don de consigne",
+          prix: 0,
+          compteur: compteurDonConsigne
+        }
       };
 
-      function actualiserCompteurClicsGobelet(typeOperation) {
-        const file = filesClicsGobelets[typeOperation];
-        file.compteur.textContent = String(file.quantite);
-        file.compteur.classList.toggle("visible", file.quantite > 0);
+      function estLigneGobelet(ligne) {
+        return Boolean(ligne && ligne.typeOperationGobelet);
       }
 
-      function ajouterClicGobelet(typeOperation) {
+      function panierContientGobelets() {
+        return panierCaisse.some(estLigneGobelet);
+      }
+
+      function panierContientArticlesClassiques() {
+        return panierCaisse.some(function (ligne) {
+          return !estLigneGobelet(ligne);
+        });
+      }
+
+      function synchroniserPastillesGobelets() {
+        Object.keys(CONFIG_GOBELETS_PANIER).forEach(function (typeOperation) {
+          const config = CONFIG_GOBELETS_PANIER[typeOperation];
+          const ligne = panierCaisse.find(function (element) {
+            return element.articleId === config.articleId;
+          });
+          const quantite = ligne ? ligne.quantite : 0;
+          config.compteur.textContent = String(quantite);
+          config.compteur.classList.toggle("visible", quantite > 0);
+        });
+      }
+
+      function ajouterGobeletAuPanier(typeOperation) {
         if (operationGobeletEnCours || !clientSupabaseCaisse) return;
 
-        const file = filesClicsGobelets[typeOperation];
-        file.quantite += 1;
-        actualiserCompteurClicsGobelet(typeOperation);
-
-        if (file.minuterie) {
-          window.clearTimeout(file.minuterie);
+        if (panierContientArticlesClassiques()) {
+          afficherMessage(
+            "Termine d'abord la vente en cours avant d'ajouter une opération Gobelet."
+          );
+          return;
         }
 
-        // Les clics rapprochés sont regroupés en une seule opération :
-        // 1 clic = 1, 2 clics = 2, 3 clics = 3, etc.
-        file.minuterie = window.setTimeout(function () {
-          const quantite = file.quantite;
-          file.quantite = 0;
-          file.minuterie = null;
-          actualiserCompteurClicsGobelet(typeOperation);
-          executerOperationGobelet(typeOperation, quantite);
-        }, 550);
+        const config = CONFIG_GOBELETS_PANIER[typeOperation];
+        if (!config) return;
+
+        const ligne = panierCaisse.find(function (element) {
+          return element.articleId === config.articleId;
+        });
+
+        if (ligne) {
+          ligne.quantite += 1;
+        } else {
+          panierCaisse.push({
+            articleId: config.articleId,
+            editionArticleId: null,
+            nom: config.nom,
+            prix: config.prix,
+            beneficiaire: "mdn",
+            gestionStock: false,
+            quantite: 1,
+            typeOperationGobelet: typeOperation
+          });
+        }
+
+        synchroniserPastillesGobelets();
+        afficherPanier();
       }
 
-      async function executerOperationGobelet(typeOperation, quantite) {
-        if (operationGobeletEnCours || !clientSupabaseCaisse || !quantite) return;
+      async function validerOperationsGobeletsPanier() {
+        if (operationGobeletEnCours || !clientSupabaseCaisse) return;
 
-        const montant = quantite * 2;
+        const lignesGobelets = panierCaisse.filter(estLigneGobelet);
+        if (lignesGobelets.length === 0) return;
+
         operationGobeletEnCours = true;
-        [boutonVenteGobelet,boutonRetourGobelet,boutonDonConsigne].forEach(b => b.disabled = true);
+        boutonEncaisser.disabled = true;
+        boutonEncaisser.textContent = "Enregistrement…";
+        [boutonVenteGobelet, boutonRetourGobelet, boutonDonConsigne].forEach(function (bouton) {
+          bouton.disabled = true;
+        });
+
+        const lignesValidees = [];
 
         try {
-          const { data, error } = await clientSupabaseCaisse.rpc(
-            modeDemo ? "operation_gobelet_caisse_demo" : "operation_gobelet_caisse",
-            { p_type_operation:typeOperation, p_quantite:quantite, p_idempotency_key:genererCleIdempotence() }
-          );
+          for (const ligne of lignesGobelets) {
+            const { error } = await clientSupabaseCaisse.rpc(
+              modeDemo ? "operation_gobelet_caisse_demo" : "operation_gobelet_caisse",
+              {
+                p_type_operation: ligne.typeOperationGobelet,
+                p_quantite: ligne.quantite,
+                p_idempotency_key: genererCleIdempotence()
+              }
+            );
 
-          if (error) throw error;
+            if (error) throw error;
+            lignesValidees.push(ligne.articleId);
+          }
 
-          afficherMessage(
-            typeOperation === "vente"
-              ? `${quantite} gobelet(s) vendu(s) — ${formaterCHF(montant)} ajouté(s) au tiroir.`
-              : typeOperation === "retour"
-                ? `${quantite} gobelet(s) retourné(s) — ${formaterCHF(montant)} remboursé(s) du tiroir.`
-                : `${quantite} gobelet(s) enregistré(s) en don de consigne.`,
-            "succes"
-          );
+          panierCaisse = panierCaisse.filter(function (ligne) {
+            return !lignesValidees.includes(ligne.articleId);
+          });
+
+          synchroniserPastillesGobelets();
+          afficherPanier();
+          afficherMessage("Opération(s) Gobelet validée(s).", "succes");
+
         } catch (erreur) {
-          console.error("[MDN Sion] Opération Gobelet impossible :", erreur);
-          afficherMessage(erreur?.message || "Impossible d'enregistrer l'opération Gobelet.");
+          panierCaisse = panierCaisse.filter(function (ligne) {
+            return !lignesValidees.includes(ligne.articleId);
+          });
+
+          synchroniserPastillesGobelets();
+          afficherPanier();
+          console.error("[MDN Sion] Validation Gobelets impossible :", erreur);
+          afficherMessage(
+            erreur?.message || "Impossible de valider toutes les opérations Gobelet. Les opérations non validées restent dans le panier."
+          );
         } finally {
           operationGobeletEnCours = false;
-          [boutonVenteGobelet,boutonRetourGobelet,boutonDonConsigne].forEach(b => b.disabled = false);
+          boutonEncaisser.textContent = "Encaisser";
+          [boutonVenteGobelet, boutonRetourGobelet, boutonDonConsigne].forEach(function (bouton) {
+            bouton.disabled = false;
+          });
+          afficherPanier();
         }
       }
 
-      boutonVenteGobelet.addEventListener("click", () => ajouterClicGobelet("vente"));
-      boutonRetourGobelet.addEventListener("click", () => ajouterClicGobelet("retour"));
-      boutonDonConsigne.addEventListener("click", () => ajouterClicGobelet("don_consigne"));
+      boutonVenteGobelet.addEventListener("click", function () {
+        ajouterGobeletAuPanier("vente");
+      });
+
+      boutonRetourGobelet.addEventListener("click", function () {
+        ajouterGobeletAuPanier("retour");
+      });
+
+      boutonDonConsigne.addEventListener("click", function () {
+        ajouterGobeletAuPanier("don_consigne");
+      });
 
 
       function ouvrirFenetreEncaissement() {
@@ -2776,6 +2860,7 @@
 
       function afficherPanier() {
         const nombreArticles = panierCaisse.reduce(function (total, ligne) { return total + ligne.quantite; }, 0);
+        synchroniserPastillesGobelets();
         if (panierCaisse.length === 0) {
           etatPanier.textContent = "Aucune vente en cours";
           panierContenu.innerHTML = '<div class="panier-vide">Le panier est vide.</div>';
@@ -2786,7 +2871,7 @@
         }
         etatPanier.textContent = nombreArticles + " article" + (nombreArticles > 1 ? "s" : "") + " dans le panier";
         panierContenu.innerHTML = `<div class="liste-panier">${panierCaisse.map(function (ligne) {
-          return `<div class="ligne-panier"><div class="ligne-panier-haut"><div class="ligne-panier-nom">${echapperHTML(ligne.nom)}</div><div class="ligne-panier-sous-total">${echapperHTML(formaterCHF(ligne.prix * ligne.quantite))}</div></div><div class="ligne-panier-bas"><div class="ligne-panier-prix">${echapperHTML(formaterCHF(ligne.prix))} / unité</div><div class="controle-quantite"><button class="bouton-quantite" type="button" data-action-panier="moins" data-article-id="${echapperHTML(ligne.articleId)}">−</button><span class="quantite-panier">${ligne.quantite}</span><button class="bouton-quantite" type="button" data-action-panier="plus" data-article-id="${echapperHTML(ligne.articleId)}">+</button></div></div></div>`;
+          return `<div class="ligne-panier"><div class="ligne-panier-haut"><div class="ligne-panier-nom">${echapperHTML(ligne.nom)}</div><div class="ligne-panier-sous-total">${echapperHTML(formaterCHF(ligne.prix * ligne.quantite))}</div></div><div class="ligne-panier-bas"><div class="ligne-panier-prix">${echapperHTML(estLigneGobelet(ligne) ? (ligne.typeOperationGobelet === "vente" ? "CHF 2.00 encaissés / unité" : ligne.typeOperationGobelet === "retour" ? "CHF 2.00 remboursés / unité" : "Aucun mouvement d’argent") : formaterCHF(ligne.prix) + " / unité")}</div><div class="controle-quantite"><button class="bouton-quantite" type="button" data-action-panier="moins" data-article-id="${echapperHTML(ligne.articleId)}">−</button><span class="quantite-panier">${ligne.quantite}</span><button class="bouton-quantite" type="button" data-action-panier="plus" data-article-id="${echapperHTML(ligne.articleId)}">+</button></div></div></div>`;
         }).join("")}</div>`;
         totalPanier.textContent = formaterCHF(calculerTotalPanier());
         boutonEncaisser.disabled = false;
@@ -2794,6 +2879,10 @@
       }
 
       function ajouterArticleAuPanier(article) {
+        if (panierContientGobelets()) {
+          afficherMessage("Valide d'abord les opérations Gobelet présentes dans le panier.");
+          return;
+        }
         const ligne = panierCaisse.find(function (element) { return element.articleId === article.articleId; });
         if (ligne) ligne.quantite += 1;
         else panierCaisse.push({ articleId:article.articleId, editionArticleId:article.editionArticleId, nom:article.nom, prix:Number(article.prix), beneficiaire:article.beneficiaire, gestionStock:article.gestionStock, quantite:1 });
@@ -3469,6 +3558,10 @@
       });
 
       boutonEncaisser.addEventListener("click", function () {
+        if (panierContientGobelets()) {
+          validerOperationsGobeletsPanier();
+          return;
+        }
         ouvrirFenetreEncaissement();
       });
 
