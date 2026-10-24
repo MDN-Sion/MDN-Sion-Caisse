@@ -1175,13 +1175,13 @@
           </p>
 
           <button
+            id="boutonPartenaires"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir les comptes stands"
+            data-texte-demo="Démo - Ouvrir les comptes stands"
           >
-            Bientôt disponible
+            Ouvrir les comptes stands
           </button>
 
         </article>
@@ -1480,6 +1480,12 @@
       const boutonVaisselle =
         document.getElementById(
           "boutonVaisselle"
+        );
+
+
+      const boutonPartenaires =
+        document.getElementById(
+          "boutonPartenaires"
         );
 const zoneReinitialisationDemo =
         document.getElementById(
@@ -1929,6 +1935,23 @@ document.querySelectorAll(
       // Une session Démo ne sera activée qu'après validation serveur
       // dans initialiserAccueil().
       actualiserModeDemoAccueil();
+
+      /* ====================================================
+         NAVIGATION EXPOSANTS / PARTENAIRES
+         ==================================================== */
+
+      boutonPartenaires.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "comptes-stands.html?mode=demo"
+              : "comptes-stands.html";
+
+        }
+      );
+
 
       /* ====================================================
          DECONNEXION
