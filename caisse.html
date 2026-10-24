@@ -1228,20 +1228,20 @@
     }
 
 
-    /* OPÉRATIONS RAPIDES GOBELETS */
-    .operations-gobelets { padding: 12px 14px; border-bottom: 1px solid #e7e7e7; background: #fffdf7; }
-    .operations-gobelets-titre { margin: 0 0 9px; color:#850000; font-size:13px; font-weight:900; }
-    .operations-gobelets-grille { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-    .operation-gobelet { min-width:0; min-height:108px; padding:9px 7px; border:1px solid #dccaca; border-radius:12px; background:#fff; cursor:pointer; font-weight:850; color:#333; }
+    /* OPÉRATIONS RAPIDES GOBELETS — VERSION COMPACTE */
+    .operations-gobelets { padding: 8px 12px; border-bottom: 1px solid #e7e7e7; background: #fffdf7; }
+    .operations-gobelets-grille { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+    .operation-gobelet { position:relative; min-width:0; height:76px; padding:5px 5px 6px; border:1px solid #dccaca; border-radius:11px; background:#fff; cursor:pointer; font-weight:900; color:#222; }
     .operation-gobelet:hover { border-color:#8b0000; background:#fff8f8; }
+    .operation-gobelet:active { transform:scale(.98); }
     .operation-gobelet:disabled { opacity:.55; cursor:wait; }
-    .operation-gobelet img { width:54px; height:54px; display:block; object-fit:contain; margin:0 auto 5px; }
-    .operation-gobelet strong,.operation-gobelet span { display:block; }
-    .operation-gobelet span { margin-top:3px; font-size:10px; color:#777; line-height:1.25; }
+    .operation-gobelet img { width:38px; height:38px; display:block; object-fit:contain; margin:0 auto 1px; pointer-events:none; }
+    .operation-gobelet strong { display:block; font-size:13px; line-height:1.05; pointer-events:none; }
     .operation-gobelet.retour strong { color:#a30000; }
     .operation-gobelet.don strong { color:#8a6800; }
-    .etat-gobelets { margin-top:8px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap; color:#666; font-size:10px; font-weight:800; }
-    @media (max-width:700px) { .operations-gobelets-grille { grid-template-columns:1fr; } .operation-gobelet { min-height:74px; display:grid; grid-template-columns:48px 1fr; align-items:center; text-align:left; column-gap:9px; } .operation-gobelet img { width:44px; height:44px; margin:0; grid-row:1 / span 2; } }
+    .compteur-clics-gobelet { position:absolute; top:4px; right:5px; min-width:22px; height:22px; padding:0 5px; border-radius:999px; background:#8b0000; color:#fff; display:none; align-items:center; justify-content:center; font-size:11px; font-weight:950; line-height:1; pointer-events:none; }
+    .compteur-clics-gobelet.visible { display:flex; }
+    @media (max-width:700px) { .operations-gobelets { padding:7px 8px; } .operations-gobelets-grille { gap:5px; } .operation-gobelet { height:70px; padding:4px; } .operation-gobelet img { width:34px; height:34px; } .operation-gobelet strong { font-size:12px; } }
 
     @keyframes rotation {
       to { transform: rotate(360deg); }
@@ -1523,27 +1523,22 @@
 
 
           <div class="operations-gobelets" aria-label="Opérations rapides gobelets">
-            <p class="operations-gobelets-titre">Gobelets — opérations rapides</p>
             <div class="operations-gobelets-grille">
-              <button id="boutonVenteGobelet" class="operation-gobelet" type="button">
+              <button id="boutonVenteGobelet" class="operation-gobelet" type="button" aria-label="Achat d'un gobelet">
+                <span id="compteurVenteGobelet" class="compteur-clics-gobelet">0</span>
                 <img src="gobelet-cup.png" alt="">
-                <strong>Gobelet</strong>
-                <span>+ CHF 2.00 · stock propre −1</span>
+                <strong>Achat</strong>
               </button>
-              <button id="boutonRetourGobelet" class="operation-gobelet retour" type="button">
+              <button id="boutonRetourGobelet" class="operation-gobelet retour" type="button" aria-label="Retour d'un gobelet">
+                <span id="compteurRetourGobelet" class="compteur-clics-gobelet">0</span>
                 <img src="gobelet-cup.png" alt="">
-                <strong>Retour gobelet</strong>
-                <span>− CHF 2.00 · stock sale +1</span>
+                <strong>Retour</strong>
               </button>
-              <button id="boutonDonConsigne" class="operation-gobelet don" type="button">
+              <button id="boutonDonConsigne" class="operation-gobelet don" type="button" aria-label="Don de consigne d'un gobelet">
+                <span id="compteurDonConsigne" class="compteur-clics-gobelet">0</span>
                 <img src="gobelet-cup.png" alt="">
-                <strong>Don de consigne</strong>
-                <span>CHF 0.00 · quantité vers stock sale</span>
+                <strong>Don</strong>
               </button>
-            </div>
-            <div class="etat-gobelets">
-              <span id="stockGobeletsPropres">Stock propre : —</span>
-              <span id="stockGobeletsSales">Stock sale : —</span>
             </div>
           </div>
 
@@ -2655,48 +2650,60 @@
 
 
       async function chargerEtatGobelets() {
-        if (!clientSupabaseCaisse) return;
-        const { data, error } = await clientSupabaseCaisse.rpc(
-          modeDemo ? "etat_gobelets_caisse_demo" : "etat_gobelets_caisse"
-        );
-        if (error) throw error;
-        stockGobeletsPropres.textContent = "Stock propre : " + Number(data?.stock_propre || 0);
-        stockGobeletsSales.textContent = "Stock sale : " + Number(data?.stock_sale_caisse || 0);
+        // Conservé pour compatibilité avec le moteur serveur,
+        // mais aucun compteur de stock n'est affiché dans la caisse.
+        return;
       }
 
-      function demanderQuantiteGobelets(libelle) {
-        const valeur = window.prompt(libelle + " — quantité :", "1");
-        if (valeur === null) return null;
-        const quantite = Number.parseInt(valeur, 10);
-        if (!Number.isInteger(quantite) || quantite <= 0) {
-          afficherMessage("Saisis une quantité entière supérieure à zéro.");
-          return null;
-        }
-        return quantite;
+      const filesClicsGobelets = {
+        vente: { quantite: 0, minuterie: null, compteur: compteurVenteGobelet },
+        retour: { quantite: 0, minuterie: null, compteur: compteurRetourGobelet },
+        don_consigne: { quantite: 0, minuterie: null, compteur: compteurDonConsigne }
+      };
+
+      function actualiserCompteurClicsGobelet(typeOperation) {
+        const file = filesClicsGobelets[typeOperation];
+        file.compteur.textContent = String(file.quantite);
+        file.compteur.classList.toggle("visible", file.quantite > 0);
       }
 
-      async function executerOperationGobelet(typeOperation) {
+      function ajouterClicGobelet(typeOperation) {
         if (operationGobeletEnCours || !clientSupabaseCaisse) return;
-        const libelles = { vente:"Gobelet", retour:"Retour gobelet", don_consigne:"Don de consigne" };
-        const quantite = demanderQuantiteGobelets(libelles[typeOperation]);
-        if (!quantite) return;
-        const montant = quantite * 2;
-        const confirmation = typeOperation === "vente"
-          ? `Vendre ${quantite} gobelet(s) pour ${formaterCHF(montant)} en espèces ?`
-          : typeOperation === "retour"
-            ? `Rembourser ${formaterCHF(montant)} en espèces pour ${quantite} gobelet(s) retourné(s) ?`
-            : `Enregistrer ${quantite} gobelet(s) en don de consigne, sans encaissement ni remboursement ?`;
-        if (!window.confirm(confirmation)) return;
 
+        const file = filesClicsGobelets[typeOperation];
+        file.quantite += 1;
+        actualiserCompteurClicsGobelet(typeOperation);
+
+        if (file.minuterie) {
+          window.clearTimeout(file.minuterie);
+        }
+
+        // Les clics rapprochés sont regroupés en une seule opération :
+        // 1 clic = 1, 2 clics = 2, 3 clics = 3, etc.
+        file.minuterie = window.setTimeout(function () {
+          const quantite = file.quantite;
+          file.quantite = 0;
+          file.minuterie = null;
+          actualiserCompteurClicsGobelet(typeOperation);
+          executerOperationGobelet(typeOperation, quantite);
+        }, 550);
+      }
+
+      async function executerOperationGobelet(typeOperation, quantite) {
+        if (operationGobeletEnCours || !clientSupabaseCaisse || !quantite) return;
+
+        const montant = quantite * 2;
         operationGobeletEnCours = true;
         [boutonVenteGobelet,boutonRetourGobelet,boutonDonConsigne].forEach(b => b.disabled = true);
+
         try {
           const { data, error } = await clientSupabaseCaisse.rpc(
             modeDemo ? "operation_gobelet_caisse_demo" : "operation_gobelet_caisse",
             { p_type_operation:typeOperation, p_quantite:quantite, p_idempotency_key:genererCleIdempotence() }
           );
+
           if (error) throw error;
-          await chargerEtatGobelets();
+
           afficherMessage(
             typeOperation === "vente"
               ? `${quantite} gobelet(s) vendu(s) — ${formaterCHF(montant)} ajouté(s) au tiroir.`
@@ -2714,9 +2721,9 @@
         }
       }
 
-      boutonVenteGobelet.addEventListener("click", () => executerOperationGobelet("vente"));
-      boutonRetourGobelet.addEventListener("click", () => executerOperationGobelet("retour"));
-      boutonDonConsigne.addEventListener("click", () => executerOperationGobelet("don_consigne"));
+      boutonVenteGobelet.addEventListener("click", () => ajouterClicGobelet("vente"));
+      boutonRetourGobelet.addEventListener("click", () => ajouterClicGobelet("retour"));
+      boutonDonConsigne.addEventListener("click", () => ajouterClicGobelet("don_consigne"));
 
 
       function ouvrirFenetreEncaissement() {
