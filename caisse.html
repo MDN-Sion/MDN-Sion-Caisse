@@ -2074,7 +2074,7 @@
 
 
       function actualiserRepartitionPaiement() {
-        const totalVente = calculerTotalPanier();
+        const totalVente = calculerTotalVenteClassique();
 
         /*
          * Les trois champs de répartition correspondent au montant
@@ -2233,7 +2233,7 @@
       }
 
       function preparerRepartitionPaiement() {
-        const totalVente = calculerTotalPanier();
+        const totalVente = calculerTotalVenteClassique();
 
         mettreMontantPaiement(montantEspeces, 0);
         mettreMontantPaiement(montantCarte, 0);
@@ -2300,7 +2300,7 @@
 
 
       function construireRepartitionServeur() {
-        const totalVente = arrondirMontant(calculerTotalPanier());
+        const totalVente = arrondirMontant(calculerTotalVenteClassique());
 
         const saisi = {
           especes: arrondirMontant(valeurMontantPaiement(montantEspeces)),
@@ -2512,12 +2512,14 @@
           cleIdempotenceEncaissement = genererCleIdempotence();
         }
 
-        const lignes = panierCaisse.map(function (ligne) {
-          return {
-            article_id: ligne.articleId,
-            quantite: ligne.quantite
-          };
-        });
+        const lignes = panierCaisse
+          .filter(function (ligne) { return !estLigneGobelet(ligne); })
+          .map(function (ligne) {
+            return {
+              article_id: ligne.articleId,
+              quantite: ligne.quantite
+            };
+          });
 
         validationPaiementEnCours = true;
 
@@ -2570,7 +2572,8 @@
             data.numero ||
             "";
 
-          panierCaisse = [];
+          const gobeletsAValiderApresVente = panierCaisse.filter(estLigneGobelet);
+          panierCaisse = gobeletsAValiderApresVente;
           afficherPanier();
 
           validationPaiementEnCours = false;
@@ -2603,6 +2606,10 @@
               "[MDN Sion] Vente enregistrée mais actualisation du catalogue impossible :",
               erreurCatalogue
             );
+          }
+
+          if (panierContientGobelets()) {
+            await validerOperationsGobeletsPanier();
           }
 
         } catch (erreur) {
@@ -2704,13 +2711,6 @@
 
       function ajouterGobeletAuPanier(typeOperation) {
         if (operationGobeletEnCours || !clientSupabaseCaisse) return;
-
-        if (panierContientArticlesClassiques()) {
-          afficherMessage(
-            "Termine d'abord la vente en cours avant d'ajouter une opération Gobelet."
-          );
-          return;
-        }
 
         const config = CONFIG_GOBELETS_PANIER[typeOperation];
         if (!config) return;
@@ -2858,6 +2858,13 @@
         }, 0);
       }
 
+      function calculerTotalVenteClassique() {
+        return panierCaisse.reduce(function (total, ligne) {
+          if (estLigneGobelet(ligne)) return total;
+          return total + (ligne.prix * ligne.quantite);
+        }, 0);
+      }
+
       function afficherPanier() {
         const nombreArticles = panierCaisse.reduce(function (total, ligne) { return total + ligne.quantite; }, 0);
         synchroniserPastillesGobelets();
@@ -2879,10 +2886,6 @@
       }
 
       function ajouterArticleAuPanier(article) {
-        if (panierContientGobelets()) {
-          afficherMessage("Valide d'abord les opérations Gobelet présentes dans le panier.");
-          return;
-        }
         const ligne = panierCaisse.find(function (element) { return element.articleId === article.articleId; });
         if (ligne) ligne.quantite += 1;
         else panierCaisse.push({ articleId:article.articleId, editionArticleId:article.editionArticleId, nom:article.nom, prix:Number(article.prix), beneficiaire:article.beneficiaire, gestionStock:article.gestionStock, quantite:1 });
@@ -3558,11 +3561,14 @@
       });
 
       boutonEncaisser.addEventListener("click", function () {
-        if (panierContientGobelets()) {
+        if (panierContientGobelets() && !panierContientArticlesClassiques()) {
           validerOperationsGobeletsPanier();
           return;
         }
-        ouvrirFenetreEncaissement();
+
+        if (panierContientArticlesClassiques()) {
+          ouvrirFenetreEncaissement();
+        }
       });
 
 
