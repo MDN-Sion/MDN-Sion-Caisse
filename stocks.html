@@ -10,12 +10,9 @@
   <title>Stocks - MDN Sion</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       width: 100%;
       height: 100%;
       margin: 0;
@@ -92,9 +89,7 @@
     }
 
     @keyframes rotation {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
     }
 
     .application {
@@ -106,18 +101,12 @@
       overflow: hidden;
     }
 
-    /* =========================================================
-       EN-TÊTE
-       Même logique que les pages Caisse / Vaisselle validées
-       ========================================================= */
-
     .barre-haute {
       flex: 0 0 auto;
-      padding:
-        max(12px, env(safe-area-inset-top))
-        max(16px, env(safe-area-inset-right))
-        12px
-        max(16px, env(safe-area-inset-left));
+      padding: max(12px, env(safe-area-inset-top))
+               max(16px, env(safe-area-inset-right))
+               12px
+               max(16px, env(safe-area-inset-left));
       background: linear-gradient(145deg, #7b0000, #980000);
       color: #fff;
       box-shadow: 0 2px 12px rgba(0,0,0,.18);
@@ -179,11 +168,8 @@
       flex: 0 0 auto;
       display: none;
       width: 100%;
-      padding:
-        9px
-        max(16px, env(safe-area-inset-right))
-        9px
-        max(16px, env(safe-area-inset-left));
+      padding: 9px max(16px, env(safe-area-inset-right))
+               9px max(16px, env(safe-area-inset-left));
       border-bottom: 2px solid #b98500;
       background: #ffe680;
       color: #4d3900;
@@ -202,20 +188,14 @@
       background: linear-gradient(145deg, #6f5200, #9a7200);
     }
 
-    /* =========================================================
-       CONTENU PRINCIPAL
-       ========================================================= */
-
     .contenu {
       width: min(100%, 1500px);
       min-height: 0;
       flex: 1 1 auto;
       margin: 0 auto;
-      padding:
-        14px
-        max(16px, env(safe-area-inset-right))
-        max(14px, env(safe-area-inset-bottom))
-        max(16px, env(safe-area-inset-left));
+      padding: 14px max(16px, env(safe-area-inset-right))
+               max(14px, env(safe-area-inset-bottom))
+               max(16px, env(safe-area-inset-left));
       overflow: hidden;
     }
 
@@ -242,10 +222,6 @@
       display: flex;
       flex-direction: column;
     }
-
-    /* =========================================================
-       ACTIONS
-       ========================================================= */
 
     .barre-actions {
       flex: 0 0 auto;
@@ -304,9 +280,14 @@
       cursor: not-allowed;
     }
 
-    /* =========================================================
-       STOCKS
-       ========================================================= */
+    .information-edition {
+      margin-left: auto;
+      flex: 0 0 auto;
+      color: #777;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
 
     .stocks-scroll {
       min-height: 0;
@@ -349,29 +330,11 @@
       white-space: nowrap;
     }
 
-    .indicateur.tente strong {
-      color: #850000;
-    }
-
-    .indicateur.reserve strong {
-      color: #7a5b00;
-    }
-
-    .indicateur.stands strong {
-      color: #245f8f;
-    }
-
-    .indicateur.sale strong {
-      color: #b86500;
-    }
-
-    .indicateur.contenant strong {
-      color: #13723f;
-    }
-
-    /* =========================================================
-       TABLEAU
-       ========================================================= */
+    .indicateur.tente strong { color: #850000; }
+    .indicateur.reserve strong { color: #7a5b00; }
+    .indicateur.stands strong { color: #245f8f; }
+    .indicateur.sale strong { color: #b86500; }
+    .indicateur.contenant strong { color: #13723f; }
 
     .tableau-cadre {
       width: 100%;
@@ -446,9 +409,9 @@
     }
 
     .article-cell {
-      width: 132px;
-      min-width: 132px;
-      max-width: 132px;
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px;
       white-space: normal;
     }
 
@@ -505,10 +468,6 @@
       background: #fff0f0;
       color: #a11919;
     }
-
-    /* =========================================================
-       HISTORIQUE
-       ========================================================= */
 
     .panneau-historique {
       display: flex;
@@ -656,10 +615,6 @@
       line-height: 1.35;
     }
 
-    /* =========================================================
-       MESSAGES
-       ========================================================= */
-
     .message {
       display: none;
       position: fixed;
@@ -718,9 +673,89 @@
       font-weight: 800;
     }
 
-    /* =========================================================
-       TABLETTE
-       ========================================================= */
+    .stock-physique {
+      display: block;
+      margin-top: 3px;
+      color: #777;
+      font-size: 9px;
+      line-height: 1.25;
+      font-weight: 700;
+      white-space: normal;
+    }
+
+    .modal-fond {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,.48);
+    }
+
+    .modal-fond.visible { display: flex; }
+
+    .modal-carte {
+      width: min(980px, 100%);
+      max-height: min(88vh, 820px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    .modal-entete {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 17px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .modal-entete h2 { margin: 0; font-size: 18px; }
+    .modal-entete p { margin: 3px 0 0; color: #777; font-size: 11px; }
+    .modal-fermer {
+      width: 38px; height: 38px; border: 0; border-radius: 10px;
+      background: #f2f2f2; cursor: pointer; font-size: 22px;
+    }
+
+    .modal-contenu { padding: 15px 17px; overflow: auto; }
+    .modal-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .champ label { display:block; margin-bottom:5px; color:#555; font-size:11px; font-weight:900; }
+    .champ input, .champ select, .champ textarea {
+      width:100%; min-height:40px; padding:8px 10px; border:1px solid #d7d7d7;
+      border-radius:10px; background:#fff; color:#333; font:inherit;
+    }
+    .champ textarea { min-height:72px; resize:vertical; }
+
+    .livraison-table { width:100%; min-width:720px; }
+    .livraison-table th, .livraison-table td { text-align:left; }
+    .livraison-table input {
+      width:100%; min-width:90px; min-height:36px; padding:6px 8px;
+      border:1px solid #d7d7d7; border-radius:9px; font:inherit;
+    }
+    .livraison-table .col-total { text-align:right; font-weight:900; }
+    .aide-partiels { display:block; margin-top:3px; color:#888; font-size:9px; white-space:normal; }
+    .modal-note {
+      margin: 12px 0; padding: 10px 12px; border-radius: 11px;
+      background:#fff8df; border:1px solid #ecd98b; color:#5c4900;
+      font-size:11px; line-height:1.4;
+    }
+    .modal-actions {
+      display:flex; justify-content:flex-end; gap:9px; padding:13px 17px;
+      border-top:1px solid #e5e5e5; background:#fafafa;
+    }
+    .bouton-modal {
+      min-height:42px; padding:9px 15px; border-radius:11px; border:1px solid #d3d3d3;
+      background:#fff; font-weight:900; cursor:pointer;
+    }
+    .bouton-modal.valider { border-color:#8b0000; background:#8b0000; color:#fff; }
+    .application.mode-demo ~ .modal-fond .bouton-modal.valider { border-color:#8a6800; background:#8a6800; }
+    .bouton-modal:disabled { opacity:.5; cursor:not-allowed; }
 
     @media (max-width: 980px) {
       .resume-global {
@@ -733,36 +768,41 @@
       }
     }
 
-    /* =========================================================
-       TÉLÉPHONE PORTRAIT
-       ========================================================= */
-
     @media (max-width: 760px) and (orientation: portrait) {
+      .barre-haute {
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-bottom: 8px;
+      }
+
       .barre-haute-contenu {
-        gap: 8px;
+        gap: 7px;
       }
 
       .bouton-retour,
       .bouton-deconnexion {
-        min-height: 40px;
-        padding: 8px 10px;
-        font-size: 12px;
-      }
-
-      .titre-entete h1 {
-        font-size: 18px;
-      }
-
-      .titre-entete p {
+        min-height: 38px;
+        padding: 7px 9px;
         font-size: 11px;
       }
 
+      .titre-entete h1 {
+        font-size: 17px;
+      }
+
+      .titre-entete p {
+        display: none;
+      }
+
+      .bandeau-demo {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 10px;
+      }
+
       .contenu {
-        padding:
-          8px
-          max(8px, env(safe-area-inset-right))
-          max(8px, env(safe-area-inset-bottom))
-          max(8px, env(safe-area-inset-left));
+        padding: 8px max(8px, env(safe-area-inset-right))
+                 max(8px, env(safe-area-inset-bottom))
+                 max(8px, env(safe-area-inset-left));
       }
 
       .zone-stocks {
@@ -785,6 +825,10 @@
         min-height: 36px;
         padding: 7px 10px;
         font-size: 11px;
+      }
+
+      .information-edition {
+        display: none;
       }
 
       .stocks-scroll {
@@ -857,40 +901,25 @@
       }
     }
 
-    /* =========================================================
-       PAYSAGE FAIBLE HAUTEUR
-       Même seuil que la page Caisse : 600 px
-       ========================================================= */
-
     @media (max-height: 600px) and (orientation: landscape) {
-      body {
-        overflow: hidden;
-      }
-
-      .application {
-        height: 100dvh;
-        min-height: 100dvh;
-        overflow: hidden;
-      }
-
       .barre-haute {
-        padding-top: max(7px, env(safe-area-inset-top));
-        padding-bottom: 7px;
+        padding-top: max(6px, env(safe-area-inset-top));
+        padding-bottom: 6px;
       }
 
       .bouton-retour,
       .bouton-deconnexion {
-        min-height: 36px;
+        min-height: 34px;
         padding: 6px 10px;
+        font-size: 11px;
       }
 
       .titre-entete h1 {
-        font-size: 18px;
+        font-size: 17px;
       }
 
       .titre-entete p {
-        margin-top: 1px;
-        font-size: 10px;
+        display: none;
       }
 
       .bandeau-demo {
@@ -900,18 +929,12 @@
       }
 
       .contenu {
-        flex: 1 1 auto;
-        min-height: 0;
-        padding:
-          10px
-          max(10px, env(safe-area-inset-right))
-          max(10px, env(safe-area-inset-bottom))
-          max(10px, env(safe-area-inset-left));
-        overflow: hidden;
+        padding: 7px max(10px, env(safe-area-inset-right))
+                 max(7px, env(safe-area-inset-bottom))
+                 max(10px, env(safe-area-inset-left));
       }
 
       .zone-stocks {
-        height: 100%;
         grid-template-columns: minmax(0, 1.75fr) minmax(260px, .65fr);
         gap: 8px;
       }
@@ -981,206 +1004,172 @@
         grid-template-columns: repeat(5, minmax(82px, 1fr));
         overflow-x: auto;
       }
+
+      .information-edition {
+        display: none;
+      }
     }
   </style>
 </head>
 
 <body>
-
   <div id="chargementPage" class="chargement-page">
     <div class="chargement-embleme">
       <img src="logo-mdn.png" alt="Marché de Noël de Sion">
     </div>
-
     <strong>Stocks</strong>
-
     <div class="spinner-page"></div>
-
     <p>Chargement des stocks…</p>
   </div>
 
   <div id="messageStocks" class="message" role="alert">
     <span id="texteMessageStocks"></span>
-
-    <button
-      id="fermerMessageStocks"
-      class="message-fermer"
-      type="button"
-      aria-label="Fermer"
-    >
-      ×
-    </button>
+    <button id="fermerMessageStocks" class="message-fermer" type="button" aria-label="Fermer">×</button>
   </div>
 
   <div id="application" class="application">
-
     <header class="barre-haute">
       <div class="barre-haute-contenu">
-
-        <button
-          id="boutonRetour"
-          class="bouton-retour"
-          type="button"
-        >
-          ← Accueil
-        </button>
+        <button id="boutonRetour" class="bouton-retour" type="button">← Retour</button>
 
         <div class="titre-entete">
-          <h1 id="titreStocks">
-            📦 Stocks
-          </h1>
-
-          <p id="identiteUtilisateur">
-            Marché de Noël de Sion
-          </p>
+          <h1 id="titreStocks">📦 Stocks</h1>
+          <p id="identiteUtilisateur">Marché de Noël de Sion</p>
         </div>
 
-        <button
-          id="boutonDeconnexion"
-          class="bouton-deconnexion"
-          type="button"
-        >
-          Déconnexion
-        </button>
-
+        <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
       </div>
     </header>
 
     <div id="bandeauDemo" class="bandeau-demo">
-      🎓 MODE DÉMO / FORMATION — Aucune opération réelle ne sera enregistrée
+      🎓 MODE DÉMO — Les données de formation sont séparées des données Réelles.
     </div>
 
     <main class="contenu">
-
       <section class="zone-stocks">
-
         <article class="panneau panneau-principal">
-
           <div class="barre-actions">
-
-            <button
-              id="boutonLivraison"
-              class="bouton-action principal"
-              type="button"
-            >
+            <button id="boutonLivraison" class="bouton-action principal" type="button">
               📥 Livraison
             </button>
 
-            <button
-              id="boutonReapprovisionnement"
-              class="bouton-action"
-              type="button"
-            >
+            <button id="boutonReapprovisionnement" class="bouton-action" type="button">
               🔄 Réserve → Stock MDN
             </button>
 
           </div>
 
           <div class="stocks-scroll">
-
-            <div
-              class="resume-global"
-              aria-label="Résumé des stocks"
-            >
-
-              <div class="indicateur tente">
-                <span>Stock MDN</span>
-                <strong id="totalTente">0</strong>
-              </div>
-
-              <div class="indicateur reserve">
-                <span>Réserve MDN</span>
-                <strong id="totalReserve">0</strong>
-              </div>
-
-              <div class="indicateur stands">
-                <span>Chez les stands</span>
-                <strong id="totalStands">0</strong>
-              </div>
-
-              <div class="indicateur sale">
-                <span>Retours sales cumulés</span>
-                <strong id="totalSales">0</strong>
-              </div>
-
-              <div class="indicateur contenant">
-                <span>Contenants vides propres</span>
-                <strong id="totalContenants">0</strong>
-              </div>
-
-            </div>
-
             <div class="tableau-cadre">
-
               <div class="tableau-defilement">
-
                 <table class="table-stocks">
-
                   <thead>
                     <tr>
                       <th>Article</th>
                       <th>Stock MDN</th>
                       <th>Réserve MDN</th>
                       <th>Total propre</th>
-                      <th>Chez les stands</th>
-                      <th>Sales cumulés</th>
                       <th>État</th>
+                      <th>Sur le marché</th>
+                      <th>Sales cumulés</th>
                     </tr>
                   </thead>
-
                   <tbody id="corpsTableStocks">
                     <tr>
-                      <td colspan="7">
-                        Chargement…
-                      </td>
+                      <td colspan="7">Chargement…</td>
                     </tr>
                   </tbody>
-
                 </table>
-
               </div>
-
             </div>
 
           </div>
-
         </article>
 
         <aside class="panneau panneau-historique">
-
           <div class="historique-entete">
-
             <div>
               <h2>Historique des mouvements</h2>
               <p>Derniers mouvements du stock vaisselle</p>
             </div>
 
-            <button
-              id="boutonActualiser"
-              class="bouton-actualiser"
-              type="button"
-              title="Actualiser"
-            >
+            <button id="boutonActualiser" class="bouton-actualiser" type="button" title="Actualiser">
               ↻
             </button>
-
           </div>
 
-          <div
-            id="historiqueListe"
-            class="historique-liste"
-          >
-            <div class="historique-vide">
-              Chargement de l’historique…
-            </div>
+          <div id="historiqueListe" class="historique-liste">
+            <div class="historique-vide">Chargement de l’historique…</div>
           </div>
-
         </aside>
-
       </section>
-
     </main>
+  </div>
 
+
+  <div id="modalLivraison" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalLivraison">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalLivraison">📥 Livraison de vaisselle</h2>
+          <p>Enregistrer les conditionnements physiques réellement reçus.</p>
+        </div>
+        <button id="fermerModalLivraison" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="modal-contenu">
+        <div class="modal-grille">
+          <div class="champ">
+            <label for="destinationLivraison">Destination</label>
+            <select id="destinationLivraison">
+              <option value="operationnel_propre">Stock MDN</option>
+              <option value="reserve_mdn_propre">Réserve MDN — Gobelets uniquement</option>
+            </select>
+          </div>
+          <div class="champ">
+            <label for="referenceLivraison">Référence / fournisseur (facultatif)</label>
+            <input id="referenceLivraison" type="text" maxlength="120" placeholder="Ex. Livraison du 24/10">
+          </div>
+        </div>
+
+        <div class="modal-note">
+          Toute la vaisselle doit être dans un conditionnement. Saisis le nombre de caisses/sachets complets et, s’il y en a, le contenu réel de chaque conditionnement partiel. Exemple : <strong>300, 180</strong>.
+        </div>
+
+        <div class="tableau-cadre">
+          <div class="tableau-defilement">
+            <table class="livraison-table">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Conditionnement</th>
+                  <th>Complets</th>
+                  <th>Partiels</th>
+                  <th>Total unités</th>
+                </tr>
+              </thead>
+              <tbody id="corpsLivraison"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="blocCaissesVides" class="modal-grille" style="margin-top:14px;">
+          <div class="champ">
+            <label for="caissesVidesLivraison">Caisses vides propres reçues séparément</label>
+            <input id="caissesVidesLivraison" type="number" min="0" step="1" value="0">
+          </div>
+          <div class="champ">
+            <label for="commentaireLivraison">Commentaire (facultatif)</label>
+            <textarea id="commentaireLivraison" placeholder="Remarque sur la livraison"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="annulerLivraison" class="bouton-modal" type="button">Annuler</button>
+        <button id="validerLivraison" class="bouton-modal valider" type="button">Enregistrer la livraison</button>
+      </div>
+    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1192,81 +1181,47 @@
     "use strict";
 
     (function () {
+      const application = document.getElementById("application");
+      const chargementPage = document.getElementById("chargementPage");
+      const bandeauDemo = document.getElementById("bandeauDemo");
+      const titreStocks = document.getElementById("titreStocks");
+      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
 
-      const application =
-        document.getElementById("application");
+      const boutonRetour = document.getElementById("boutonRetour");
+      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
+      const boutonActualiser = document.getElementById("boutonActualiser");
+      const boutonLivraison = document.getElementById("boutonLivraison");
+      const boutonReapprovisionnement = document.getElementById("boutonReapprovisionnement");
 
-      const chargementPage =
-        document.getElementById("chargementPage");
+      const corpsTableStocks = document.getElementById("corpsTableStocks");
+      const historiqueListe = document.getElementById("historiqueListe");
+      const modalLivraison = document.getElementById("modalLivraison");
+      const fermerModalLivraison = document.getElementById("fermerModalLivraison");
+      const annulerLivraison = document.getElementById("annulerLivraison");
+      const validerLivraison = document.getElementById("validerLivraison");
+      const destinationLivraison = document.getElementById("destinationLivraison");
+      const referenceLivraison = document.getElementById("referenceLivraison");
+      const commentaireLivraison = document.getElementById("commentaireLivraison");
+      const caissesVidesLivraison = document.getElementById("caissesVidesLivraison");
+      const blocCaissesVides = document.getElementById("blocCaissesVides");
+      const corpsLivraison = document.getElementById("corpsLivraison");
 
-      const bandeauDemo =
-        document.getElementById("bandeauDemo");
 
-      const titreStocks =
-        document.getElementById("titreStocks");
-
-      const identiteUtilisateur =
-        document.getElementById("identiteUtilisateur");
-
-      const boutonRetour =
-        document.getElementById("boutonRetour");
-
-      const boutonDeconnexion =
-        document.getElementById("boutonDeconnexion");
-
-      const boutonActualiser =
-        document.getElementById("boutonActualiser");
-
-      const boutonLivraison =
-        document.getElementById("boutonLivraison");
-
-      const boutonReapprovisionnement =
-        document.getElementById("boutonReapprovisionnement");
-
-      const corpsTableStocks =
-        document.getElementById("corpsTableStocks");
-
-      const historiqueListe =
-        document.getElementById("historiqueListe");
-
-      const totalTente =
-        document.getElementById("totalTente");
-
-      const totalReserve =
-        document.getElementById("totalReserve");
-
-      const totalStands =
-        document.getElementById("totalStands");
-
-      const totalSales =
-        document.getElementById("totalSales");
-
-      const totalContenants =
-        document.getElementById("totalContenants");
-
-      const messageStocks =
-        document.getElementById("messageStocks");
-
-      const texteMessageStocks =
-        document.getElementById("texteMessageStocks");
-
-      const fermerMessageStocks =
-        document.getElementById("fermerMessageStocks");
+      const messageStocks = document.getElementById("messageStocks");
+      const texteMessageStocks = document.getElementById("texteMessageStocks");
+      const fermerMessageStocks = document.getElementById("fermerMessageStocks");
 
       let minuterieMessage = null;
       let modeDemo = false;
       let editionCourante = null;
       let chargementEnCours = false;
-
-
-      /* =======================================================
-         OUTILS
-         ======================================================= */
+      let stocksCourants = [];
+      let conditionnementsCourants = [];
+      let contenantsCourants = [];
 
       function masquerChargement() {
         chargementPage.classList.add("masque");
       }
-
 
       function echapperHtml(valeur) {
         return String(valeur ?? "")
@@ -1277,132 +1232,69 @@
           .replaceAll("'", "&#039;");
       }
 
-
       function entier(valeur) {
-        const nombre =
-          Number(valeur || 0);
-
-        return Number.isFinite(nombre)
-          ? Math.trunc(nombre)
-          : 0;
+        const nombre = Number(valeur || 0);
+        return Number.isFinite(nombre) ? Math.trunc(nombre) : 0;
       }
-
 
       function formatNombre(valeur) {
-        return new Intl.NumberFormat(
-          "fr-CH"
-        ).format(
-          entier(valeur)
-        );
+        return new Intl.NumberFormat("fr-CH").format(entier(valeur));
       }
-
 
       function formatDateHeure(valeur) {
-
-        if (!valeur) {
-          return "—";
-        }
+        if (!valeur) return "—";
 
         try {
-
-          return new Intl.DateTimeFormat(
-            "fr-CH",
-            {
-              timeZone: "Europe/Zurich",
-              dateStyle: "short",
-              timeStyle: "short"
-            }
-          ).format(
-            new Date(valeur)
-          );
-
+          return new Intl.DateTimeFormat("fr-CH", {
+            timeZone: "Europe/Zurich",
+            dateStyle: "short",
+            timeStyle: "short"
+          }).format(new Date(valeur));
         } catch (_) {
-
           return String(valeur);
-
         }
-
       }
 
-
-      function afficherMessage(
-        texte,
-        type = "erreur"
-      ) {
-
+      function afficherMessage(texte, type = "erreur") {
         if (minuterieMessage) {
           clearTimeout(minuterieMessage);
           minuterieMessage = null;
         }
 
-        texteMessageStocks.textContent =
-          texte;
+        texteMessageStocks.textContent = texte;
+        messageStocks.className = "message visible " + type;
 
-        messageStocks.className =
-          "message visible " + type;
-
-        minuterieMessage =
-          setTimeout(
-            function () {
-              fermerMessage();
-            },
-            6000
-          );
-
+        minuterieMessage = setTimeout(function () {
+          fermerMessage();
+        }, 6000);
       }
-
 
       function fermerMessage() {
-
-        messageStocks.className =
-          "message";
-
-        texteMessageStocks.textContent =
-          "";
+        messageStocks.className = "message";
+        texteMessageStocks.textContent = "";
 
         if (minuterieMessage) {
           clearTimeout(minuterieMessage);
           minuterieMessage = null;
         }
-
       }
 
-
-      function libelleConditionnement(
-        type,
-        quantiteStandard
-      ) {
-
-        const typeNormalise =
-          String(type || "")
-            .toLowerCase();
-
-        const qte =
-          entier(quantiteStandard);
+      function libelleConditionnement(type, quantiteStandard) {
+        const typeNormalise = String(type || "").toLowerCase();
+        const qte = entier(quantiteStandard);
 
         if (typeNormalise === "caisse") {
-
-          return qte > 0
-            ? "Caisse de " + formatNombre(qte)
-            : "Caisse";
-
+          return qte > 0 ? "Caisse de " + formatNombre(qte) : "Caisse";
         }
 
         if (typeNormalise === "sachet") {
-
-          return qte > 0
-            ? "Sachet de " + formatNombre(qte)
-            : "Sachet";
-
+          return qte > 0 ? "Sachet de " + formatNombre(qte) : "Sachet";
         }
 
         return type || "À l’unité";
-
       }
 
-
       function libelleEmplacement(valeur) {
-
         const correspondances = {
           externe: "Extérieur",
           externe_papival: "Extérieur",
@@ -1412,23 +1304,14 @@
           partenaire: "Stand"
         };
 
-        if (
-          valeur === null ||
-          valeur === undefined ||
-          valeur === ""
-        ) {
+        if (valeur === null || valeur === undefined || valeur === "") {
           return "—";
         }
 
-        return correspondances[valeur] ||
-          String(valeur)
-            .replaceAll("_", " ");
-
+        return correspondances[valeur] || String(valeur).replaceAll("_", " ");
       }
 
-
       function libelleTypeMouvement(valeur) {
-
         const correspondances = {
           inventaire_initial: "Inventaire initial",
           approvisionnement_mdn: "Approvisionnement MDN",
@@ -1445,831 +1328,532 @@
           annulation: "Annulation"
         };
 
-        if (!valeur) {
-          return "Mouvement";
-        }
+        if (!valeur) return "Mouvement";
 
         return correspondances[valeur] ||
           String(valeur)
             .replaceAll("_", " ")
-            .replace(
-              /^./,
-              function (lettre) {
-                return lettre.toUpperCase();
-              }
-            );
-
+            .replace(/^./, function (lettre) {
+              return lettre.toUpperCase();
+            });
       }
 
+      function detailPhysique(ligne, zone) {
+        const physique = conditionnementsCourants.find(function (item) {
+          return item.vaisselle_id === ligne.vaisselle_id;
+        });
 
-      /* =======================================================
-         TOTAUX
-         ======================================================= */
+        if (!physique) return "Aucun conditionnement";
 
-      function calculerTotaux(
-        stocks,
-        contenants
-      ) {
+        const estStock = zone === "stock";
+        const complets = entier(estStock
+          ? physique.stock_mdn_conditionnements_complets
+          : physique.reserve_conditionnements_complets);
+        const partiels = entier(estStock
+          ? physique.stock_mdn_conditionnements_partiels
+          : physique.reserve_conditionnements_partiels);
+        const details = estStock
+          ? physique.stock_mdn_detail_partiels
+          : physique.reserve_detail_partiels;
+        const nom = String(ligne.type_conditionnement || "conditionnement").toLowerCase();
+        const pluriel = nom === "caisse" ? "caisses" : "sachets";
+        const morceaux = [];
 
-        const totaux =
-          stocks.reduce(
-            function (acc, ligne) {
+        if (complets > 0) morceaux.push(complets + " " + pluriel + " compl." );
+        if (partiels > 0) {
+          const qtes = Array.isArray(details)
+            ? details.map(function (d) { return entier(d.quantite); }).join(", ")
+            : "";
+          morceaux.push(partiels + " " + pluriel + " part." + (qtes ? " (" + qtes + ")" : ""));
+        }
 
-              acc.tente +=
-                entier(
-                  ligne.stock_mdn_tente
-                );
-
-              acc.reserve +=
-                entier(
-                  ligne.reserve_mdn
-                );
-
-              acc.stands +=
-                entier(
-                  ligne.chez_stands
-                );
-
-              acc.sales +=
-                entier(
-                  ligne.retours_sales_cumules
-                );
-
-              return acc;
-
-            },
-            {
-              tente: 0,
-              reserve: 0,
-              stands: 0,
-              sales: 0
-            }
-          );
-
-
-        const totalContenantsVides =
-          contenants.reduce(
-            function (somme, ligne) {
-
-              return somme +
-                entier(
-                  ligne.stock_vide_propre
-                );
-
-            },
-            0
-          );
-
-
-        totalTente.textContent =
-          formatNombre(
-            totaux.tente
-          );
-
-        totalReserve.textContent =
-          formatNombre(
-            totaux.reserve
-          );
-
-        totalStands.textContent =
-          formatNombre(
-            totaux.stands
-          );
-
-        totalSales.textContent =
-          formatNombre(
-            totaux.sales
-          );
-
-        totalContenants.textContent =
-          formatNombre(
-            totalContenantsVides
-          );
-
+        return morceaux.length ? morceaux.join(" · ") : "Aucun conditionnement";
       }
-
-
-      /* =======================================================
-         TABLEAU VAISSELLE
-         ======================================================= */
 
       function afficherStocks(stocks) {
-
-        if (
-          !Array.isArray(stocks) ||
-          stocks.length === 0
-        ) {
-
+        if (!Array.isArray(stocks) || stocks.length === 0) {
           corpsTableStocks.innerHTML = `
             <tr>
-              <td colspan="7">
-                Aucun article de vaisselle configuré pour cette édition.
+              <td colspan="7">Aucun article de vaisselle configuré pour cette édition.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        corpsTableStocks.innerHTML = stocks.map(function (ligne) {
+          const alerte = ligne.alerte_stock_tente === true;
+
+          return `
+            <tr>
+              <td class="article-cell">
+                <strong>${echapperHtml(ligne.article)}</strong>
+                <small>${echapperHtml(libelleConditionnement(
+                  ligne.type_conditionnement,
+                  ligne.quantite_standard
+                ))}</small>
+              </td>
+
+              <td class="nombre-tente">
+                ${formatNombre(ligne.stock_mdn_tente)}
+                <span class="stock-physique">${echapperHtml(detailPhysique(ligne, "stock"))}</span>
+              </td>
+              <td class="nombre-reserve">
+                ${formatNombre(ligne.reserve_mdn)}
+                <span class="stock-physique">${echapperHtml(detailPhysique(ligne, "reserve"))}</span>
+              </td>
+              <td><strong>${formatNombre(ligne.stock_propre_total)}</strong></td>
+              <td>
+                <span class="badge-stock ${alerte ? "alerte" : "ok"}">
+                  ${alerte ? "À surveiller" : "Disponible"}
+                </span>
+              </td>
+              <td class="nombre-stands">${formatNombre(ligne.chez_stands)}</td>
+              <td class="nombre-sale">${formatNombre(ligne.retours_sales_cumules)}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function ajouterContenantsAuTableau(contenants) {
+        if (!Array.isArray(contenants) || contenants.length === 0) {
+          return;
+        }
+
+        const lignesContenants = contenants.map(function (ligne) {
+          return `
+            <tr class="ligne-contenant">
+              <td class="article-cell">
+                <strong>${echapperHtml(ligne.contenant)}</strong>
+                <small>Vide propre</small>
+              </td>
+
+              <td class="nombre-tente">${formatNombre(ligne.stock_vide_propre)}</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+
+              <td>
+                <span class="badge-stock ok">Disponible</span>
               </td>
             </tr>
           `;
+        }).join("");
 
-          return;
-
-        }
-
-
-        corpsTableStocks.innerHTML =
-          stocks.map(
-            function (ligne) {
-
-              const alerte =
-                ligne.alerte_stock_tente === true;
-
-              return `
-                <tr>
-
-                  <td class="article-cell">
-
-                    <strong>
-                      ${echapperHtml(
-                        ligne.article
-                      )}
-                    </strong>
-
-                    <small>
-                      ${echapperHtml(
-                        libelleConditionnement(
-                          ligne.type_conditionnement,
-                          ligne.quantite_standard
-                        )
-                      )}
-                    </small>
-
-                  </td>
-
-                  <td class="nombre-tente">
-                    ${formatNombre(
-                      ligne.stock_mdn_tente
-                    )}
-                  </td>
-
-                  <td class="nombre-reserve">
-                    ${formatNombre(
-                      ligne.reserve_mdn
-                    )}
-                  </td>
-
-                  <td>
-                    <strong>
-                      ${formatNombre(
-                        ligne.stock_propre_total
-                      )}
-                    </strong>
-                  </td>
-
-                  <td class="nombre-stands">
-                    ${formatNombre(
-                      ligne.chez_stands
-                    )}
-                  </td>
-
-                  <td class="nombre-sale">
-                    ${formatNombre(
-                      ligne.retours_sales_cumules
-                    )}
-                  </td>
-
-                  <td>
-
-                    <span
-                      class="badge-stock ${
-                        alerte
-                          ? "alerte"
-                          : "ok"
-                      }"
-                    >
-                      ${
-                        alerte
-                          ? "À surveiller"
-                          : "Disponible"
-                      }
-                    </span>
-
-                  </td>
-
-                </tr>
-              `;
-
-            }
-          ).join("");
-
+        corpsTableStocks.insertAdjacentHTML("beforeend", lignesContenants);
       }
 
-
-      /* =======================================================
-         CAISSES / CONTENANTS
-         Directement sous la liste des articles
-         ======================================================= */
-
-      function ajouterContenantsAuTableau(
-        contenants
-      ) {
-
-        if (
-          !Array.isArray(contenants) ||
-          contenants.length === 0
-        ) {
-          return;
+      function uuidAleatoire() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
         }
-
-
-        const lignesContenants =
-          contenants.map(
-            function (ligne) {
-
-              return `
-                <tr class="ligne-contenant">
-
-                  <td class="article-cell">
-
-                    <strong>
-                      ${echapperHtml(
-                        ligne.contenant
-                      )}
-                    </strong>
-
-                    <small>
-                      Vide propre
-                    </small>
-
-                  </td>
-
-                  <td class="nombre-tente">
-                    ${formatNombre(
-                      ligne.stock_vide_propre
-                    )}
-                  </td>
-
-                  <td>
-                    —
-                  </td>
-
-                  <td>
-                    —
-                  </td>
-
-                  <td>
-                    —
-                  </td>
-
-                  <td>
-                    —
-                  </td>
-
-                  <td>
-
-                    <span class="badge-stock ok">
-                      Disponible
-                    </span>
-
-                  </td>
-
-                </tr>
-              `;
-
-            }
-          ).join("");
-
-
-        corpsTableStocks.insertAdjacentHTML(
-          "beforeend",
-          lignesContenants
-        );
-
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+          const r = Math.random() * 16 | 0;
+          const v = c === "x" ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
       }
 
+      function analyserPartiels(texte, standard) {
+        const brut = String(texte || "").trim();
+        if (!brut) return [];
+        const valeurs = brut.split(/[;,]+/).map(function (v) { return Number(v.trim()); });
+        if (valeurs.some(function (v) { return !Number.isInteger(v) || v <= 0 || v >= standard; })) {
+          throw new Error("Chaque conditionnement partiel doit contenir entre 1 et " + (standard - 1) + " unités.");
+        }
+        return valeurs;
+      }
 
-      /* =======================================================
-         HISTORIQUE
-         ======================================================= */
+      function recalculerTotauxLivraison() {
+        corpsLivraison.querySelectorAll("tr[data-vaisselle-id]").forEach(function (tr) {
+          const standard = entier(tr.dataset.standard);
+          const complets = Math.max(0, entier(tr.querySelector(".livraison-complets").value));
+          let partiels = [];
+          try {
+            partiels = analyserPartiels(tr.querySelector(".livraison-partiels").value, standard);
+          } catch (_) {
+            tr.querySelector(".livraison-total").textContent = "!";
+            return;
+          }
+          const total = complets * standard + partiels.reduce(function (a, b) { return a + b; }, 0);
+          tr.querySelector(".livraison-total").textContent = formatNombre(total);
+        });
+      }
 
-      function afficherHistorique(
-        mouvements
-      ) {
+      function construireFormulaireLivraison() {
+        const destinationReserve = destinationLivraison.value === "reserve_mdn_propre";
+        const lignes = stocksCourants.filter(function (ligne) {
+          return !destinationReserve || String(ligne.article || "").trim().toLowerCase() === "gobelets";
+        });
 
-        if (
-          !Array.isArray(mouvements) ||
-          mouvements.length === 0
-        ) {
+        corpsLivraison.innerHTML = lignes.map(function (ligne) {
+          const type = String(ligne.type_conditionnement || "conditionnement").toLowerCase();
+          const pluriel = type === "caisse" ? "caisses" : "sachets";
+          return `
+            <tr data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}" data-standard="${entier(ligne.quantite_standard)}">
+              <td><strong>${echapperHtml(ligne.article)}</strong></td>
+              <td>${echapperHtml(libelleConditionnement(type, ligne.quantite_standard))}</td>
+              <td><input class="livraison-complets" type="number" min="0" step="1" value="0" aria-label="${pluriel} complets"></td>
+              <td>
+                <input class="livraison-partiels" type="text" inputmode="numeric" placeholder="Ex. 300, 180" aria-label="Contenu des ${pluriel} partiels">
+                <span class="aide-partiels">1 quantité par ${type} partiel</span>
+              </td>
+              <td class="col-total livraison-total">0</td>
+            </tr>
+          `;
+        }).join("");
 
+        blocCaissesVides.style.display = destinationReserve ? "none" : "grid";
+        if (destinationReserve) caissesVidesLivraison.value = "0";
+
+        corpsLivraison.querySelectorAll("input").forEach(function (input) {
+          input.addEventListener("input", recalculerTotauxLivraison);
+        });
+        recalculerTotauxLivraison();
+      }
+
+      function ouvrirLivraison() {
+        destinationLivraison.value = "operationnel_propre";
+        referenceLivraison.value = "";
+        commentaireLivraison.value = "";
+        caissesVidesLivraison.value = "0";
+        construireFormulaireLivraison();
+        modalLivraison.classList.add("visible");
+        modalLivraison.setAttribute("aria-hidden", "false");
+      }
+
+      function fermerLivraison() {
+        modalLivraison.classList.remove("visible");
+        modalLivraison.setAttribute("aria-hidden", "true");
+      }
+
+      async function enregistrerLivraison() {
+        if (!editionCourante?.id) return;
+
+        const lignes = [];
+        corpsLivraison.querySelectorAll("tr[data-vaisselle-id]").forEach(function (tr) {
+          const standard = entier(tr.dataset.standard);
+          const complets = Math.max(0, entier(tr.querySelector(".livraison-complets").value));
+          const partiels = analyserPartiels(tr.querySelector(".livraison-partiels").value, standard);
+          if (complets > 0 || partiels.length > 0) {
+            lignes.push({
+              vaisselle_id: tr.dataset.vaisselleId,
+              nombre_conditionnements_complets: complets,
+              conditionnements_partiels: partiels
+            });
+          }
+        });
+
+        const nbCaissesVides = destinationLivraison.value === "operationnel_propre"
+          ? Math.max(0, entier(caissesVidesLivraison.value))
+          : 0;
+
+        const contenantsVides = [];
+        if (nbCaissesVides > 0) {
+          const caisse = contenantsCourants.find(function (c) {
+            return String(c.contenant || "").trim().toLowerCase() === "caisse";
+          });
+          if (!caisse?.type_contenant_id) {
+            throw new Error("Impossible d'identifier le type de contenant « Caisse ».");
+          }
+          contenantsVides.push({
+            type_contenant_id: caisse.type_contenant_id,
+            quantite: nbCaissesVides
+          });
+        }
+
+        if (lignes.length === 0 && contenantsVides.length === 0) {
+          throw new Error("Saisis au moins un conditionnement complet, partiel ou une caisse vide propre.");
+        }
+
+        validerLivraison.disabled = true;
+        validerLivraison.textContent = "Enregistrement…";
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("enregistrer_livraison_vaisselle", {
+            p_idempotency_key: uuidAleatoire(),
+            p_edition_id: editionCourante.id,
+            p_lignes: lignes,
+            p_destination: destinationLivraison.value,
+            p_contenants_vides: contenantsVides,
+            p_reference_externe: referenceLivraison.value.trim() || null,
+            p_commentaire: commentaireLivraison.value.trim() || null
+          });
+
+          if (error) throw error;
+          fermerLivraison();
+          await chargerStocks();
+          afficherMessage(
+            "Livraison enregistrée : " + formatNombre(data?.total_conditionnements_physiques || 0) +
+            " conditionnement(s), " + formatNombre(data?.total_unites_vaisselle || 0) + " unité(s).",
+            "succes"
+          );
+        } finally {
+          validerLivraison.disabled = false;
+          validerLivraison.textContent = "Enregistrer la livraison";
+        }
+      }
+
+      function afficherHistorique(mouvements) {
+        if (!Array.isArray(mouvements) || mouvements.length === 0) {
           historiqueListe.innerHTML = `
             <div class="historique-vide">
               Aucun mouvement de stock pour le moment.
             </div>
           `;
-
           return;
-
         }
 
+        historiqueListe.innerHTML = mouvements.map(function (mouvement) {
+          const source = libelleEmplacement(mouvement.emplacement_source);
+          const destination = libelleEmplacement(mouvement.emplacement_destination);
 
-        historiqueListe.innerHTML =
-          mouvements.map(
-            function (mouvement) {
+          const reference =
+            mouvement.reference_type || mouvement.reference_id
+              ? [
+                  mouvement.reference_type,
+                  mouvement.reference_id
+                ].filter(Boolean).join(" · ")
+              : "";
 
-              const source =
-                libelleEmplacement(
-                  mouvement.emplacement_source
-                );
+          const commentaire =
+            mouvement.commentaire || mouvement.motif || "";
 
-              const destination =
-                libelleEmplacement(
-                  mouvement.emplacement_destination
-                );
+          return `
+            <article class="mouvement">
+              <div class="mouvement-haut">
+                <div class="mouvement-article">
+                  ${echapperHtml(mouvement.article)}
+                </div>
 
+                <div class="mouvement-quantite">
+                  ${formatNombre(mouvement.quantite)}
+                </div>
+              </div>
 
-              const reference =
-                mouvement.reference_type ||
-                mouvement.reference_id
-                  ? [
-                      mouvement.reference_type,
-                      mouvement.reference_id
-                    ]
-                    .filter(Boolean)
-                    .join(" · ")
-                  : "";
+              <div class="mouvement-type">
+                ${echapperHtml(libelleTypeMouvement(mouvement.type_mouvement))}
+              </div>
 
+              <div class="mouvement-trajet">
+                ${echapperHtml(source)} → ${echapperHtml(destination)}
+              </div>
 
-              const commentaire =
-                mouvement.commentaire ||
-                mouvement.motif ||
-                "";
+              <div class="mouvement-bas">
+                <span>${echapperHtml(formatDateHeure(mouvement.date_mouvement || mouvement.created_at))}</span>
+                ${reference ? `<span>${echapperHtml(reference)}</span>` : ""}
+              </div>
 
-
-              return `
-                <article class="mouvement">
-
-                  <div class="mouvement-haut">
-
-                    <div class="mouvement-article">
-                      ${echapperHtml(
-                        mouvement.article
-                      )}
-                    </div>
-
-                    <div class="mouvement-quantite">
-                      ${formatNombre(
-                        mouvement.quantite
-                      )}
-                    </div>
-
-                  </div>
-
-
-                  <div class="mouvement-type">
-
-                    ${echapperHtml(
-                      libelleTypeMouvement(
-                        mouvement.type_mouvement
-                      )
-                    )}
-
-                  </div>
-
-
-                  <div class="mouvement-trajet">
-
-                    ${echapperHtml(source)}
-                    →
-                    ${echapperHtml(destination)}
-
-                  </div>
-
-
-                  <div class="mouvement-bas">
-
-                    <span>
-                      ${echapperHtml(
-                        formatDateHeure(
-                          mouvement.date_mouvement
-                        )
-                      )}
-                    </span>
-
-                    ${
-                      reference
-                        ? `
-                          <span>
-                            ${echapperHtml(
-                              reference
-                            )}
-                          </span>
-                        `
-                        : ""
-                    }
-
-                  </div>
-
-
-                  ${
-                    commentaire
-                      ? `
-                        <div class="mouvement-commentaire">
-                          ${echapperHtml(
-                            commentaire
-                          )}
-                        </div>
-                      `
-                      : ""
-                  }
-
-                </article>
-              `;
-
-            }
-          ).join("");
-
+              ${commentaire
+                ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>`
+                : ""}
+            </article>
+          `;
+        }).join("");
       }
 
-
-      /* =======================================================
-         ÉDITION
-         ======================================================= */
-
       async function determinerEdition() {
-
-        const client =
-          window.MDN_SUPABASE;
-
+        const client = window.MDN_SUPABASE;
 
         if (!client) {
-
-          throw new Error(
-            "Le client Supabase MDN n'est pas disponible."
-          );
-
+          throw new Error("Le client Supabase MDN n'est pas disponible.");
         }
 
-
-        /*
-         * MODE DÉMO
-         */
-
         if (modeDemo) {
-
           const {
             data: catalogueDemo,
             error: erreurCatalogueDemo
-          } =
-            await client.rpc(
-              "charger_catalogue_caisse_demo"
-            );
-
+          } = await client.rpc("charger_catalogue_caisse_demo");
 
           if (erreurCatalogueDemo) {
             throw erreurCatalogueDemo;
           }
 
-
-          const editionDemo =
-            catalogueDemo?.edition ||
-            null;
-
+          const editionDemo = catalogueDemo?.edition || null;
 
           if (!editionDemo?.id) {
-
             throw new Error(
               "Aucune édition n'est disponible pour le Mode Démo."
             );
-
           }
-
 
           return {
             id: editionDemo.id,
             annee: editionDemo.annee,
             nom: editionDemo.nom || null
           };
-
         }
-
-
-        /*
-         * MODE RÉEL
-         */
 
         const {
           data: editionActive,
           error: erreurEditionActive
-        } =
-          await client
-            .from("editions")
-            .select(
-              "id, annee, nom, statut, est_active"
-            )
-            .eq(
-              "est_active",
-              true
-            )
-            .maybeSingle();
-
+        } = await client
+          .from("editions")
+          .select("id, annee, nom, statut, est_active")
+          .eq("est_active", true)
+          .maybeSingle();
 
         if (erreurEditionActive) {
           throw erreurEditionActive;
         }
 
-
         if (!editionActive?.id) {
-
           throw new Error(
             "Aucune édition active n'est configurée."
           );
-
         }
 
-
         return editionActive;
-
       }
 
-
-      /* =======================================================
-         CHARGEMENT DES STOCKS
-         ======================================================= */
-
       async function chargerStocks() {
-
-        if (
-          chargementEnCours ||
-          !editionCourante?.id
-        ) {
+        if (chargementEnCours || !editionCourante?.id) {
           return;
         }
 
-
-        chargementEnCours =
-          true;
-
-        boutonActualiser.disabled =
-          true;
-
+        chargementEnCours = true;
+        boutonActualiser.disabled = true;
 
         try {
-
-          const client =
-            window.MDN_SUPABASE;
-
+          const client = window.MDN_SUPABASE;
 
           const [
             reponseStocks,
+            reponseConditionnements,
             reponseContenants,
             reponseHistorique
-          ] =
-            await Promise.all([
+          ] = await Promise.all([
+            client.rpc("etat_stocks_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }),
 
-              client.rpc(
-                "etat_stocks_vaisselle",
-                {
-                  p_edition_id:
-                    editionCourante.id,
+            client.rpc("etat_conditionnements_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }),
 
-                  p_is_demo:
-                    modeDemo
-                }
-              ),
+            client.rpc("etat_stocks_contenants", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }),
 
-
-              client.rpc(
-                "etat_stocks_contenants",
-                {
-                  p_edition_id:
-                    editionCourante.id,
-
-                  p_is_demo:
-                    modeDemo
-                }
-              ),
-
-
-              client.rpc(
-                "historique_mouvements_stock_vaisselle",
-                {
-                  p_edition_id:
-                    editionCourante.id,
-
-                  p_is_demo:
-                    modeDemo
-                }
-              )
-
-            ]);
-
+            client.rpc("historique_mouvements_stock_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            })
+          ]);
 
           if (reponseStocks.error) {
             throw reponseStocks.error;
           }
 
+          if (reponseConditionnements.error) {
+            throw reponseConditionnements.error;
+          }
 
           if (reponseContenants.error) {
             throw reponseContenants.error;
           }
 
-
           if (reponseHistorique.error) {
             throw reponseHistorique.error;
           }
 
+          const stocks = Array.isArray(reponseStocks.data)
+            ? reponseStocks.data
+            : [];
 
-          const stocks =
-            Array.isArray(
-              reponseStocks.data
-            )
-              ? reponseStocks.data
-              : [];
+          const conditionnements = Array.isArray(reponseConditionnements.data)
+            ? reponseConditionnements.data
+            : [];
 
+          const contenants = Array.isArray(reponseContenants.data)
+            ? reponseContenants.data
+            : [];
 
-          const contenants =
-            Array.isArray(
-              reponseContenants.data
-            )
-              ? reponseContenants.data
-              : [];
+          const mouvements = Array.isArray(reponseHistorique.data)
+            ? reponseHistorique.data
+            : [];
 
+          stocksCourants = stocks;
+          conditionnementsCourants = conditionnements;
+          contenantsCourants = contenants;
 
-          const mouvements =
-            Array.isArray(
-              reponseHistorique.data
-            )
-              ? reponseHistorique.data
-              : [];
-
-
-          afficherStocks(
-            stocks
-          );
-
-
-          ajouterContenantsAuTableau(
-            contenants
-          );
-
-
-          afficherHistorique(
-            mouvements
-          );
-
-
-          calculerTotaux(
-            stocks,
-            contenants
-          );
-
+          afficherStocks(stocks);
+          ajouterContenantsAuTableau(contenants);
+          afficherHistorique(mouvements);
         } finally {
-
-          chargementEnCours =
-            false;
-
-          boutonActualiser.disabled =
-            false;
-
+          chargementEnCours = false;
+          boutonActualiser.disabled = false;
         }
-
       }
 
+      boutonRetour.addEventListener("click", function () {
+        window.location.href = "accueil.html";
+      });
 
-      /* =======================================================
-         NAVIGATION
-         ======================================================= */
+      boutonDeconnexion.addEventListener("click", async function () {
+        boutonDeconnexion.disabled = true;
+        boutonDeconnexion.textContent = "Déconnexion…";
+        await window.MDN_AUTH.deconnexion();
+      });
 
-      boutonRetour.addEventListener(
-        "click",
-        function () {
-
-          window.location.href =
-            "accueil.html";
-
-        }
-      );
-
-
-      boutonDeconnexion.addEventListener(
-        "click",
-        async function () {
-
-          boutonDeconnexion.disabled =
-            true;
-
-          boutonDeconnexion.textContent =
-            "Déconnexion…";
-
-
-          await window.MDN_AUTH.deconnexion();
-
-        }
-      );
-
-
-      boutonActualiser.addEventListener(
-        "click",
-        async function () {
-
-          try {
-
-            await chargerStocks();
-
-
-            afficherMessage(
-              "Stocks actualisés.",
-              "succes"
-            );
-
-          } catch (erreur) {
-
-            console.error(
-              "[MDN Sion] Actualisation Stocks impossible :",
-              erreur
-            );
-
-
-            afficherMessage(
-              erreur?.message ||
-              "Impossible d'actualiser les stocks."
-            );
-
-          }
-
-        }
-      );
-
-
-      /*
-       * Les deux actions sont déjà placées.
-       * Elles seront raccordées à leurs formulaires
-       * à l'étape suivante.
-       */
-
-      boutonLivraison.addEventListener(
-        "click",
-        function () {
-
+      boutonActualiser.addEventListener("click", async function () {
+        try {
+          await chargerStocks();
+          afficherMessage("Stocks actualisés.", "succes");
+        } catch (erreur) {
+          console.error("[MDN Sion] Actualisation Stocks impossible :", erreur);
           afficherMessage(
-            "Le formulaire de livraison sera raccordé à cette page à l'étape suivante.",
-            "info"
+            erreur?.message || "Impossible d'actualiser les stocks."
           );
-
         }
-      );
+      });
 
+      boutonLivraison.addEventListener("click", ouvrirLivraison);
 
-      boutonReapprovisionnement.addEventListener(
-        "click",
-        function () {
-
-          afficherMessage(
-            "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
-            "info"
-          );
-
+      destinationLivraison.addEventListener("change", construireFormulaireLivraison);
+      fermerModalLivraison.addEventListener("click", fermerLivraison);
+      annulerLivraison.addEventListener("click", fermerLivraison);
+      modalLivraison.addEventListener("click", function (event) {
+        if (event.target === modalLivraison) fermerLivraison();
+      });
+      validerLivraison.addEventListener("click", async function () {
+        try {
+          await enregistrerLivraison();
+        } catch (erreur) {
+          console.error("[MDN Sion] Livraison impossible :", erreur);
+          afficherMessage(erreur?.message || "Impossible d'enregistrer la livraison.");
         }
-      );
+      });
 
+      boutonReapprovisionnement.addEventListener("click", function () {
+        afficherMessage(
+          "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
+          "info"
+        );
+      });
 
-      fermerMessageStocks.addEventListener(
-        "click",
-        fermerMessage
-      );
-
-
-      /* =======================================================
-         AUTHENTIFICATION
-         ======================================================= */
+      fermerMessageStocks.addEventListener("click", fermerMessage);
 
       window.MDN_AUTH.surveillerSession({
         redirigerApresDeconnexion: true
       });
 
-
-      /* =======================================================
-         INITIALISATION
-         ======================================================= */
-
       async function initialiserStocks() {
-
         try {
-
-          const auth =
-            await window.MDN_AUTH.protegerPage([
-              "utilisateur",
-              "responsable",
-              "administrateur"
-            ]);
-
+          const auth = await window.MDN_AUTH.protegerPage([
+            "utilisateur",
+            "responsable",
+            "administrateur"
+          ]);
 
           if (!auth) {
             return;
           }
 
-
-          const prenom =
-            String(
-              auth.profil.prenom || ""
-            ).trim();
-
+          const prenom = String(auth.profil.prenom || "").trim();
 
           const identite =
             prenom ||
@@ -2277,113 +1861,58 @@
             auth.utilisateur.email ||
             "Utilisateur";
 
-
           identiteUtilisateur.textContent =
             identite +
             " · " +
             auth.libelleRole;
 
-
-          /*
-           * Le Mode Démo est déterminé côté serveur.
-           * Le paramètre URL ne suffit jamais.
-           */
-
           const {
             data: etatSessionDemo,
             error: erreurEtatSessionDemo
-          } =
-            await window.MDN_SUPABASE.rpc(
-              "etat_session_demo"
-            );
-
+          } = await window.MDN_SUPABASE.rpc(
+            "etat_session_demo"
+          );
 
           if (erreurEtatSessionDemo) {
             throw erreurEtatSessionDemo;
           }
 
-
-          modeDemo =
-            etatSessionDemo?.mode_demo === true;
-
+          modeDemo = etatSessionDemo?.mode_demo === true;
 
           if (modeDemo) {
-
-            application.classList.add(
-              "mode-demo"
-            );
-
-            bandeauDemo.classList.add(
-              "visible"
-            );
-
-            titreStocks.textContent =
-              "🎓 Stocks — Mode Démo";
-
-            document.title =
-              "Stocks Démo - MDN Sion";
-
+            application.classList.add("mode-demo");
+            bandeauDemo.classList.add("visible");
+            titreStocks.textContent = "🎓 Stocks — Mode Démo";
+            document.title = "Stocks Démo - MDN Sion";
           } else {
-
-            application.classList.remove(
-              "mode-demo"
-            );
-
-            bandeauDemo.classList.remove(
-              "visible"
-            );
-
-            titreStocks.textContent =
-              "📦 Stocks";
-
-            document.title =
-              "Stocks - MDN Sion";
-
+            application.classList.remove("mode-demo");
+            bandeauDemo.classList.remove("visible");
+            titreStocks.textContent = "📦 Stocks";
+            document.title = "Stocks - MDN Sion";
           }
 
-
-          /*
-           * Récupération de l'édition.
-           */
-
-          editionCourante =
-            await determinerEdition();
-
-
-          /*
-           * Chargement initial.
-           */
+          editionCourante = await determinerEdition();
 
           await chargerStocks();
 
-
           masquerChargement();
-
         } catch (erreur) {
-
           console.error(
             "[MDN Sion] Initialisation de la page Stocks impossible :",
             erreur
           );
 
-
           masquerChargement();
-
 
           afficherMessage(
             erreur?.message ||
             "Impossible d'ouvrir la page Stocks."
           );
-
         }
-
       }
 
-
       initialiserStocks();
-
     })();
   </script>
-
 </body>
 </html>
