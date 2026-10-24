@@ -2105,6 +2105,46 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
 }
 
+
+/* === Navigation horizontale sur écrans étroits === */
+@media(max-width:680px){
+  .tabs{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center;
+    gap:8px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding-bottom:4px;
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs > *{flex:0 0 auto !important}
+  .return-subtabs{display:flex;flex:0 0 auto;gap:8px}
+  .tab,.subtab,.correction-top-button{white-space:nowrap}
+}
+
+/* === Modification / annulation dans l'écran principal === */
+.correction-work-banner{
+  display:none;
+  margin:12px 16px 0;
+  padding:12px 14px;
+  border:1px solid #d69a28;
+  border-radius:12px;
+  background:#fff6df;
+}
+.correction-work-banner.show{display:block}
+.correction-work-title{font-weight:900;color:#8b0000;margin-bottom:4px}
+.correction-work-detail{font-size:13px;line-height:1.4;color:#5b4630}
+.correction-work-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.correction-work-actions button{
+  min-height:38px;border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer
+}
+.correction-work-cancel{border:1px solid #c9cfd6;background:#fff}
+.correction-work-confirm{border:1px solid #8b0000;background:#8b0000;color:#fff}
+.correction-work-confirm.annulation{border-color:#b26a00;background:#fff7e8;color:#7a4600}
+
 </style>
  </head>
  <body>
@@ -2160,6 +2200,14 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
       <button class="correct-account correction-top-button" disabled id="correctAccount" type="button" style="display:none">
        Modifier / annuler
       </button>
+     </div>
+     <div class="correction-work-banner" id="correctionWorkBanner">
+      <div class="correction-work-title" id="correctionWorkTitle"></div>
+      <div class="correction-work-detail" id="correctionWorkDetail"></div>
+      <div class="correction-work-actions">
+       <button class="correction-work-cancel" id="correctionWorkCancel" type="button">Quitter</button>
+       <button class="correction-work-confirm" id="correctionWorkConfirm" type="button"></button>
+      </div>
      </div>
      <div class="catalog-scroll" id="catalogScroll">
      </div>
@@ -2338,9 +2386,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
      <button class="close" id="correctionClose" type="button">×</button>
     </div>
     <div class="correction-body">
-     <p class="correction-note">Choisis « Modifier » pour reprendre automatiquement les quantités de l’opération dans l’écran de saisie, les ajuster puis les valider à nouveau. Choisis « Annuler » pour supprimer uniquement ses effets. L’opération originale reste toujours traçable dans l’historique.</p>
+     <p class="correction-note">Choisis « Modifier » ou « Annuler ». L’opération sera chargée dans l’écran principal afin que tu voies directement les articles et les quantités concernés.</p>
      <div class="correction-list" id="correctionList"></div>
-     <div class="correction-form" id="correctionForm">
+     <div class="correction-form" id="correctionForm" style="display:none !important">
       <div class="correction-selected" id="correctionSelected"></div>
       <label>Motif obligatoire<textarea id="correctionReason" maxlength="500" placeholder="Ex. Mauvaise quantité saisie, mauvais type de retour…"></textarea></label>
       <div class="correction-form-actions">
@@ -2428,6 +2476,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const correctionSelected=$("correctionSelected");
     const correctionReason=$("correctionReason");
     const correctionConfirm=$("correctionConfirm");
+    const correctionWorkBanner=$("correctionWorkBanner");
+    const correctionWorkTitle=$("correctionWorkTitle");
+    const correctionWorkDetail=$("correctionWorkDetail");
+    const correctionWorkCancel=$("correctionWorkCancel");
+    const correctionWorkConfirm=$("correctionWorkConfirm");
     const closeAccount=$("closeAccount");
     const paymentModal=$("paymentModal");
     const paymentBalance=$("paymentBalance");
@@ -2457,6 +2510,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     let correctionOperation=null;
     let correctionAction="annuler";
     let correctionKey=null;
+    let correctionWorkOperation=null;
+    let correctionWorkAction=null;
     let accountData=null;
     let paymentKey=null;
     let refundKey=null;
@@ -3014,18 +3069,15 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     function selectCorrectionOperation(id,action="annuler"){
         const op=correctionOperations.find(x=>x.id===id);
         if(!op)return;
-        correctionOperation=op;
-        correctionAction=action==="modifier"?"modifier":"annuler";
-        correctionKey=uuid();
-        correctionSelected.innerHTML=`<strong>${esc(operationTypeLabel(op.type_operation))}</strong> · ${esc(op.numero_operation||"")}<br>${correctionDetail(op)}`;
-        correctionReason.value="";
-        correctionConfirm.disabled=true;
-        correctionConfirm.textContent=correctionAction==="modifier"?"Préparer la modification":"Annuler cette opération";
-        correctionForm.classList.add("show");
-        correctionReason.focus();
+        closeCorrectionModal();
+        openCorrectionInMainScreen(op,action);
     }
 
-    function prefillOperationForModification(op){
+    function openCorrectionInMainScreen(op,action){
+        correctionWorkOperation=op;
+        correctionWorkAction=action==="modifier"?"modifier":"annuler";
+        correctionKey=uuid();
+
         initState();
         const t=String(op?.type_operation||"");
         if(!types.includes(t))return;
@@ -3033,10 +3085,15 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         for(const ligne of (Array.isArray(op?.vaisselle)?op.vaisselle:[])){
             const id=ligne.vaisselle_id;
             if(!state.vaisselle[id])continue;
-            state.vaisselle[id][t].caisses=n(ligne.nombre_caisses_completes);
+            state.vaisselle[id][t].caisses=n(
+                ligne.nombre_caisses_completes ??
+                ligne.nombre_conditionnements_complets ??
+                0
+            );
             state.vaisselle[id][t].unites=n(
                 ligne.quantite_hors_caisses ??
                 ligne.quantite_unites_hors_conditionnement ??
+                ligne.quantite_hors_conditionnement ??
                 0
             );
         }
@@ -3061,9 +3118,123 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             $("returnSubtabs").hidden=false;
         }
 
+        const numero=op.numero_operation||"";
+        const libelle=operationTypeLabel(t);
+
+        if(correctionWorkAction==="modifier"){
+            correctionWorkTitle.textContent=`MODIFICATION — ${libelle} ${numero}`;
+            correctionWorkDetail.textContent="L’opération a été rechargée. Modifie les quantités avec les boutons − / + puis clique sur « Valider la modification ».";
+            correctionWorkConfirm.textContent="Valider la modification";
+            correctionWorkConfirm.classList.remove("annulation");
+        }else{
+            correctionWorkTitle.textContent=`ANNULATION — ${libelle} ${numero}`;
+            correctionWorkDetail.textContent="L’opération est affichée ci-dessous pour contrôle. Les quantités restent inchangées ; clique sur « Confirmer l’annulation ».";
+            correctionWorkConfirm.textContent="Confirmer l’annulation";
+            correctionWorkConfirm.classList.add("annulation");
+        }
+
+        correctionWorkBanner.classList.add("show");
+        renderCatalog();
+        renderSummary();
+        applyCorrectionLock();
+        correctionWorkBanner.scrollIntoView({behavior:"smooth",block:"nearest"});
+    }
+
+    function applyCorrectionLock(){
+        if(correctionWorkAction!=="annuler")return;
+        catalogScroll.querySelectorAll("button").forEach(button=>{
+            if(button.matches(".minus,.plus,.qty-btn,[data-action]"))button.disabled=true;
+        });
+    }
+
+    function leaveCorrectionWork(){
+        correctionWorkOperation=null;
+        correctionWorkAction=null;
+        correctionOperation=null;
+        correctionKey=null;
+        correctionWorkBanner.classList.remove("show");
+        initState();
         renderCatalog();
         renderSummary();
     }
+
+    function demanderMotif(action){
+        const mot=action==="modifier"?"modification":"annulation";
+        const valeur=window.prompt(`Motif obligatoire de la ${mot} :`);
+        if(valeur===null)return null;
+        const motif=String(valeur).trim();
+        if(!motif){
+            msg("Le motif est obligatoire.");
+            return null;
+        }
+        return motif;
+    }
+
+    async function annulerOperationCorrection(op,motif){
+        const {data:r,error}=await client.rpc(
+            demo?"annuler_operation_vaisselle_demo":"annuler_operation_vaisselle",
+            {
+                p_operation_id:op.id,
+                p_motif:motif,
+                p_idempotency_key:correctionKey||uuid()
+            }
+        );
+        if(error)throw error;
+        if(!r?.ok)throw new Error("Annulation non confirmée par le serveur.");
+        return r;
+    }
+
+    async function executeCorrectionWork(){
+        if(!correctionWorkOperation||!correctionWorkAction)return;
+
+        const op=correctionWorkOperation;
+        const action=correctionWorkAction;
+        const motif=demanderMotif(action);
+        if(!motif)return;
+
+        correctionWorkConfirm.disabled=true;
+        const ancienTexte=correctionWorkConfirm.textContent;
+        correctionWorkConfirm.textContent=action==="modifier"?"Préparation…":"Annulation…";
+
+        try{
+            await annulerOperationCorrection(op,motif);
+
+            if(action==="annuler"){
+                const numero=op.numero_operation||"";
+                leaveCorrectionWork();
+                await loadAccount();
+                msg(`Opération ${numero} annulée.`,true);
+                return;
+            }
+
+            // En modification, l'ancienne opération est annulée,
+            // mais on conserve à l'écran les quantités corrigées.
+            correctionWorkOperation=null;
+            correctionWorkAction=null;
+            correctionOperation=null;
+            correctionKey=null;
+            correctionWorkBanner.classList.remove("show");
+
+            await loadAccount();
+            renderCatalog();
+            renderSummary();
+
+            msg("Ancienne opération annulée. Vérifie le récapitulatif puis signe et valide le passage corrigé.",true);
+
+            // On réutilise exactement le circuit de validation/signature existant.
+            openPassageConfirm();
+
+        }catch(e){
+            console.error(e);
+            msg(e?.message||"Impossible d'effectuer cette correction.");
+            correctionWorkConfirm.disabled=false;
+            correctionWorkConfirm.textContent=ancienTexte;
+        }
+    }
+
+    correctionWorkCancel.onclick=leaveCorrectionWork;
+    correctionWorkConfirm.onclick=executeCorrectionWork;
+
     async function openCorrectionModal(){
         if(!stand)return msg("Sélectionne d'abord le stand.");
         if(!canCorrectDishware())return msg("Cette fonction est réservée aux Responsables et Administrateurs.");
@@ -3967,6 +4138,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             loading.classList.add("hide");
         }
     }
+
+    const correctionCatalogObserver=new MutationObserver(()=>{
+        if(correctionWorkAction==="annuler")applyCorrectionLock();
+    });
+    correctionCatalogObserver.observe(catalogScroll,{childList:true,subtree:true});
 
     const securiteChargement=setTimeout(()=>{
         if(!loading.classList.contains("hide")){
