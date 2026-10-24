@@ -1282,7 +1282,21 @@
         <p id="texteControleAnnulation" class="aide-annulation"></p>
         <div class="champ">
           <label for="motifAnnulationOperation">Motif de l’annulation *</label>
-          <textarea id="motifAnnulationOperation" placeholder="Indique le motif de l’annulation"></textarea>
+          <select id="motifAnnulationOperation">
+            <option value="">Choisir un motif…</option>
+            <option value="Erreur de saisie">Erreur de saisie</option>
+            <option value="Mauvaise quantité">Mauvaise quantité</option>
+            <option value="Mauvais type d’opération">Mauvais type d’opération</option>
+            <option value="Doublon">Doublon</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="commentaireAnnulationOperation">
+            Commentaire
+            <span id="commentaireAnnulationObligatoire" hidden>(obligatoire pour « Autre »)</span>
+          </label>
+          <textarea id="commentaireAnnulationOperation" rows="3" placeholder="Précision facultative"></textarea>
         </div>
       </div>
       <div class="modal-actions">
@@ -1338,6 +1352,8 @@
       const abandonnerAnnulationOperation = document.getElementById("abandonnerAnnulationOperation");
       const confirmerAnnulationOperation = document.getElementById("confirmerAnnulationOperation");
       const motifAnnulationOperation = document.getElementById("motifAnnulationOperation");
+      const commentaireAnnulationOperation = document.getElementById("commentaireAnnulationOperation");
+      const commentaireAnnulationObligatoire = document.getElementById("commentaireAnnulationObligatoire");
       const texteControleAnnulation = document.getElementById("texteControleAnnulation");
 
       const messageStocks = document.getElementById("messageStocks");
@@ -1794,6 +1810,8 @@
         modalAnnulationOperation.classList.remove("visible");
         modalAnnulationOperation.setAttribute("aria-hidden", "true");
         motifAnnulationOperation.value = "";
+        commentaireAnnulationOperation.value = "";
+        commentaireAnnulationObligatoire.hidden = true;
         confirmerAnnulationOperation.disabled = false;
         confirmerAnnulationOperation.textContent = "Confirmer l’annulation";
       }
@@ -1825,6 +1843,8 @@
 
           texteControleAnnulation.textContent = controleAnnulationCourant.raison || "Le contrôle de sécurité autorise l’annulation par contre-opération traçable.";
           motifAnnulationOperation.value = "";
+          commentaireAnnulationOperation.value = "";
+          commentaireAnnulationObligatoire.hidden = true;
           modalAnnulationOperation.classList.add("visible");
           modalAnnulationOperation.setAttribute("aria-hidden", "false");
           setTimeout(function () { motifAnnulationOperation.focus(); }, 0);
@@ -1838,18 +1858,29 @@
 
       async function confirmerAnnulationStock() {
         const op = operationDetailCourante;
-        const motif = String(motifAnnulationOperation.value || "").trim();
+        const motifChoisi = String(motifAnnulationOperation.value || "").trim();
+        const commentaire = String(commentaireAnnulationOperation.value || "").trim();
 
         if (!op?.id) {
           afficherMessage("Aucune opération n’est sélectionnée.");
           return;
         }
 
-        if (!motif) {
+        if (!motifChoisi) {
           afficherMessage("Le motif de l’annulation est obligatoire.");
           motifAnnulationOperation.focus();
           return;
         }
+
+        if (motifChoisi === "Autre" && !commentaire) {
+          afficherMessage("Le commentaire est obligatoire lorsque le motif « Autre » est sélectionné.");
+          commentaireAnnulationOperation.focus();
+          return;
+        }
+
+        const motif = commentaire
+          ? motifChoisi + " — " + commentaire
+          : motifChoisi;
 
         confirmerAnnulationOperation.disabled = true;
         confirmerAnnulationOperation.textContent = "Annulation…";
@@ -2216,6 +2247,14 @@
       annulerOperationStock.addEventListener("click", preparerAnnulationOperation);
       fermerModalAnnulationOperation.addEventListener("click", fermerAnnulationOperation);
       abandonnerAnnulationOperation.addEventListener("click", fermerAnnulationOperation);
+      motifAnnulationOperation.addEventListener("change", function () {
+        const autre = motifAnnulationOperation.value === "Autre";
+        commentaireAnnulationObligatoire.hidden = !autre;
+        commentaireAnnulationOperation.placeholder = autre
+          ? "Précise obligatoirement le motif de l’annulation"
+          : "Précision facultative";
+      });
+
       confirmerAnnulationOperation.addEventListener("click", confirmerAnnulationStock);
       modalAnnulationOperation.addEventListener("click", function (event) {
         if (event.target === modalAnnulationOperation) fermerAnnulationOperation();
