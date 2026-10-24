@@ -1493,6 +1493,46 @@
       .remboursement-paiements{grid-template-columns:1fr}
     }
 
+  
+    /* Ajustements barre des filtres */
+    #informationEdition {
+      display: none !important;
+    }
+
+    .bouton-remboursement-vente {
+      margin-left: auto !important;
+      flex: 0 0 auto;
+      padding: 8px 11px !important;
+      font-size: 0.92rem;
+      max-width: 205px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  
+    .categories,
+    .filtres-categories,
+    .barre-categories,
+    .catalogue-filtres {
+      overflow-x: hidden !important;
+    }
+
+    @media (min-width: 701px) {
+      .bouton-remboursement-vente {
+        margin-left: auto !important;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .bouton-remboursement-vente {
+        width: auto !important;
+        max-width: 190px;
+        margin-left: auto !important;
+        font-size: 0.86rem;
+        padding: 8px 9px !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -1545,10 +1585,6 @@
             <button id="filtreMDN" class="categorie" type="button">MDN</button>
             <button id="filtreFondation" class="categorie" type="button">Fondation</button>
             <button id="boutonRembourserVente" class="bouton-remboursement-vente" type="button">↩ Rembourser une vente</button>
-
-            <span id="informationEdition" class="information-edition">
-              Édition…
-            </span>
           </nav>
 
           <div id="zoneArticles" class="zone-articles">
@@ -3647,7 +3683,7 @@
 
           if (!editionDemo) {
 
-            informationEdition.textContent =
+            if (informationEdition) informationEdition.textContent =
               "Aucune édition disponible";
 
             articlesCaisse = [];
@@ -3662,7 +3698,7 @@
           }
 
 
-          informationEdition.textContent =
+          if (informationEdition) informationEdition.textContent =
             "DÉMO · MDN Sion " +
             editionDemo.annee;
 
@@ -3758,7 +3794,7 @@
 
         if (!edition) {
 
-          informationEdition.textContent =
+          if (informationEdition) informationEdition.textContent =
             "Aucune édition active";
 
           afficherEtatArticles(
@@ -3771,7 +3807,7 @@
         }
 
 
-        informationEdition.textContent =
+        if (informationEdition) informationEdition.textContent =
           "MDN Sion " + edition.annee;
 
 
