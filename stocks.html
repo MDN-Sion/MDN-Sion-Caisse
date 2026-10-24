@@ -577,6 +577,18 @@
       background: #fff;
     }
 
+    .mouvement-article-cliquable {
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+    }
+
+    .mouvement-article-cliquable:hover,
+    .mouvement-article-cliquable:focus-visible {
+      background: #fffaf0;
+      border-color: #c99a35;
+      outline: none;
+    }
+
     .mouvement + .mouvement {
       margin-top: 8px;
     }
@@ -1733,15 +1745,23 @@
         const ligneStock = stocksCourants.find(function (x) { return x.vaisselle_id === vaisselleId; });
         ouvrirDetail("📦 " + (ligneStock?.article || "Détail de l’article"), "Répartition actuelle et historique");
         try {
-          const { data, error } = await window.MDN_SUPABASE.rpc("detail_article_stock_vaisselle", {
-            p_edition_id: editionCourante.id,
-            p_vaisselle_id: vaisselleId,
-            p_is_demo: modeDemo
-          });
-          if (error) throw error;
-          const d = data || {};
+          const [reponseDetail, reponseHistoriqueArticle] = await Promise.all([
+            window.MDN_SUPABASE.rpc("detail_article_stock_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_vaisselle_id: vaisselleId,
+              p_is_demo: modeDemo
+            }),
+            window.MDN_SUPABASE.rpc("historique_article_stock_vaisselle_detaille", {
+              p_edition_id: editionCourante.id,
+              p_vaisselle_id: vaisselleId,
+              p_is_demo: modeDemo
+            })
+          ]);
+          if (reponseDetail.error) throw reponseDetail.error;
+          if (reponseHistoriqueArticle.error) throw reponseHistoriqueArticle.error;
+          const d = reponseDetail.data || {};
           const stands = Array.isArray(d.stands) ? d.stands : (Array.isArray(d.ventilation_stands) ? d.ventilation_stands : []);
-          const hist = Array.isArray(d.historique) ? d.historique : [];
+          const hist = Array.isArray(reponseHistoriqueArticle.data) ? reponseHistoriqueArticle.data : [];
           const stock = d.stock || d.etat_stock || d;
           contenuModalDetail.innerHTML = `
             <div class="detail-sections">
@@ -1760,12 +1780,66 @@
               </section>
               <section class="detail-carte">
                 <h3>Historique de l’article</h3>
-                ${hist.length ? hist.map(function(x){return `<div class="mouvement"><div class="mouvement-haut"><div class="mouvement-article">${echapperHtml(libelleTypeMouvement(x.type_operation || x.type_mouvement))}</div><div class="mouvement-quantite">${formatNombre(x.quantite ?? x.quantite_totale)}</div></div><div class="mouvement-bas"><span>${echapperHtml(formatDateHeure(x.date_operation || x.date_mouvement || x.created_at))}</span><span>${echapperHtml(x.reference_externe || x.stand || "")}</span></div></div>`;}).join("") : '<div class="detail-vide">Aucun historique disponible pour cet article.</div>'}
+                ${hist.length ? hist.map(function(x){
+                  const libelleSecondaire = x.stand_libelle || x.reference_externe || x.reference_libelle || "";
+                  return `<div class="mouvement mouvement-article-cliquable" data-mouvement-id="${echapperHtml(x.mouvement_id || "")}" role="button" tabindex="0">
+                    <div class="mouvement-haut">
+                      <div class="mouvement-article">${echapperHtml(libelleTypeMouvement(x.type_operation || x.type_mouvement))}</div>
+                      <div class="mouvement-quantite">${formatNombre(x.quantite ?? x.quantite_totale)}</div>
+                    </div>
+                    <div class="mouvement-bas">
+                      <span>${echapperHtml(formatDateHeure(x.date_operation || x.date_mouvement || x.created_at))}</span>
+                      <span>${echapperHtml(libelleSecondaire)}</span>
+                    </div>
+                  </div>`;
+                }).join("") : '<div class="detail-vide">Aucun historique disponible pour cet article.</div>'}
               </section>
             </div>`;
         } catch (erreur) {
           console.error("[MDN Sion] Détail article impossible :", erreur);
           contenuModalDetail.innerHTML = `<div class="detail-vide">${echapperHtml(erreur?.message || "Impossible de charger le détail de cet article.")}</div>`;
+        }
+      }
+
+      async function afficherDetailMouvement(mouvementId) {
+        if (!mouvementId) return;
+        ouvrirDetail("🧾 Détail du mouvement", "Traçabilité du mouvement de stock");
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("detail_mouvement_stock_vaisselle", {
+            p_mouvement_id: mouvementId,
+            p_is_demo: modeDemo
+          });
+          if (error) throw error;
+          const d = data || {};
+          const stand = d.stand || {};
+          const utilisateur = d.utilisateur || {};
+          const standLibelle = d.stand_libelle || "";
+          contenuModalDetail.innerHTML = `
+            <div class="detail-sections">
+              <section class="detail-carte">
+                <h3>${echapperHtml(libelleTypeMouvement(d.type_operation || d.type_mouvement))}</h3>
+                <div class="detail-meta">
+                  <span>${echapperHtml(formatDateHeure(d.created_at))}</span>
+                  <span>Article : <strong>${echapperHtml(d.article || "—")}</strong></span>
+                  <span>Quantité : <strong>${formatNombre(d.quantite)}</strong></span>
+                </div>
+              </section>
+              ${standLibelle ? `<section class="detail-carte"><h3>Stand concerné</h3><div class="detail-meta"><span><strong>${echapperHtml(standLibelle)}</strong></span>${stand.type_partenaire ? `<span>Type : ${echapperHtml(stand.type_partenaire)}</span>` : ""}</div></section>` : ""}
+              <section class="detail-carte">
+                <h3>Mouvement de stock</h3>
+                <div class="detail-meta">
+                  <span>Origine : <strong>${echapperHtml(libelleEmplacement(d.emplacement_source))}</strong></span>
+                  <span>Destination : <strong>${echapperHtml(libelleEmplacement(d.emplacement_destination))}</strong></span>
+                  ${d.reference_externe ? `<span>Référence : ${echapperHtml(d.reference_externe)}</span>` : ""}
+                  ${d.motif ? `<span>Motif : ${echapperHtml(d.motif)}</span>` : ""}
+                  ${d.commentaire ? `<span>Commentaire : ${echapperHtml(d.commentaire)}</span>` : ""}
+                  ${(utilisateur.prenom || utilisateur.nom || utilisateur.email) ? `<span>Enregistré par : ${echapperHtml([utilisateur.prenom, utilisateur.nom].filter(Boolean).join(" ") || utilisateur.email)}</span>` : ""}
+                </div>
+              </section>
+            </div>`;
+        } catch (erreur) {
+          console.error("[MDN Sion] Détail mouvement impossible :", erreur);
+          contenuModalDetail.innerHTML = `<div class="detail-vide">${echapperHtml(erreur?.message || "Impossible de charger le détail de ce mouvement.")}</div>`;
         }
       }
 
@@ -1965,6 +2039,22 @@
       historiqueListe.addEventListener("click", function (event) {
         const carte = event.target.closest("[data-operation-id]");
         if (carte?.dataset.operationId) afficherDetailOperation(carte.dataset.operationId);
+      });
+
+      contenuModalDetail.addEventListener("click", function (event) {
+        const carte = event.target.closest("[data-mouvement-id]");
+        if (carte?.dataset.mouvementId) {
+          afficherDetailMouvement(carte.dataset.mouvementId);
+        }
+      });
+
+      contenuModalDetail.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const carte = event.target.closest("[data-mouvement-id]");
+        if (carte?.dataset.mouvementId) {
+          event.preventDefault();
+          afficherDetailMouvement(carte.dataset.mouvementId);
+        }
       });
 
       fermerModalDetail.addEventListener("click", fermerDetail);
