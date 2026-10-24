@@ -525,6 +525,9 @@
       flex: 1 1 auto;
       min-width: 0;
       display: flex;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
       gap: 18px;
       overflow-x: auto;
       overflow-y: hidden;
@@ -544,6 +547,10 @@
     .grille-modules .module {
       flex: 0 0 calc((100% - 27px) / 2.18);
       scroll-snap-align: start;
+    }
+
+    .carrousel-modules .module {
+      box-shadow: none;
     }
 
     .bouton-carrousel {
