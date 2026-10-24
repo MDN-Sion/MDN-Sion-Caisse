@@ -2166,6 +2166,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 @media(max-width:680px){
   .correction-work-actions{grid-template-columns:1fr}
 }
+.correction-work-reference{
+  display:block;
+  margin-top:2px;
+  font-size:.92em;
+  line-height:1.18;
+  overflow-wrap:anywhere;
+}
 </style>
  </head>
  <body>
@@ -3158,17 +3165,20 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const libelle=operationTypeLabel(t);
 
         if(correctionWorkAction==="modifier"){
-            correctionWorkTitle.textContent=`MODIFICATION — ${libelle} ${numero}`;
-            correctionWorkDetail.textContent="L’opération a été rechargée. Modifie les quantités avec les boutons − / +. Le motif sera demandé avec la signature.";
-            correctionWorkConfirm.textContent="Valider la modification";
+            correctionWorkTitle.innerHTML=`MODIFICATION<br><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
+            correctionWorkDetail.textContent="";
+            correctionWorkDetail.style.display="none";
+            correctionWorkConfirm.textContent="Valider";
             correctionWorkConfirm.classList.remove("annulation");
         }else{
-            correctionWorkTitle.textContent=`ANNULATION — ${libelle} ${numero}`;
-            correctionWorkDetail.textContent="L’opération est affichée pour contrôle. Le motif et la signature seront demandés à l’étape suivante.";
+            correctionWorkTitle.innerHTML=`ANNULATION<br><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
+            correctionWorkDetail.textContent="";
+            correctionWorkDetail.style.display="none";
             correctionWorkConfirm.textContent="Confirmer l’annulation";
             correctionWorkConfirm.classList.add("annulation");
         }
 
+        correctionWorkDetail.style.display="none";
         correctionWorkBanner.classList.add("show");
         syncCorrectionWorkspaceUi();
         renderCatalog();
@@ -3243,7 +3253,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(!ops.length){
                 // Une modification à zéro devient une annulation explicite.
                 correctionWorkAction="annuler";
-                correctionWorkTitle.textContent=`ANNULATION — ${operationTypeLabel(correctionWorkOperation.type_operation)} ${correctionWorkOperation.numero_operation||""}`;
+                correctionWorkTitle.innerHTML=`ANNULATION<br><span class="correction-work-reference">${esc(operationTypeLabel(correctionWorkOperation.type_operation))} ${esc(correctionWorkOperation.numero_operation||"")}</span>`;
             }
         }
 
