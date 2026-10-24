@@ -2316,8 +2316,24 @@
           }, 0)
         );
 
-        const totalVente = arrondirMontant(
+        const totalRetoursGobelets = arrondirMontant(
+          calculerTotalRetoursGobelets()
+        );
+
+        const totalVenteBrute = arrondirMontant(
           totalArticlesClassiques + totalAchatsGobelets
+        );
+
+        const compensationRetour = arrondirMontant(
+          Math.min(totalVenteBrute, totalRetoursGobelets)
+        );
+
+        const totalAEncaisser = arrondirMontant(
+          Math.max(0, totalVenteBrute - totalRetoursGobelets)
+        );
+
+        const remboursementEspecesRetour = arrondirMontant(
+          Math.max(0, totalRetoursGobelets - totalVenteBrute)
         );
 
         const saisi = {
@@ -2326,52 +2342,69 @@
           twint: arrondirMontant(valeurMontantPaiement(montantTwint))
         };
 
-        const ordreVente = ["especes", "carte", "twint"];
-        const venteTotale = { especes: 0, carte: 0, twint: 0 };
-        let resteVente = totalVente;
+        const ordrePaiement = ["especes", "carte", "twint"];
+        const paiementsReels = { especes: 0, carte: 0, twint: 0 };
+        let resteAEncaisser = totalAEncaisser;
 
-        ordreVente.forEach(function (code) {
-          const utilise = arrondirMontant(Math.min(saisi[code], resteVente));
-          venteTotale[code] = utilise;
-          resteVente = arrondirMontant(resteVente - utilise);
+        ordrePaiement.forEach(function (code) {
+          const utilise = arrondirMontant(Math.min(saisi[code], resteAEncaisser));
+          paiementsReels[code] = utilise;
+          resteAEncaisser = arrondirMontant(resteAEncaisser - utilise);
         });
 
-        if (resteVente > 0.005) {
-          throw new Error("La vente n'est pas entièrement répartie entre les moyens de paiement.");
+        if (resteAEncaisser > 0.005) {
+          throw new Error("Le montant net à encaisser n'est pas entièrement réparti entre les moyens de paiement.");
         }
 
         /*
-         * La répartition saisie concerne le panier complet.
-         * On affecte d'abord les montants aux articles classiques, puis le solde
-         * aux achats Gobelet. Le total par moyen de paiement reste strictement
-         * identique à ce que l'utilisateur a saisi.
+         * Le retour Gobelet compensé n'est pas un encaissement réel.
+         * Il complète uniquement la couverture comptable de la vente brute :
+         * vente CHF 20 - retour CHF 2 = CHF 18 réellement payés.
          */
+        const couvertureVente = [];
+
+        ordrePaiement.forEach(function (code) {
+          if (paiementsReels[code] > 0) {
+            couvertureVente.push({ code: code, montant: paiementsReels[code] });
+          }
+        });
+
+        if (compensationRetour > 0) {
+          couvertureVente.push({
+            code: "retour_gobelet",
+            montant: compensationRetour
+          });
+        }
+
         const paiementsArticles = [];
         const paiementsGobelets = [];
         let resteArticles = totalArticlesClassiques;
 
-        ordreVente.forEach(function (code) {
-          const montantDisponible = venteTotale[code];
+        couvertureVente.forEach(function (paiement) {
+          let montantDisponible = paiement.montant;
           const pourArticles = arrondirMontant(
             Math.min(montantDisponible, resteArticles)
           );
 
           if (pourArticles > 0) {
-            paiementsArticles.push({ code: code, montant: pourArticles });
+            paiementsArticles.push({
+              code: paiement.code,
+              montant: pourArticles
+            });
             resteArticles = arrondirMontant(resteArticles - pourArticles);
+            montantDisponible = arrondirMontant(montantDisponible - pourArticles);
           }
 
-          const pourGobelets = arrondirMontant(
-            montantDisponible - pourArticles
-          );
-
-          if (pourGobelets > 0) {
-            paiementsGobelets.push({ code: code, montant: pourGobelets });
+          if (montantDisponible > 0) {
+            paiementsGobelets.push({
+              code: paiement.code,
+              montant: montantDisponible
+            });
           }
         });
 
         if (resteArticles > 0.005) {
-          throw new Error("Impossible de répartir le paiement des articles de la vente.");
+          throw new Error("Impossible de couvrir comptablement les articles de la vente.");
         }
 
         const totalPaiementsGobelets = arrondirMontant(
@@ -2381,19 +2414,24 @@
         );
 
         if (Math.abs(totalPaiementsGobelets - totalAchatsGobelets) > 0.005) {
-          throw new Error("La répartition du paiement des gobelets est incohérente.");
+          throw new Error("La couverture comptable des achats Gobelet est incohérente.");
         }
 
+        const totalSaisi = arrondirMontant(
+          saisi.especes + saisi.carte + saisi.twint
+        );
+
         const surplusNumerique = {
-          carte: arrondirMontant(Math.max(0, saisi.carte - venteTotale.carte)),
-          twint: arrondirMontant(Math.max(0, saisi.twint - venteTotale.twint))
+          carte: arrondirMontant(Math.max(0, saisi.carte - paiementsReels.carte)),
+          twint: arrondirMontant(Math.max(0, saisi.twint - paiementsReels.twint))
         };
 
         const clientDonneValeur = arrondirMontant(
           valeurMontantPaiement(clientDonne)
         );
+
         const disponibleEspeces = arrondirMontant(
-          Math.max(0, clientDonneValeur - venteTotale.especes)
+          Math.max(0, clientDonneValeur - paiementsReels.especes)
         );
 
         const donMdnValeur = arrondirMontant(valeurMontantPaiement(donMDN));
@@ -2455,13 +2493,17 @@
         );
 
         const monnaie = arrondirMontant(
-          Math.max(0, clientDonneValeur - venteTotale.especes - especesDonneesAuxDons)
+          Math.max(0, clientDonneValeur - paiementsReels.especes - especesDonneesAuxDons)
         );
 
         return {
-          totalVente: totalVente,
+          totalVente: totalAEncaisser,
+          totalVenteBrute: totalVenteBrute,
           totalArticlesClassiques: totalArticlesClassiques,
           totalAchatsGobelets: totalAchatsGobelets,
+          totalRetoursGobelets: totalRetoursGobelets,
+          compensationRetour: compensationRetour,
+          remboursementEspecesRetour: remboursementEspecesRetour,
           paiementsVente: paiementsArticles,
           paiementsGobelets: paiementsGobelets,
           dons: dons,
@@ -2544,7 +2586,8 @@
 
           if (panierContientGobelets()) {
             await validerOperationsGobeletsPanier(
-              repartitionServeur.paiementsGobelets
+              repartitionServeur.paiementsGobelets,
+              repartitionServeur.remboursementEspecesRetour
             );
           }
 
@@ -2683,7 +2726,7 @@
         afficherPanier();
       }
 
-      async function validerOperationsGobeletsPanier(paiementsAchatGobelets = null) {
+      async function validerOperationsGobeletsPanier(paiementsAchatGobelets = null, montantRembourseEspecesRetour = null) {
         if (operationGobeletEnCours || !clientSupabaseCaisse) return;
 
         const lignesGobelets = panierCaisse.filter(estLigneGobelet);
@@ -2719,6 +2762,12 @@
               nomRpc = modeDemo
                 ? "operation_gobelet_caisse_demo_paiement"
                 : "operation_gobelet_caisse_paiement";
+            }
+            if (ligne.typeOperationGobelet === "retour" && montantRembourseEspecesRetour !== null) {
+              parametres.p_montant_rembourse_especes = arrondirMontant(montantRembourseEspecesRetour);
+              nomRpc = modeDemo
+                ? "operation_gobelet_caisse_demo_retour_net"
+                : "operation_gobelet_caisse_retour_net";
             }
 
             const { error } = await clientSupabaseCaisse.rpc(
@@ -2822,7 +2871,7 @@
       }
 
       function calculerTotalVenteClassique() {
-        return panierCaisse.reduce(function (total, ligne) {
+        const totalBrut = panierCaisse.reduce(function (total, ligne) {
           if (estLigneGobelet(ligne)) {
             return ligne.typeOperationGobelet === "vente"
               ? total + (ligne.prix * ligne.quantite)
@@ -2830,6 +2879,10 @@
           }
           return total + (ligne.prix * ligne.quantite);
         }, 0);
+
+        return arrondirMontant(
+          Math.max(0, totalBrut - calculerTotalRetoursGobelets())
+        );
       }
 
       function calculerTotalRetoursGobelets() {
@@ -3536,13 +3589,24 @@
         modifierQuantitePanier(bouton.dataset.articleId, bouton.dataset.actionPanier === "plus" ? 1 : -1);
       });
 
-      boutonEncaisser.addEventListener("click", function () {
+      boutonEncaisser.addEventListener("click", async function () {
         const contientAchatGobelet = panierCaisse.some(function (ligne) {
           return estLigneGobelet(ligne) && ligne.typeOperationGobelet === "vente";
         });
 
         if (panierContientArticlesClassiques() || contientAchatGobelet) {
-          ouvrirFenetreEncaissement();
+          if (calculerTotalVenteClassique() > 0.005) {
+            ouvrirFenetreEncaissement();
+          } else {
+            moyenPaiementSelectionne = [];
+            mettreMontantPaiement(montantEspeces, 0);
+            mettreMontantPaiement(montantCarte, 0);
+            mettreMontantPaiement(montantTwint, 0);
+            mettreMontantPaiement(clientDonne, 0);
+            mettreMontantPaiement(donMDN, 0);
+            mettreMontantPaiement(donFondation, 0);
+            await validerPaiementSupabase();
+          }
           return;
         }
 
