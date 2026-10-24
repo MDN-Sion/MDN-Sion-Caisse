@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+  <meta name="description" content="Stocks - Marché de Noël de Sion">
+  <title>Stocks - MDN Sion</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f3f3f3;
+      color: #222;
+    }
+
+    button {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chargement-page {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
+      color: #fff;
+      text-align: center;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+
+    .chargement-page.masque {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .chargement-embleme {
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chargement-embleme img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .chargement-page strong {
+      font-size: 28px;
+    }
+
+    .chargement-page p {
+      margin: 0;
+      color: rgba(255,255,255,.85);
+    }
+
+    .spinner-page {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: rotation .8s linear infinite;
+    }
+
+    @keyframes rotation {
+      to { transform: rotate(360deg); }
+    }
+
+    .application {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .barre-haute {
+      flex: 0 0 auto;
+      padding: max(12px, env(safe-area-inset-top))
+               max(16px, env(safe-area-inset-right))
+               12px
+               max(16px, env(safe-area-inset-left));
+      background: linear-gradient(145deg, #7b0000, #980000);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.18);
+      z-index: 10;
+    }
+
+    .barre-haute-contenu {
+      width: min(100%, 1500px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bouton-retour,
+    .bouton-deconnexion {
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 11px;
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .bouton-retour:hover,
+    .bouton-deconnexion:hover:not(:disabled) {
+      background: rgba(255,255,255,.18);
+    }
+
+    .bouton-deconnexion:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    .titre-entete {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .titre-entete h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .titre-entete p {
+      margin: 3px 0 0;
+      color: rgba(255,255,255,.82);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bandeau-demo {
+      flex: 0 0 auto;
+      display: none;
+      width: 100%;
+      padding: 8px max(16px, env(safe-area-inset-right))
+               8px max(16px, env(safe-area-inset-left));
+      border-bottom: 2px solid #b98500;
+      background: #ffe680;
+      color: #4d3900;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+
+    .bandeau-demo.visible {
+      display: block;
+    }
+
+    .application.mode-demo .barre-haute {
+      background: linear-gradient(145deg, #6f5200, #9a7200);
+    }
+
+    .contenu {
+      width: min(100%, 1500px);
+      min-height: 0;
+      flex: 1 1 auto;
+      margin: 0 auto;
+      padding: 14px max(16px, env(safe-area-inset-right))
+               max(14px, env(safe-area-inset-bottom))
+               max(16px, env(safe-area-inset-left));
+      overflow: hidden;
+    }
+
+    .zone-stocks {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(330px, .72fr);
+      gap: 14px;
+    }
+
+    .panneau {
+      min-width: 0;
+      min-height: 0;
+      background: #fff;
+      border: 1px solid #e2e2e2;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .panneau-principal {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .barre-actions {
+      flex: 0 0 auto;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fafafa;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .bouton-action {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid #d7d7d7;
+      border-radius: 999px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .bouton-action:hover:not(:disabled) {
+      border-color: #8b0000;
+      color: #850000;
+      background: #fff8f8;
+    }
+
+    .bouton-action.principal {
+      border-color: #8b0000;
+      background: #8b0000;
+      color: #fff;
+    }
+
+    .bouton-action.principal:hover:not(:disabled) {
+      background: #700000;
+      color: #fff;
+    }
+
+    .application.mode-demo .bouton-action.principal {
+      border-color: #8a6800;
+      background: #8a6800;
+    }
+
+    .application.mode-demo .bouton-action.principal:hover:not(:disabled) {
+      background: #705500;
+    }
+
+    .bouton-action:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+    }
+
+    .information-edition {
+      margin-left: auto;
+      flex: 0 0 auto;
+      color: #777;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .stocks-scroll {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 12px;
+      scrollbar-width: thin;
+    }
+
+    .resume-global {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .indicateur {
+      min-width: 0;
+      padding: 11px 10px;
+      border: 1px solid #e2e2e2;
+      border-radius: 13px;
+      background: #fafafa;
+    }
+
+    .indicateur span {
+      display: block;
+      margin-bottom: 4px;
+      color: #777;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .indicateur strong {
+      display: block;
+      color: #333;
+      font-size: 21px;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .indicateur.tente strong { color: #850000; }
+    .indicateur.reserve strong { color: #7a5b00; }
+    .indicateur.stands strong { color: #245f8f; }
+    .indicateur.sale strong { color: #b86500; }
+    .indicateur.contenant strong { color: #13723f; }
+
+    .tableau-cadre {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #e2e2e2;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .tableau-defilement {
+      width: 100%;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .table-stocks {
+      min-width: 840px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 9px 8px;
+      border-bottom: 1px solid #dedede;
+      background: #f7f7f7;
+      color: #555;
+      text-align: right;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    td {
+      padding: 9px 8px;
+      border-bottom: 1px solid #eeeeee;
+      text-align: right;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover {
+      background: #fffafa;
+    }
+
+    .article-cell {
+      min-width: 150px;
+      white-space: normal;
+    }
+
+    .article-cell strong {
+      display: block;
+      color: #333;
+      font-size: 12px;
+    }
+
+    .article-cell small {
+      display: block;
+      margin-top: 2px;
+      color: #888;
+      font-size: 9px;
+    }
+
+    .nombre-tente {
+      color: #850000;
+      font-weight: 900;
+    }
+
+    .nombre-reserve {
+      color: #7a5b00;
+      font-weight: 900;
+    }
+
+    .nombre-stands {
+      color: #245f8f;
+      font-weight: 900;
+    }
+
+    .nombre-sale {
+      color: #b86500;
+      font-weight: 900;
+    }
+
+    .badge-stock {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 76px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 900;
+    }
+
+    .badge-stock.ok {
+      background: #e9f7ef;
+      color: #13723f;
+    }
+
+    .badge-stock.alerte {
+      background: #fff0f0;
+      color: #a11919;
+    }
+
+    .zone-contenants {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .titre-section {
+      margin: 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .liste-contenants {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .carte-contenant {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #dce8df;
+      border-radius: 12px;
+      background: #f7fcf9;
+    }
+
+    .carte-contenant span {
+      color: #555;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .carte-contenant strong {
+      color: #13723f;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .panneau-historique {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .historique-entete {
+      flex: 0 0 auto;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e7e7e7;
+      background: #fafafa;
+    }
+
+    .historique-entete h2 {
+      margin: 0;
+      color: #850000;
+      font-size: 18px;
+    }
+
+    .application.mode-demo .historique-entete h2 {
+      color: #725600;
+    }
+
+    .historique-entete p {
+      margin: 3px 0 0;
+      color: #777;
+      font-size: 10px;
+    }
+
+    .bouton-actualiser {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .bouton-actualiser:hover:not(:disabled) {
+      background: #f4f4f4;
+    }
+
+    .bouton-actualiser:disabled {
+      opacity: .5;
+      cursor: wait;
+    }
+
+    .historique-liste {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 10px;
+      scrollbar-width: thin;
+    }
+
+    .historique-vide,
+    .etat-vide {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #888;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .mouvement {
+      padding: 10px;
+      border: 1px solid #e4e4e4;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .mouvement + .mouvement {
+      margin-top: 8px;
+    }
+
+    .mouvement-haut {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mouvement-article {
+      min-width: 0;
+      color: #333;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .mouvement-quantite {
+      flex: 0 0 auto;
+      color: #850000;
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .application.mode-demo .mouvement-quantite {
+      color: #725600;
+    }
+
+    .mouvement-type {
+      margin-top: 4px;
+      color: #666;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .mouvement-trajet {
+      margin-top: 5px;
+      padding: 6px 7px;
+      border-radius: 8px;
+      background: #f7f7f7;
+      color: #555;
+      font-size: 9px;
+      line-height: 1.3;
+    }
+
+    .mouvement-bas {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 5px;
+      color: #888;
+      font-size: 9px;
+    }
+
+    .mouvement-commentaire {
+      margin-top: 5px;
+      color: #666;
+      font-size: 9px;
+      line-height: 1.35;
+    }
+
+    .message {
+      display: none;
+      position: fixed;
+      z-index: 5000;
+      top: calc(18px + env(safe-area-inset-top));
+      left: 50%;
+      width: min(720px, calc(100vw - 32px));
+      padding: 12px 48px 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 14px 38px rgba(0,0,0,.22);
+      transform: translateX(-50%);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message.visible {
+      display: block;
+    }
+
+    .message.erreur {
+      border: 1px solid #e4b5b5;
+      background: #fff1f1;
+      color: #9c1616;
+    }
+
+    .message.succes {
+      border: 1px solid #b9ddc5;
+      background: #effaf2;
+      color: #146b35;
+    }
+
+    .message.info {
+      border: 1px solid #cbd7e4;
+      background: #f2f7fc;
+      color: #315f86;
+    }
+
+    .message-fermer {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: currentColor;
+      cursor: pointer;
+      transform: translateY(-50%);
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .resume-global {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .zone-stocks {
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr);
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 760px) and (orientation: portrait) {
+      .barre-haute {
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-bottom: 8px;
+      }
+
+      .barre-haute-contenu {
+        gap: 7px;
+      }
+
+      .bouton-retour,
+      .bouton-deconnexion {
+        min-height: 38px;
+        padding: 7px 9px;
+        font-size: 11px;
+      }
+
+      .titre-entete h1 {
+        font-size: 17px;
+      }
+
+      .titre-entete p {
+        display: none;
+      }
+
+      .bandeau-demo {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 10px;
+      }
+
+      .contenu {
+        padding: 8px max(8px, env(safe-area-inset-right))
+                 max(8px, env(safe-area-inset-bottom))
+                 max(8px, env(safe-area-inset-left));
+      }
+
+      .zone-stocks {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1.55fr) minmax(160px, .75fr);
+        gap: 8px;
+      }
+
+      .panneau {
+        border-radius: 14px;
+      }
+
+      .barre-actions,
+      .historique-entete {
+        min-height: 54px;
+        padding: 7px 9px;
+      }
+
+      .bouton-action {
+        min-height: 36px;
+        padding: 7px 10px;
+        font-size: 11px;
+      }
+
+      .information-edition {
+        display: none;
+      }
+
+      .stocks-scroll {
+        padding: 8px;
+      }
+
+      .resume-global {
+        grid-template-columns: repeat(5, minmax(92px, 1fr));
+        gap: 6px;
+        margin-bottom: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .indicateur {
+        padding: 8px;
+      }
+
+      .indicateur strong {
+        font-size: 17px;
+      }
+
+      .table-stocks {
+        min-width: 720px;
+      }
+
+      th,
+      td {
+        padding: 7px 6px;
+      }
+
+      .zone-contenants {
+        margin-top: 8px;
+      }
+
+      .historique-entete h2 {
+        font-size: 15px;
+      }
+
+      .historique-liste {
+        padding: 7px;
+      }
+
+      .mouvement {
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 430px) and (orientation: portrait) {
+      .barre-haute-contenu {
+        grid-template-columns: 72px 1fr 72px;
+      }
+
+      .bouton-retour,
+      .bouton-deconnexion {
+        padding: 6px 5px;
+        font-size: 10px;
+      }
+
+      .titre-entete h1 {
+        font-size: 15px;
+      }
+
+      .zone-stocks {
+        grid-template-rows: minmax(0, 1.7fr) minmax(145px, .68fr);
+      }
+
+      .barre-actions {
+        gap: 6px;
+      }
+
+      .bouton-action {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-height: 700px) and (orientation: landscape) {
+      .barre-haute {
+        padding-top: max(6px, env(safe-area-inset-top));
+        padding-bottom: 6px;
+      }
+
+      .bouton-retour,
+      .bouton-deconnexion {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .titre-entete h1 {
+        font-size: 17px;
+      }
+
+      .titre-entete p {
+        display: none;
+      }
+
+      .bandeau-demo {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        font-size: 10px;
+      }
+
+      .contenu {
+        padding: 7px max(10px, env(safe-area-inset-right))
+                 max(7px, env(safe-area-inset-bottom))
+                 max(10px, env(safe-area-inset-left));
+      }
+
+      .zone-stocks {
+        grid-template-columns: minmax(0, 1.75fr) minmax(260px, .65fr);
+        gap: 8px;
+      }
+
+      .barre-actions,
+      .historique-entete {
+        min-height: 48px;
+        padding: 5px 8px;
+      }
+
+      .bouton-action {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 10px;
+      }
+
+      .stocks-scroll {
+        padding: 7px;
+      }
+
+      .resume-global {
+        gap: 6px;
+        margin-bottom: 7px;
+      }
+
+      .indicateur {
+        padding: 7px;
+      }
+
+      .indicateur span {
+        margin-bottom: 2px;
+        font-size: 8px;
+      }
+
+      .indicateur strong {
+        font-size: 16px;
+      }
+
+      th,
+      td {
+        padding: 6px;
+      }
+
+      .zone-contenants {
+        margin-top: 7px;
+      }
+
+      .historique-entete h2 {
+        font-size: 14px;
+      }
+
+      .historique-entete p {
+        display: none;
+      }
+
+      .historique-liste {
+        padding: 6px;
+      }
+
+      .mouvement {
+        padding: 7px;
+      }
+    }
+
+    @media (max-width: 700px) and (orientation: landscape) {
+      .zone-stocks {
+        grid-template-columns: minmax(0, 1.7fr) minmax(230px, .7fr);
+      }
+
+      .resume-global {
+        grid-template-columns: repeat(5, minmax(82px, 1fr));
+        overflow-x: auto;
+      }
+
+      .information-edition {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chargementPage" class="chargement-page">
+    <div class="chargement-embleme">
+      <img src="logo-mdn.png" alt="Marché de Noël de Sion">
+    </div>
+    <strong>Stocks</strong>
+    <div class="spinner-page"></div>
+    <p>Chargement des stocks…</p>
+  </div>
+
+  <div id="messageStocks" class="message" role="alert">
+    <span id="texteMessageStocks"></span>
+    <button id="fermerMessageStocks" class="message-fermer" type="button" aria-label="Fermer">×</button>
+  </div>
+
+  <div id="application" class="application">
+    <header class="barre-haute">
+      <div class="barre-haute-contenu">
+        <button id="boutonRetour" class="bouton-retour" type="button">← Retour</button>
+
+        <div class="titre-entete">
+          <h1 id="titreStocks">📦 Stocks</h1>
+          <p id="identiteUtilisateur">Marché de Noël de Sion</p>
+        </div>
+
+        <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
+      </div>
+    </header>
+
+    <div id="bandeauDemo" class="bandeau-demo">
+      🎓 MODE DÉMO — Les données de formation sont séparées des données Réelles.
+    </div>
+
+    <main class="contenu">
+      <section class="zone-stocks">
+        <article class="panneau panneau-principal">
+          <div class="barre-actions">
+            <button id="boutonLivraison" class="bouton-action principal" type="button">
+              📥 Livraison
+            </button>
+
+            <button id="boutonReapprovisionnement" class="bouton-action" type="button">
+              🔄 Réserve → Stock MDN
+            </button>
+
+            <span id="informationEdition" class="information-edition">
+              Chargement…
+            </span>
+          </div>
+
+          <div class="stocks-scroll">
+            <div class="resume-global" aria-label="Résumé des stocks">
+              <div class="indicateur tente">
+                <span>Stock MDN — Tente</span>
+                <strong id="totalTente">0</strong>
+              </div>
+
+              <div class="indicateur reserve">
+                <span>Réserve MDN</span>
+                <strong id="totalReserve">0</strong>
+              </div>
+
+              <div class="indicateur stands">
+                <span>Chez les stands</span>
+                <strong id="totalStands">0</strong>
+              </div>
+
+              <div class="indicateur sale">
+                <span>Retours sales cumulés</span>
+                <strong id="totalSales">0</strong>
+              </div>
+
+              <div class="indicateur contenant">
+                <span>Contenants vides propres</span>
+                <strong id="totalContenants">0</strong>
+              </div>
+            </div>
+
+            <div class="tableau-cadre">
+              <div class="tableau-defilement">
+                <table class="table-stocks">
+                  <thead>
+                    <tr>
+                      <th>Article</th>
+                      <th>Stock MDN — Tente</th>
+                      <th>Réserve MDN</th>
+                      <th>Total propre</th>
+                      <th>Chez les stands</th>
+                      <th>Sales cumulés</th>
+                      <th>État</th>
+                    </tr>
+                  </thead>
+                  <tbody id="corpsTableStocks">
+                    <tr>
+                      <td colspan="7">Chargement…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <section class="zone-contenants">
+              <h2 class="titre-section">Contenants vides propres disponibles</h2>
+              <div id="listeContenants" class="liste-contenants">
+                <div class="carte-contenant">
+                  <span>Chargement…</span>
+                  <strong>—</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <aside class="panneau panneau-historique">
+          <div class="historique-entete">
+            <div>
+              <h2>Historique des mouvements</h2>
+              <p>Derniers mouvements du stock vaisselle</p>
+            </div>
+
+            <button id="boutonActualiser" class="bouton-actualiser" type="button" title="Actualiser">
+              ↻
+            </button>
+          </div>
+
+          <div id="historiqueListe" class="historique-liste">
+            <div class="historique-vide">Chargement de l’historique…</div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    "use strict";
+
+    (function () {
+      const application = document.getElementById("application");
+      const chargementPage = document.getElementById("chargementPage");
+      const bandeauDemo = document.getElementById("bandeauDemo");
+      const titreStocks = document.getElementById("titreStocks");
+      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
+      const informationEdition = document.getElementById("informationEdition");
+
+      const boutonRetour = document.getElementById("boutonRetour");
+      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
+      const boutonActualiser = document.getElementById("boutonActualiser");
+      const boutonLivraison = document.getElementById("boutonLivraison");
+      const boutonReapprovisionnement = document.getElementById("boutonReapprovisionnement");
+
+      const corpsTableStocks = document.getElementById("corpsTableStocks");
+      const listeContenants = document.getElementById("listeContenants");
+      const historiqueListe = document.getElementById("historiqueListe");
+
+      const totalTente = document.getElementById("totalTente");
+      const totalReserve = document.getElementById("totalReserve");
+      const totalStands = document.getElementById("totalStands");
+      const totalSales = document.getElementById("totalSales");
+      const totalContenants = document.getElementById("totalContenants");
+
+      const messageStocks = document.getElementById("messageStocks");
+      const texteMessageStocks = document.getElementById("texteMessageStocks");
+      const fermerMessageStocks = document.getElementById("fermerMessageStocks");
+
+      let minuterieMessage = null;
+      let modeDemo = false;
+      let editionCourante = null;
+      let chargementEnCours = false;
+
+      function masquerChargement() {
+        chargementPage.classList.add("masque");
+      }
+
+      function echapperHtml(valeur) {
+        return String(valeur ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function entier(valeur) {
+        const nombre = Number(valeur || 0);
+        return Number.isFinite(nombre) ? Math.trunc(nombre) : 0;
+      }
+
+      function formatNombre(valeur) {
+        return new Intl.NumberFormat("fr-CH").format(entier(valeur));
+      }
+
+      function formatDateHeure(valeur) {
+        if (!valeur) return "—";
+
+        try {
+          return new Intl.DateTimeFormat("fr-CH", {
+            timeZone: "Europe/Zurich",
+            dateStyle: "short",
+            timeStyle: "short"
+          }).format(new Date(valeur));
+        } catch (_) {
+          return String(valeur);
+        }
+      }
+
+      function afficherMessage(texte, type = "erreur") {
+        if (minuterieMessage) {
+          clearTimeout(minuterieMessage);
+          minuterieMessage = null;
+        }
+
+        texteMessageStocks.textContent = texte;
+        messageStocks.className = "message visible " + type;
+
+        minuterieMessage = setTimeout(function () {
+          fermerMessage();
+        }, 6000);
+      }
+
+      function fermerMessage() {
+        messageStocks.className = "message";
+        texteMessageStocks.textContent = "";
+
+        if (minuterieMessage) {
+          clearTimeout(minuterieMessage);
+          minuterieMessage = null;
+        }
+      }
+
+      function libelleConditionnement(type, quantiteStandard) {
+        const typeNormalise = String(type || "").toLowerCase();
+        const qte = entier(quantiteStandard);
+
+        if (typeNormalise === "caisse") {
+          return qte > 0 ? "Caisse de " + formatNombre(qte) : "Caisse";
+        }
+
+        if (typeNormalise === "sachet") {
+          return qte > 0 ? "Sachet de " + formatNombre(qte) : "Sachet";
+        }
+
+        return type || "À l’unité";
+      }
+
+      function libelleEmplacement(valeur) {
+        const correspondances = {
+          externe: "Extérieur",
+          externe_papival: "Extérieur",
+          operationnel_propre: "Stock MDN — Tente",
+          reserve_mdn: "Réserve MDN",
+          reserve_mdn_propre: "Réserve MDN",
+          partenaire: "Stand"
+        };
+
+        if (valeur === null || valeur === undefined || valeur === "") {
+          return "—";
+        }
+
+        return correspondances[valeur] || String(valeur).replaceAll("_", " ");
+      }
+
+      function libelleTypeMouvement(valeur) {
+        const correspondances = {
+          inventaire_initial: "Inventaire initial",
+          approvisionnement_mdn: "Approvisionnement MDN",
+          livraison_papival: "Livraison",
+          livraison_vaisselle: "Livraison vaisselle",
+          transfert_reserve_operationnel: "Réserve → Stock MDN",
+          retrait: "Retrait",
+          retrait_partenaire: "Retrait stand",
+          retour_propre: "Retour propre",
+          retour_propre_partenaire: "Retour propre stand",
+          retour_sale: "Retour sale",
+          retour_sale_partenaire: "Retour sale stand",
+          correction: "Correction",
+          annulation: "Annulation"
+        };
+
+        if (!valeur) return "Mouvement";
+
+        return correspondances[valeur] ||
+          String(valeur)
+            .replaceAll("_", " ")
+            .replace(/^./, function (lettre) {
+              return lettre.toUpperCase();
+            });
+      }
+
+      function calculerTotaux(stocks, contenants) {
+        const totaux = stocks.reduce(function (acc, ligne) {
+          acc.tente += entier(ligne.stock_mdn_tente);
+          acc.reserve += entier(ligne.reserve_mdn);
+          acc.stands += entier(ligne.chez_stands);
+          acc.sales += entier(ligne.retours_sales_cumules);
+          return acc;
+        }, {
+          tente: 0,
+          reserve: 0,
+          stands: 0,
+          sales: 0
+        });
+
+        const totalContenantsVides = contenants.reduce(function (somme, ligne) {
+          return somme + entier(ligne.stock_vide_propre);
+        }, 0);
+
+        totalTente.textContent = formatNombre(totaux.tente);
+        totalReserve.textContent = formatNombre(totaux.reserve);
+        totalStands.textContent = formatNombre(totaux.stands);
+        totalSales.textContent = formatNombre(totaux.sales);
+        totalContenants.textContent = formatNombre(totalContenantsVides);
+      }
+
+      function afficherStocks(stocks) {
+        if (!Array.isArray(stocks) || stocks.length === 0) {
+          corpsTableStocks.innerHTML = `
+            <tr>
+              <td colspan="7">Aucun article de vaisselle configuré pour cette édition.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        corpsTableStocks.innerHTML = stocks.map(function (ligne) {
+          const alerte = ligne.alerte_stock_tente === true;
+
+          return `
+            <tr>
+              <td class="article-cell">
+                <strong>${echapperHtml(ligne.article)}</strong>
+                <small>${echapperHtml(libelleConditionnement(
+                  ligne.type_conditionnement,
+                  ligne.quantite_standard
+                ))}</small>
+              </td>
+
+              <td class="nombre-tente">${formatNombre(ligne.stock_mdn_tente)}</td>
+              <td class="nombre-reserve">${formatNombre(ligne.reserve_mdn)}</td>
+              <td><strong>${formatNombre(ligne.stock_propre_total)}</strong></td>
+              <td class="nombre-stands">${formatNombre(ligne.chez_stands)}</td>
+              <td class="nombre-sale">${formatNombre(ligne.retours_sales_cumules)}</td>
+
+              <td>
+                <span class="badge-stock ${alerte ? "alerte" : "ok"}">
+                  ${alerte ? "À surveiller" : "Disponible"}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function afficherContenants(contenants) {
+        if (!Array.isArray(contenants) || contenants.length === 0) {
+          listeContenants.innerHTML = `
+            <div class="carte-contenant">
+              <span>Aucun contenant configuré</span>
+              <strong>0</strong>
+            </div>
+          `;
+          return;
+        }
+
+        listeContenants.innerHTML = contenants.map(function (ligne) {
+          return `
+            <div class="carte-contenant">
+              <span>${echapperHtml(ligne.contenant)}</span>
+              <strong>${formatNombre(ligne.stock_vide_propre)}</strong>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function afficherHistorique(mouvements) {
+        if (!Array.isArray(mouvements) || mouvements.length === 0) {
+          historiqueListe.innerHTML = `
+            <div class="historique-vide">
+              Aucun mouvement de stock pour le moment.
+            </div>
+          `;
+          return;
+        }
+
+        historiqueListe.innerHTML = mouvements.map(function (mouvement) {
+          const source = libelleEmplacement(mouvement.emplacement_source);
+          const destination = libelleEmplacement(mouvement.emplacement_destination);
+
+          const reference =
+            mouvement.reference_type || mouvement.reference_id
+              ? [
+                  mouvement.reference_type,
+                  mouvement.reference_id
+                ].filter(Boolean).join(" · ")
+              : "";
+
+          const commentaire =
+            mouvement.commentaire || mouvement.motif || "";
+
+          return `
+            <article class="mouvement">
+              <div class="mouvement-haut">
+                <div class="mouvement-article">
+                  ${echapperHtml(mouvement.article)}
+                </div>
+
+                <div class="mouvement-quantite">
+                  ${formatNombre(mouvement.quantite)}
+                </div>
+              </div>
+
+              <div class="mouvement-type">
+                ${echapperHtml(libelleTypeMouvement(mouvement.type_mouvement))}
+              </div>
+
+              <div class="mouvement-trajet">
+                ${echapperHtml(source)} → ${echapperHtml(destination)}
+              </div>
+
+              <div class="mouvement-bas">
+                <span>${echapperHtml(formatDateHeure(mouvement.date_mouvement))}</span>
+                ${reference ? `<span>${echapperHtml(reference)}</span>` : ""}
+              </div>
+
+              ${commentaire
+                ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>`
+                : ""}
+            </article>
+          `;
+        }).join("");
+      }
+
+      async function determinerEdition() {
+        const client = window.MDN_SUPABASE;
+
+        if (!client) {
+          throw new Error("Le client Supabase MDN n'est pas disponible.");
+        }
+
+        if (modeDemo) {
+          const {
+            data: catalogueDemo,
+            error: erreurCatalogueDemo
+          } = await client.rpc("charger_catalogue_caisse_demo");
+
+          if (erreurCatalogueDemo) {
+            throw erreurCatalogueDemo;
+          }
+
+          const editionDemo = catalogueDemo?.edition || null;
+
+          if (!editionDemo?.id) {
+            throw new Error(
+              "Aucune édition n'est disponible pour le Mode Démo."
+            );
+          }
+
+          return {
+            id: editionDemo.id,
+            annee: editionDemo.annee,
+            nom: editionDemo.nom || null
+          };
+        }
+
+        const {
+          data: editionActive,
+          error: erreurEditionActive
+        } = await client
+          .from("editions")
+          .select("id, annee, nom, statut, est_active")
+          .eq("est_active", true)
+          .maybeSingle();
+
+        if (erreurEditionActive) {
+          throw erreurEditionActive;
+        }
+
+        if (!editionActive?.id) {
+          throw new Error(
+            "Aucune édition active n'est configurée."
+          );
+        }
+
+        return editionActive;
+      }
+
+      async function chargerStocks() {
+        if (chargementEnCours || !editionCourante?.id) {
+          return;
+        }
+
+        chargementEnCours = true;
+        boutonActualiser.disabled = true;
+
+        try {
+          const client = window.MDN_SUPABASE;
+
+          const [
+            reponseStocks,
+            reponseContenants,
+            reponseHistorique
+          ] = await Promise.all([
+            client.rpc("etat_stocks_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }),
+
+            client.rpc("etat_stocks_contenants", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }),
+
+            client.rpc("historique_mouvements_stock_vaisselle", {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            })
+          ]);
+
+          if (reponseStocks.error) {
+            throw reponseStocks.error;
+          }
+
+          if (reponseContenants.error) {
+            throw reponseContenants.error;
+          }
+
+          if (reponseHistorique.error) {
+            throw reponseHistorique.error;
+          }
+
+          const stocks = Array.isArray(reponseStocks.data)
+            ? reponseStocks.data
+            : [];
+
+          const contenants = Array.isArray(reponseContenants.data)
+            ? reponseContenants.data
+            : [];
+
+          const mouvements = Array.isArray(reponseHistorique.data)
+            ? reponseHistorique.data
+            : [];
+
+          afficherStocks(stocks);
+          afficherContenants(contenants);
+          afficherHistorique(mouvements);
+          calculerTotaux(stocks, contenants);
+        } finally {
+          chargementEnCours = false;
+          boutonActualiser.disabled = false;
+        }
+      }
+
+      boutonRetour.addEventListener("click", function () {
+        window.location.href = "accueil.html";
+      });
+
+      boutonDeconnexion.addEventListener("click", async function () {
+        boutonDeconnexion.disabled = true;
+        boutonDeconnexion.textContent = "Déconnexion…";
+        await window.MDN_AUTH.deconnexion();
+      });
+
+      boutonActualiser.addEventListener("click", async function () {
+        try {
+          await chargerStocks();
+          afficherMessage("Stocks actualisés.", "succes");
+        } catch (erreur) {
+          console.error("[MDN Sion] Actualisation Stocks impossible :", erreur);
+          afficherMessage(
+            erreur?.message || "Impossible d'actualiser les stocks."
+          );
+        }
+      });
+
+      boutonLivraison.addEventListener("click", function () {
+        afficherMessage(
+          "Le formulaire de livraison sera raccordé à cette page à l'étape suivante.",
+          "info"
+        );
+      });
+
+      boutonReapprovisionnement.addEventListener("click", function () {
+        afficherMessage(
+          "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
+          "info"
+        );
+      });
+
+      fermerMessageStocks.addEventListener("click", fermerMessage);
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
+      });
+
+      async function initialiserStocks() {
+        try {
+          const auth = await window.MDN_AUTH.protegerPage([
+            "utilisateur",
+            "responsable",
+            "administrateur"
+          ]);
+
+          if (!auth) {
+            return;
+          }
+
+          const prenom = String(auth.profil.prenom || "").trim();
+
+          const identite =
+            prenom ||
+            auth.profil.email ||
+            auth.utilisateur.email ||
+            "Utilisateur";
+
+          identiteUtilisateur.textContent =
+            identite +
+            " · " +
+            auth.libelleRole;
+
+          const {
+            data: etatSessionDemo,
+            error: erreurEtatSessionDemo
+          } = await window.MDN_SUPABASE.rpc(
+            "etat_session_demo"
+          );
+
+          if (erreurEtatSessionDemo) {
+            throw erreurEtatSessionDemo;
+          }
+
+          modeDemo = etatSessionDemo?.mode_demo === true;
+
+          if (modeDemo) {
+            application.classList.add("mode-demo");
+            bandeauDemo.classList.add("visible");
+            titreStocks.textContent = "🎓 Stocks — Mode Démo";
+            document.title = "Stocks Démo - MDN Sion";
+          } else {
+            application.classList.remove("mode-demo");
+            bandeauDemo.classList.remove("visible");
+            titreStocks.textContent = "📦 Stocks";
+            document.title = "Stocks - MDN Sion";
+          }
+
+          editionCourante = await determinerEdition();
+
+          informationEdition.textContent =
+            (modeDemo ? "DÉMO · " : "") +
+            "MDN Sion " +
+            editionCourante.annee;
+
+          await chargerStocks();
+
+          masquerChargement();
+        } catch (erreur) {
+          console.error(
+            "[MDN Sion] Initialisation de la page Stocks impossible :",
+            erreur
+          );
+
+          masquerChargement();
+
+          afficherMessage(
+            erreur?.message ||
+            "Impossible d'ouvrir la page Stocks."
+          );
+        }
+      }
+
+      initialiserStocks();
+    })();
+  </script>
+</body>
+</html>
