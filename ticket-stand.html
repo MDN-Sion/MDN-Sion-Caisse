@@ -518,16 +518,10 @@
 
       function cancellationInfo(movement) {
         const d = movement?.detail || {};
-        const annulation = movement?.annulation || d?.annulation || {};
-        const cancelled = Boolean(
-          movement?.annulee ?? movement?.annule ?? movement?.est_annulee ?? movement?.operation_annulee ??
-          d?.annulee ?? d?.annule ?? d?.est_annulee ?? d?.operation_annulee ??
-          annulation?.annulee ?? annulation?.est_annulee ??
-          movement?.date_annulation ?? d?.date_annulation ?? annulation?.date_annulation
-        );
-        const motif = movement?.motif_annulation || d?.motif_annulation || annulation?.motif || annulation?.motif_annulation || "";
-        const commentaire = movement?.commentaire_annulation || d?.commentaire_annulation || annulation?.commentaire || "";
-        const date = movement?.date_annulation || d?.date_annulation || annulation?.date_annulation || annulation?.created_at || null;
+        const cancelled = String(d?.statut || "").toLowerCase() === "annule";
+        const motif = d?.motif_correction || "";
+        const commentaire = d?.commentaire || "";
+        const date = d?.annule_at || null;
         return { cancelled, motif, commentaire, date };
       }
 
@@ -583,10 +577,9 @@
           const running = Number(m.solde_apres_mouvement ?? 0);
           const debit = Number(m.montant_debit || 0);
           const credit = Number(m.montant_credit || 0);
-          const amount = debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0);
-          const cls = debit > 0 ? "debit" : credit > 0 ? "credit" : "";
-
           const cancellation = cancellationInfo(m);
+          const amount = cancellation.cancelled ? "ANNULÉE" : (debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0));
+          const cls = cancellation.cancelled ? "" : (debit > 0 ? "debit" : credit > 0 ? "credit" : "");
           return `<div class="movement${cancellation.cancelled ? " movement-cancelled" : ""}">
             ${renderCancellation(m)}
             <div class="movement-head">
