@@ -2128,7 +2128,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 /* === Modification / annulation dans l'écran principal === */
 .correction-work-banner{
   display:none;
-  margin:12px 16px 0;
+  margin:10px 0 0;
   padding:12px 14px;
   border:1px solid #d69a28;
   border-radius:12px;
@@ -2137,7 +2137,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .correction-work-banner.show{display:block}
 .correction-work-title{font-weight:900;color:#8b0000;margin-bottom:4px}
 .correction-work-detail{font-size:13px;line-height:1.4;color:#5b4630}
-.correction-work-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.correction-work-actions{display:grid;grid-template-columns:1fr 1.45fr;gap:8px;margin-top:10px}
 .correction-work-actions button{
   min-height:38px;border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer
 }
@@ -2145,6 +2145,27 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .correction-work-confirm{border:1px solid #8b0000;background:#8b0000;color:#fff}
 .correction-work-confirm.annulation{border-color:#b26a00;background:#fff7e8;color:#7a4600}
 
+
+.correction-signature-fields{
+  display:grid;
+  gap:5px;
+  padding:9px 10px;
+  margin:7px 0;
+  border:1px solid #e0c58d;
+  border-radius:10px;
+  background:#fff8e9;
+}
+.correction-signature-fields label{font-weight:800;font-size:13px}
+.correction-signature-fields select,
+.correction-signature-fields textarea{
+  width:100%;box-sizing:border-box;border:1px solid #c9cfd6;border-radius:8px;
+  background:#fff;padding:8px 9px;font:inherit
+}
+.correction-signature-fields textarea{resize:vertical;min-height:52px}
+#correctionCommentRequired{font-weight:600;color:#a40000}
+@media(max-width:680px){
+  .correction-work-actions{grid-template-columns:1fr}
+}
 </style>
  </head>
  <body>
@@ -2200,14 +2221,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
       <button class="correct-account correction-top-button" disabled id="correctAccount" type="button" style="display:none">
        Modifier / annuler
       </button>
-     </div>
-     <div class="correction-work-banner" id="correctionWorkBanner">
-      <div class="correction-work-title" id="correctionWorkTitle"></div>
-      <div class="correction-work-detail" id="correctionWorkDetail"></div>
-      <div class="correction-work-actions">
-       <button class="correction-work-cancel" id="correctionWorkCancel" type="button">Quitter</button>
-       <button class="correction-work-confirm" id="correctionWorkConfirm" type="button"></button>
-      </div>
      </div>
      <div class="catalog-scroll" id="catalogScroll">
      </div>
@@ -2278,6 +2291,14 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         CHF 0.00
        </strong>
       </div>
+     <div class="correction-work-banner" id="correctionWorkBanner">
+      <div class="correction-work-title" id="correctionWorkTitle"></div>
+      <div class="correction-work-detail" id="correctionWorkDetail"></div>
+      <div class="correction-work-actions">
+       <button class="correction-work-cancel" id="correctionWorkCancel" type="button">Quitter</button>
+       <button class="correction-work-confirm" id="correctionWorkConfirm" type="button"></button>
+      </div>
+     </div>
       <button class="validate" disabled="" id="validate">
        Valider sur le compte du stand
       </button>
@@ -2414,6 +2435,20 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        <label class="signature-label">Signature du stand</label>
        <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
        <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
+       <div class="correction-signature-fields" id="correctionSignatureFields" hidden>
+        <label for="correctionReasonSelect">Motif <span aria-hidden="true">*</span></label>
+        <select id="correctionReasonSelect">
+         <option value="">Choisir un motif…</option>
+         <option value="Erreur de saisie">Erreur de saisie</option>
+         <option value="Mauvaise quantité">Mauvaise quantité</option>
+         <option value="Mauvais type d’opération">Mauvais type d’opération</option>
+         <option value="Mauvais stand">Mauvais stand</option>
+         <option value="Doublon">Doublon</option>
+         <option value="Autre">Autre</option>
+        </select>
+        <label for="correctionReasonComment">Commentaire <span id="correctionCommentRequired" hidden>(obligatoire pour « Autre »)</span></label>
+        <textarea id="correctionReasonComment" rows="2" placeholder="Précision facultative"></textarea>
+       </div>
        <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
        <div class="passage-confirm-actions"><button class="passage-confirm-cancel" id="passageConfirmCancel" type="button">Annuler</button><button class="passage-confirm-save" id="passageConfirmSave" type="button" disabled>Confirmer et enregistrer</button></div>
       </div>
@@ -3124,21 +3159,32 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
         if(correctionWorkAction==="modifier"){
             correctionWorkTitle.textContent=`MODIFICATION — ${libelle} ${numero}`;
-            correctionWorkDetail.textContent="L’opération a été rechargée. Modifie les quantités avec les boutons − / + puis clique sur « Valider la modification ».";
+            correctionWorkDetail.textContent="L’opération a été rechargée. Modifie les quantités avec les boutons − / +. Le motif sera demandé avec la signature.";
             correctionWorkConfirm.textContent="Valider la modification";
             correctionWorkConfirm.classList.remove("annulation");
         }else{
             correctionWorkTitle.textContent=`ANNULATION — ${libelle} ${numero}`;
-            correctionWorkDetail.textContent="L’opération est affichée ci-dessous pour contrôle. Les quantités restent inchangées ; clique sur « Confirmer l’annulation ».";
+            correctionWorkDetail.textContent="L’opération est affichée pour contrôle. Le motif et la signature seront demandés à l’étape suivante.";
             correctionWorkConfirm.textContent="Confirmer l’annulation";
             correctionWorkConfirm.classList.add("annulation");
         }
 
         correctionWorkBanner.classList.add("show");
+        syncCorrectionWorkspaceUi();
         renderCatalog();
         renderSummary();
         applyCorrectionLock();
         correctionWorkBanner.scrollIntoView({behavior:"smooth",block:"nearest"});
+    }
+
+    function syncCorrectionWorkspaceUi(){
+        const active=!!correctionWorkOperation;
+        validate.style.display=active?"none":"";
+        if(active){
+            correctionWorkBanner.classList.add("show");
+        }else{
+            correctionWorkBanner.classList.remove("show");
+        }
     }
 
     function applyCorrectionLock(){
@@ -3155,6 +3201,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         correctionKey=null;
         correctionPendingMotif=null;
         correctionWorkBanner.classList.remove("show");
+        syncCorrectionWorkspaceUi();
         initState();
         renderCatalog();
         renderSummary();
@@ -3186,80 +3233,47 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         return r;
     }
 
-    async function executeCorrectionWork(){
+    function prepareCorrectionConfirmation(){
         if(!correctionWorkOperation||!correctionWorkAction)return;
 
-        const op=correctionWorkOperation;
-        const action=correctionWorkAction;
-        const motif=demanderMotif(action);
-        if(!motif)return;
-
-        correctionWorkConfirm.disabled=true;
-        const ancienTexte=correctionWorkConfirm.textContent;
-
-        try{
-            if(action==="annuler"){
-                correctionWorkConfirm.textContent="Annulation…";
-                await annulerOperationCorrection(op,motif);
-                const numero=op.numero_operation||"";
-                leaveCorrectionWork();
-                await loadAccount();
-                msg(`Opération ${numero} annulée.`,true);
-                return;
-            }
-
-            // MODIFICATION :
-            // On NE TOUCHE PAS encore à l'opération originale.
-            // On construit d'abord la nouvelle opération corrigée.
-            let ops=[];
-            try{
-                ops=types.map(buildOperation).filter(Boolean);
-            }catch(e){
-                throw e;
-            }
-
-            // Si la correction met toutes les quantités à zéro,
-            // il n'y a logiquement aucune nouvelle opération à créer :
-            // la modification équivaut donc à une annulation.
+        let ops=[];
+        if(correctionWorkAction==="modifier"){
+            try{ops=types.map(buildOperation).filter(Boolean)}
+            catch(e){return msg(e.message)}
             if(!ops.length){
-                correctionWorkConfirm.textContent="Annulation…";
-                await annulerOperationCorrection(op,motif);
-                const numero=op.numero_operation||"";
-                leaveCorrectionWork();
-                await loadAccount();
-                msg(`L'opération ${numero} a été annulée : la modification ne contient plus aucune quantité.`,true);
-                return;
+                // Une modification à zéro devient une annulation explicite.
+                correctionWorkAction="annuler";
+                correctionWorkTitle.textContent=`ANNULATION — ${operationTypeLabel(correctionWorkOperation.type_operation)} ${correctionWorkOperation.numero_operation||""}`;
             }
-
-            // On conserve le motif et l'opération originale jusqu'à la signature.
-            // L'annulation + le nouvel enregistrement seront faits atomiquement
-            // par le SQL n°82 dans performSignedSave().
-            correctionPendingMotif=motif;
-            pendingOps=ops;
-
-            $("passageConfirmStand").textContent=standName(stand);
-            $("passageConfirmType").textContent=stand.type_partenaire||"";
-            $("passageConfirmDetail").innerHTML=summary.innerHTML;
-            $("passageConfirmDetail").querySelectorAll("button").forEach(button=>button.remove());
-            $("passageConfirmInvoice").textContent=invoice.textContent;
-            $("passageConfirmCredit").textContent=credit.textContent;
-            $("passageConfirmNet").textContent=net.textContent;
-            $("passageConfirmCheck").checked=false;
-            signatureHasInk=false;
-            syncVisibleViewport();
-            $("passageConfirmModal").classList.add("show");
-            $("passageConfirmModal").setAttribute("aria-hidden","false");
-            requestAnimationFrame(resizeSignatureCanvas);
-
-            correctionWorkConfirm.textContent=ancienTexte;
-            correctionWorkConfirm.disabled=false;
-
-        }catch(e){
-            console.error(e);
-            msg(e?.message||"Impossible d'effectuer cette correction.");
-            correctionWorkConfirm.disabled=false;
-            correctionWorkConfirm.textContent=ancienTexte;
         }
+
+        pendingOps=ops;
+        correctionPendingMotif=null;
+
+        $("passageConfirmStand").textContent=standName(stand);
+        $("passageConfirmType").textContent=stand.type_partenaire||"";
+        $("passageConfirmDetail").innerHTML=summary.innerHTML;
+        $("passageConfirmDetail").querySelectorAll("button").forEach(button=>button.remove());
+        $("passageConfirmInvoice").textContent=invoice.textContent;
+        $("passageConfirmCredit").textContent=credit.textContent;
+        $("passageConfirmNet").textContent=net.textContent;
+
+        $("correctionSignatureFields").hidden=false;
+        $("correctionReasonSelect").value="";
+        $("correctionReasonComment").value="";
+        $("correctionCommentRequired").hidden=true;
+
+        $("passageConfirmCheck").checked=false;
+        signatureHasInk=false;
+        syncVisibleViewport();
+        $("passageConfirmModal").classList.add("show");
+        $("passageConfirmModal").setAttribute("aria-hidden","false");
+        requestAnimationFrame(resizeSignatureCanvas);
+        updatePassageConfirmButton();
+    }
+
+    async function executeCorrectionWork(){
+        prepareCorrectionConfirmation();
     }
 
     correctionWorkCancel.onclick=leaveCorrectionWork;
@@ -3828,8 +3842,19 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
     let pendingOps=null;
     let signatureHasInk=false;
+    function correctionReasonValue(){
+        const select=$("correctionReasonSelect");
+        const comment=$("correctionReasonComment");
+        const reason=String(select?.value||"").trim();
+        const detail=String(comment?.value||"").trim();
+        if(!reason)return "";
+        if(reason==="Autre"&&!detail)return "";
+        return detail ? `${reason} — ${detail}` : reason;
+    }
     function updatePassageConfirmButton(){
-        $("passageConfirmSave").disabled=!(signatureHasInk&&$("passageConfirmCheck").checked);
+        const correctionActive=!!correctionWorkOperation;
+        const motifOk=!correctionActive||!!correctionReasonValue();
+        $("passageConfirmSave").disabled=!(signatureHasInk&&$("passageConfirmCheck").checked&&motifOk);
     }
     function resizeSignatureCanvas(){
         const canvas=$("passageSignature");
@@ -3846,8 +3871,10 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         $("passageConfirmModal").classList.remove("show");
         $("passageConfirmModal").setAttribute("aria-hidden","true");
         pendingOps=null;
+        correctionPendingMotif=null;
     }
     function openPassageConfirm(){
+        $("correctionSignatureFields").hidden=true;
         if(!stand)return msg("Sélectionne d'abord le stand.");
         if(accountClosed())return msg("Ce compte est clôturé. Aucune nouvelle opération ne peut être enregistrée.");
         try{pendingOps=types.map(buildOperation).filter(Boolean)}catch(e){return msg(e.message)}
@@ -3866,11 +3893,17 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         requestAnimationFrame(resizeSignatureCanvas);
     }
     async function performSignedSave(){
-        if(!stand||!pendingOps?.length)return msg("Aucun passage à confirmer.");
+        if(!stand)return msg("Aucun stand à confirmer.");
+        const correctionActive=!!correctionWorkOperation;
+        if(!correctionActive&&!pendingOps?.length)return msg("Aucun passage à confirmer.");
         if(!signatureHasInk)return msg("La signature du stand est obligatoire.");
         if(!$("passageConfirmCheck").checked)return msg("La confirmation du stand est obligatoire.");
-        const ops=pendingOps;
+        const ops=Array.isArray(pendingOps)?pendingOps:[];
         const signatureData=$("passageSignature").toDataURL("image/png");
+        if(correctionActive){
+            correctionPendingMotif=correctionReasonValue();
+            if(!correctionPendingMotif)return msg("Choisis un motif de correction.");
+        }
         validate.disabled=true;
         validate.classList.remove("on");
         validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
@@ -3881,49 +3914,74 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 correctionWorkAction==="modifier" &&
                 correctionPendingMotif
             );
-
-            const response=await client.rpc(
-                modificationEnCours
-                    ? (demo ? "modifier_operation_vaisselle_demo_signe" : "modifier_operation_vaisselle_signe")
-                    : (demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe"),
-                modificationEnCours
-                    ? (
-                        demo
-                            ? {
-                                p_operation_id:correctionWorkOperation.id,
-                                p_motif:correctionPendingMotif,
-                                p_idempotency_key:correctionKey||uuid(),
-                                p_stand_demo_id:stand.id,
-                                p_operations:ops,
-                                p_signature_data:signatureData,
-                                p_commentaire:null
-                            }
-                            : {
-                                p_operation_id:correctionWorkOperation.id,
-                                p_motif:correctionPendingMotif,
-                                p_idempotency_key:correctionKey||uuid(),
-                                p_participation_id:stand.id,
-                                p_operations:ops,
-                                p_signature_data:signatureData,
-                                p_commentaire:null
-                            }
-                    )
-                    : (
-                        demo
-                            ? {
-                                p_stand_demo_id:stand.id,
-                                p_operations:ops,
-                                p_signature_data:signatureData,
-                                p_commentaire:null
-                            }
-                            : {
-                                p_participation_id:stand.id,
-                                p_operations:ops,
-                                p_signature_data:signatureData,
-                                p_commentaire:null
-                            }
-                    )
+            const annulationEnCours=!!(
+                correctionWorkOperation &&
+                correctionWorkAction==="annuler" &&
+                correctionPendingMotif
             );
+
+            let response;
+
+            if(annulationEnCours){
+                response=await client.rpc(
+                    demo ? "annuler_operation_vaisselle_demo_signee" : "annuler_operation_vaisselle_signee",
+                    demo
+                        ? {
+                            p_operation_id:correctionWorkOperation.id,
+                            p_motif:correctionPendingMotif,
+                            p_idempotency_key:correctionKey||uuid(),
+                            p_stand_demo_id:stand.id,
+                            p_signature_data:signatureData
+                        }
+                        : {
+                            p_operation_id:correctionWorkOperation.id,
+                            p_motif:correctionPendingMotif,
+                            p_idempotency_key:correctionKey||uuid(),
+                            p_participation_id:stand.id,
+                            p_signature_data:signatureData
+                        }
+                );
+            }else if(modificationEnCours){
+                response=await client.rpc(
+                    demo ? "modifier_operation_vaisselle_demo_signe" : "modifier_operation_vaisselle_signe",
+                    demo
+                        ? {
+                            p_operation_id:correctionWorkOperation.id,
+                            p_motif:correctionPendingMotif,
+                            p_idempotency_key:correctionKey||uuid(),
+                            p_stand_demo_id:stand.id,
+                            p_operations:ops,
+                            p_signature_data:signatureData,
+                            p_commentaire:null
+                        }
+                        : {
+                            p_operation_id:correctionWorkOperation.id,
+                            p_motif:correctionPendingMotif,
+                            p_idempotency_key:correctionKey||uuid(),
+                            p_participation_id:stand.id,
+                            p_operations:ops,
+                            p_signature_data:signatureData,
+                            p_commentaire:null
+                        }
+                );
+            }else{
+                response=await client.rpc(
+                    demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe",
+                    demo
+                        ? {
+                            p_stand_demo_id:stand.id,
+                            p_operations:ops,
+                            p_signature_data:signatureData,
+                            p_commentaire:null
+                        }
+                        : {
+                            p_participation_id:stand.id,
+                            p_operations:ops,
+                            p_signature_data:signatureData,
+                            p_commentaire:null
+                        }
+                );
+            }
             if(response.error)throw response.error;
             r=response.data;
             if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
@@ -3935,25 +3993,33 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 correctionWorkAction==="modifier" &&
                 correctionPendingMotif
             );
+            const etaitAnnulation=!!(
+                correctionWorkOperation &&
+                correctionWorkAction==="annuler" &&
+                correctionPendingMotif
+            );
 
             msg(
                 etaitModification
                     ? `Modification enregistrée sur le compte de ${standName(stand)}.`
-                    : (
-                        demo
-                            ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
-                            :`Enregistré sur le compte de ${standName(stand)}.`
-                    ),
+                    : etaitAnnulation
+                        ? `Annulation enregistrée sur le compte de ${standName(stand)}.`
+                        : (
+                            demo
+                                ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
+                                :`Enregistré sur le compte de ${standName(stand)}.`
+                        ),
                 true
             );
 
-            if(etaitModification){
+            if(etaitModification||etaitAnnulation){
                 correctionWorkOperation=null;
                 correctionWorkAction=null;
                 correctionOperation=null;
                 correctionPendingMotif=null;
                 correctionKey=null;
                 correctionWorkBanner.classList.remove("show");
+                syncCorrectionWorkspaceUi();
             }
 
             initState();
@@ -4121,6 +4187,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         validate.onclick=openPassageConfirm;
         $("passageConfirmClose").onclick=closePassageConfirm;
         $("passageConfirmCancel").onclick=closePassageConfirm;
+        $("correctionReasonSelect").onchange=()=>{
+            $("correctionCommentRequired").hidden=$("correctionReasonSelect").value!=="Autre";
+            updatePassageConfirmButton();
+        };
+        $("correctionReasonComment").oninput=updatePassageConfirmButton;
         $("passageConfirmCheck").onchange=updatePassageConfirmButton;
         $("passageSignatureClear").onclick=resizeSignatureCanvas;
         $("passageConfirmSave").onclick=performSignedSave;
