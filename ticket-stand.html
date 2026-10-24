@@ -303,45 +303,42 @@
     .passage-confirmation { margin:6px 3px 1px; padding-top:6px; border-top:1px dashed #cbd2df; color:#107c10; font-size:11px; font-weight:800; }
     @media print { .passage-confirmation { color:#1d2939; } }
 
-    /* SQL 84 : affichage des opérations Vaisselle annulées. */
+
+    /* Opérations vaisselle annulées — même rendu validé que comptes-stands */
     .movement.movement-cancelled {
-      margin: 6px 0;
-      padding: 10px;
-      border: 1px solid #f1aeb5;
-      border-radius: 10px;
-      background: #fff0f1 !important;
+      background:#fff0f0 !important;
+      border:1px solid #e8a8a8;
+      box-shadow:inset 4px 0 0 #b42318;
+      padding-left:8px;
+      padding-right:8px;
     }
-    .movement-cancelled .movement-title,
-    .movement-cancelled .movement-amount,
-    .movement-cancelled .balance strong {
-      color: #b42318 !important;
-    }
+    .movement.movement-cancelled .movement-head { background:#ffe4e4; }
     .cancelled-badge {
-      display: inline-flex;
-      align-items: center;
-      margin: 0 0 5px;
-      padding: 3px 7px;
-      border-radius: 999px;
-      background: #b42318;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .04em;
+      display:inline-block;
+      margin-top:5px;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#b42318;
+      color:#fff;
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.03em;
     }
-    .cancelled-info {
-      margin-top: 7px;
-      padding: 7px 8px;
-      border-left: 3px solid #b42318;
-      background: rgba(255,255,255,.65);
-      color: #7a271a;
-      font-size: 12px;
-      line-height: 1.4;
+    .cancelled-reason {
+      margin:7px 0 3px;
+      padding:7px 9px;
+      border-radius:9px;
+      background:#fff7f7;
+      color:#7a1d16;
+      font-size:12px;
+      font-weight:700;
     }
     @media print {
-      .movement.movement-cancelled {
-        background: #fff0f1 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+      .movement.movement-cancelled,
+      .movement.movement-cancelled .movement-head {
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
       }
     }
 
@@ -399,11 +396,10 @@
       function formatDate(value) {
         if(!value) return "—";
         const d = new Date(value);
-        return Number.isNaN(d.getTime()) ? String(value) : new Intl.DateTimeFormat("fr-CH", {
-          timeZone:"Europe/Zurich",
+        return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("fr-FR", {
           dateStyle:"short",
           timeStyle:"short"
-        }).format(d);
+        });
       }
 
       function balanceClass(value) {
@@ -516,25 +512,6 @@
         return rows.join("");
       }
 
-      function cancellationInfo(movement) {
-        const d = movement?.detail || {};
-        const cancelled = String(d?.statut || "").toLowerCase() === "annule";
-        const motif = d?.motif_correction || "";
-        const commentaire = d?.commentaire || "";
-        const date = d?.annule_at || null;
-        return { cancelled, motif, commentaire, date };
-      }
-
-      function renderCancellation(movement) {
-        const info = cancellationInfo(movement);
-        if(!info.cancelled) return "";
-        const lignes = [];
-        if(info.motif) lignes.push(`<div><strong>Motif :</strong> ${esc(info.motif)}</div>`);
-        if(info.commentaire) lignes.push(`<div><strong>Commentaire :</strong> ${esc(info.commentaire)}</div>`);
-        if(info.date) lignes.push(`<div><strong>Annulée le :</strong> ${esc(formatDate(info.date))}</div>`);
-        return `<div class="cancelled-badge">OPÉRATION ANNULÉE</div>${lignes.length ? `<div class="cancelled-info">${lignes.join("")}</div>` : ""}`;
-      }
-
       function render(data) {
         const i = data.identite || {};
         const c = data.compte || {};
@@ -577,19 +554,27 @@
           const running = Number(m.solde_apres_mouvement ?? 0);
           const debit = Number(m.montant_debit || 0);
           const credit = Number(m.montant_credit || 0);
-          const cancellation = cancellationInfo(m);
-          const amount = cancellation.cancelled ? "ANNULÉE" : (debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0));
-          const cls = cancellation.cancelled ? "" : (debit > 0 ? "debit" : credit > 0 ? "credit" : "");
-          return `<div class="movement${cancellation.cancelled ? " movement-cancelled" : ""}">
-            ${renderCancellation(m)}
+
+          // EXACTEMENT la même détection que dans comptes-stands.html validé.
+          const cancelled = String(m.detail?.statut || "").toLowerCase() === "annule";
+          const amount = cancelled
+            ? "ANNULÉE"
+            : (debit > 0 ? `+ ${money(debit)}` : credit > 0 ? `− ${money(credit)}` : money(0));
+          const cls = cancelled ? "" : (debit > 0 ? "debit" : credit > 0 ? "credit" : "");
+          const cancelledInfo = cancelled
+            ? `<div class="cancelled-reason">Motif : ${esc(m.detail?.motif_correction || "Non précisé")}</div>`
+            : "";
+
+          return `<div class="movement ${cancelled ? "movement-cancelled" : ""}">
             <div class="movement-head">
               <div>
                 <div class="movement-title">${esc(movementLabel(m.type))}</div>
                 <div class="movement-meta">${esc(m.reference || "—")}</div>
+                ${cancelled ? `<div class="cancelled-badge">Opération annulée</div>` : ""}
               </div>
               <div class="movement-amount ${cls}">${esc(amount)}</div>
             </div>
-            <div class="detail">${details(m)}</div>
+            <div class="detail">${details(m)}${cancelledInfo}</div>
             <div class="balance"><span>Solde après mouvement</span><strong class="${balanceClass(running)}">${esc(money(running))}</strong></div>
           </div>`;
         };
@@ -615,7 +600,7 @@
           const dateLabel = group[0]?.date ? formatDate(group[0].date) : "";
           const confirmation = groupComplet.map(m => m.confirmation).find(Boolean);
           const confirmationHtml = isPassage && confirmation?.confirme_at
-            ? `<div class="passage-confirmation">✓ Passage confirmé par le stand à ${esc(new Intl.DateTimeFormat("fr-CH",{timeZone:"Europe/Zurich",hour:"2-digit",minute:"2-digit"}).format(new Date(confirmation.confirme_at)))}</div>`
+            ? `<div class="passage-confirmation">✓ Passage confirmé par le stand à ${esc(new Date(confirmation.confirme_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}))}</div>`
             : "";
           return `<section class="passage-group ${index % 2 === 0 ? "passage-a" : "passage-b"}">
             <div class="passage-title"><span>${esc(label)}</span><span>${esc(dateLabel)}</span></div>
