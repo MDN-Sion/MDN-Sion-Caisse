@@ -1159,7 +1159,46 @@ let currentHistoryData=null;
 let currentHistoryDay="all";
 let currentHistoryType="all";
 function historyHtml(data){
-  const i=data.identite||{},c=data.compte||{},all=Array.isArray(data.mouvements)?data.mouvements:[];
+  const i=data.identite||{},c=data.compte||{},mouvementsBruts=Array.isArray(data.mouvements)?data.mouvements:[];
+
+  // Les opérations annulées existent sous leur forme historique d'origine
+  // et sous leur forme marquée "annule". On n'affiche que la version annulée.
+  const annulesParReference=new Map(
+    mouvementsBruts
+      .filter(m=>String(m.detail?.statut||"").toLowerCase()==="annule"&&m.reference)
+      .map(m=>[String(m.reference),m])
+  );
+
+  const originauxAnnules=mouvementsBruts.filter(m=>
+    m.reference&&
+    annulesParReference.has(String(m.reference))&&
+    String(m.detail?.statut||"").toLowerCase()!=="annule"
+  );
+
+  const all=mouvementsBruts.filter(m=>!(
+    m.reference&&
+    annulesParReference.has(String(m.reference))&&
+    String(m.detail?.statut||"").toLowerCase()!=="annule"
+  ));
+
+  const totalFactureAffiche=Number(c.total_facture||0)-
+    originauxAnnules.reduce((s,m)=>s+Number(m.montant_debit||0),0);
+
+  const totalCreditAffiche=Number(c.total_credit_compte||0)-
+    originauxAnnules.reduce((s,m)=>s+Number(m.montant_credit||0),0);
+
+  let soldeRecalcule=0;
+  all.forEach(m=>{
+    const annule=String(m.detail?.statut||"").toLowerCase()==="annule";
+    if(!annule){
+      soldeRecalcule+=Number(
+        m.mouvement_delta_solde ??
+        (Number(m.montant_debit||0)-Number(m.montant_credit||0))
+      );
+    }
+    m.__solde_affiche=soldeRecalcule;
+  });
+
   const days=[...new Set(all.map(m=>historyDayKey(m.date)).filter(Boolean))].sort();
   const types=[...new Set(all.map(m=>m.type).filter(Boolean))];
   // On conserve le regroupement par passage, mais le filtre de type
@@ -1182,7 +1221,7 @@ function historyHtml(data){
   );
 
   const movementCard=m=>{
-    const solde=Number(m.solde_apres_mouvement ?? 0);
+    const solde=Number(m.__solde_affiche ?? m.solde_apres_mouvement ?? 0);
     const d=Number(m.montant_debit||0),cr=Number(m.montant_credit||0);
     const cancelled=String(m.detail?.statut||"").toLowerCase()==="annule";
     const amount=cancelled?"ANNULÉE":(d>0?`+ ${money(d)}`:cr>0?`− ${money(cr)}`:money(0));
@@ -1219,7 +1258,7 @@ function historyHtml(data){
     return `<section class="passage-group ${index%2===0?"passage-a":"passage-b"}"><div class="passage-title"><span>${esc(label)}</span><span>${esc(date)}</span></div>${mouvements.map(movementCard).join("")}${confirmationHtml}</section>`;
   }).join("");
 
-  return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(c.total_facture||0))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(c.total_credit_compte||0))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-filters"><select id="historyDayFilter"><option value="all">Tous les jours</option>${days.map(day=>`<option value="${esc(day)}" ${currentHistoryDay===day?"selected":""}>${esc(new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}))}</option>`).join("")}</select><select id="historyTypeFilter"><option value="all">Tous les mouvements</option>${types.map(type=>`<option value="${esc(type)}" ${currentHistoryType===type?"selected":""}>${esc(movementLabel(type))}</option>`).join("")}</select></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement pour ce filtre.</div>`}</div>`;
+  return `<div class="history-summary"><div><span>Stand</span><strong>${esc(i.numero_stand||"—")} · ${esc(i.partenaire_nom||"—")}</strong></div><div><span>Total facturé</span><strong class="amount-factured">${esc(money(totalFactureAffiche))}</strong></div><div><span>Total crédité</span><strong class="amount-credited">${esc(money(totalCreditAffiche))}</strong></div><div><span>Total payé</span><strong class="amount-paid">${esc(money(c.total_paye||0))}</strong></div><div><span>Solde actuel</span><strong class="${balanceClass(c.solde_restant)}">${esc(money(c.solde_restant||0))}</strong></div></div><div class="history-filters"><select id="historyDayFilter"><option value="all">Tous les jours</option>${days.map(day=>`<option value="${esc(day)}" ${currentHistoryDay===day?"selected":""}>${esc(new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}))}</option>`).join("")}</select><select id="historyTypeFilter"><option value="all">Tous les mouvements</option>${types.map(type=>`<option value="${esc(type)}" ${currentHistoryType===type?"selected":""}>${esc(movementLabel(type))}</option>`).join("")}</select></div><div class="history-list">${cards||`<div class="history-empty">Aucun mouvement pour ce filtre.</div>`}</div>`;
 }
 function bindHistoryFilters(){
   $("historyDayFilter")?.addEventListener("change",e=>{currentHistoryDay=e.target.value;$("historyBody").innerHTML=historyHtml(currentHistoryData);bindHistoryFilters()});
