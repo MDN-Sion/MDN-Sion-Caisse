@@ -1783,11 +1783,10 @@
               <section class="detail-carte">
                 <h3>Solde des mouvements par stand</h3>
                 <div class="detail-aide">
-                  Retraits − retours propres − retours sales enregistrés sur chaque stand.
-                  Ce solde est informatif et ne localise pas physiquement la vaisselle :
-                  une vaisselle peut être rendue dans un autre stand.
+                  Un solde positif signifie que le stand a retiré plus de vaisselle qu’il n’en a rendu.
+                  Un solde négatif signifie qu’il en a rendu davantage.
                 </div>
-                ${stands.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Type</th><th>Solde</th></tr></thead><tbody>${stands.map(function(x){
+                ${stands.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Type</th><th>Retirés − rendus</th></tr></thead><tbody>${stands.map(function(x){
                   const quantite = Number(x.quantite ?? x.quantite_actuelle ?? x.solde ?? 0);
                   const signe = quantite > 0 ? "+" : "";
                   const nomStand = x.numero_stand
