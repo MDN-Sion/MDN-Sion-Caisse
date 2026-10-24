@@ -1461,75 +1461,6 @@
       white-space:nowrap;
     }
     .bouton-remboursement-vente:hover{background:#fff1f2}
-
-    .bouton-rattrapage-vente{
-      flex:0 0 auto;
-      min-height:42px;
-      margin-left:8px;
-      padding:9px 14px;
-      border:1px solid #b98500;
-      border-radius:11px;
-      background:#fff9df;
-      color:#765800;
-      cursor:pointer;
-      font-weight:800;
-      white-space:nowrap;
-    }
-    .bouton-rattrapage-vente:hover{background:#fff2b8}
-    .modal-rattrapage-carte{width:min(560px,calc(100vw - 24px))}
-    .rattrapage-corps{padding:18px}
-    .rattrapage-info{
-      margin:0 0 14px;
-      padding:11px 12px;
-      border:1px solid #ead38b;
-      border-radius:10px;
-      background:#fff9df;
-      color:#5f4800;
-      font-size:.9rem;
-      line-height:1.4;
-    }
-    .rattrapage-champ{display:grid;gap:6px;margin-top:12px}
-    .rattrapage-champ label{font-weight:800;color:#334155}
-    .rattrapage-champ select,
-    .rattrapage-champ input{
-      width:100%;
-      min-height:44px;
-      padding:9px 11px;
-      border:1px solid #cbd5e1;
-      border-radius:9px;
-      background:#fff;
-      color:#0f172a;
-      font:inherit;
-    }
-    .rattrapage-erreur{min-height:20px;margin-top:10px;color:#b91c1c;font-weight:700;font-size:.9rem}
-    .mode-rattrapage-indicateur{
-      display:none;
-      margin:0 18px 10px;
-      padding:9px 11px;
-      border:1px solid #e0bf50;
-      border-radius:10px;
-      background:#fff7d6;
-      color:#684e00;
-      font-size:.86rem;
-      font-weight:800;
-      line-height:1.35;
-    }
-    .mode-rattrapage-indicateur.visible{display:block}
-    .mode-rattrapage-indicateur button{
-      margin-left:8px;
-      border:0;
-      background:transparent;
-      color:#8b0000;
-      cursor:pointer;
-      font-weight:900;
-      text-decoration:underline;
-    }
-    @media (max-width:700px){
-      .bouton-rattrapage-vente{
-        margin-left:0;
-        padding:9px 11px;
-      }
-    }
     .remboursement-carte{width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
     .remboursement-recherche{display:flex;gap:8px;margin-bottom:12px}
     .remboursement-recherche input,.remboursement-champ,.remboursement-select{
@@ -2072,7 +2003,6 @@
             <button id="filtreMDN" class="categorie" type="button">MDN</button>
             <button id="filtreFondation" class="categorie" type="button">Fondation</button>
             <button id="boutonRembourserVente" class="bouton-remboursement-vente" type="button">↩ Rembourser une vente</button>
-            <button id="boutonRattrapageVente" class="bouton-rattrapage-vente" type="button">🕘 Rattrapage</button>
           </nav>
 
           <div id="zoneArticles" class="zone-articles">
@@ -2093,11 +2023,6 @@
           <div class="panier-entete">
             <h2>Panier</h2>
             <p id="etatPanier">Aucune vente en cours</p>
-          </div>
-
-          <div id="indicateurRattrapage" class="mode-rattrapage-indicateur">
-            🕘 Rattrapage actif — cette vente sera identifiée comme une opération enregistrée après coup.
-            <button id="annulerModeRattrapage" type="button">Annuler le rattrapage</button>
           </div>
 
 
@@ -2208,46 +2133,6 @@
       </div>
     </section>
   </div>
-
-  <div id="modalRattrapageVente" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreRattrapageVente">
-    <section class="encaissement-carte modal-rattrapage-carte">
-      <div class="encaissement-entete">
-        <h2 id="titreRattrapageVente">Rattrapage de caisse</h2>
-        <button id="fermerRattrapageVente" class="encaissement-fermer" type="button" aria-label="Fermer">×</button>
-      </div>
-      <div class="rattrapage-corps">
-        <p class="rattrapage-info">
-          Utilise ce mode lorsqu'une vente a été oubliée et doit être enregistrée après coup.
-          La vente reste une vente normale : paiement, stock, remise/offert et bénéficiaire sont traités normalement.
-          Le motif du rattrapage est conservé dans le commentaire de la vente.
-        </p>
-
-        <div class="rattrapage-champ">
-          <label for="motifRattrapageVente">Motif obligatoire</label>
-          <select id="motifRattrapageVente">
-            <option value="">Sélectionner un motif</option>
-            <option value="Vente oubliée">Vente oubliée</option>
-            <option value="Encaissement non enregistré">Encaissement non enregistré</option>
-            <option value="Saisie après incident technique">Saisie après incident technique</option>
-            <option value="Correction après erreur de caisse">Correction après erreur de caisse</option>
-            <option value="Autre">Autre</option>
-          </select>
-        </div>
-
-        <div class="rattrapage-champ">
-          <label for="commentaireRattrapageVente">Commentaire</label>
-          <input id="commentaireRattrapageVente" type="text" maxlength="350" placeholder="Facultatif">
-        </div>
-
-        <div id="erreurRattrapageVente" class="rattrapage-erreur"></div>
-      </div>
-      <div class="encaissement-actions">
-        <button id="annulerRattrapageVente" class="encaissement-annuler" type="button">Annuler</button>
-        <button id="activerRattrapageVente" class="encaissement-continuer" type="button" disabled>Activer le rattrapage</button>
-      </div>
-    </section>
-  </div>
-
 
   <div id="modalRemboursementVente" class="modal-encaissement" role="dialog" aria-modal="true" aria-labelledby="titreRemboursementVente">
     <section class="encaissement-carte remboursement-carte">
@@ -2585,20 +2470,6 @@
       let cleIdempotenceEncaissement = null;
 
       let modeDemo = false;
-
-      const boutonRattrapageVente = document.getElementById("boutonRattrapageVente");
-      const modalRattrapageVente = document.getElementById("modalRattrapageVente");
-      const fermerRattrapageVente = document.getElementById("fermerRattrapageVente");
-      const annulerRattrapageVente = document.getElementById("annulerRattrapageVente");
-      const activerRattrapageVente = document.getElementById("activerRattrapageVente");
-      const motifRattrapageVente = document.getElementById("motifRattrapageVente");
-      const commentaireRattrapageVente = document.getElementById("commentaireRattrapageVente");
-      const erreurRattrapageVente = document.getElementById("erreurRattrapageVente");
-      const indicateurRattrapage = document.getElementById("indicateurRattrapage");
-      const annulerModeRattrapage = document.getElementById("annulerModeRattrapage");
-      let modeRattrapageActif = false;
-      let motifRattrapageActif = "";
-      let commentaireRattrapageActif = "";
 
       const boutonRembourserVente = document.getElementById("boutonRembourserVente");
       const modalRemboursementVente = document.getElementById("modalRemboursementVente");
@@ -3395,10 +3266,7 @@
                 p_lignes: lignes,
                 p_paiements: repartitionServeur.paiementsVente,
                 p_don: repartitionServeur.dons.length > 0 ? repartitionServeur.dons : null,
-                p_commentaire: modeRattrapageActif
-                  ? "[RATTRAPAGE CAISSE] Motif : " + motifRattrapageActif +
-                    (commentaireRattrapageActif ? " | Commentaire : " + commentaireRattrapageActif : "")
-                  : null
+                p_commentaire: null
               }
             );
 
@@ -3430,26 +3298,17 @@
             );
           }
 
-          const venteEtaitUnRattrapage = modeRattrapageActif;
-
           if (lignes.length > 0) {
             afficherMessage(
               modeDemo
                 ? (numeroVente
-                    ? (venteEtaitUnRattrapage ? "Mode Démo : rattrapage enregistré. Vente " + numeroVente + "." : "Mode Démo : paiement simulé. Vente " + numeroVente + " et opérations Gobelet enregistrées.")
+                    ? "Mode Démo : paiement simulé. Vente " + numeroVente + " et opérations Gobelet enregistrées."
                     : "Mode Démo : paiement simulé. Vente et opérations Gobelet enregistrées.")
                 : (numeroVente
-                    ? (venteEtaitUnRattrapage ? "Rattrapage enregistré. Vente " + numeroVente + "." : "Paiement validé. Vente " + numeroVente + " et opérations Gobelet enregistrées.")
+                    ? "Paiement validé. Vente " + numeroVente + " et opérations Gobelet enregistrées."
                     : "Paiement validé. Vente et opérations Gobelet enregistrées."),
               "succes"
             );
-          }
-
-          if (venteEtaitUnRattrapage) {
-            modeRattrapageActif = false;
-            motifRattrapageActif = "";
-            commentaireRattrapageActif = "";
-            indicateurRattrapage.classList.remove("visible");
           }
 
           try {
@@ -3849,61 +3708,6 @@
           actualiserRemboursementVente();
         }
       }
-
-      function actualiserBoutonRattrapage() {
-        const valide = String(motifRattrapageVente.value || "").trim().length > 0;
-        activerRattrapageVente.disabled = !valide;
-        activerRattrapageVente.classList.toggle("actif", valide);
-        erreurRattrapageVente.textContent = "";
-      }
-
-      function ouvrirModalRattrapageVente() {
-        motifRattrapageVente.value = modeRattrapageActif ? motifRattrapageActif : "";
-        commentaireRattrapageVente.value = modeRattrapageActif ? commentaireRattrapageActif : "";
-        erreurRattrapageVente.textContent = "";
-        actualiserBoutonRattrapage();
-        modalRattrapageVente.classList.add("visible");
-      }
-
-      function fermerModalRattrapageVente() {
-        modalRattrapageVente.classList.remove("visible");
-      }
-
-      function desactiverModeRattrapage() {
-        modeRattrapageActif = false;
-        motifRattrapageActif = "";
-        commentaireRattrapageActif = "";
-        indicateurRattrapage.classList.remove("visible");
-        afficherMessage("Mode rattrapage annulé.", "succes");
-      }
-
-      boutonRattrapageVente.addEventListener("click", ouvrirModalRattrapageVente);
-      fermerRattrapageVente.addEventListener("click", fermerModalRattrapageVente);
-      annulerRattrapageVente.addEventListener("click", fermerModalRattrapageVente);
-      motifRattrapageVente.addEventListener("change", actualiserBoutonRattrapage);
-      annulerModeRattrapage.addEventListener("click", desactiverModeRattrapage);
-
-      modalRattrapageVente.addEventListener("click", function (evenement) {
-        if (evenement.target === modalRattrapageVente) {
-          fermerModalRattrapageVente();
-        }
-      });
-
-      activerRattrapageVente.addEventListener("click", function () {
-        const motif = String(motifRattrapageVente.value || "").trim();
-        if (!motif) {
-          erreurRattrapageVente.textContent = "Le motif du rattrapage est obligatoire.";
-          actualiserBoutonRattrapage();
-          return;
-        }
-
-        modeRattrapageActif = true;
-        motifRattrapageActif = motif;
-        commentaireRattrapageActif = String(commentaireRattrapageVente.value || "").trim();
-        indicateurRattrapage.classList.add("visible");
-        fermerModalRattrapageVente();
-        afficherMessage("Mode rattrapage activé. Compose la vente puis encaisse-la normalement.", "succes");
-      });
 
       boutonRembourserVente.addEventListener("click", ouvrirModalRemboursementVente);
       fermerRemboursementVente.addEventListener("click", fermerModalRemboursementVente);
