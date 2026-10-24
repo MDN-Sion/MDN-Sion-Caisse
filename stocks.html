@@ -10,9 +10,12 @@
   <title>Stocks - MDN Sion</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       margin: 0;
@@ -89,7 +92,9 @@
     }
 
     @keyframes rotation {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .application {
@@ -101,12 +106,18 @@
       overflow: hidden;
     }
 
+    /* =========================================================
+       EN-TÊTE
+       Même logique que les pages Caisse / Vaisselle validées
+       ========================================================= */
+
     .barre-haute {
       flex: 0 0 auto;
-      padding: max(12px, env(safe-area-inset-top))
-               max(16px, env(safe-area-inset-right))
-               12px
-               max(16px, env(safe-area-inset-left));
+      padding:
+        max(12px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        12px
+        max(16px, env(safe-area-inset-left));
       background: linear-gradient(145deg, #7b0000, #980000);
       color: #fff;
       box-shadow: 0 2px 12px rgba(0,0,0,.18);
@@ -168,14 +179,17 @@
       flex: 0 0 auto;
       display: none;
       width: 100%;
-      padding: 8px max(16px, env(safe-area-inset-right))
-               8px max(16px, env(safe-area-inset-left));
+      padding:
+        9px
+        max(16px, env(safe-area-inset-right))
+        9px
+        max(16px, env(safe-area-inset-left));
       border-bottom: 2px solid #b98500;
       background: #ffe680;
       color: #4d3900;
       text-align: center;
-      font-size: 12px;
-      line-height: 1.3;
+      font-size: 13px;
+      line-height: 1.35;
       font-weight: 900;
       letter-spacing: .02em;
     }
@@ -188,14 +202,20 @@
       background: linear-gradient(145deg, #6f5200, #9a7200);
     }
 
+    /* =========================================================
+       CONTENU PRINCIPAL
+       ========================================================= */
+
     .contenu {
       width: min(100%, 1500px);
       min-height: 0;
       flex: 1 1 auto;
       margin: 0 auto;
-      padding: 14px max(16px, env(safe-area-inset-right))
-               max(14px, env(safe-area-inset-bottom))
-               max(16px, env(safe-area-inset-left));
+      padding:
+        14px
+        max(16px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
       overflow: hidden;
     }
 
@@ -222,6 +242,10 @@
       display: flex;
       flex-direction: column;
     }
+
+    /* =========================================================
+       ACTIONS
+       ========================================================= */
 
     .barre-actions {
       flex: 0 0 auto;
@@ -280,14 +304,9 @@
       cursor: not-allowed;
     }
 
-    .information-edition {
-      margin-left: auto;
-      flex: 0 0 auto;
-      color: #777;
-      font-size: 11px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
+    /* =========================================================
+       STOCKS
+       ========================================================= */
 
     .stocks-scroll {
       min-height: 0;
@@ -330,11 +349,29 @@
       white-space: nowrap;
     }
 
-    .indicateur.tente strong { color: #850000; }
-    .indicateur.reserve strong { color: #7a5b00; }
-    .indicateur.stands strong { color: #245f8f; }
-    .indicateur.sale strong { color: #b86500; }
-    .indicateur.contenant strong { color: #13723f; }
+    .indicateur.tente strong {
+      color: #850000;
+    }
+
+    .indicateur.reserve strong {
+      color: #7a5b00;
+    }
+
+    .indicateur.stands strong {
+      color: #245f8f;
+    }
+
+    .indicateur.sale strong {
+      color: #b86500;
+    }
+
+    .indicateur.contenant strong {
+      color: #13723f;
+    }
+
+    /* =========================================================
+       TABLEAU
+       ========================================================= */
 
     .tableau-cadre {
       width: 100%;
@@ -358,7 +395,7 @@
     }
 
     .table-stocks {
-      min-width: 840px;
+      min-width: 790px;
     }
 
     th {
@@ -396,8 +433,22 @@
       background: #fffafa;
     }
 
+    .ligne-contenant {
+      background: #f7fcf9;
+    }
+
+    .ligne-contenant td {
+      border-top: 2px solid #dce8df;
+    }
+
+    .ligne-contenant .article-cell strong {
+      color: #13723f;
+    }
+
     .article-cell {
-      min-width: 150px;
+      width: 132px;
+      min-width: 132px;
+      max-width: 132px;
       white-space: normal;
     }
 
@@ -455,48 +506,9 @@
       color: #a11919;
     }
 
-    .zone-contenants {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 8px;
-    }
-
-    .titre-section {
-      margin: 0;
-      color: #333;
-      font-size: 14px;
-      font-weight: 900;
-    }
-
-    .liste-contenants {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 8px;
-    }
-
-    .carte-contenant {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border: 1px solid #dce8df;
-      border-radius: 12px;
-      background: #f7fcf9;
-    }
-
-    .carte-contenant span {
-      color: #555;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .carte-contenant strong {
-      color: #13723f;
-      font-size: 20px;
-      font-weight: 900;
-    }
+    /* =========================================================
+       HISTORIQUE
+       ========================================================= */
 
     .panneau-historique {
       display: flex;
@@ -644,6 +656,10 @@
       line-height: 1.35;
     }
 
+    /* =========================================================
+       MESSAGES
+       ========================================================= */
+
     .message {
       display: none;
       position: fixed;
@@ -702,6 +718,10 @@
       font-weight: 800;
     }
 
+    /* =========================================================
+       TABLETTE
+       ========================================================= */
+
     @media (max-width: 980px) {
       .resume-global {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -713,41 +733,36 @@
       }
     }
 
-    @media (max-width: 760px) and (orientation: portrait) {
-      .barre-haute {
-        padding-top: max(8px, env(safe-area-inset-top));
-        padding-bottom: 8px;
-      }
+    /* =========================================================
+       TÉLÉPHONE PORTRAIT
+       ========================================================= */
 
+    @media (max-width: 760px) and (orientation: portrait) {
       .barre-haute-contenu {
-        gap: 7px;
+        gap: 8px;
       }
 
       .bouton-retour,
       .bouton-deconnexion {
-        min-height: 38px;
-        padding: 7px 9px;
-        font-size: 11px;
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 12px;
       }
 
       .titre-entete h1 {
-        font-size: 17px;
+        font-size: 18px;
       }
 
       .titre-entete p {
-        display: none;
-      }
-
-      .bandeau-demo {
-        padding-top: 5px;
-        padding-bottom: 5px;
-        font-size: 10px;
+        font-size: 11px;
       }
 
       .contenu {
-        padding: 8px max(8px, env(safe-area-inset-right))
-                 max(8px, env(safe-area-inset-bottom))
-                 max(8px, env(safe-area-inset-left));
+        padding:
+          8px
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
       }
 
       .zone-stocks {
@@ -772,10 +787,6 @@
         font-size: 11px;
       }
 
-      .information-edition {
-        display: none;
-      }
-
       .stocks-scroll {
         padding: 8px;
       }
@@ -797,16 +808,12 @@
       }
 
       .table-stocks {
-        min-width: 720px;
+        min-width: 680px;
       }
 
       th,
       td {
         padding: 7px 6px;
-      }
-
-      .zone-contenants {
-        margin-top: 8px;
       }
 
       .historique-entete h2 {
@@ -850,25 +857,40 @@
       }
     }
 
-    @media (max-height: 700px) and (orientation: landscape) {
+    /* =========================================================
+       PAYSAGE FAIBLE HAUTEUR
+       Même seuil que la page Caisse : 600 px
+       ========================================================= */
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      body {
+        overflow: hidden;
+      }
+
+      .application {
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
       .barre-haute {
-        padding-top: max(6px, env(safe-area-inset-top));
-        padding-bottom: 6px;
+        padding-top: max(7px, env(safe-area-inset-top));
+        padding-bottom: 7px;
       }
 
       .bouton-retour,
       .bouton-deconnexion {
-        min-height: 34px;
+        min-height: 36px;
         padding: 6px 10px;
-        font-size: 11px;
       }
 
       .titre-entete h1 {
-        font-size: 17px;
+        font-size: 18px;
       }
 
       .titre-entete p {
-        display: none;
+        margin-top: 1px;
+        font-size: 10px;
       }
 
       .bandeau-demo {
@@ -878,12 +900,18 @@
       }
 
       .contenu {
-        padding: 7px max(10px, env(safe-area-inset-right))
-                 max(7px, env(safe-area-inset-bottom))
-                 max(10px, env(safe-area-inset-left));
+        flex: 1 1 auto;
+        min-height: 0;
+        padding:
+          10px
+          max(10px, env(safe-area-inset-right))
+          max(10px, env(safe-area-inset-bottom))
+          max(10px, env(safe-area-inset-left));
+        overflow: hidden;
       }
 
       .zone-stocks {
+        height: 100%;
         grid-template-columns: minmax(0, 1.75fr) minmax(260px, .65fr);
         gap: 8px;
       }
@@ -927,10 +955,6 @@
         padding: 6px;
       }
 
-      .zone-contenants {
-        margin-top: 7px;
-      }
-
       .historique-entete h2 {
         font-size: 14px;
       }
@@ -957,68 +981,110 @@
         grid-template-columns: repeat(5, minmax(82px, 1fr));
         overflow-x: auto;
       }
-
-      .information-edition {
-        display: none;
-      }
     }
   </style>
 </head>
 
 <body>
+
   <div id="chargementPage" class="chargement-page">
     <div class="chargement-embleme">
       <img src="logo-mdn.png" alt="Marché de Noël de Sion">
     </div>
+
     <strong>Stocks</strong>
+
     <div class="spinner-page"></div>
+
     <p>Chargement des stocks…</p>
   </div>
 
   <div id="messageStocks" class="message" role="alert">
     <span id="texteMessageStocks"></span>
-    <button id="fermerMessageStocks" class="message-fermer" type="button" aria-label="Fermer">×</button>
+
+    <button
+      id="fermerMessageStocks"
+      class="message-fermer"
+      type="button"
+      aria-label="Fermer"
+    >
+      ×
+    </button>
   </div>
 
   <div id="application" class="application">
+
     <header class="barre-haute">
       <div class="barre-haute-contenu">
-        <button id="boutonRetour" class="bouton-retour" type="button">← Retour</button>
+
+        <button
+          id="boutonRetour"
+          class="bouton-retour"
+          type="button"
+        >
+          ← Accueil
+        </button>
 
         <div class="titre-entete">
-          <h1 id="titreStocks">📦 Stocks</h1>
-          <p id="identiteUtilisateur">Marché de Noël de Sion</p>
+          <h1 id="titreStocks">
+            📦 Stocks
+          </h1>
+
+          <p id="identiteUtilisateur">
+            Marché de Noël de Sion
+          </p>
         </div>
 
-        <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
+        <button
+          id="boutonDeconnexion"
+          class="bouton-deconnexion"
+          type="button"
+        >
+          Déconnexion
+        </button>
+
       </div>
     </header>
 
     <div id="bandeauDemo" class="bandeau-demo">
-      🎓 MODE DÉMO — Les données de formation sont séparées des données Réelles.
+      🎓 MODE DÉMO / FORMATION — Aucune opération réelle ne sera enregistrée
     </div>
 
     <main class="contenu">
+
       <section class="zone-stocks">
+
         <article class="panneau panneau-principal">
+
           <div class="barre-actions">
-            <button id="boutonLivraison" class="bouton-action principal" type="button">
+
+            <button
+              id="boutonLivraison"
+              class="bouton-action principal"
+              type="button"
+            >
               📥 Livraison
             </button>
 
-            <button id="boutonReapprovisionnement" class="bouton-action" type="button">
+            <button
+              id="boutonReapprovisionnement"
+              class="bouton-action"
+              type="button"
+            >
               🔄 Réserve → Stock MDN
             </button>
 
-            <span id="informationEdition" class="information-edition">
-              Chargement…
-            </span>
           </div>
 
           <div class="stocks-scroll">
-            <div class="resume-global" aria-label="Résumé des stocks">
+
+            <div
+              class="resume-global"
+              aria-label="Résumé des stocks"
+            >
+
               <div class="indicateur tente">
-                <span>Stock MDN — Tente</span>
+                <span>Stock MDN</span>
                 <strong id="totalTente">0</strong>
               </div>
 
@@ -1041,15 +1107,19 @@
                 <span>Contenants vides propres</span>
                 <strong id="totalContenants">0</strong>
               </div>
+
             </div>
 
             <div class="tableau-cadre">
+
               <div class="tableau-defilement">
+
                 <table class="table-stocks">
+
                   <thead>
                     <tr>
                       <th>Article</th>
-                      <th>Stock MDN — Tente</th>
+                      <th>Stock MDN</th>
                       <th>Réserve MDN</th>
                       <th>Total propre</th>
                       <th>Chez les stands</th>
@@ -1057,45 +1127,60 @@
                       <th>État</th>
                     </tr>
                   </thead>
+
                   <tbody id="corpsTableStocks">
                     <tr>
-                      <td colspan="7">Chargement…</td>
+                      <td colspan="7">
+                        Chargement…
+                      </td>
                     </tr>
                   </tbody>
+
                 </table>
+
               </div>
+
             </div>
 
-            <section class="zone-contenants">
-              <h2 class="titre-section">Contenants vides propres disponibles</h2>
-              <div id="listeContenants" class="liste-contenants">
-                <div class="carte-contenant">
-                  <span>Chargement…</span>
-                  <strong>—</strong>
-                </div>
-              </div>
-            </section>
           </div>
+
         </article>
 
         <aside class="panneau panneau-historique">
+
           <div class="historique-entete">
+
             <div>
               <h2>Historique des mouvements</h2>
               <p>Derniers mouvements du stock vaisselle</p>
             </div>
 
-            <button id="boutonActualiser" class="bouton-actualiser" type="button" title="Actualiser">
+            <button
+              id="boutonActualiser"
+              class="bouton-actualiser"
+              type="button"
+              title="Actualiser"
+            >
               ↻
             </button>
+
           </div>
 
-          <div id="historiqueListe" class="historique-liste">
-            <div class="historique-vide">Chargement de l’historique…</div>
+          <div
+            id="historiqueListe"
+            class="historique-liste"
+          >
+            <div class="historique-vide">
+              Chargement de l’historique…
+            </div>
           </div>
+
         </aside>
+
       </section>
+
     </main>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1107,41 +1192,81 @@
     "use strict";
 
     (function () {
-      const application = document.getElementById("application");
-      const chargementPage = document.getElementById("chargementPage");
-      const bandeauDemo = document.getElementById("bandeauDemo");
-      const titreStocks = document.getElementById("titreStocks");
-      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
-      const informationEdition = document.getElementById("informationEdition");
 
-      const boutonRetour = document.getElementById("boutonRetour");
-      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
-      const boutonActualiser = document.getElementById("boutonActualiser");
-      const boutonLivraison = document.getElementById("boutonLivraison");
-      const boutonReapprovisionnement = document.getElementById("boutonReapprovisionnement");
+      const application =
+        document.getElementById("application");
 
-      const corpsTableStocks = document.getElementById("corpsTableStocks");
-      const listeContenants = document.getElementById("listeContenants");
-      const historiqueListe = document.getElementById("historiqueListe");
+      const chargementPage =
+        document.getElementById("chargementPage");
 
-      const totalTente = document.getElementById("totalTente");
-      const totalReserve = document.getElementById("totalReserve");
-      const totalStands = document.getElementById("totalStands");
-      const totalSales = document.getElementById("totalSales");
-      const totalContenants = document.getElementById("totalContenants");
+      const bandeauDemo =
+        document.getElementById("bandeauDemo");
 
-      const messageStocks = document.getElementById("messageStocks");
-      const texteMessageStocks = document.getElementById("texteMessageStocks");
-      const fermerMessageStocks = document.getElementById("fermerMessageStocks");
+      const titreStocks =
+        document.getElementById("titreStocks");
+
+      const identiteUtilisateur =
+        document.getElementById("identiteUtilisateur");
+
+      const boutonRetour =
+        document.getElementById("boutonRetour");
+
+      const boutonDeconnexion =
+        document.getElementById("boutonDeconnexion");
+
+      const boutonActualiser =
+        document.getElementById("boutonActualiser");
+
+      const boutonLivraison =
+        document.getElementById("boutonLivraison");
+
+      const boutonReapprovisionnement =
+        document.getElementById("boutonReapprovisionnement");
+
+      const corpsTableStocks =
+        document.getElementById("corpsTableStocks");
+
+      const historiqueListe =
+        document.getElementById("historiqueListe");
+
+      const totalTente =
+        document.getElementById("totalTente");
+
+      const totalReserve =
+        document.getElementById("totalReserve");
+
+      const totalStands =
+        document.getElementById("totalStands");
+
+      const totalSales =
+        document.getElementById("totalSales");
+
+      const totalContenants =
+        document.getElementById("totalContenants");
+
+      const messageStocks =
+        document.getElementById("messageStocks");
+
+      const texteMessageStocks =
+        document.getElementById("texteMessageStocks");
+
+      const fermerMessageStocks =
+        document.getElementById("fermerMessageStocks");
 
       let minuterieMessage = null;
       let modeDemo = false;
       let editionCourante = null;
       let chargementEnCours = false;
 
+
+      /* =======================================================
+         OUTILS
+         ======================================================= */
+
       function masquerChargement() {
         chargementPage.classList.add("masque");
       }
+
 
       function echapperHtml(valeur) {
         return String(valeur ?? "")
@@ -1152,86 +1277,158 @@
           .replaceAll("'", "&#039;");
       }
 
+
       function entier(valeur) {
-        const nombre = Number(valeur || 0);
-        return Number.isFinite(nombre) ? Math.trunc(nombre) : 0;
+        const nombre =
+          Number(valeur || 0);
+
+        return Number.isFinite(nombre)
+          ? Math.trunc(nombre)
+          : 0;
       }
+
 
       function formatNombre(valeur) {
-        return new Intl.NumberFormat("fr-CH").format(entier(valeur));
+        return new Intl.NumberFormat(
+          "fr-CH"
+        ).format(
+          entier(valeur)
+        );
       }
+
 
       function formatDateHeure(valeur) {
-        if (!valeur) return "—";
+
+        if (!valeur) {
+          return "—";
+        }
 
         try {
-          return new Intl.DateTimeFormat("fr-CH", {
-            timeZone: "Europe/Zurich",
-            dateStyle: "short",
-            timeStyle: "short"
-          }).format(new Date(valeur));
+
+          return new Intl.DateTimeFormat(
+            "fr-CH",
+            {
+              timeZone: "Europe/Zurich",
+              dateStyle: "short",
+              timeStyle: "short"
+            }
+          ).format(
+            new Date(valeur)
+          );
+
         } catch (_) {
+
           return String(valeur);
+
         }
+
       }
 
-      function afficherMessage(texte, type = "erreur") {
+
+      function afficherMessage(
+        texte,
+        type = "erreur"
+      ) {
+
         if (minuterieMessage) {
           clearTimeout(minuterieMessage);
           minuterieMessage = null;
         }
 
-        texteMessageStocks.textContent = texte;
-        messageStocks.className = "message visible " + type;
+        texteMessageStocks.textContent =
+          texte;
 
-        minuterieMessage = setTimeout(function () {
-          fermerMessage();
-        }, 6000);
+        messageStocks.className =
+          "message visible " + type;
+
+        minuterieMessage =
+          setTimeout(
+            function () {
+              fermerMessage();
+            },
+            6000
+          );
+
       }
+
 
       function fermerMessage() {
-        messageStocks.className = "message";
-        texteMessageStocks.textContent = "";
+
+        messageStocks.className =
+          "message";
+
+        texteMessageStocks.textContent =
+          "";
 
         if (minuterieMessage) {
           clearTimeout(minuterieMessage);
           minuterieMessage = null;
         }
+
       }
 
-      function libelleConditionnement(type, quantiteStandard) {
-        const typeNormalise = String(type || "").toLowerCase();
-        const qte = entier(quantiteStandard);
+
+      function libelleConditionnement(
+        type,
+        quantiteStandard
+      ) {
+
+        const typeNormalise =
+          String(type || "")
+            .toLowerCase();
+
+        const qte =
+          entier(quantiteStandard);
 
         if (typeNormalise === "caisse") {
-          return qte > 0 ? "Caisse de " + formatNombre(qte) : "Caisse";
+
+          return qte > 0
+            ? "Caisse de " + formatNombre(qte)
+            : "Caisse";
+
         }
 
         if (typeNormalise === "sachet") {
-          return qte > 0 ? "Sachet de " + formatNombre(qte) : "Sachet";
+
+          return qte > 0
+            ? "Sachet de " + formatNombre(qte)
+            : "Sachet";
+
         }
 
         return type || "À l’unité";
+
       }
 
+
       function libelleEmplacement(valeur) {
+
         const correspondances = {
           externe: "Extérieur",
           externe_papival: "Extérieur",
-          operationnel_propre: "Stock MDN — Tente",
+          operationnel_propre: "Stock MDN",
           reserve_mdn: "Réserve MDN",
           reserve_mdn_propre: "Réserve MDN",
           partenaire: "Stand"
         };
 
-        if (valeur === null || valeur === undefined || valeur === "") {
+        if (
+          valeur === null ||
+          valeur === undefined ||
+          valeur === ""
+        ) {
           return "—";
         }
 
-        return correspondances[valeur] || String(valeur).replaceAll("_", " ");
+        return correspondances[valeur] ||
+          String(valeur)
+            .replaceAll("_", " ");
+
       }
 
+
       function libelleTypeMouvement(valeur) {
+
         const correspondances = {
           inventaire_initial: "Inventaire initial",
           approvisionnement_mdn: "Approvisionnement MDN",
@@ -1248,334 +1445,831 @@
           annulation: "Annulation"
         };
 
-        if (!valeur) return "Mouvement";
+        if (!valeur) {
+          return "Mouvement";
+        }
 
         return correspondances[valeur] ||
           String(valeur)
             .replaceAll("_", " ")
-            .replace(/^./, function (lettre) {
-              return lettre.toUpperCase();
-            });
+            .replace(
+              /^./,
+              function (lettre) {
+                return lettre.toUpperCase();
+              }
+            );
+
       }
 
-      function calculerTotaux(stocks, contenants) {
-        const totaux = stocks.reduce(function (acc, ligne) {
-          acc.tente += entier(ligne.stock_mdn_tente);
-          acc.reserve += entier(ligne.reserve_mdn);
-          acc.stands += entier(ligne.chez_stands);
-          acc.sales += entier(ligne.retours_sales_cumules);
-          return acc;
-        }, {
-          tente: 0,
-          reserve: 0,
-          stands: 0,
-          sales: 0
-        });
 
-        const totalContenantsVides = contenants.reduce(function (somme, ligne) {
-          return somme + entier(ligne.stock_vide_propre);
-        }, 0);
+      /* =======================================================
+         TOTAUX
+         ======================================================= */
 
-        totalTente.textContent = formatNombre(totaux.tente);
-        totalReserve.textContent = formatNombre(totaux.reserve);
-        totalStands.textContent = formatNombre(totaux.stands);
-        totalSales.textContent = formatNombre(totaux.sales);
-        totalContenants.textContent = formatNombre(totalContenantsVides);
+      function calculerTotaux(
+        stocks,
+        contenants
+      ) {
+
+        const totaux =
+          stocks.reduce(
+            function (acc, ligne) {
+
+              acc.tente +=
+                entier(
+                  ligne.stock_mdn_tente
+                );
+
+              acc.reserve +=
+                entier(
+                  ligne.reserve_mdn
+                );
+
+              acc.stands +=
+                entier(
+                  ligne.chez_stands
+                );
+
+              acc.sales +=
+                entier(
+                  ligne.retours_sales_cumules
+                );
+
+              return acc;
+
+            },
+            {
+              tente: 0,
+              reserve: 0,
+              stands: 0,
+              sales: 0
+            }
+          );
+
+
+        const totalContenantsVides =
+          contenants.reduce(
+            function (somme, ligne) {
+
+              return somme +
+                entier(
+                  ligne.stock_vide_propre
+                );
+
+            },
+            0
+          );
+
+
+        totalTente.textContent =
+          formatNombre(
+            totaux.tente
+          );
+
+        totalReserve.textContent =
+          formatNombre(
+            totaux.reserve
+          );
+
+        totalStands.textContent =
+          formatNombre(
+            totaux.stands
+          );
+
+        totalSales.textContent =
+          formatNombre(
+            totaux.sales
+          );
+
+        totalContenants.textContent =
+          formatNombre(
+            totalContenantsVides
+          );
+
       }
+
+
+      /* =======================================================
+         TABLEAU VAISSELLE
+         ======================================================= */
 
       function afficherStocks(stocks) {
-        if (!Array.isArray(stocks) || stocks.length === 0) {
+
+        if (
+          !Array.isArray(stocks) ||
+          stocks.length === 0
+        ) {
+
           corpsTableStocks.innerHTML = `
             <tr>
-              <td colspan="7">Aucun article de vaisselle configuré pour cette édition.</td>
-            </tr>
-          `;
-          return;
-        }
-
-        corpsTableStocks.innerHTML = stocks.map(function (ligne) {
-          const alerte = ligne.alerte_stock_tente === true;
-
-          return `
-            <tr>
-              <td class="article-cell">
-                <strong>${echapperHtml(ligne.article)}</strong>
-                <small>${echapperHtml(libelleConditionnement(
-                  ligne.type_conditionnement,
-                  ligne.quantite_standard
-                ))}</small>
-              </td>
-
-              <td class="nombre-tente">${formatNombre(ligne.stock_mdn_tente)}</td>
-              <td class="nombre-reserve">${formatNombre(ligne.reserve_mdn)}</td>
-              <td><strong>${formatNombre(ligne.stock_propre_total)}</strong></td>
-              <td class="nombre-stands">${formatNombre(ligne.chez_stands)}</td>
-              <td class="nombre-sale">${formatNombre(ligne.retours_sales_cumules)}</td>
-
-              <td>
-                <span class="badge-stock ${alerte ? "alerte" : "ok"}">
-                  ${alerte ? "À surveiller" : "Disponible"}
-                </span>
+              <td colspan="7">
+                Aucun article de vaisselle configuré pour cette édition.
               </td>
             </tr>
           `;
-        }).join("");
+
+          return;
+
+        }
+
+
+        corpsTableStocks.innerHTML =
+          stocks.map(
+            function (ligne) {
+
+              const alerte =
+                ligne.alerte_stock_tente === true;
+
+              return `
+                <tr>
+
+                  <td class="article-cell">
+
+                    <strong>
+                      ${echapperHtml(
+                        ligne.article
+                      )}
+                    </strong>
+
+                    <small>
+                      ${echapperHtml(
+                        libelleConditionnement(
+                          ligne.type_conditionnement,
+                          ligne.quantite_standard
+                        )
+                      )}
+                    </small>
+
+                  </td>
+
+                  <td class="nombre-tente">
+                    ${formatNombre(
+                      ligne.stock_mdn_tente
+                    )}
+                  </td>
+
+                  <td class="nombre-reserve">
+                    ${formatNombre(
+                      ligne.reserve_mdn
+                    )}
+                  </td>
+
+                  <td>
+                    <strong>
+                      ${formatNombre(
+                        ligne.stock_propre_total
+                      )}
+                    </strong>
+                  </td>
+
+                  <td class="nombre-stands">
+                    ${formatNombre(
+                      ligne.chez_stands
+                    )}
+                  </td>
+
+                  <td class="nombre-sale">
+                    ${formatNombre(
+                      ligne.retours_sales_cumules
+                    )}
+                  </td>
+
+                  <td>
+
+                    <span
+                      class="badge-stock ${
+                        alerte
+                          ? "alerte"
+                          : "ok"
+                      }"
+                    >
+                      ${
+                        alerte
+                          ? "À surveiller"
+                          : "Disponible"
+                      }
+                    </span>
+
+                  </td>
+
+                </tr>
+              `;
+
+            }
+          ).join("");
+
       }
 
-      function afficherContenants(contenants) {
-        if (!Array.isArray(contenants) || contenants.length === 0) {
-          listeContenants.innerHTML = `
-            <div class="carte-contenant">
-              <span>Aucun contenant configuré</span>
-              <strong>0</strong>
-            </div>
-          `;
+
+      /* =======================================================
+         CAISSES / CONTENANTS
+         Directement sous la liste des articles
+         ======================================================= */
+
+      function ajouterContenantsAuTableau(
+        contenants
+      ) {
+
+        if (
+          !Array.isArray(contenants) ||
+          contenants.length === 0
+        ) {
           return;
         }
 
-        listeContenants.innerHTML = contenants.map(function (ligne) {
-          return `
-            <div class="carte-contenant">
-              <span>${echapperHtml(ligne.contenant)}</span>
-              <strong>${formatNombre(ligne.stock_vide_propre)}</strong>
-            </div>
-          `;
-        }).join("");
+
+        const lignesContenants =
+          contenants.map(
+            function (ligne) {
+
+              return `
+                <tr class="ligne-contenant">
+
+                  <td class="article-cell">
+
+                    <strong>
+                      ${echapperHtml(
+                        ligne.contenant
+                      )}
+                    </strong>
+
+                    <small>
+                      Vide propre
+                    </small>
+
+                  </td>
+
+                  <td class="nombre-tente">
+                    ${formatNombre(
+                      ligne.stock_vide_propre
+                    )}
+                  </td>
+
+                  <td>
+                    —
+                  </td>
+
+                  <td>
+                    —
+                  </td>
+
+                  <td>
+                    —
+                  </td>
+
+                  <td>
+                    —
+                  </td>
+
+                  <td>
+
+                    <span class="badge-stock ok">
+                      Disponible
+                    </span>
+
+                  </td>
+
+                </tr>
+              `;
+
+            }
+          ).join("");
+
+
+        corpsTableStocks.insertAdjacentHTML(
+          "beforeend",
+          lignesContenants
+        );
+
       }
 
-      function afficherHistorique(mouvements) {
-        if (!Array.isArray(mouvements) || mouvements.length === 0) {
+
+      /* =======================================================
+         HISTORIQUE
+         ======================================================= */
+
+      function afficherHistorique(
+        mouvements
+      ) {
+
+        if (
+          !Array.isArray(mouvements) ||
+          mouvements.length === 0
+        ) {
+
           historiqueListe.innerHTML = `
             <div class="historique-vide">
               Aucun mouvement de stock pour le moment.
             </div>
           `;
+
           return;
+
         }
 
-        historiqueListe.innerHTML = mouvements.map(function (mouvement) {
-          const source = libelleEmplacement(mouvement.emplacement_source);
-          const destination = libelleEmplacement(mouvement.emplacement_destination);
 
-          const reference =
-            mouvement.reference_type || mouvement.reference_id
-              ? [
-                  mouvement.reference_type,
-                  mouvement.reference_id
-                ].filter(Boolean).join(" · ")
-              : "";
+        historiqueListe.innerHTML =
+          mouvements.map(
+            function (mouvement) {
 
-          const commentaire =
-            mouvement.commentaire || mouvement.motif || "";
+              const source =
+                libelleEmplacement(
+                  mouvement.emplacement_source
+                );
 
-          return `
-            <article class="mouvement">
-              <div class="mouvement-haut">
-                <div class="mouvement-article">
-                  ${echapperHtml(mouvement.article)}
-                </div>
+              const destination =
+                libelleEmplacement(
+                  mouvement.emplacement_destination
+                );
 
-                <div class="mouvement-quantite">
-                  ${formatNombre(mouvement.quantite)}
-                </div>
-              </div>
 
-              <div class="mouvement-type">
-                ${echapperHtml(libelleTypeMouvement(mouvement.type_mouvement))}
-              </div>
+              const reference =
+                mouvement.reference_type ||
+                mouvement.reference_id
+                  ? [
+                      mouvement.reference_type,
+                      mouvement.reference_id
+                    ]
+                    .filter(Boolean)
+                    .join(" · ")
+                  : "";
 
-              <div class="mouvement-trajet">
-                ${echapperHtml(source)} → ${echapperHtml(destination)}
-              </div>
 
-              <div class="mouvement-bas">
-                <span>${echapperHtml(formatDateHeure(mouvement.date_mouvement))}</span>
-                ${reference ? `<span>${echapperHtml(reference)}</span>` : ""}
-              </div>
+              const commentaire =
+                mouvement.commentaire ||
+                mouvement.motif ||
+                "";
 
-              ${commentaire
-                ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>`
-                : ""}
-            </article>
-          `;
-        }).join("");
+
+              return `
+                <article class="mouvement">
+
+                  <div class="mouvement-haut">
+
+                    <div class="mouvement-article">
+                      ${echapperHtml(
+                        mouvement.article
+                      )}
+                    </div>
+
+                    <div class="mouvement-quantite">
+                      ${formatNombre(
+                        mouvement.quantite
+                      )}
+                    </div>
+
+                  </div>
+
+
+                  <div class="mouvement-type">
+
+                    ${echapperHtml(
+                      libelleTypeMouvement(
+                        mouvement.type_mouvement
+                      )
+                    )}
+
+                  </div>
+
+
+                  <div class="mouvement-trajet">
+
+                    ${echapperHtml(source)}
+                    →
+                    ${echapperHtml(destination)}
+
+                  </div>
+
+
+                  <div class="mouvement-bas">
+
+                    <span>
+                      ${echapperHtml(
+                        formatDateHeure(
+                          mouvement.date_mouvement
+                        )
+                      )}
+                    </span>
+
+                    ${
+                      reference
+                        ? `
+                          <span>
+                            ${echapperHtml(
+                              reference
+                            )}
+                          </span>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+
+                  ${
+                    commentaire
+                      ? `
+                        <div class="mouvement-commentaire">
+                          ${echapperHtml(
+                            commentaire
+                          )}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                </article>
+              `;
+
+            }
+          ).join("");
+
       }
 
+
+      /* =======================================================
+         ÉDITION
+         ======================================================= */
+
       async function determinerEdition() {
-        const client = window.MDN_SUPABASE;
+
+        const client =
+          window.MDN_SUPABASE;
+
 
         if (!client) {
-          throw new Error("Le client Supabase MDN n'est pas disponible.");
+
+          throw new Error(
+            "Le client Supabase MDN n'est pas disponible."
+          );
+
         }
 
+
+        /*
+         * MODE DÉMO
+         */
+
         if (modeDemo) {
+
           const {
             data: catalogueDemo,
             error: erreurCatalogueDemo
-          } = await client.rpc("charger_catalogue_caisse_demo");
+          } =
+            await client.rpc(
+              "charger_catalogue_caisse_demo"
+            );
+
 
           if (erreurCatalogueDemo) {
             throw erreurCatalogueDemo;
           }
 
-          const editionDemo = catalogueDemo?.edition || null;
+
+          const editionDemo =
+            catalogueDemo?.edition ||
+            null;
+
 
           if (!editionDemo?.id) {
+
             throw new Error(
               "Aucune édition n'est disponible pour le Mode Démo."
             );
+
           }
+
 
           return {
             id: editionDemo.id,
             annee: editionDemo.annee,
             nom: editionDemo.nom || null
           };
+
         }
+
+
+        /*
+         * MODE RÉEL
+         */
 
         const {
           data: editionActive,
           error: erreurEditionActive
-        } = await client
-          .from("editions")
-          .select("id, annee, nom, statut, est_active")
-          .eq("est_active", true)
-          .maybeSingle();
+        } =
+          await client
+            .from("editions")
+            .select(
+              "id, annee, nom, statut, est_active"
+            )
+            .eq(
+              "est_active",
+              true
+            )
+            .maybeSingle();
+
 
         if (erreurEditionActive) {
           throw erreurEditionActive;
         }
 
+
         if (!editionActive?.id) {
+
           throw new Error(
             "Aucune édition active n'est configurée."
           );
+
         }
 
+
         return editionActive;
+
       }
 
+
+      /* =======================================================
+         CHARGEMENT DES STOCKS
+         ======================================================= */
+
       async function chargerStocks() {
-        if (chargementEnCours || !editionCourante?.id) {
+
+        if (
+          chargementEnCours ||
+          !editionCourante?.id
+        ) {
           return;
         }
 
-        chargementEnCours = true;
-        boutonActualiser.disabled = true;
+
+        chargementEnCours =
+          true;
+
+        boutonActualiser.disabled =
+          true;
+
 
         try {
-          const client = window.MDN_SUPABASE;
+
+          const client =
+            window.MDN_SUPABASE;
+
 
           const [
             reponseStocks,
             reponseContenants,
             reponseHistorique
-          ] = await Promise.all([
-            client.rpc("etat_stocks_vaisselle", {
-              p_edition_id: editionCourante.id,
-              p_is_demo: modeDemo
-            }),
+          ] =
+            await Promise.all([
 
-            client.rpc("etat_stocks_contenants", {
-              p_edition_id: editionCourante.id,
-              p_is_demo: modeDemo
-            }),
+              client.rpc(
+                "etat_stocks_vaisselle",
+                {
+                  p_edition_id:
+                    editionCourante.id,
 
-            client.rpc("historique_mouvements_stock_vaisselle", {
-              p_edition_id: editionCourante.id,
-              p_is_demo: modeDemo
-            })
-          ]);
+                  p_is_demo:
+                    modeDemo
+                }
+              ),
+
+
+              client.rpc(
+                "etat_stocks_contenants",
+                {
+                  p_edition_id:
+                    editionCourante.id,
+
+                  p_is_demo:
+                    modeDemo
+                }
+              ),
+
+
+              client.rpc(
+                "historique_mouvements_stock_vaisselle",
+                {
+                  p_edition_id:
+                    editionCourante.id,
+
+                  p_is_demo:
+                    modeDemo
+                }
+              )
+
+            ]);
+
 
           if (reponseStocks.error) {
             throw reponseStocks.error;
           }
 
+
           if (reponseContenants.error) {
             throw reponseContenants.error;
           }
+
 
           if (reponseHistorique.error) {
             throw reponseHistorique.error;
           }
 
-          const stocks = Array.isArray(reponseStocks.data)
-            ? reponseStocks.data
-            : [];
 
-          const contenants = Array.isArray(reponseContenants.data)
-            ? reponseContenants.data
-            : [];
+          const stocks =
+            Array.isArray(
+              reponseStocks.data
+            )
+              ? reponseStocks.data
+              : [];
 
-          const mouvements = Array.isArray(reponseHistorique.data)
-            ? reponseHistorique.data
-            : [];
 
-          afficherStocks(stocks);
-          afficherContenants(contenants);
-          afficherHistorique(mouvements);
-          calculerTotaux(stocks, contenants);
+          const contenants =
+            Array.isArray(
+              reponseContenants.data
+            )
+              ? reponseContenants.data
+              : [];
+
+
+          const mouvements =
+            Array.isArray(
+              reponseHistorique.data
+            )
+              ? reponseHistorique.data
+              : [];
+
+
+          afficherStocks(
+            stocks
+          );
+
+
+          ajouterContenantsAuTableau(
+            contenants
+          );
+
+
+          afficherHistorique(
+            mouvements
+          );
+
+
+          calculerTotaux(
+            stocks,
+            contenants
+          );
+
         } finally {
-          chargementEnCours = false;
-          boutonActualiser.disabled = false;
+
+          chargementEnCours =
+            false;
+
+          boutonActualiser.disabled =
+            false;
+
         }
+
       }
 
-      boutonRetour.addEventListener("click", function () {
-        window.location.href = "accueil.html";
-      });
 
-      boutonDeconnexion.addEventListener("click", async function () {
-        boutonDeconnexion.disabled = true;
-        boutonDeconnexion.textContent = "Déconnexion…";
-        await window.MDN_AUTH.deconnexion();
-      });
+      /* =======================================================
+         NAVIGATION
+         ======================================================= */
 
-      boutonActualiser.addEventListener("click", async function () {
-        try {
-          await chargerStocks();
-          afficherMessage("Stocks actualisés.", "succes");
-        } catch (erreur) {
-          console.error("[MDN Sion] Actualisation Stocks impossible :", erreur);
-          afficherMessage(
-            erreur?.message || "Impossible d'actualiser les stocks."
-          );
+      boutonRetour.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            "accueil.html";
+
         }
-      });
+      );
 
-      boutonLivraison.addEventListener("click", function () {
-        afficherMessage(
-          "Le formulaire de livraison sera raccordé à cette page à l'étape suivante.",
-          "info"
-        );
-      });
 
-      boutonReapprovisionnement.addEventListener("click", function () {
-        afficherMessage(
-          "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
-          "info"
-        );
-      });
+      boutonDeconnexion.addEventListener(
+        "click",
+        async function () {
 
-      fermerMessageStocks.addEventListener("click", fermerMessage);
+          boutonDeconnexion.disabled =
+            true;
+
+          boutonDeconnexion.textContent =
+            "Déconnexion…";
+
+
+          await window.MDN_AUTH.deconnexion();
+
+        }
+      );
+
+
+      boutonActualiser.addEventListener(
+        "click",
+        async function () {
+
+          try {
+
+            await chargerStocks();
+
+
+            afficherMessage(
+              "Stocks actualisés.",
+              "succes"
+            );
+
+          } catch (erreur) {
+
+            console.error(
+              "[MDN Sion] Actualisation Stocks impossible :",
+              erreur
+            );
+
+
+            afficherMessage(
+              erreur?.message ||
+              "Impossible d'actualiser les stocks."
+            );
+
+          }
+
+        }
+      );
+
+
+      /*
+       * Les deux actions sont déjà placées.
+       * Elles seront raccordées à leurs formulaires
+       * à l'étape suivante.
+       */
+
+      boutonLivraison.addEventListener(
+        "click",
+        function () {
+
+          afficherMessage(
+            "Le formulaire de livraison sera raccordé à cette page à l'étape suivante.",
+            "info"
+          );
+
+        }
+      );
+
+
+      boutonReapprovisionnement.addEventListener(
+        "click",
+        function () {
+
+          afficherMessage(
+            "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
+            "info"
+          );
+
+        }
+      );
+
+
+      fermerMessageStocks.addEventListener(
+        "click",
+        fermerMessage
+      );
+
+
+      /* =======================================================
+         AUTHENTIFICATION
+         ======================================================= */
 
       window.MDN_AUTH.surveillerSession({
         redirigerApresDeconnexion: true
       });
 
+
+      /* =======================================================
+         INITIALISATION
+         ======================================================= */
+
       async function initialiserStocks() {
+
         try {
-          const auth = await window.MDN_AUTH.protegerPage([
-            "utilisateur",
-            "responsable",
-            "administrateur"
-          ]);
+
+          const auth =
+            await window.MDN_AUTH.protegerPage([
+              "utilisateur",
+              "responsable",
+              "administrateur"
+            ]);
+
 
           if (!auth) {
             return;
           }
 
-          const prenom = String(auth.profil.prenom || "").trim();
+
+          const prenom =
+            String(
+              auth.profil.prenom || ""
+            ).trim();
+
 
           const identite =
             prenom ||
@@ -1583,63 +2277,113 @@
             auth.utilisateur.email ||
             "Utilisateur";
 
+
           identiteUtilisateur.textContent =
             identite +
             " · " +
             auth.libelleRole;
 
+
+          /*
+           * Le Mode Démo est déterminé côté serveur.
+           * Le paramètre URL ne suffit jamais.
+           */
+
           const {
             data: etatSessionDemo,
             error: erreurEtatSessionDemo
-          } = await window.MDN_SUPABASE.rpc(
-            "etat_session_demo"
-          );
+          } =
+            await window.MDN_SUPABASE.rpc(
+              "etat_session_demo"
+            );
+
 
           if (erreurEtatSessionDemo) {
             throw erreurEtatSessionDemo;
           }
 
-          modeDemo = etatSessionDemo?.mode_demo === true;
+
+          modeDemo =
+            etatSessionDemo?.mode_demo === true;
+
 
           if (modeDemo) {
-            application.classList.add("mode-demo");
-            bandeauDemo.classList.add("visible");
-            titreStocks.textContent = "🎓 Stocks — Mode Démo";
-            document.title = "Stocks Démo - MDN Sion";
+
+            application.classList.add(
+              "mode-demo"
+            );
+
+            bandeauDemo.classList.add(
+              "visible"
+            );
+
+            titreStocks.textContent =
+              "🎓 Stocks — Mode Démo";
+
+            document.title =
+              "Stocks Démo - MDN Sion";
+
           } else {
-            application.classList.remove("mode-demo");
-            bandeauDemo.classList.remove("visible");
-            titreStocks.textContent = "📦 Stocks";
-            document.title = "Stocks - MDN Sion";
+
+            application.classList.remove(
+              "mode-demo"
+            );
+
+            bandeauDemo.classList.remove(
+              "visible"
+            );
+
+            titreStocks.textContent =
+              "📦 Stocks";
+
+            document.title =
+              "Stocks - MDN Sion";
+
           }
 
-          editionCourante = await determinerEdition();
 
-          informationEdition.textContent =
-            (modeDemo ? "DÉMO · " : "") +
-            "MDN Sion " +
-            editionCourante.annee;
+          /*
+           * Récupération de l'édition.
+           */
+
+          editionCourante =
+            await determinerEdition();
+
+
+          /*
+           * Chargement initial.
+           */
 
           await chargerStocks();
 
+
           masquerChargement();
+
         } catch (erreur) {
+
           console.error(
             "[MDN Sion] Initialisation de la page Stocks impossible :",
             erreur
           );
 
+
           masquerChargement();
+
 
           afficherMessage(
             erreur?.message ||
             "Impossible d'ouvrir la page Stocks."
           );
+
         }
+
       }
 
+
       initialiserStocks();
+
     })();
   </script>
+
 </body>
 </html>
