@@ -1828,7 +1828,10 @@
           « Pic sur le marché » correspond au maximum simultanément sorti pendant l’édition.
           « Sur le marché » est une estimation actuelle et ne descend jamais sous zéro.
           Les retours sales peuvent être supérieurs aux retraits d’un stand : la vaisselle peut être rendue depuis n’importe quel stand.
-          L’écart de bilan compare les apports nets de stock avec ce qui est actuellement expliqué.
+          Le « Solde historique » compare les apports nets enregistrés avec l’état actuellement expliqué.
+          Il s’agit d’un indicateur de lecture des flux historiques et non d’un écart physique de stock.
+          Il peut notamment être négatif lorsque des retours ont été enregistrés sans retrait global correspondant dans l’historique disponible.
+          Le véritable écart de stock sera calculé plus tard à partir du comptage physique de clôture.
         </div>
       </div>
 
@@ -4183,7 +4186,7 @@
               <td>${formatNombre(ligne.total_propre)}</td>
               <td>${formatNombre(ligne.sur_le_marche)}</td>
               <td>${formatNombre(ligne.total_actuellement_explique)}</td>
-              <td class="${classeValeurBilan(ecart)}">${formatNombre(ecart)}</td>
+              <td>${formatNombre(ecart)}</td>
             </tr>
           `;
         }).join("");
@@ -4205,8 +4208,8 @@
               <strong>${formatNombre(resume.retours_sales_cumules)}</strong>
             </div>
 
-            <div class="bilan-indicateur ${classeEcartBilan(ecartGlobal)}">
-              <span>Écart global du bilan</span>
+            <div class="bilan-indicateur">
+              <span>Solde historique global</span>
               <strong>${formatNombre(ecartGlobal)}</strong>
             </div>
           </div>
@@ -4227,7 +4230,7 @@
                     <th>Total propre</th>
                     <th>Sur le marché</th>
                     <th>Total expliqué</th>
-                    <th>Écart</th>
+                    <th>Solde historique</th>
                   </tr>
                 </thead>
                 <tbody>
