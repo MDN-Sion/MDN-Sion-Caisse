@@ -1705,6 +1705,116 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 109 - CORRECTIONS UI DU BILAN
+       - La molette verticale reste dédiée au défilement du bilan.
+       - Le tableau conserve uniquement son défilement horizontal.
+       - Bouton Fermer harmonisé avec l'application.
+       ======================================================== */
+
+    #modalBilan .modal-carte.large {
+      width: min(1050px, calc(100vw - 40px));
+      max-height: calc(100vh - 56px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #modalBilan .modal-entete {
+      flex: 0 0 auto;
+    }
+
+    #modalBilan .modal-contenu {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding-bottom: 18px;
+    }
+
+    #modalBilan .bilan-table-cadre {
+      width: 100%;
+      overflow: visible;
+    }
+
+    #modalBilan .tableau-defilement {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      max-height: none;
+      overscroll-behavior-x: contain;
+      scrollbar-gutter: auto;
+    }
+
+    #modalBilan .bilan-table {
+      margin-bottom: 2px;
+    }
+
+    #modalBilan .modal-actions {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 13px 18px 15px;
+      border-top: 1px solid #e6e6e6;
+      background: #fff;
+    }
+
+    #modalBilan #fermerBilanBas {
+      min-width: 150px;
+      min-height: 44px;
+      padding: 10px 24px;
+      border: 1px solid #8d6b00;
+      border-radius: 12px;
+      background: #fff;
+      color: #5d4700;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    #modalBilan #fermerBilanBas:hover {
+      background: #8d6b00;
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    #modalBilan #fermerBilanBas:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    #modalBilan #fermerModalBilan {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      font-size: 27px;
+    }
+
+    @media (max-width: 700px) {
+      #modalBilan .modal-carte.large {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+      }
+
+      #modalBilan .modal-actions {
+        padding: 10px 12px 12px;
+      }
+
+      #modalBilan #fermerBilanBas {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 
@@ -4465,6 +4575,30 @@
       boutonBilan.addEventListener("click", ouvrirBilan);
       fermerModalBilan.addEventListener("click", fermerBilan);
       fermerBilanBas.addEventListener("click", fermerBilan);
+
+      const defilementTableauBilan = modalBilan.querySelector(".bilan-table-cadre .tableau-defilement");
+      const contenuScrollableBilan = modalBilan.querySelector(".modal-contenu");
+
+      if (defilementTableauBilan && contenuScrollableBilan) {
+        defilementTableauBilan.addEventListener(
+          "wheel",
+          function (event) {
+            const mouvementVertical = Math.abs(event.deltaY) >= Math.abs(event.deltaX);
+
+            if (!mouvementVertical || event.deltaY === 0) {
+              return;
+            }
+
+            const avant = contenuScrollableBilan.scrollTop;
+            contenuScrollableBilan.scrollTop += event.deltaY;
+
+            if (contenuScrollableBilan.scrollTop !== avant) {
+              event.preventDefault();
+            }
+          },
+          { passive: false }
+        );
+      }
 
       modalBilan.addEventListener("click", function (event) {
         if (event.target === modalBilan) {
