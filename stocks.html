@@ -361,6 +361,24 @@
       min-width: 790px;
     }
 
+    /* Le scroll principal porte les deux axes :
+       l'en-tête ET la colonne Article restent visibles. */
+    .stocks-scroll .tableau-cadre,
+    .stocks-scroll .tableau-defilement {
+      overflow: visible;
+    }
+
+    .table-stocks thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #f7f7f7;
+    }
+
+    .table-stocks th:first-child {
+      z-index: 7;
+    }
+
     th {
       position: sticky;
       top: 0;
@@ -831,6 +849,11 @@
     .detail-vide { padding:12px; color:#888; text-align:center; font-size:11px; }
     .detail-meta { display:flex; flex-wrap:wrap; gap:6px 12px; color:#666; font-size:10px; line-height:1.4; }
     .detail-commentaire { margin-top:8px; padding:8px 10px; border-radius:9px; background:#fff; border:1px solid #e7e7e7; font-size:10px; color:#555; }
+    .detail-explication { margin-top:10px; padding:10px 11px; border:1px solid #dbe6ef; border-radius:10px; background:#f7fbff; color:#36546b; font-size:10px; line-height:1.45; }
+    .detail-tracabilite { margin-top:11px; padding-top:9px; border-top:1px dashed #d7d7d7; color:#777; font-size:9px; line-height:1.5; }
+    .detail-tracabilite strong { color:#555; }
+    .detail-identifiant { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:8px; overflow-wrap:anywhere; white-space:normal; }
+    .mouvement-explication { margin-top:6px; color:#666; font-size:10px; line-height:1.35; }
     @media (max-width:760px) { .detail-grille { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
     @media (max-width: 980px) {
@@ -1165,7 +1188,7 @@
         <aside class="panneau panneau-historique">
           <div class="historique-entete">
             <div>
-              <h2>Historique des opérations</h2>
+              <h2>Historique</h2>
               <p>Dernières opérations du stock vaisselle</p>
             </div>
 
@@ -2022,32 +2045,83 @@
       async function afficherDetailOperation(operationId) {
         if (!editionCourante?.id || !operationId) return;
         ouvrirDetail("🧾 Détail de l’opération", "Traçabilité de l’opération de stock");
+
         try {
           const { data, error } = await window.MDN_SUPABASE.rpc("detail_operation_stock_vaisselle", {
             p_operation_id: operationId,
             p_is_demo: modeDemo
           });
           if (error) throw error;
+
           const d = data || {};
           const lignes = Array.isArray(d.lignes_vaisselle) ? d.lignes_vaisselle : (Array.isArray(d.lignes) ? d.lignes : []);
+          const operationsLiees = Array.isArray(d.operations_liees) ? d.operations_liees : [];
           const op = d.operation || d;
+
           operationDetailCourante = op;
           operationDetailCourante.contenants_vides = Array.isArray(d.contenants_vides) ? d.contenants_vides : [];
-          const typeAnnulable = ["livraison_vaisselle", "transfert_reserve_operationnel"].includes(String(op.type_operation || ""));
+
+          const typeOperation = String(op.type_operation || "");
+          const estContreOperation = typeOperation === "ajustement_stock" && !!op.operation_originale_id;
+          const estAnnulee = String(op.statut || "valide").toLowerCase() === "annule";
+          const operationCompensatrice = operationsLiees.find(function(x){ return x && x.id; }) || null;
+
+          const typeAnnulable = ["livraison_vaisselle", "transfert_reserve_operationnel"].includes(typeOperation);
           const statutValide = String(op.statut || "valide").toLowerCase() === "valide";
           const estOperationOriginale = !op.operation_originale_id;
           annulerOperationStock.hidden = !(typeAnnulable && statutValide && estOperationOriginale);
+
+          const titreOperation = estContreOperation
+            ? "Annulation d’une opération de stock"
+            : libelleTypeMouvement(typeOperation);
+
+          let explication = "";
+          if (estContreOperation) {
+            explication = "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
+          } else if (estAnnulee && operationCompensatrice) {
+            explication = "Cette opération a été annulée. Elle reste dans l’historique pour conserver la trace de ce qui avait été enregistré. Une contre-opération distincte a compensé son effet sur le stock.";
+          } else if (estAnnulee) {
+            explication = "Cette opération a été annulée mais reste visible afin de conserver une traçabilité complète.";
+          }
+
+          const commentaireTechnique =
+            estContreOperation &&
+            String(op.commentaire || "").toLowerCase().includes("contre-opération créée automatiquement")
+              ? ""
+              : (op.commentaire || "");
+
           contenuModalDetail.innerHTML = `
             <div class="detail-sections">
               <section class="detail-carte">
-                <h3>${echapperHtml(libelleTypeMouvement(op.type_operation))}</h3>
-                <div class="detail-meta"><span>${echapperHtml(formatDateHeure(op.date_operation || op.created_at))}</span><span>Statut : <strong>${echapperHtml(statutOperation(op.statut))}</strong></span>${op.reference_externe ? `<span>Référence : ${echapperHtml(op.reference_externe)}</span>` : ""}</div>
-                ${op.commentaire ? `<div class="detail-commentaire">${echapperHtml(op.commentaire)}</div>` : ""}
+                <h3>${echapperHtml(titreOperation)}</h3>
+                <div class="detail-meta">
+                  <span>${echapperHtml(formatDateHeure(op.date_operation || op.created_at))}</span>
+                  <span>Statut : <strong>${echapperHtml(statutOperation(op.statut))}</strong></span>
+                  ${op.reference_externe ? `<span>Référence : ${echapperHtml(op.reference_externe)}</span>` : ""}
+                </div>
+
+                ${explication ? `<div class="detail-explication">${echapperHtml(explication)}</div>` : ""}
+                ${commentaireTechnique ? `<div class="detail-commentaire">${echapperHtml(commentaireTechnique)}</div>` : ""}
                 ${op.motif_correction ? `<div class="detail-commentaire"><strong>Motif :</strong> ${echapperHtml(op.motif_correction)}</div>` : ""}
+
+                <div class="detail-tracabilite">
+                  <strong>Traçabilité</strong><br>
+                  N° d’opération :
+                  <span class="detail-identifiant">${echapperHtml(op.id || operationId)}</span>
+                  ${op.operation_originale_id ? `<br>Opération d’origine : <span class="detail-identifiant">${echapperHtml(op.operation_originale_id)}</span>` : ""}
+                  ${operationCompensatrice?.id ? `<br>Contre-opération : <span class="detail-identifiant">${echapperHtml(operationCompensatrice.id)}</span>` : ""}
+                </div>
               </section>
+
               <section class="detail-carte">
                 <h3>Détail par article</h3>
-                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Conditionnement</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){const partiels=Array.isArray(x.conditionnements_partiels)?x.conditionnements_partiels:[];const physique=[];if(entier(x.nombre_conditionnements_complets)>0)physique.push(formatNombre(x.nombre_conditionnements_complets)+" complet(s)");if(partiels.length>0)physique.push(formatNombre(partiels.length)+" partiel(s) ("+partiels.map(function(q){return formatNombre(q);}).join(", ")+")");return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;}).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
+                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Conditionnement</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){
+                  const partiels = Array.isArray(x.conditionnements_partiels) ? x.conditionnements_partiels : [];
+                  const physique = [];
+                  if (entier(x.nombre_conditionnements_complets) > 0) physique.push(formatNombre(x.nombre_conditionnements_complets) + " complet(s)");
+                  if (partiels.length > 0) physique.push(formatNombre(partiels.length) + " partiel(s) (" + partiels.map(function(q){ return formatNombre(q); }).join(", ") + ")");
+                  return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;
+                }).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
               </section>
             </div>`;
         } catch (erreur) {
@@ -2061,18 +2135,65 @@
           historiqueListe.innerHTML = '<div class="historique-vide">Aucune opération de stock pour le moment.</div>';
           return;
         }
-        historiqueListe.innerHTML = operations.map(function (operation) {
+
+        const operationsParId = new Map(
+          operations.map(function(operation) {
+            return [String(operation.operation_id || operation.id || ""), operation];
+          })
+        );
+
+        historiqueListe.innerHTML = operations.map(function(operation) {
+          const operationId = String(operation.operation_id || operation.id || "");
           const quantite = operation.quantite_totale ?? operation.total_unites ?? operation.quantite ?? 0;
-          const commentaire = operation.commentaire || operation.motif_correction || "";
           const statut = String(operation.statut || "valide").toLowerCase();
           const classeStatut = statut === "annule" ? "annulee" : (statut === "corrige" ? "corrigee" : statut);
+
+          const operationOriginaleId = String(operation.operation_originale_id || "");
+          const estContreOperation =
+            String(operation.type_operation || "") === "ajustement_stock" &&
+            !!operationOriginaleId;
+
+          const operationOriginale = operationOriginaleId
+            ? operationsParId.get(operationOriginaleId)
+            : null;
+
+          let titre = libelleTypeMouvement(operation.type_operation || operation.type_mouvement);
+          let explication = "";
+          let commentaireVisible = operation.motif_correction || operation.motif || operation.commentaire || "";
+
+          if (estContreOperation) {
+            const typeOriginal = operationOriginale
+              ? libelleTypeMouvement(operationOriginale.type_operation)
+              : "opération de stock";
+
+            titre = "Annulation de " + String(typeOriginal).toLowerCase();
+            explication = "Contre-opération créée automatiquement pour compenser l’opération annulée.";
+
+            /* L'UUID technique n'est plus affiché dans la tuile.
+               Il reste disponible dans le détail, rubrique Traçabilité. */
+            commentaireVisible = operation.motif_correction || operation.motif || "";
+          } else if (statut === "annule") {
+            explication = "Opération conservée dans l’historique et compensée par une contre-opération.";
+            commentaireVisible = operation.motif_correction || operation.motif || "";
+          }
+
           return `
-            <article class="mouvement" data-operation-id="${echapperHtml(operation.operation_id || operation.id || "")}">
-              <div class="mouvement-haut"><div class="mouvement-article">${echapperHtml(libelleTypeMouvement(operation.type_operation || operation.type_mouvement))}</div><div class="mouvement-quantite">${formatNombre(quantite)}</div></div>
-              <div class="mouvement-type">${echapperHtml(operation.reference_externe || operation.reference_type || "Opération de stock")}</div>
+            <article class="mouvement" data-operation-id="${echapperHtml(operationId)}">
+              <div class="mouvement-haut">
+                <div class="mouvement-article">${echapperHtml(titre)}</div>
+                <div class="mouvement-quantite">${formatNombre(quantite)}</div>
+              </div>
+
               <span class="mouvement-statut ${classeStatut}">${echapperHtml(statutOperation(statut))}</span>
-              <div class="mouvement-bas"><span>${echapperHtml(formatDateHeure(operation.date_operation || operation.date_mouvement || operation.created_at))}</span><span>Voir le détail ›</span></div>
-              ${commentaire ? `<div class="mouvement-commentaire">${echapperHtml(commentaire)}</div>` : ""}
+
+              ${explication ? `<div class="mouvement-explication">${echapperHtml(explication)}</div>` : ""}
+
+              <div class="mouvement-bas">
+                <span>${echapperHtml(formatDateHeure(operation.date_operation || operation.date_mouvement || operation.created_at))}</span>
+                <span>Voir le détail ›</span>
+              </div>
+
+              ${commentaireVisible ? `<div class="mouvement-commentaire">${echapperHtml(commentaireVisible)}</div>` : ""}
             </article>`;
         }).join("");
       }
