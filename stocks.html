@@ -1922,6 +1922,7 @@
       function preparerCorrectionOperation() {
         const op = operationDetailCourante;
         const lignes = Array.isArray(op?.lignes_vaisselle) ? op.lignes_vaisselle : [];
+        const contenants = Array.isArray(op?.contenants_vides) ? op.contenants_vides : [];
 
         if (!op?.id || op.type_operation !== "livraison_vaisselle") {
           afficherMessage("Cette opération ne peut pas être corrigée avec ce workflow.", "erreur");
@@ -1933,31 +1934,81 @@
           return;
         }
 
-        if (Array.isArray(op.contenants_vides) && op.contenants_vides.length > 0) {
-          afficherMessage("Cette livraison contient des contenants vides. Leur correction n’est pas encore prise en charge.", "erreur");
+        /* SQL 105 corrige une livraison de vaisselle sans contenants.
+           SQL 106 corrige une livraison de contenants vides sans vaisselle.
+           Une livraison mixte nécessite un moteur unifié afin que les deux
+           familles soient corrigées dans une seule transaction. */
+        if (lignes.length > 0 && contenants.length > 0) {
+          afficherMessage(
+            "Cette livraison contient à la fois de la vaisselle et des contenants vides. La correction mixte doit être réalisée en une seule opération et n’est pas encore prise en charge par le moteur actuel.",
+            "erreur"
+          );
           return;
         }
 
-        lignesCorrectionOperation.innerHTML = lignes.map(function(ligne) {
+        if (lignes.length === 0 && contenants.length === 0) {
+          afficherMessage("Cette livraison ne contient aucune ligne corrigeable.", "erreur");
+          return;
+        }
+
+        const lignesVaisselleHtml = lignes.map(function(ligne) {
           const vaisselleId = ligne.vaisselle_id || "";
           const article = ligne.article || ligne.nom || "Article";
           const quantite = entier(ligne.quantite_totale ?? ligne.quantite);
+
           return `<div class="correction-ligne">
-            <div><strong>${echapperHtml(article)}</strong><small>Quantité enregistrée : ${formatNombre(quantite)}</small></div>
-            <input type="number" min="0" step="1" value="${quantite}"
+            <div>
+              <strong>${echapperHtml(article)}</strong>
+              <small>Quantité enregistrée : ${formatNombre(quantite)}</small>
+            </div>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value="${quantite}"
               data-vaisselle-id="${echapperHtml(vaisselleId)}"
               data-ancienne-quantite="${quantite}"
               aria-label="Nouvelle quantité pour ${echapperHtml(article)}">
           </div>`;
         }).join("");
 
+        const lignesContenantsHtml = contenants.map(function(ligne) {
+          const typeContenantId = ligne.type_contenant_id || "";
+          const nomContenant =
+            ligne.type_contenant ||
+            ligne.contenant ||
+            ligne.nom ||
+            "Contenant vide";
+
+          const quantite = entier(ligne.quantite);
+
+          return `<div class="correction-ligne">
+            <div>
+              <strong>${echapperHtml(nomContenant)}</strong>
+              <small>Contenants vides propres enregistrés : ${formatNombre(quantite)}</small>
+            </div>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value="${quantite}"
+              data-type-contenant-id="${echapperHtml(typeContenantId)}"
+              data-ancienne-quantite="${quantite}"
+              aria-label="Nouvelle quantité pour ${echapperHtml(nomContenant)}">
+          </div>`;
+        }).join("");
+
+        lignesCorrectionOperation.innerHTML =
+          lignesVaisselleHtml +
+          lignesContenantsHtml;
+
         motifCorrectionOperation.value = "";
         commentaireCorrectionOperation.value = "";
         commentaireCorrectionObligatoire.hidden = true;
+
         /* On ferme uniquement visuellement la fenêtre de détail.
-           Ne pas appeler fermerDetail() ici : cette fonction remet
-           operationDetailCourante à null, alors que la correction en a
-           encore besoin au moment de la confirmation. */
+           operationDetailCourante doit rester disponible jusqu'à
+           la confirmation de la correction. */
         modalDetail.classList.remove("visible");
         modalDetail.setAttribute("aria-hidden", "true");
         corrigerOperationStock.hidden = true;
@@ -1969,6 +2020,7 @@
 
       async function confirmerCorrectionStock() {
         const op = operationDetailCourante;
+
         if (!op?.id) {
           afficherMessage("Aucune opération sélectionnée.", "erreur");
           return;
@@ -1984,29 +2036,80 @@
         }
 
         if (motifChoisi === "Autre" && !commentaire) {
-          afficherMessage("Le commentaire est obligatoire lorsque le motif « Autre » est sélectionné.", "erreur");
+          afficherMessage(
+            "Le commentaire est obligatoire lorsque le motif « Autre » est sélectionné.",
+            "erreur"
+          );
           commentaireCorrectionOperation.focus();
           return;
         }
 
-        const champs = Array.from(lignesCorrectionOperation.querySelectorAll("input[data-vaisselle-id]"));
-        const lignes = [];
-        let modificationDetectee = false;
+        const champsVaisselle = Array.from(
+          lignesCorrectionOperation.querySelectorAll("input[data-vaisselle-id]")
+        );
 
-        for (const champ of champs) {
+        const champsContenants = Array.from(
+          lignesCorrectionOperation.querySelectorAll("input[data-type-contenant-id]")
+        );
+
+        if (champsVaisselle.length > 0 && champsContenants.length > 0) {
+          afficherMessage(
+            "Une livraison mixte vaisselle + contenants doit être corrigée par un moteur unifié. Aucune modification n’a été envoyée.",
+            "erreur"
+          );
+          return;
+        }
+
+        let modificationDetectee = false;
+        const lignes = [];
+        const contenantsVides = [];
+
+        for (const champ of champsVaisselle) {
           const valeur = String(champ.value ?? "").trim();
+
           if (!/^\d+$/.test(valeur)) {
-            afficherMessage("Chaque nouvelle quantité doit être un entier supérieur ou égal à 0.", "erreur");
+            afficherMessage(
+              "Chaque nouvelle quantité doit être un entier supérieur ou égal à 0.",
+              "erreur"
+            );
             champ.focus();
             return;
           }
 
           const nouvelleQuantite = Number(valeur);
           const ancienneQuantite = Number(champ.dataset.ancienneQuantite || 0);
-          if (nouvelleQuantite !== ancienneQuantite) modificationDetectee = true;
+
+          if (nouvelleQuantite !== ancienneQuantite) {
+            modificationDetectee = true;
+          }
 
           lignes.push({
             vaisselle_id: champ.dataset.vaisselleId,
+            nouvelle_quantite: nouvelleQuantite
+          });
+        }
+
+        for (const champ of champsContenants) {
+          const valeur = String(champ.value ?? "").trim();
+
+          if (!/^\d+$/.test(valeur)) {
+            afficherMessage(
+              "Chaque nouvelle quantité de contenant doit être un entier supérieur ou égal à 0.",
+              "erreur"
+            );
+            champ.focus();
+            return;
+          }
+
+          const nouvelleQuantite = Number(valeur);
+          const ancienneQuantite = Number(champ.dataset.ancienneQuantite || 0);
+
+          if (nouvelleQuantite !== ancienneQuantite) {
+            modificationDetectee = true;
+          }
+
+          contenantsVides.push({
+            type_contenant_id: champ.dataset.typeContenantId,
             nouvelle_quantite: nouvelleQuantite
           });
         }
@@ -2016,27 +2119,60 @@
           return;
         }
 
-        const motif = commentaire ? motifChoisi + " — " + commentaire : motifChoisi;
+        const motif = commentaire
+          ? motifChoisi + " — " + commentaire
+          : motifChoisi;
+
         confirmerCorrectionOperation.disabled = true;
         confirmerCorrectionOperation.textContent = "Correction…";
 
         try {
-          const { data, error } = await window.MDN_SUPABASE.rpc("corriger_livraison_stock_vaisselle", {
-            p_operation_id: op.id,
-            p_lignes: lignes,
-            p_motif: motif,
-            p_is_demo: modeDemo
-          });
+          let resultat;
+
+          if (champsContenants.length > 0) {
+            resultat = await window.MDN_SUPABASE.rpc(
+              "corriger_contenants_vides_livraison_stock",
+              {
+                p_operation_id: op.id,
+                p_contenants_vides: contenantsVides,
+                p_motif: motif,
+                p_is_demo: modeDemo
+              }
+            );
+          } else {
+            resultat = await window.MDN_SUPABASE.rpc(
+              "corriger_livraison_stock_vaisselle",
+              {
+                p_operation_id: op.id,
+                p_lignes: lignes,
+                p_motif: motif,
+                p_is_demo: modeDemo
+              }
+            );
+          }
+
+          const { data, error } = resultat;
 
           if (error) throw error;
-          if (data?.ok === false) throw new Error(data?.message || "La correction a été refusée.");
+          if (data?.ok === false) {
+            throw new Error(data?.message || "La correction a été refusée.");
+          }
 
           fermerCorrectionOperation();
           await chargerStocks();
-          afficherMessage("Correction enregistrée. L’opération d’origine reste visible avec le statut « Corrigée ».", "succes");
+
+          afficherMessage(
+            "Correction enregistrée. L’opération d’origine reste visible avec le statut « Corrigée ».",
+            "succes"
+          );
+
         } catch (erreur) {
           console.error("[MDN Sion] Correction opération stock impossible :", erreur);
-          afficherMessage(erreur?.message || "Impossible de corriger cette opération.", "erreur");
+          afficherMessage(
+            erreur?.message || "Impossible de corriger cette opération.",
+            "erreur"
+          );
+
           confirmerCorrectionOperation.disabled = false;
           confirmerCorrectionOperation.textContent = "Confirmer la correction";
         }
@@ -2285,11 +2421,25 @@
           const estOperationOriginale = !op.operation_originale_id;
           annulerOperationStock.hidden = !(typeAnnulable && statutValide && estOperationOriginale);
 
+          const nbLignesVaisselleCorrection =
+            Array.isArray(operationDetailCourante.lignes_vaisselle)
+              ? operationDetailCourante.lignes_vaisselle.length
+              : 0;
+
+          const nbLignesContenantsCorrection =
+            Array.isArray(operationDetailCourante.contenants_vides)
+              ? operationDetailCourante.contenants_vides.length
+              : 0;
+
+          const livraisonCorrectionSimple =
+            (nbLignesVaisselleCorrection > 0 && nbLignesContenantsCorrection === 0) ||
+            (nbLignesVaisselleCorrection === 0 && nbLignesContenantsCorrection > 0);
+
           corrigerOperationStock.hidden = !(
             typeOperation === "livraison_vaisselle" &&
             statutValide &&
             estOperationOriginale &&
-            operationDetailCourante.contenants_vides.length === 0
+            livraisonCorrectionSimple
           );
 
           const operationOrigineLiee = estContreOperation
