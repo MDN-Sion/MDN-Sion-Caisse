@@ -1048,7 +1048,7 @@
       .bouton-retour,
       .bouton-deconnexion {
         min-height: 34px;
-        padding: 6px 10px;
+        padding: 4px 10px;
         font-size: 11px;
       }
 
@@ -1085,7 +1085,7 @@
 
       .bouton-action {
         min-height: 34px;
-        padding: 6px 10px;
+        padding: 4px 10px;
         font-size: 10px;
       }
 
@@ -1457,7 +1457,7 @@
 
     .correction-transfert-entete > div,
     .correction-transfert-retour-ligne > div {
-      padding: 6px 10px;
+      padding: 4px 10px;
       box-sizing: border-box;
     }
 
@@ -1472,7 +1472,7 @@
     }
 
     .correction-transfert-retour-ligne {
-      min-height: 50px;
+      min-height: 42px;
       border-bottom: 1px solid #ececec;
     }
 
@@ -1490,10 +1490,10 @@
 
     .correction-transfert-retour-checkbox {
       display: block !important;
-      width: 32px !important;
-      height: 32px !important;
-      min-width: 32px !important;
-      min-height: 32px !important;
+      width: 30px !important;
+      height: 30px !important;
+      min-width: 30px !important;
+      min-height: 30px !important;
       margin: 0 auto !important;
       padding: 0 !important;
       box-sizing: border-box;
@@ -2763,6 +2763,7 @@
         commentaireCorrectionObligatoire.hidden = true;
         blocCommentaireCorrectionOperation.hidden = true;
         labelLignesCorrectionOperation.hidden = false;
+        labelLignesCorrectionOperation.style.display = "";
         lignesCorrectionOperation.innerHTML = "";
         confirmerCorrectionOperation.disabled = false;
         confirmerCorrectionOperation.textContent = "Confirmer la correction";
@@ -2788,9 +2789,11 @@
         commentaireCorrectionObligatoire.hidden = true;
         blocCommentaireCorrectionOperation.hidden = true;
         labelLignesCorrectionOperation.hidden = false;
+        labelLignesCorrectionOperation.style.display = "";
 
         if (op.type_operation === "transfert_reserve_operationnel") {
           labelLignesCorrectionOperation.hidden = true;
+          labelLignesCorrectionOperation.style.display = "none";
           corrigerOperationStock.disabled = true;
           corrigerOperationStock.textContent = "Chargement…";
 
