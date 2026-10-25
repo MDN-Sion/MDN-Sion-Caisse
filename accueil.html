@@ -27,7 +27,7 @@
     html,
     body {
       width: 100%;
-      min-height: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
     }
@@ -35,6 +35,7 @@
     body {
       min-height: 100vh;
       min-height: 100dvh;
+      overflow: hidden;
 
       margin: 0;
 
@@ -167,12 +168,13 @@
 
     .application {
       width: 100%;
-
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
 
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     /* ======================================================
@@ -344,8 +346,11 @@
 
     .contenu {
       width: min(100%, 1220px);
-
-      flex: 1;
+      min-height: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
 
       margin: 0 auto;
 
@@ -516,6 +521,8 @@
 
     .carrousel-modules {
       position: relative;
+      min-height: 0;
+      flex: 1 1 auto;
       display: flex;
       align-items: stretch;
       gap: 8px;
@@ -524,6 +531,7 @@
     .grille-modules {
       flex: 1 1 auto;
       min-width: 0;
+      min-height: 0;
       display: flex;
       background: transparent;
       border: 0;
@@ -788,6 +796,7 @@
        ====================================================== */
 
     .pied-page {
+      flex: 0 0 auto;
       padding:
         12px
         max(18px, env(safe-area-inset-right))
@@ -1309,13 +1318,13 @@
           </p>
 
           <button
+            id="boutonStocks"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir les stocks"
+            data-texte-demo="Démo - Ouvrir les stocks"
           >
-            Bientôt disponible
+            Ouvrir les stocks
           </button>
 
         </article>
@@ -1607,6 +1616,12 @@
       const boutonPartenaires =
         document.getElementById(
           "boutonPartenaires"
+        );
+
+
+      const boutonStocks =
+        document.getElementById(
+          "boutonStocks"
         );
 const zoneReinitialisationDemo =
         document.getElementById(
@@ -2169,6 +2184,24 @@ document.querySelectorAll(
             modeDemoActif
               ? "comptes-stands.html?mode=demo"
               : "comptes-stands.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION STOCKS
+         Réel et Démo restent strictement séparés.
+         ==================================================== */
+
+      boutonStocks.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "stocks.html?mode=demo"
+              : "stocks.html";
 
         }
       );
