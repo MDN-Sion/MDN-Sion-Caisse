@@ -2085,6 +2085,185 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 110 - RELEVÉ FINAL DU PRESTATAIRE
+       ======================================================== */
+
+    .releve-prestataire {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #e1e1e1;
+      border-radius: 15px;
+      background: #fff;
+    }
+
+    .releve-prestataire-entete {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .releve-prestataire-entete h3 {
+      margin: 0 0 5px;
+      color: #333;
+      font-size: 17px;
+    }
+
+    .releve-prestataire-entete p {
+      margin: 0;
+      color: #777;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .releve-prestataire-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .releve-prestataire-table th,
+    .releve-prestataire-table td {
+      padding: 10px 9px;
+      border-bottom: 1px solid #ececec;
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .releve-prestataire-table th {
+      background: #f7f7f7;
+      color: #555;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .releve-prestataire-table th:first-child,
+    .releve-prestataire-table td:first-child {
+      text-align: left;
+    }
+
+    .releve-sale-input {
+      width: 105px;
+      min-height: 38px;
+      padding: 7px 9px;
+      border: 1px solid #cfcfcf;
+      border-radius: 9px;
+      background: #fff;
+      color: #333;
+      font: inherit;
+      font-weight: 800;
+      text-align: center;
+      outline: none;
+    }
+
+    .releve-sale-input::placeholder {
+      color: #aaa;
+      font-weight: 600;
+      opacity: 1;
+    }
+
+    .releve-sale-input:focus {
+      border-color: #8d6b00;
+      box-shadow: 0 0 0 3px rgba(141, 107, 0, 0.10);
+    }
+
+    .releve-non-revenu {
+      font-weight: 900;
+    }
+
+    .releve-non-revenu.ok {
+      color: #28733a;
+    }
+
+    .releve-non-revenu.attention {
+      color: #9a1c1c;
+    }
+
+    .releve-non-revenu.neutre {
+      color: #777;
+    }
+
+    .releve-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-top: 13px;
+    }
+
+    #enregistrerRelevePrestataire {
+      min-height: 42px;
+      padding: 9px 18px;
+      border: 1px solid #8d6b00;
+      border-radius: 11px;
+      background: #8d6b00;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    #enregistrerRelevePrestataire:hover {
+      background: #725700;
+      border-color: #725700;
+    }
+
+    .releve-date {
+      color: #888;
+      font-size: 12px;
+    }
+
+    @media (max-width: 700px) {
+      .releve-prestataire-entete {
+        flex-direction: column;
+      }
+
+      .releve-actions {
+        justify-content: stretch;
+      }
+
+      #enregistrerRelevePrestataire {
+        width: 100%;
+      }
+    }
+
+    @media print {
+      #modalBilan .releve-actions {
+        display: none !important;
+      }
+
+      #modalBilan .releve-sale-input {
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+      }
+
+      #modalBilan .releve-prestataire {
+        margin-top: 6mm !important;
+        padding: 4mm !important;
+        break-inside: avoid;
+      }
+
+      #modalBilan .releve-prestataire-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+        font-size: 8pt !important;
+      }
+
+      #modalBilan .releve-prestataire-table th,
+      #modalBilan .releve-prestataire-table td {
+        padding: 2mm 1mm !important;
+        white-space: normal !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -2462,6 +2641,8 @@
       const imprimerBilan = document.getElementById("imprimerBilan");
       const contenuBilan = document.getElementById("contenuBilan");
       const sousTitreModalBilan = document.getElementById("sousTitreModalBilan");
+      let dernierBilanGlobal = null;
+      let dernierRelevePrestataire = null;
 
       const modalReapprovisionnement = document.getElementById("modalReapprovisionnement");
       const fermerModalReapprovisionnement = document.getElementById("fermerModalReapprovisionnement");
@@ -4537,6 +4718,123 @@
         return "";
       }
 
+
+      function valeurRelevePrestataireParArticle(vaisselleId) {
+        const articles =
+          dernierRelevePrestataire &&
+          Array.isArray(dernierRelevePrestataire.articles)
+            ? dernierRelevePrestataire.articles
+            : [];
+
+        return articles.find(
+          (ligne) => String(ligne.vaisselle_id) === String(vaisselleId)
+        ) || null;
+      }
+
+      function calculerNonRevenu(utilise, salePrestataire) {
+        if (salePrestataire === null || salePrestataire === undefined || salePrestataire === "") {
+          return null;
+        }
+
+        return entier(utilise) - entier(salePrestataire);
+      }
+
+      function classeNonRevenu(valeur) {
+        if (valeur === null) return "neutre";
+        return entier(valeur) === 0 ? "ok" : "attention";
+      }
+
+      function texteNonRevenu(valeur) {
+        if (valeur === null) return "—";
+        return formatNombre(valeur);
+      }
+
+      function mettreAJourCalculReleve(input) {
+        const ligne = input.closest("tr");
+        if (!ligne) return;
+
+        const utilise = entier(ligne.dataset.utilise);
+        const valeurBrute = input.value.trim();
+        const salePrestataire =
+          valeurBrute === "" ? null : Math.max(0, entier(valeurBrute));
+        const nonRevenu = calculerNonRevenu(utilise, salePrestataire);
+        const celluleNonRevenu = ligne.querySelector("[data-non-revenu]");
+        const celluleTaux = ligne.querySelector("[data-taux-recuperation]");
+
+        if (celluleNonRevenu) {
+          celluleNonRevenu.textContent = texteNonRevenu(nonRevenu);
+          celluleNonRevenu.className =
+            "releve-non-revenu " + classeNonRevenu(nonRevenu);
+        }
+
+        if (celluleTaux) {
+          if (salePrestataire === null || utilise <= 0) {
+            celluleTaux.textContent = "—";
+          } else {
+            celluleTaux.textContent =
+              ((salePrestataire / utilise) * 100).toFixed(1).replace(".", ",") + " %";
+          }
+        }
+      }
+
+      async function enregistrerRelevePrestataireDepuisBilan() {
+        if (!editionCourante?.id) {
+          afficherMessage("Aucune édition active.", "erreur");
+          return;
+        }
+
+        const inputs = Array.from(
+          contenuBilan.querySelectorAll(".releve-sale-input")
+        );
+
+        const lignes = inputs
+          .filter((input) => input.value.trim() !== "")
+          .map((input) => ({
+            vaisselle_id: input.dataset.vaisselleId,
+            quantite_sale_prestataire: Math.max(0, entier(input.value))
+          }));
+
+        try {
+          const bouton = document.getElementById("enregistrerRelevePrestataire");
+          if (bouton) {
+            bouton.disabled = true;
+            bouton.textContent = "Enregistrement…";
+          }
+
+          const { error } = await window.MDN_SUPABASE.rpc(
+            "enregistrer_releve_final_prestataire",
+            {
+              p_edition_id: editionCourante.id,
+              p_lignes: lignes,
+              p_is_demo: modeDemo
+            }
+          );
+
+          if (error) throw error;
+
+          const { data: releve, error: erreurLecture } =
+            await window.MDN_SUPABASE.rpc(
+              "releve_final_prestataire",
+              {
+                p_edition_id: editionCourante.id,
+                p_is_demo: modeDemo
+              }
+            );
+
+          if (erreurLecture) throw erreurLecture;
+
+          dernierRelevePrestataire = releve || null;
+          afficherBilanGlobal(dernierBilanGlobal || {});
+          afficherMessage("Relevé du prestataire enregistré.", "succes");
+        } catch (erreur) {
+          console.error("[MDN Sion] Enregistrement du relevé prestataire impossible :", erreur);
+          afficherMessage(
+            erreur?.message || "Impossible d’enregistrer le relevé du prestataire.",
+            "erreur"
+          );
+        }
+      }
+
       function afficherBilanGlobal(bilan) {
         const resume = bilan && bilan.resume ? bilan.resume : {};
         const articles = bilan && Array.isArray(bilan.articles) ? bilan.articles : [];
@@ -4679,7 +4977,117 @@
               </div>
             </div>
           </section>
+
+          <section class="releve-prestataire">
+            <div class="releve-prestataire-entete">
+              <div>
+                <h3>Relevé final du prestataire</h3>
+                <p>
+                  Saisis uniquement les quantités sales communiquées par le prestataire.
+                  Le propre restant, l’utilisation et la quantité non revenue sont calculés automatiquement.
+                </p>
+              </div>
+              <span class="releve-date">${
+                dernierRelevePrestataire?.updated_at
+                  ? "Dernier enregistrement : " +
+                    new Date(dernierRelevePrestataire.updated_at).toLocaleString("fr-FR")
+                  : "Aucun relevé enregistré"
+              }</span>
+            </div>
+
+            <div class="tableau-cadre">
+              <div class="tableau-defilement">
+                <table class="releve-prestataire-table">
+                  <thead>
+                    <tr>
+                      <th>Article</th>
+                      <th>Livré propre</th>
+                      <th>Propre restant</th>
+                      <th>Utilisé</th>
+                      <th>Sale enregistré MDN</th>
+                      <th>Sale prestataire</th>
+                      <th>Non revenu</th>
+                      <th>Taux récupération</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${articles.map(function (ligne) {
+                      const releve = valeurRelevePrestataireParArticle(ligne.vaisselle_id);
+                      const livrePropre = entier(ligne.apports_nets_stock);
+                      const propreRestant = entier(ligne.total_propre);
+                      const utilise = Math.max(livrePropre - propreRestant, 0);
+                      const saleMdn = entier(ligne.retours_sales_cumules);
+                      const salePrestataire =
+                        releve && releve.sale_prestataire !== null
+                          ? entier(releve.sale_prestataire)
+                          : null;
+                      const nonRevenu =
+                        calculerNonRevenu(utilise, salePrestataire);
+                      const taux =
+                        salePrestataire !== null && utilise > 0
+                          ? ((salePrestataire / utilise) * 100)
+                              .toFixed(1)
+                              .replace(".", ",") + " %"
+                          : "—";
+
+                      return `
+                        <tr data-utilise="${utilise}">
+                          <td class="bilan-article">${echapperHtml(ligne.article || "Article")}</td>
+                          <td>${formatNombre(livrePropre)}</td>
+                          <td>${formatNombre(propreRestant)}</td>
+                          <td><strong>${formatNombre(utilise)}</strong></td>
+                          <td>${formatNombre(saleMdn)}</td>
+                          <td>
+                            <input
+                              class="releve-sale-input"
+                              type="number"
+                              min="0"
+                              step="1"
+                              inputmode="numeric"
+                              data-vaisselle-id="${echapperHtml(String(ligne.vaisselle_id || ""))}"
+                              value="${salePrestataire === null ? "" : salePrestataire}"
+                              placeholder="Saisir"
+                              aria-label="Sale prestataire - ${echapperHtml(ligne.article || "Article")}"
+                            >
+                          </td>
+                          <td
+                            data-non-revenu
+                            class="releve-non-revenu ${classeNonRevenu(nonRevenu)}"
+                          >${texteNonRevenu(nonRevenu)}</td>
+                          <td data-taux-recuperation>${taux}</td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="releve-actions">
+              <button id="enregistrerRelevePrestataire" type="button">
+                💾 Enregistrer le relevé
+              </button>
+            </div>
+          </section>
         `;
+
+        contenuBilan
+          .querySelectorAll(".releve-sale-input")
+          .forEach(function (input) {
+            input.addEventListener("input", function () {
+              mettreAJourCalculReleve(input);
+            });
+          });
+
+        const boutonEnregistrerReleve =
+          document.getElementById("enregistrerRelevePrestataire");
+
+        if (boutonEnregistrerReleve) {
+          boutonEnregistrerReleve.addEventListener(
+            "click",
+            enregistrerRelevePrestataireDepuisBilan
+          );
+        }
       }
 
       function fermerBilan() {
@@ -4712,19 +5120,37 @@
           (modeDemo ? " — Mode Démo." : ".");
 
         try {
-          const { data, error } = await window.MDN_SUPABASE.rpc(
-            "bilan_global_edition_vaisselle",
-            {
-              p_edition_id: editionCourante.id,
-              p_is_demo: modeDemo
-            }
-          );
+          const [
+            { data: bilan, error: erreurBilan },
+            { data: releve, error: erreurReleve }
+          ] = await Promise.all([
+            window.MDN_SUPABASE.rpc(
+              "bilan_global_edition_vaisselle",
+              {
+                p_edition_id: editionCourante.id,
+                p_is_demo: modeDemo
+              }
+            ),
+            window.MDN_SUPABASE.rpc(
+              "releve_final_prestataire",
+              {
+                p_edition_id: editionCourante.id,
+                p_is_demo: modeDemo
+              }
+            )
+          ]);
 
-          if (error) {
-            throw error;
+          if (erreurBilan) {
+            throw erreurBilan;
           }
 
-          afficherBilanGlobal(data || {});
+          if (erreurReleve) {
+            throw erreurReleve;
+          }
+
+          dernierBilanGlobal = bilan || {};
+          dernierRelevePrestataire = releve || null;
+          afficherBilanGlobal(dernierBilanGlobal);
         } catch (erreur) {
           console.error("[MDN Sion] Chargement du bilan impossible :", erreur);
 
