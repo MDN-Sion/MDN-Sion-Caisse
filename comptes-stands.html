@@ -671,6 +671,33 @@ footer {
     -webkit-print-color-adjust:exact;print-color-adjust:exact
   }
 }
+
+/* SQL114 — fiche administrative du stand intégrée */
+.stand-manage-button{height:42px;min-width:42px;border:1px solid #c7d2fe;border-radius:11px;background:#eef2ff;color:#00126b;font-weight:900;padding:0 10px;display:none;align-items:center;justify-content:center;white-space:nowrap}
+.stand-manage-button.show{display:flex}
+.selected-actions{display:flex;gap:7px;align-items:center}
+.stand-admin-card{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden}
+.stand-admin-body{padding:14px 16px;overflow:auto;min-height:0}
+.stand-admin-section{margin-bottom:15px}.stand-admin-section:last-child{margin-bottom:0}
+.stand-admin-section h4{margin:0 0 9px;color:#00126b;font-size:14px;text-transform:uppercase;letter-spacing:.03em}
+.stand-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
+.stand-admin-field{display:flex;flex-direction:column;gap:4px;min-width:0}.stand-admin-field.full{grid-column:1/-1}
+.stand-admin-field span{font-size:12px;font-weight:800;color:#4b5563}
+.stand-admin-field input,.stand-admin-field select,.stand-admin-field textarea{width:100%;border:1px solid #cbd2df;border-radius:9px;padding:8px 9px;background:#fff;color:#1f2937;outline:none}
+.stand-admin-field input,.stand-admin-field select{height:40px}.stand-admin-field textarea{min-height:68px;resize:vertical}
+.stand-admin-checks{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.stand-admin-check{display:flex;align-items:center;gap:8px;border:1px solid #d9deea;border-radius:9px;padding:9px;background:#f8f9fc;font-size:13px;font-weight:800}.stand-admin-check input{width:18px;height:18px}
+.stand-admin-actions{padding:10px 16px 14px;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #e4e6e9;background:#fafbfc}.stand-admin-actions button{min-height:40px;border:0;border-radius:9px;padding:8px 13px;font-weight:900}.stand-admin-cancel{background:#e9edf5;color:#25314f}.stand-admin-save{background:#107c10;color:#fff}
+@media(max-width:620px){.stand-admin-grid,.stand-admin-checks{grid-template-columns:1fr}.stand-admin-field.full{grid-column:auto}.stand-admin-card{width:100%;max-height:calc(100dvh - 12px)}.stand-admin-actions{flex-direction:column}.stand-admin-actions button{width:100%}}
+
+/* En-tête et viewport alignés sur retrait-vaisselle */
+.page{height:var(--mdn-visible-height,100dvh);min-height:0;overflow:hidden}
+.topbar{flex:0 0 auto;min-height:68px;padding:10px 20px;background:linear-gradient(145deg,#7b0000,#980000);grid-template-columns:auto 1fr auto;gap:12px}
+.back,.logout{min-height:42px;height:auto;padding:9px 14px;border-radius:11px;font-size:14px;font-weight:900}
+.title h1{font-size:22px}.title .edition{margin-top:3px;font-size:12px;color:rgba(255,255,255,.82)}
+main{min-height:0;overflow:auto;padding:14px 18px 16px}
+@media(max-width:760px){html,body{overflow:auto}.page{height:auto;min-height:var(--mdn-visible-height,100dvh);overflow:visible}.topbar{grid-template-columns:85px 1fr 85px;padding:8px;gap:6px}.back,.logout{min-height:42px;padding:4px;font-size:10px}.identity{display:none}.identity-wrap{grid-column:auto;display:block}.logout{margin-left:0;width:100%}.title h1{font-size:15px}.title .edition{display:none}main{overflow:visible}}
+@media(max-height:600px) and (orientation:landscape){html,body{overflow:hidden}.page{height:var(--mdn-visible-height,100dvh);min-height:var(--mdn-visible-height,100dvh);overflow:hidden}.topbar{min-height:54px;padding:6px 14px}.back,.logout{min-height:36px;padding:6px 10px}.title h1{font-size:18px}.title .edition{display:none}main{overflow:auto;padding:10px 12px}}
+
 </style>
 </head>
 <body>
@@ -853,6 +880,48 @@ footer {
   </div>
 </div>
 
+
+  <div aria-hidden="true" class="modal" id="standAdminModal">
+   <div class="modalcard stand-admin-card">
+    <div class="modalhead">
+     <h3 id="standAdminTitle">Fiche du stand</h3>
+     <button class="close" id="standAdminClose" type="button">×</button>
+    </div>
+    <div class="stand-admin-body">
+     <div class="stand-admin-section">
+      <h4>Partenaire</h4>
+      <div class="stand-admin-grid">
+       <label class="stand-admin-field"><span>Nom du stand</span><input id="standAdminNom" type="text"></label>
+       <label class="stand-admin-field"><span>Raison sociale</span><input id="standAdminRaison" type="text"></label>
+       <label class="stand-admin-field"><span>Personne de contact</span><input id="standAdminContact" type="text"></label>
+       <label class="stand-admin-field"><span>Téléphone</span><input id="standAdminTelephone" type="tel"></label>
+       <label class="stand-admin-field full"><span>Adresse e-mail</span><input id="standAdminEmail" type="email"></label>
+       <label class="stand-admin-field full"><span>Adresse</span><input id="standAdminAdresse" type="text"></label>
+       <label class="stand-admin-field"><span>NPA</span><input id="standAdminNpa" type="text" inputmode="numeric"></label>
+       <label class="stand-admin-field"><span>Localité</span><input id="standAdminLocalite" type="text"></label>
+       <label class="stand-admin-field full"><span>Notes internes</span><textarea id="standAdminNotes"></textarea></label>
+      </div>
+     </div>
+     <div class="stand-admin-section">
+      <h4>Participation à l’édition</h4>
+      <div class="stand-admin-grid">
+       <label class="stand-admin-field"><span>N° de stand *</span><input id="standAdminNumero" type="text"></label>
+       <label class="stand-admin-field"><span>Type de stand *</span><select id="standAdminType"><option value="">Choisir…</option><option>Associatif</option><option>Métier de la bouche</option><option>Restaurateur</option><option>Artisan</option><option>Comité</option></select></label>
+       <label class="stand-admin-field full"><span>Mode de règlement habituel *</span><select id="standAdminMode"><option value="direct">Règlement direct</option><option value="facture">Facturation</option></select></label>
+      </div>
+      <div class="stand-admin-checks">
+       <label class="stand-admin-check"><input id="standAdminVaisselle" type="checkbox"><span>Utilise la vaisselle MDN</span></label>
+       <label class="stand-admin-check"><input id="standAdminActif" type="checkbox" checked><span>Partenaire actif</span></label>
+      </div>
+     </div>
+    </div>
+    <div class="stand-admin-actions">
+     <button class="stand-admin-cancel" id="standAdminCancel" type="button">Annuler</button>
+     <button class="stand-admin-save" id="standAdminSave" type="button">Enregistrer</button>
+    </div>
+   </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
 </script>
@@ -865,10 +934,82 @@ footer {
 <script>
 "use strict";
 (function() {
+  function syncVisibleViewport(){
+    const viewport=window.visualViewport;
+    const height=viewport?.height||window.innerHeight||document.documentElement.clientHeight;
+    document.documentElement.style.setProperty("--mdn-visible-height",`${Math.round(height)}px`);
+  }
+  syncVisibleViewport();
+  window.addEventListener("resize",syncVisibleViewport,{passive:true});
+  window.addEventListener("orientationchange",()=>setTimeout(syncVisibleViewport,60),{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",syncVisibleViewport,{passive:true});
+    window.visualViewport.addEventListener("scroll",syncVisibleViewport,{passive:true});
+  }
   const $=id=>document.getElementById(id);
   const loading=$("loading"),topbar=$("topbar"),demoNote=$("demoNote"),edition=$("edition"),identity=$("identity"),accounts=$("accounts"),search=$("search"),statusFilter=$("statusFilter"),paymentFilter=$("paymentFilter"),scenario=$("scenario");
   const invoiceModal=$("invoiceModal"),invoiceCheck=$("invoiceCheck"),invoiceConfirm=$("invoiceConfirm"),invoiceComment=$("invoiceComment");
   let client=null,demo=false,rows=[],selected=null,currentRole="",currentQrStandId=null;
+
+    let standAdminPartnerId=null;
+    let standAdminParticipationId=null;
+    const standAdminModal=$("standAdminModal");
+    function canManageStands(){return !demo&&(currentRole==="responsable"||currentRole==="administrateur")}
+    function closeStandAdmin(){standAdminModal.classList.remove("show");standAdminModal.setAttribute("aria-hidden","true")}
+    function adminValue(id){return String($(id)?.value||"").trim()}
+    function fillStandAdmin(item){
+        standAdminPartnerId=item?.id||null;
+        standAdminParticipationId=item?.participation_id||null;
+        $("standAdminNom").value=item?.nom||"";
+        $("standAdminRaison").value=item?.raison_sociale||"";
+        $("standAdminContact").value=item?.contact||"";
+        $("standAdminTelephone").value=item?.telephone||"";
+        $("standAdminEmail").value=item?.email||"";
+        $("standAdminAdresse").value=item?.adresse||"";
+        $("standAdminNpa").value=item?.npa||"";
+        $("standAdminLocalite").value=item?.localite||"";
+        $("standAdminNotes").value=item?.notes||"";
+        $("standAdminNumero").value=item?.numero_stand||"";
+        $("standAdminType").value=item?.type_partenaire||"";
+        $("standAdminMode").value=item?.mode_reglement_habituel||"direct";
+        $("standAdminVaisselle").checked=Boolean(item?.utilise_vaisselle);
+        $("standAdminActif").checked=item?.actif!==false;
+        $("standAdminTitle").textContent=item?"Modifier la fiche du stand":"Nouveau stand";
+    }
+    async function openStandAdmin(participationId=null){
+        if(!canManageStands())return msg("La gestion des stands est réservée aux Responsables et Administrateurs.");
+        try{
+            const {data:r,error}=await client.rpc("charger_gestion_stands");
+            if(error)throw error;
+            const item=participationId?(r?.partenaires||[]).find(x=>x.participation_id===participationId):null;
+            if(participationId&&!item)throw new Error("Fiche du stand introuvable.");
+            fillStandAdmin(item);
+            standAdminModal.classList.add("show");standAdminModal.setAttribute("aria-hidden","false");
+        }catch(e){console.error(e);msg(e?.message||"Impossible d'ouvrir la fiche du stand.")}
+    }
+    async function saveStandAdmin(){
+        const nom=adminValue("standAdminNom"),raison=adminValue("standAdminRaison"),numero=adminValue("standAdminNumero"),type=adminValue("standAdminType"),mode=adminValue("standAdminMode");
+        if(!nom&&!raison)return msg("Renseigne le nom du stand ou la raison sociale.");
+        if(!numero)return msg("Renseigne le numéro de stand.");
+        if(!type)return msg("Choisis le type de stand.");
+        const button=$("standAdminSave");button.disabled=true;button.textContent="Enregistrement…";
+        try{
+            const {data:r,error}=await client.rpc("enregistrer_partenaire_stand",{
+                p_partenaire_id:standAdminPartnerId,p_nom:nom||null,p_raison_sociale:raison||null,
+                p_contact:adminValue("standAdminContact")||null,p_adresse:adminValue("standAdminAdresse")||null,
+                p_npa:adminValue("standAdminNpa")||null,p_localite:adminValue("standAdminLocalite")||null,
+                p_telephone:adminValue("standAdminTelephone")||null,p_email:adminValue("standAdminEmail")||null,
+                p_notes:adminValue("standAdminNotes")||null,p_actif:$("standAdminActif").checked,
+                p_numero_stand:numero,p_type_partenaire:type,p_utilise_vaisselle:$("standAdminVaisselle").checked,
+                p_mode_reglement_habituel:mode
+            });
+            if(error)throw error;if(!r?.ok)throw new Error(r?.message||"Enregistrement impossible.");
+            await loadRows();
+            closeStandAdmin();msg("Fiche du stand enregistrée.",true);
+        }catch(e){console.error(e);msg(e?.message||"Impossible d'enregistrer la fiche du stand.")}
+        finally{button.disabled=false;button.textContent="Enregistrer"}
+    }
+
   function money(v) {
     return `${Number(v||0).toLocaleString("fr-CH",{minimumFractionDigits:2,maximumFractionDigits:2})} CHF`
   }
@@ -1022,6 +1163,7 @@ function actionHtml(r) {
   const buttons=[];
   buttons.push(`<button class="action history" data-history="${esc(r.id)}" type="button">Voir les mouvements</button>`);
   buttons.push(`<button class="action qr" data-qr="${esc(r.id)}" type="button">${demo?"QR du stand":"Code d’accès ticket"}</button>`);
+  if(!demo&&(currentRole==="responsable"||currentRole==="administrateur")){buttons.push(`<button class="action info" data-stand-admin="${esc(r.id)}" type="button">Fiche du stand</button>`);}
   if(r.statut==="a_facturer"){
     buttons.push(`<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`);
   }
@@ -1064,6 +1206,7 @@ function render() {
   accounts.querySelectorAll("[data-invoice]").forEach(b=>b.addEventListener("click",()=>openInvoice(b.dataset.invoice)));
   accounts.querySelectorAll("[data-history]").forEach(b=>b.addEventListener("click",()=>openHistory(b.dataset.history)));
   accounts.querySelectorAll("[data-qr]").forEach(b=>b.addEventListener("click",()=>openQr(b.dataset.qr)));
+  accounts.querySelectorAll("[data-stand-admin]").forEach(b=>b.addEventListener("click",()=>openStandAdmin(b.dataset.standAdmin)));
 }
 function movementLabel(type){return ({retrait:"Retrait",retour_propre:"Retour propre",retour_sale:"Retour sale",paiement:"Paiement",remboursement_credit:"Remboursement du crédit",cloture_compte:"Clôture du compte",cloture_facturation:"Clôture pour facturation"})[type]||type||"Mouvement"}
 function formatDate(v){if(!v)return "—";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}
@@ -1431,6 +1574,10 @@ function events() {
   $("qrSaveAccessCode").onclick=saveQrAccessCode;
   $("qrNewAccessCode").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6)});
   $("qrModal").onclick=x=>{if(x.target===$("qrModal"))closeQr()};
+  $("standAdminClose").onclick=closeStandAdmin;
+  $("standAdminCancel").onclick=closeStandAdmin;
+  $("standAdminSave").onclick=saveStandAdmin;
+  standAdminModal.onclick=e=>{if(e.target===standAdminModal)closeStandAdmin()};
 }
 async function init() {
   try {
