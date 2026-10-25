@@ -292,9 +292,8 @@
     .stocks-scroll {
       min-height: 0;
       flex: 1 1 auto;
-      overflow: auto;
+      overflow: hidden;
       padding: 12px;
-      scrollbar-width: thin;
     }
 
     .resume-global {
@@ -338,17 +337,25 @@
 
     .tableau-cadre {
       width: 100%;
+      height: 100%;
       min-width: 0;
+      min-height: 0;
       border: 1px solid #e2e2e2;
       border-radius: 14px;
       overflow: hidden;
       background: #fff;
+      isolation: isolate;
     }
 
     .tableau-defilement {
       width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
       overflow: auto;
       scrollbar-width: thin;
+      overscroll-behavior: contain;
+      border-radius: inherit;
     }
 
     table {
@@ -361,22 +368,19 @@
       min-width: 790px;
     }
 
-    /* Le scroll principal porte les deux axes :
-       l'en-tête ET la colonne Article restent visibles. */
-    .stocks-scroll .tableau-cadre,
-    .stocks-scroll .tableau-defilement {
-      overflow: visible;
-    }
-
+    /* Le tableau possède son propre défilement.
+       L'en-tête reste fixe verticalement.
+       La colonne Article reste fixe horizontalement et passe toujours
+       AU-DESSUS des autres cellules pendant le défilement. */
     .table-stocks thead th {
       position: sticky;
       top: 0;
-      z-index: 5;
+      z-index: 20;
       background: #f7f7f7;
     }
 
     .table-stocks th:first-child {
-      z-index: 7;
+      z-index: 40;
     }
 
     th {
@@ -406,13 +410,15 @@
     }
 
     .table-stocks th:first-child {
-      z-index: 4;
+      z-index: 40;
       background: #f7f7f7;
+      box-shadow: 1px 0 0 #dedede;
     }
 
     .table-stocks td:first-child {
-      z-index: 1;
+      z-index: 10;
       background: #fff;
+      box-shadow: 1px 0 0 #eeeeee;
     }
 
     .table-stocks tbody tr:hover td:first-child {
@@ -549,6 +555,9 @@
       width: 38px;
       height: 38px;
       flex: 0 0 38px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
       border: 1px solid #ddd;
       border-radius: 10px;
       background: #fff;
@@ -556,6 +565,8 @@
       cursor: pointer;
       font-size: 18px;
       font-weight: 900;
+      line-height: 1;
+      text-align: center;
     }
 
     .bouton-actualiser:hover:not(:disabled) {
@@ -2075,6 +2086,11 @@
             ? "Annulation d’une opération de stock"
             : libelleTypeMouvement(typeOperation);
 
+          /* Une contre-opération compense une opération précédente.
+             On affiche donc visuellement un signe moins devant ses quantités,
+             sans modifier les valeurs enregistrées en base. */
+          const signeQuantiteDetail = estContreOperation ? "−" : "";
+
           let explication = "";
           if (estContreOperation) {
             explication = "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
@@ -2120,7 +2136,7 @@
                   const physique = [];
                   if (entier(x.nombre_conditionnements_complets) > 0) physique.push(formatNombre(x.nombre_conditionnements_complets) + " complet(s)");
                   if (partiels.length > 0) physique.push(formatNombre(partiels.length) + " partiel(s) (" + partiels.map(function(q){ return formatNombre(q); }).join(", ") + ")");
-                  return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;
+                  return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${signeQuantiteDetail}${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;
                 }).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
               </section>
             </div>`;
@@ -2160,6 +2176,7 @@
           let titre = libelleTypeMouvement(operation.type_operation || operation.type_mouvement);
           let explication = "";
           let commentaireVisible = operation.motif_correction || operation.motif || operation.commentaire || "";
+          let quantiteAffichee = formatNombre(quantite);
 
           if (estContreOperation) {
             const typeOriginal = operationOriginale
@@ -2168,6 +2185,7 @@
 
             titre = "Annulation de " + String(typeOriginal).toLowerCase();
             explication = "Contre-opération créée automatiquement pour compenser l’opération annulée.";
+            quantiteAffichee = "−" + formatNombre(quantite);
 
             /* L'UUID technique n'est plus affiché dans la tuile.
                Il reste disponible dans le détail, rubrique Traçabilité. */
@@ -2181,7 +2199,7 @@
             <article class="mouvement" data-operation-id="${echapperHtml(operationId)}">
               <div class="mouvement-haut">
                 <div class="mouvement-article">${echapperHtml(titre)}</div>
-                <div class="mouvement-quantite">${formatNombre(quantite)}</div>
+                <div class="mouvement-quantite">${quantiteAffichee}</div>
               </div>
 
               <span class="mouvement-statut ${classeStatut}">${echapperHtml(statutOperation(statut))}</span>
