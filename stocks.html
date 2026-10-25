@@ -2544,6 +2544,52 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 110 - CORRECTION HAUTEUR DU TABLEAU STOCK ACTUEL
+       ======================================================== */
+
+    /*
+      Le panneau principal peut continuer à occuper la hauteur disponible,
+      mais le cadre du tableau ne doit plus être étiré artificiellement
+      jusqu'en bas du panneau.
+    */
+    .panneau-principal .stocks-scroll {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .panneau-principal .stocks-scroll > .tableau-cadre {
+      flex: 0 1 auto;
+      height: auto;
+      max-height: 100%;
+    }
+
+    .panneau-principal .stocks-scroll > .tableau-cadre > .tableau-defilement {
+      height: auto;
+      max-height: 100%;
+    }
+
+    /*
+      Sur appareils tactiles (tablettes et téléphones), on force également
+      le comportement même lorsque la largeur d'écran est supérieure à 900 px
+      (cas typique d'un iPad en paysage).
+    */
+    @media (hover: none) and (pointer: coarse) {
+      .panneau-principal .stocks-scroll > .tableau-cadre {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+      }
+
+      .panneau-principal .stocks-scroll > .tableau-cadre > .tableau-defilement {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+      }
+    }
+
   </style>
 </head>
 
