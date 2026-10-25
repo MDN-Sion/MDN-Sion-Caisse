@@ -2264,6 +2264,210 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 110 - CORRECTIONS UI RELEVÉ PRESTATAIRE
+       ======================================================== */
+
+    /* Les cadres arrondis masquent réellement le contenu sur tablette/téléphone. */
+    #modalBilan .tableau-cadre,
+    #modalBilan .releve-prestataire {
+      overflow: hidden;
+    }
+
+    /*
+      Les zones de tableaux gardent le défilement horizontal.
+      Le défilement vertical est celui de la page/modale :
+      la molette ne reste donc plus "capturée" au-dessus du tableau.
+    */
+    #modalBilan .tableau-defilement {
+      overflow-x: auto;
+      overflow-y: visible;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Bloc repliable du relevé prestataire. */
+    .releve-prestataire {
+      padding: 0;
+    }
+
+    .releve-prestataire-resume {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      width: 100%;
+      padding: 16px 20px;
+      border: 0;
+      background: #fff;
+      color: #333;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .releve-prestataire-resume:hover {
+      background: #fafafa;
+    }
+
+    .releve-prestataire-resume-texte {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .releve-prestataire-resume-titre {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .releve-prestataire-resume-sous-titre {
+      display: block;
+      color: #777;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .releve-prestataire-resume-droite {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .releve-prestataire-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: #f4f4f4;
+      font-size: 20px;
+      font-weight: 900;
+      transition: transform .18s ease;
+    }
+
+    .releve-prestataire-resume[aria-expanded="true"]
+      .releve-prestataire-chevron {
+      transform: rotate(180deg);
+    }
+
+    .releve-prestataire-contenu {
+      padding: 0 20px 18px;
+      border-top: 1px solid #ececec;
+    }
+
+    .releve-prestataire-contenu[hidden] {
+      display: none !important;
+    }
+
+    /*
+      Première colonne fixe.
+      width:max-content adapte sa largeur au libellé le plus long
+      au lieu d'imposer une largeur arbitraire.
+    */
+    .releve-prestataire-table th:first-child,
+    .releve-prestataire-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      width: max-content;
+      min-width: max-content;
+      max-width: none;
+      white-space: nowrap;
+      background: #fff;
+      box-shadow: 1px 0 0 #e5e5e5;
+    }
+
+    .releve-prestataire-table thead th:first-child {
+      z-index: 5;
+      background: #f7f7f7;
+    }
+
+    .releve-actions {
+      flex-wrap: wrap;
+    }
+
+    #enregistrerBrouillonRelevePrestataire {
+      min-height: 42px;
+      padding: 9px 18px;
+      border: 1px solid #8d6b00;
+      border-radius: 11px;
+      background: #fff;
+      color: #6e5300;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    #enregistrerBrouillonRelevePrestataire:hover {
+      background: #fff9e8;
+    }
+
+    @media (max-width: 700px) {
+      .releve-prestataire-resume {
+        align-items: flex-start;
+        padding: 14px;
+      }
+
+      .releve-prestataire-resume-droite {
+        gap: 7px;
+      }
+
+      .releve-date {
+        max-width: 120px;
+        text-align: right;
+      }
+
+      .releve-prestataire-contenu {
+        padding: 0 0 14px;
+      }
+
+      .releve-prestataire-contenu > .tableau-cadre {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+      }
+
+      .releve-actions {
+        padding: 0 14px;
+      }
+
+      #enregistrerBrouillonRelevePrestataire,
+      #enregistrerRelevePrestataire {
+        flex: 1 1 220px;
+        width: auto;
+      }
+    }
+
+    @media print {
+      .releve-prestataire-resume {
+        display: none !important;
+      }
+
+      .releve-prestataire-contenu[hidden] {
+        display: block !important;
+      }
+
+      .releve-prestataire-contenu {
+        padding: 0 !important;
+        border-top: 0 !important;
+      }
+
+      .releve-prestataire-table th:first-child,
+      .releve-prestataire-table td:first-child {
+        position: static !important;
+        width: auto !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        box-shadow: none !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -2643,6 +2847,7 @@
       const sousTitreModalBilan = document.getElementById("sousTitreModalBilan");
       let dernierBilanGlobal = null;
       let dernierRelevePrestataire = null;
+      let relevePrestataireOuvert = false;
 
       const modalReapprovisionnement = document.getElementById("modalReapprovisionnement");
       const fermerModalReapprovisionnement = document.getElementById("fermerModalReapprovisionnement");
@@ -4777,7 +4982,7 @@
         }
       }
 
-      async function enregistrerRelevePrestataireDepuisBilan() {
+      async function enregistrerRelevePrestataireDepuisBilan(modeEnregistrement = "final") {
         if (!editionCourante?.id) {
           afficherMessage("Aucune édition active.", "erreur");
           return;
@@ -4795,10 +5000,18 @@
           }));
 
         try {
-          const bouton = document.getElementById("enregistrerRelevePrestataire");
-          if (bouton) {
+          const boutonFinal = document.getElementById("enregistrerRelevePrestataire");
+          const boutonBrouillon = document.getElementById("enregistrerBrouillonRelevePrestataire");
+          const boutons = [boutonFinal, boutonBrouillon].filter(Boolean);
+
+          boutons.forEach(function (bouton) {
             bouton.disabled = true;
-            bouton.textContent = "Enregistrement…";
+          });
+
+          if (modeEnregistrement === "brouillon" && boutonBrouillon) {
+            boutonBrouillon.textContent = "Enregistrement…";
+          } else if (boutonFinal) {
+            boutonFinal.textContent = "Enregistrement…";
           }
 
           const { error } = await window.MDN_SUPABASE.rpc(
@@ -4825,7 +5038,12 @@
 
           dernierRelevePrestataire = releve || null;
           afficherBilanGlobal(dernierBilanGlobal || {});
-          afficherMessage("Relevé du prestataire enregistré.", "succes");
+          afficherMessage(
+            modeEnregistrement === "brouillon"
+              ? "Brouillon du relevé enregistré. Tu pourras le reprendre plus tard."
+              : "Relevé du prestataire enregistré.",
+            "succes"
+          );
         } catch (erreur) {
           console.error("[MDN Sion] Enregistrement du relevé prestataire impossible :", erreur);
           afficherMessage(
@@ -4979,97 +5197,133 @@
           </section>
 
           <section class="releve-prestataire">
-            <div class="releve-prestataire-entete">
-              <div>
-                <h3>Relevé final du prestataire</h3>
-                <p>
+            <button
+              id="toggleRelevePrestataire"
+              class="releve-prestataire-resume"
+              type="button"
+              aria-expanded="${relevePrestataireOuvert ? "true" : "false"}"
+              aria-controls="contenuRelevePrestataire"
+            >
+              <span class="releve-prestataire-resume-texte">
+                <span class="releve-prestataire-resume-titre">
+                  Relevé final du prestataire
+                </span>
+                <span class="releve-prestataire-resume-sous-titre">
                   Saisis uniquement les quantités sales communiquées par le prestataire.
-                  Le propre restant, l’utilisation et la quantité non revenue sont calculés automatiquement.
-                </p>
+                </span>
+              </span>
+
+              <span class="releve-prestataire-resume-droite">
+                <span class="releve-date">${
+                  dernierRelevePrestataire?.updated_at
+                    ? "Brouillon enregistré"
+                    : "Aucun relevé enregistré"
+                }</span>
+                <span class="releve-prestataire-chevron" aria-hidden="true">⌄</span>
+              </span>
+            </button>
+
+            <div
+              id="contenuRelevePrestataire"
+              class="releve-prestataire-contenu"
+              ${relevePrestataireOuvert ? "" : "hidden"}
+            >
+              <div class="tableau-cadre">
+                <div class="tableau-defilement">
+                  <table class="releve-prestataire-table">
+                    <thead>
+                      <tr>
+                        <th>Article</th>
+                        <th>Livré propre</th>
+                        <th>Propre restant</th>
+                        <th>Utilisé</th>
+                        <th>Sale enregistré MDN</th>
+                        <th>Sale prestataire</th>
+                        <th>Non revenu</th>
+                        <th>Taux récupération</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${articles.map(function (ligne) {
+                        const releve = valeurRelevePrestataireParArticle(ligne.vaisselle_id);
+                        const livrePropre = entier(ligne.apports_nets_stock);
+                        const propreRestant = entier(ligne.total_propre);
+                        const utilise = Math.max(livrePropre - propreRestant, 0);
+                        const saleMdn = entier(ligne.retours_sales_cumules);
+                        const salePrestataire =
+                          releve && releve.sale_prestataire !== null
+                            ? entier(releve.sale_prestataire)
+                            : null;
+                        const nonRevenu =
+                          calculerNonRevenu(utilise, salePrestataire);
+                        const taux =
+                          salePrestataire !== null && utilise > 0
+                            ? ((salePrestataire / utilise) * 100)
+                                .toFixed(1)
+                                .replace(".", ",") + " %"
+                            : "—";
+
+                        return `
+                          <tr data-utilise="${utilise}">
+                            <td class="bilan-article">${echapperHtml(ligne.article || "Article")}</td>
+                            <td>${formatNombre(livrePropre)}</td>
+                            <td>${formatNombre(propreRestant)}</td>
+                            <td><strong>${formatNombre(utilise)}</strong></td>
+                            <td>${formatNombre(saleMdn)}</td>
+                            <td>
+                              <input
+                                class="releve-sale-input"
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputmode="numeric"
+                                data-vaisselle-id="${echapperHtml(String(ligne.vaisselle_id || ""))}"
+                                value="${salePrestataire === null ? "" : salePrestataire}"
+                                placeholder="Saisir"
+                                aria-label="Sale prestataire - ${echapperHtml(ligne.article || "Article")}"
+                              >
+                            </td>
+                            <td
+                              data-non-revenu
+                              class="releve-non-revenu ${classeNonRevenu(nonRevenu)}"
+                            >${texteNonRevenu(nonRevenu)}</td>
+                            <td data-taux-recuperation>${taux}</td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <span class="releve-date">${
-                dernierRelevePrestataire?.updated_at
-                  ? "Dernier enregistrement : " +
-                    new Date(dernierRelevePrestataire.updated_at).toLocaleString("fr-FR")
-                  : "Aucun relevé enregistré"
-              }</span>
-            </div>
 
-            <div class="tableau-cadre">
-              <div class="tableau-defilement">
-                <table class="releve-prestataire-table">
-                  <thead>
-                    <tr>
-                      <th>Article</th>
-                      <th>Livré propre</th>
-                      <th>Propre restant</th>
-                      <th>Utilisé</th>
-                      <th>Sale enregistré MDN</th>
-                      <th>Sale prestataire</th>
-                      <th>Non revenu</th>
-                      <th>Taux récupération</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${articles.map(function (ligne) {
-                      const releve = valeurRelevePrestataireParArticle(ligne.vaisselle_id);
-                      const livrePropre = entier(ligne.apports_nets_stock);
-                      const propreRestant = entier(ligne.total_propre);
-                      const utilise = Math.max(livrePropre - propreRestant, 0);
-                      const saleMdn = entier(ligne.retours_sales_cumules);
-                      const salePrestataire =
-                        releve && releve.sale_prestataire !== null
-                          ? entier(releve.sale_prestataire)
-                          : null;
-                      const nonRevenu =
-                        calculerNonRevenu(utilise, salePrestataire);
-                      const taux =
-                        salePrestataire !== null && utilise > 0
-                          ? ((salePrestataire / utilise) * 100)
-                              .toFixed(1)
-                              .replace(".", ",") + " %"
-                          : "—";
+              <div class="releve-actions">
+                <button id="enregistrerBrouillonRelevePrestataire" type="button">
+                  💾 Enregistrer le brouillon
+                </button>
 
-                      return `
-                        <tr data-utilise="${utilise}">
-                          <td class="bilan-article">${echapperHtml(ligne.article || "Article")}</td>
-                          <td>${formatNombre(livrePropre)}</td>
-                          <td>${formatNombre(propreRestant)}</td>
-                          <td><strong>${formatNombre(utilise)}</strong></td>
-                          <td>${formatNombre(saleMdn)}</td>
-                          <td>
-                            <input
-                              class="releve-sale-input"
-                              type="number"
-                              min="0"
-                              step="1"
-                              inputmode="numeric"
-                              data-vaisselle-id="${echapperHtml(String(ligne.vaisselle_id || ""))}"
-                              value="${salePrestataire === null ? "" : salePrestataire}"
-                              placeholder="Saisir"
-                              aria-label="Sale prestataire - ${echapperHtml(ligne.article || "Article")}"
-                            >
-                          </td>
-                          <td
-                            data-non-revenu
-                            class="releve-non-revenu ${classeNonRevenu(nonRevenu)}"
-                          >${texteNonRevenu(nonRevenu)}</td>
-                          <td data-taux-recuperation>${taux}</td>
-                        </tr>
-                      `;
-                    }).join("")}
-                  </tbody>
-                </table>
+                <button id="enregistrerRelevePrestataire" type="button">
+                  ✓ Enregistrer le relevé
+                </button>
               </div>
-            </div>
-
-            <div class="releve-actions">
-              <button id="enregistrerRelevePrestataire" type="button">
-                💾 Enregistrer le relevé
-              </button>
             </div>
           </section>
         `;
+
+        const boutonToggleReleve =
+          document.getElementById("toggleRelevePrestataire");
+        const contenuReleve =
+          document.getElementById("contenuRelevePrestataire");
+
+        if (boutonToggleReleve && contenuReleve) {
+          boutonToggleReleve.addEventListener("click", function () {
+            relevePrestataireOuvert = !relevePrestataireOuvert;
+            contenuReleve.hidden = !relevePrestataireOuvert;
+            boutonToggleReleve.setAttribute(
+              "aria-expanded",
+              relevePrestataireOuvert ? "true" : "false"
+            );
+          });
+        }
 
         contenuBilan
           .querySelectorAll(".releve-sale-input")
@@ -5082,11 +5336,19 @@
         const boutonEnregistrerReleve =
           document.getElementById("enregistrerRelevePrestataire");
 
+        const boutonBrouillonReleve =
+          document.getElementById("enregistrerBrouillonRelevePrestataire");
+
+        if (boutonBrouillonReleve) {
+          boutonBrouillonReleve.addEventListener("click", function () {
+            enregistrerRelevePrestataireDepuisBilan("brouillon");
+          });
+        }
+
         if (boutonEnregistrerReleve) {
-          boutonEnregistrerReleve.addEventListener(
-            "click",
-            enregistrerRelevePrestataireDepuisBilan
-          );
+          boutonEnregistrerReleve.addEventListener("click", function () {
+            enregistrerRelevePrestataireDepuisBilan("final");
+          });
         }
       }
 
