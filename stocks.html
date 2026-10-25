@@ -1945,18 +1945,8 @@
           return;
         }
 
-        /* SQL 105 corrige une livraison de vaisselle sans contenants.
-           SQL 106 corrige une livraison de contenants vides sans vaisselle.
-           Une livraison mixte nécessite un moteur unifié afin que les deux
-           familles soient corrigées dans une seule transaction. */
-        if (lignes.length > 0 && contenants.length > 0) {
-          afficherMessage(
-            "Cette livraison contient à la fois de la vaisselle et des contenants vides. La correction mixte doit être réalisée en une seule opération et n’est pas encore prise en charge par le moteur actuel.",
-            "erreur"
-          );
-          return;
-        }
-
+        /* SQL 107 corrige dans une seule transaction une livraison contenant
+           de la vaisselle, des contenants vides, ou les deux simultanément. */
         if (lignes.length === 0 && contenants.length === 0) {
           afficherMessage("Cette livraison ne contient aucune ligne corrigeable.", "erreur");
           return;
@@ -2464,15 +2454,14 @@
               ? operationDetailCourante.contenants_vides.length
               : 0;
 
-          const livraisonCorrectionSimple =
-            (nbLignesVaisselleCorrection > 0 && nbLignesContenantsCorrection === 0) ||
-            (nbLignesVaisselleCorrection === 0 && nbLignesContenantsCorrection > 0);
+          const livraisonCorrigeable =
+            nbLignesVaisselleCorrection > 0 || nbLignesContenantsCorrection > 0;
 
           corrigerOperationStock.hidden = !(
             typeOperation === "livraison_vaisselle" &&
             statutValide &&
             estOperationOriginale &&
-            livraisonCorrectionSimple
+            livraisonCorrigeable
           );
 
           const operationOrigineLiee = estContreOperation
