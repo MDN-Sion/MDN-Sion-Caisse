@@ -2292,8 +2292,28 @@
             operationDetailCourante.contenants_vides.length === 0
           );
 
+          const operationOrigineLiee = estContreOperation
+            ? operationsLiees.find(function(x) {
+                return x && String(x.id || "") === String(op.operation_originale_id || "");
+              }) || operationsLiees.find(function(x) {
+                return x && String(x.statut || "").toLowerCase() === "corrige";
+              }) || null
+            : null;
+
+          const estCorrectionDetail =
+            estContreOperation &&
+            (
+              String(operationOrigineLiee?.statut || "").toLowerCase() === "corrige" ||
+              String(op.motif || "").toLowerCase().includes("correction") ||
+              String(op.commentaire || "").toLowerCase().includes("corriger la livraison")
+            );
+
           const titreOperation = estContreOperation
-            ? "Annulation d’une opération de stock"
+            ? (
+                estCorrectionDetail
+                  ? "Correction d’une opération de stock"
+                  : "Annulation d’une opération de stock"
+              )
             : libelleTypeMouvement(typeOperation);
 
           /* Une contre-opération compense une opération précédente.
@@ -2303,11 +2323,6 @@
 
           let explication = "";
           if (estContreOperation) {
-            const estCorrectionDetail =
-              String(op.reference_type || "") === "correction_operation_stock" ||
-              String(op.motif || "").toLowerCase().includes("correction") ||
-              String(op.commentaire || "").toLowerCase().includes("corriger la livraison");
-
             explication = estCorrectionDetail
               ? "Cette opération compensatrice a été créée automatiquement pour appliquer uniquement la différence entre la quantité d’origine et la quantité corrigée. Elle reste valide car c’est elle qui ajuste réellement le stock."
               : "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
@@ -2402,8 +2417,17 @@
               ? libelleTypeMouvement(operationOriginale.type_operation)
               : "opération de stock";
 
-            titre = "Annulation de " + String(typeOriginal).toLowerCase();
-            explication = "Contre-opération créée automatiquement pour compenser l’opération annulée.";
+            const statutOriginal = String(operationOriginale?.statut || "").toLowerCase();
+            const estCorrection = statutOriginal === "corrige";
+
+            if (estCorrection) {
+              titre = "Correction de " + String(typeOriginal).toLowerCase();
+              explication = "Opération compensatrice créée automatiquement pour appliquer uniquement la différence corrigée.";
+            } else {
+              titre = "Annulation de " + String(typeOriginal).toLowerCase();
+              explication = "Contre-opération créée automatiquement pour compenser l’opération annulée.";
+            }
+
             quantiteAffichee = "−" + formatNombre(quantite);
 
             /* L'UUID technique n'est plus affiché dans la tuile.
