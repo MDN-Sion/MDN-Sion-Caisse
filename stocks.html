@@ -1954,7 +1954,15 @@
         motifCorrectionOperation.value = "";
         commentaireCorrectionOperation.value = "";
         commentaireCorrectionObligatoire.hidden = true;
-        fermerDetail();
+        /* On ferme uniquement visuellement la fenêtre de détail.
+           Ne pas appeler fermerDetail() ici : cette fonction remet
+           operationDetailCourante à null, alors que la correction en a
+           encore besoin au moment de la confirmation. */
+        modalDetail.classList.remove("visible");
+        modalDetail.setAttribute("aria-hidden", "true");
+        corrigerOperationStock.hidden = true;
+        annulerOperationStock.hidden = true;
+
         modalCorrectionOperation.classList.add("visible");
         modalCorrectionOperation.setAttribute("aria-hidden", "false");
       }
