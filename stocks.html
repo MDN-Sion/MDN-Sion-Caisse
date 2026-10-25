@@ -1973,15 +1973,13 @@
           throw new Error("Impossible d’identifier l’article « Gobelets ».");
         }
 
-        const { data, error } = await window.MDN_SUPABASE
-          .from("stock_conditionnements_vaisselle")
-          .select("id, vaisselle_id, type_conditionnement, quantite_standard, quantite_actuelle, emplacement, created_at")
-          .eq("edition_id", editionCourante.id)
-          .eq("vaisselle_id", gobelets.vaisselle_id)
-          .eq("is_demo", modeDemo)
-          .eq("emplacement", "reserve_mdn_propre")
-          .gt("quantite_actuelle", 0)
-          .order("created_at", { ascending: true });
+        const { data, error } = await window.MDN_SUPABASE.rpc(
+          "lister_conditionnements_reserve_mdn",
+          {
+            p_edition_id: editionCourante.id,
+            p_is_demo: modeDemo
+          }
+        );
 
         if (error) {
           throw error;
@@ -2018,7 +2016,7 @@
             : `${type.charAt(0).toUpperCase() + type.slice(1)} partielle`;
 
           return `
-            <tr data-conditionnement-id="${echapperHtml(ligne.id)}"
+            <tr data-conditionnement-id="${echapperHtml(ligne.conditionnement_id)}"
                 data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}"
                 data-quantite="${quantite}">
               <td style="text-align:center;">
