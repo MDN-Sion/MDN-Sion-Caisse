@@ -2194,6 +2194,11 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 }
 
 /* SQL114 — fiche administrative du stand intégrée */
+/* Barre stand : recherche + création + QR sur UNE seule ligne */
+.standbar{display:block}
+.standline{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 42px 48px;gap:7px;align-items:center}
+.standline .search{width:100%;min-width:0}
+#newStandAdmin{width:42px;min-width:42px;padding:0}
 .qr{display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
 .stand-manage-button{height:42px;min-width:42px;border:1px solid #c7d2fe;border-radius:11px;background:#eef2ff;color:#00126b;font-weight:900;padding:0 10px;display:none;align-items:center;justify-content:center;white-space:nowrap}
 .stand-manage-button.show{display:flex}
@@ -2423,7 +2428,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        <label class="stand-admin-field full"><span>Mode de règlement habituel *</span><select id="standAdminMode"><option value="direct">Règlement direct</option><option value="facture">Facturation</option></select></label>
       </div>
       <div class="stand-admin-checks">
-       <label class="stand-admin-check"><input id="standAdminVaisselle" type="checkbox"><span>Utilise la vaisselle MDN</span></label>
+       <label class="stand-admin-check"><input id="standAdminVaisselle" type="checkbox"><span>Utilise la vaisselle réutilisable MDN</span></label>
        <label class="stand-admin-check"><input id="standAdminActif" type="checkbox" checked><span>Partenaire actif</span></label>
       </div>
      </div>
@@ -2669,7 +2674,7 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         $("standAdminNumero").value=item?.numero_stand||"";
         $("standAdminType").value=item?.type_partenaire||"";
         $("standAdminMode").value=item?.mode_reglement_habituel||"direct";
-        $("standAdminVaisselle").checked=Boolean(item?.utilise_vaisselle);
+        $("standAdminVaisselle").checked=item ? Boolean(item?.utilise_vaisselle) : true;
         $("standAdminActif").checked=item?.actif!==false;
         $("standAdminTitle").textContent=item?"Modifier la fiche du stand":"Nouveau stand";
     }
