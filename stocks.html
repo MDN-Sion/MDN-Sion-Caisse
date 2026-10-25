@@ -2063,14 +2063,6 @@
           lignesCorrectionOperation.querySelectorAll("input[data-type-contenant-id]")
         );
 
-        if (champsVaisselle.length > 0 && champsContenants.length > 0) {
-          afficherMessage(
-            "Une livraison mixte vaisselle + contenants doit être corrigée par un moteur unifié. Aucune modification n’a été envoyée.",
-            "erreur"
-          );
-          return;
-        }
-
         let modificationDetectee = false;
         const lignes = [];
         const contenantsVides = [];
@@ -2138,31 +2130,16 @@
         confirmerCorrectionOperation.textContent = "Correction…";
 
         try {
-          let resultat;
-
-          if (champsContenants.length > 0) {
-            resultat = await window.MDN_SUPABASE.rpc(
-              "corriger_contenants_vides_livraison_stock",
-              {
-                p_operation_id: op.id,
-                p_contenants_vides: contenantsVides,
-                p_motif: motif,
-                p_is_demo: modeDemo
-              }
-            );
-          } else {
-            resultat = await window.MDN_SUPABASE.rpc(
-              "corriger_livraison_stock_vaisselle",
-              {
-                p_operation_id: op.id,
-                p_lignes: lignes,
-                p_motif: motif,
-                p_is_demo: modeDemo
-              }
-            );
-          }
-
-          const { data, error } = resultat;
+          const { data, error } = await window.MDN_SUPABASE.rpc(
+            "corriger_livraison_stock_unifiee",
+            {
+              p_operation_id: op.id,
+              p_lignes: lignes,
+              p_contenants_vides: contenantsVides,
+              p_motif: motif,
+              p_is_demo: modeDemo
+            }
+          );
 
           if (error) throw error;
           if (data?.ok === false) {
