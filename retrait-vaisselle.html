@@ -2202,7 +2202,22 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .qr{display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
 .stand-manage-button{height:42px;min-width:42px;border:1px solid #c7d2fe;border-radius:11px;background:#eef2ff;color:#00126b;font-weight:900;padding:0 10px;display:none;align-items:center;justify-content:center;white-space:nowrap}
 .stand-manage-button.show{display:flex}
-.selected-actions{display:flex;gap:7px;align-items:center}
+.selected-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+/* Ajustement ciblé : fiche du stand compacte pour conserver l’alignement des deux panneaux */
+.selected.show{grid-template-columns:minmax(0,1fr) auto !important;gap:8px}
+.selected-actions .stand-manage-button,
+.selected-actions .change{
+    min-height:28px !important;
+    height:28px !important;
+    padding:3px 9px !important;
+    border-radius:8px;
+    font-size:12px;
+    line-height:1;
+}
+@media(max-width:430px){
+    .selected.show{grid-template-columns:minmax(0,1fr) !important}
+    .selected-actions{justify-content:flex-start}
+}
 .stand-admin-card{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .stand-admin-body{padding:14px 16px;overflow:auto;min-height:0}
 .stand-admin-section{margin-bottom:15px}.stand-admin-section:last-child{margin-bottom:0}
