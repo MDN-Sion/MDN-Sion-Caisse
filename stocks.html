@@ -2590,6 +2590,32 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 111 - STATUT DU RELEVÉ PRESTATAIRE
+       ======================================================== */
+
+    .releve-date {
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #f3f3f3;
+      color: #777;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .releve-prestataire-resume[aria-expanded="true"] .releve-date {
+      background: #fff8df;
+      color: #6e5300;
+    }
+
+    @media (max-width: 700px) {
+      .releve-date {
+        max-width: none;
+        font-size: 11px;
+      }
+    }
+
   </style>
 </head>
 
@@ -5136,8 +5162,13 @@
             boutonFinal.textContent = "Enregistrement…";
           }
 
+          const rpcEnregistrement =
+            modeEnregistrement === "brouillon"
+              ? "enregistrer_brouillon_releve_final_prestataire"
+              : "valider_releve_final_prestataire";
+
           const { error } = await window.MDN_SUPABASE.rpc(
-            "enregistrer_releve_final_prestataire",
+            rpcEnregistrement,
             {
               p_edition_id: editionCourante.id,
               p_lignes: lignes,
@@ -5163,7 +5194,7 @@
           afficherMessage(
             modeEnregistrement === "brouillon"
               ? "Brouillon du relevé enregistré. Tu pourras le reprendre plus tard."
-              : "Relevé du prestataire enregistré.",
+              : "Relevé du prestataire validé.",
             "succes"
           );
         } catch (erreur) {
@@ -5337,9 +5368,11 @@
 
               <span class="releve-prestataire-resume-droite">
                 <span class="releve-date">${
-                  dernierRelevePrestataire?.updated_at
-                    ? "Brouillon enregistré"
-                    : "Aucun relevé enregistré"
+                  dernierRelevePrestataire?.statut === "valide"
+                    ? "Relevé validé"
+                    : dernierRelevePrestataire?.statut === "brouillon"
+                      ? "Brouillon enregistré"
+                      : "Aucun relevé enregistré"
                 }</span>
                 <span class="releve-prestataire-chevron" aria-hidden="true"></span>
               </span>
@@ -5424,7 +5457,7 @@
                 </button>
 
                 <button id="enregistrerRelevePrestataire" type="button">
-                  ✓ Enregistrer le relevé
+                  ✓ Valider le relevé
                 </button>
               </div>
             </div>
