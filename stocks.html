@@ -1549,6 +1549,162 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 109 - BILAN GLOBAL DE L'ÉDITION
+       ======================================================== */
+
+    .bilan-resume {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .bilan-indicateur {
+      min-width: 0;
+      padding: 13px 14px;
+      border: 1px solid #e3e3e3;
+      border-radius: 14px;
+      background: #fafafa;
+    }
+
+    .bilan-indicateur span {
+      display: block;
+      color: #777;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .bilan-indicateur strong {
+      display: block;
+      margin-top: 5px;
+      color: #333;
+      font-size: 21px;
+      line-height: 1.1;
+    }
+
+    .bilan-indicateur.ecart-ok {
+      background: #f5fbf6;
+      border-color: #cfe6d3;
+    }
+
+    .bilan-indicateur.ecart-ok strong {
+      color: #28733a;
+    }
+
+    .bilan-indicateur.ecart-attention {
+      background: #fff7f7;
+      border-color: #efcaca;
+    }
+
+    .bilan-indicateur.ecart-attention strong {
+      color: #9a1c1c;
+    }
+
+    .bilan-table-cadre {
+      margin-top: 4px;
+    }
+
+    .bilan-table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .bilan-table th,
+    .bilan-table td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #ececec;
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .bilan-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f7f7f7;
+      color: #555;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bilan-table th:first-child,
+    .bilan-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      text-align: left;
+      background: #fff;
+    }
+
+    .bilan-table th:first-child {
+      z-index: 3;
+      background: #f7f7f7;
+    }
+
+    .bilan-table tbody tr:hover td {
+      background: #fffafa;
+    }
+
+    .bilan-table tbody tr:hover td:first-child {
+      background: #fffafa;
+    }
+
+    .bilan-article {
+      min-width: 170px;
+      font-weight: 800;
+      color: #333;
+    }
+
+    .bilan-valeur-positive {
+      color: #28733a;
+      font-weight: 800;
+    }
+
+    .bilan-valeur-negative {
+      color: #9a1c1c;
+      font-weight: 800;
+    }
+
+    .bilan-aide {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 13px;
+      background: #f8f8f8;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .bilan-chargement,
+    .bilan-vide {
+      padding: 28px 16px;
+      text-align: center;
+      color: #777;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      .bilan-resume {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .bilan-resume {
+        grid-template-columns: 1fr;
+      }
+
+      .bilan-indicateur {
+        padding: 11px 12px;
+      }
+    }
+
   </style>
 </head>
 
@@ -1595,6 +1751,10 @@
 
             <button id="boutonReapprovisionnement" class="bouton-action" type="button">
               🔄 Mettre la réserve en stock
+            </button>
+
+            <button id="boutonBilan" class="bouton-action" type="button">
+              📊 Bilan de l’édition
             </button>
 
           </div>
@@ -1646,6 +1806,37 @@
     </main>
   </div>
 
+
+  <div id="modalBilan" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte large" role="dialog" aria-modal="true" aria-labelledby="titreModalBilan">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalBilan">📊 Bilan de l’édition</h2>
+          <p id="sousTitreModalBilan">Vision globale de l’utilisation de la vaisselle pendant le marché.</p>
+        </div>
+        <button id="fermerModalBilan" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="modal-contenu">
+        <div id="contenuBilan">
+          <div class="bilan-chargement">Chargement du bilan…</div>
+        </div>
+
+        <div class="bilan-aide">
+          <strong>Lecture du bilan :</strong>
+          « Retraits cumulés » mesure tout ce qui est sorti du Stock MDN vers les stands.
+          « Pic sur le marché » correspond au maximum simultanément sorti pendant l’édition.
+          « Sur le marché » est une estimation actuelle et ne descend jamais sous zéro.
+          Les retours sales peuvent être supérieurs aux retraits d’un stand : la vaisselle peut être rendue depuis n’importe quel stand.
+          L’écart de bilan compare les apports nets de stock avec ce qui est actuellement expliqué.
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="fermerBilanBas" class="bouton-secondaire" type="button">Fermer</button>
+      </div>
+    </section>
+  </div>
 
   <div id="modalLivraison" class="modal-fond" aria-hidden="true">
     <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalLivraison">
@@ -1880,6 +2071,12 @@
       const boutonActualiser = document.getElementById("boutonActualiser");
       const boutonLivraison = document.getElementById("boutonLivraison");
       const boutonReapprovisionnement = document.getElementById("boutonReapprovisionnement");
+      const boutonBilan = document.getElementById("boutonBilan");
+      const modalBilan = document.getElementById("modalBilan");
+      const fermerModalBilan = document.getElementById("fermerModalBilan");
+      const fermerBilanBas = document.getElementById("fermerBilanBas");
+      const contenuBilan = document.getElementById("contenuBilan");
+      const sousTitreModalBilan = document.getElementById("sousTitreModalBilan");
 
       const modalReapprovisionnement = document.getElementById("modalReapprovisionnement");
       const fermerModalReapprovisionnement = document.getElementById("fermerModalReapprovisionnement");
@@ -3943,6 +4140,156 @@
         return editionActive;
       }
 
+
+      function classeEcartBilan(valeur) {
+        return entier(valeur) === 0 ? "ecart-ok" : "ecart-attention";
+      }
+
+      function classeValeurBilan(valeur) {
+        const nombre = entier(valeur);
+        if (nombre > 0) return "bilan-valeur-positive";
+        if (nombre < 0) return "bilan-valeur-negative";
+        return "";
+      }
+
+      function afficherBilanGlobal(bilan) {
+        const resume = bilan && bilan.resume ? bilan.resume : {};
+        const articles = bilan && Array.isArray(bilan.articles) ? bilan.articles : [];
+
+        if (articles.length === 0) {
+          contenuBilan.innerHTML = `
+            <div class="bilan-vide">
+              Aucune donnée de vaisselle disponible pour cette édition.
+            </div>
+          `;
+          return;
+        }
+
+        const ecartGlobal = entier(resume.ecart_bilan);
+
+        const lignes = articles.map(function (ligne) {
+          const ecart = entier(ligne.ecart_bilan);
+
+          return `
+            <tr>
+              <td class="bilan-article">${echapperHtml(ligne.article || "Article")}</td>
+              <td>${formatNombre(ligne.apports_nets_stock)}</td>
+              <td>${formatNombre(ligne.retraits_cumules)}</td>
+              <td>${formatNombre(ligne.retours_propres_cumules)}</td>
+              <td>${formatNombre(ligne.retours_sales_cumules)}</td>
+              <td><strong>${formatNombre(ligne.pic_sur_le_marche)}</strong></td>
+              <td>${formatNombre(ligne.stock_mdn)}</td>
+              <td>${formatNombre(ligne.reserve_mdn)}</td>
+              <td>${formatNombre(ligne.total_propre)}</td>
+              <td>${formatNombre(ligne.sur_le_marche)}</td>
+              <td>${formatNombre(ligne.total_actuellement_explique)}</td>
+              <td class="${classeValeurBilan(ecart)}">${formatNombre(ecart)}</td>
+            </tr>
+          `;
+        }).join("");
+
+        contenuBilan.innerHTML = `
+          <div class="bilan-resume">
+            <div class="bilan-indicateur">
+              <span>Articles suivis</span>
+              <strong>${formatNombre(resume.nombre_articles)}</strong>
+            </div>
+
+            <div class="bilan-indicateur">
+              <span>Retraits cumulés</span>
+              <strong>${formatNombre(resume.retraits_cumules)}</strong>
+            </div>
+
+            <div class="bilan-indicateur">
+              <span>Retours sales cumulés</span>
+              <strong>${formatNombre(resume.retours_sales_cumules)}</strong>
+            </div>
+
+            <div class="bilan-indicateur ${classeEcartBilan(ecartGlobal)}">
+              <span>Écart global du bilan</span>
+              <strong>${formatNombre(ecartGlobal)}</strong>
+            </div>
+          </div>
+
+          <div class="tableau-cadre bilan-table-cadre">
+            <div class="tableau-defilement">
+              <table class="bilan-table">
+                <thead>
+                  <tr>
+                    <th>Article</th>
+                    <th>Apports nets</th>
+                    <th>Retraits cumulés</th>
+                    <th>Retours propres</th>
+                    <th>Retours sales</th>
+                    <th>Pic sur le marché</th>
+                    <th>Stock MDN</th>
+                    <th>Réserve MDN</th>
+                    <th>Total propre</th>
+                    <th>Sur le marché</th>
+                    <th>Total expliqué</th>
+                    <th>Écart</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${lignes}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      function fermerBilan() {
+        modalBilan.classList.remove("visible");
+        modalBilan.setAttribute("aria-hidden", "true");
+      }
+
+      async function ouvrirBilan() {
+        if (!editionCourante?.id) {
+          afficherMessage("Aucune édition n’est disponible pour établir le bilan.", "erreur");
+          return;
+        }
+
+        modalBilan.classList.add("visible");
+        modalBilan.setAttribute("aria-hidden", "false");
+        contenuBilan.innerHTML = '<div class="bilan-chargement">Chargement du bilan…</div>';
+
+        const annee = editionCourante?.annee ? " " + editionCourante.annee : "";
+        sousTitreModalBilan.textContent =
+          "Vision globale de l’utilisation de la vaisselle pendant l’édition" +
+          annee +
+          (modeDemo ? " — Mode Démo." : ".");
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc(
+            "bilan_global_edition_vaisselle",
+            {
+              p_edition_id: editionCourante.id,
+              p_is_demo: modeDemo
+            }
+          );
+
+          if (error) {
+            throw error;
+          }
+
+          afficherBilanGlobal(data || {});
+        } catch (erreur) {
+          console.error("[MDN Sion] Chargement du bilan impossible :", erreur);
+
+          contenuBilan.innerHTML = `
+            <div class="bilan-vide">
+              Impossible de charger le bilan de l’édition.
+            </div>
+          `;
+
+          afficherMessage(
+            erreur?.message || "Impossible de charger le bilan de l’édition.",
+            "erreur"
+          );
+        }
+      }
+
       async function chargerStocks() {
         if (chargementEnCours || !editionCourante?.id) {
           return;
@@ -4109,6 +4456,17 @@
         boutonDeconnexion.disabled = true;
         boutonDeconnexion.textContent = "Déconnexion…";
         await window.MDN_AUTH.deconnexion();
+      });
+
+
+      boutonBilan.addEventListener("click", ouvrirBilan);
+      fermerModalBilan.addEventListener("click", fermerBilan);
+      fermerBilanBas.addEventListener("click", fermerBilan);
+
+      modalBilan.addEventListener("click", function (event) {
+        if (event.target === modalBilan) {
+          fermerBilan();
+        }
       });
 
       boutonActualiser.addEventListener("click", async function () {
