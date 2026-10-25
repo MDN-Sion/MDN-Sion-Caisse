@@ -1249,6 +1249,139 @@
       font-weight: 700;
     }
 
+  
+    /* =========================================================
+       TRANSFERT RÉSERVE — CENTRAGE STRICT TOUS SUPPORTS
+       ========================================================= */
+
+    #modalReapprovisionnement .livraison-table th:first-child,
+    #modalReapprovisionnement .livraison-table td:first-child {
+      text-align: center !important;
+      vertical-align: middle !important;
+    }
+
+    #modalReapprovisionnement .livraison-table td:first-child {
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+    }
+
+    /* Groupe - quantité + : centré dans toute la cellule,
+       indépendamment de la largeur disponible. */
+    #modalReapprovisionnement .livraison-table td:first-child > div {
+      display: grid !important;
+      grid-template-columns: 42px minmax(52px, 112px) 42px;
+      align-items: center !important;
+      justify-content: center !important;
+      justify-items: center !important;
+      column-gap: 10px !important;
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Boutons - et + : le signe est centré horizontalement
+       ET verticalement, sans dépendre du line-height du navigateur. */
+    #modalReapprovisionnement .bouton-quantite-reappro {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 42px !important;
+      min-width: 42px !important;
+      max-width: 42px !important;
+      height: 42px !important;
+      min-height: 42px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      line-height: 1 !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    #modalReapprovisionnement .reapprovisionnement-nombre {
+      display: block !important;
+      width: 100% !important;
+      min-width: 52px !important;
+      max-width: 112px !important;
+      height: 42px !important;
+      padding: 0 8px !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      text-align: center !important;
+    }
+
+    /* Cases partielles : centrage indépendant du rendu natif
+       tablette / mobile / ordinateur. */
+    #modalReapprovisionnement .reapprovisionnement-selection-unique {
+      display: block !important;
+      width: 44px !important;
+      height: 44px !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      float: none !important;
+      position: static !important;
+      vertical-align: middle !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Tablette, téléphone, portrait et paysage :
+       seule la taille s'adapte ; le principe de centrage reste identique. */
+    @media (max-width: 900px) {
+      #modalReapprovisionnement .livraison-table td:first-child > div {
+        grid-template-columns: 40px minmax(50px, 96px) 40px;
+        column-gap: 8px !important;
+      }
+
+      #modalReapprovisionnement .bouton-quantite-reappro {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-nombre {
+        min-width: 50px !important;
+        max-width: 96px !important;
+        height: 40px !important;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-selection-unique {
+        width: 42px !important;
+        height: 42px !important;
+      }
+    }
+
+    @media (max-width: 600px) {
+      #modalReapprovisionnement .livraison-table td:first-child > div {
+        grid-template-columns: 36px minmax(46px, 72px) 36px;
+        column-gap: 6px !important;
+      }
+
+      #modalReapprovisionnement .bouton-quantite-reappro {
+        width: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-nombre {
+        min-width: 46px !important;
+        max-width: 72px !important;
+        height: 36px !important;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-selection-unique {
+        width: 38px !important;
+        height: 38px !important;
+      }
+    }
+
   </style>
 </head>
 
