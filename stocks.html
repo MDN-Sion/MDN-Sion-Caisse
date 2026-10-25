@@ -840,6 +840,13 @@
     .bouton-modal.danger { border-color:#a11919; background:#a11919; color:#fff; }
     .bouton-modal.danger:hover:not(:disabled) { background:#7f1010; }
     .bouton-modal.action-operation { margin-right:auto; }
+    .correction-lignes { display:grid; gap:9px; margin-top:8px; }
+    .correction-ligne { display:grid; grid-template-columns:minmax(0,1fr) 130px; gap:10px; align-items:center; padding:10px; border:1px solid #e5e5e5; border-radius:10px; background:#fafafa; }
+    .correction-ligne strong { display:block; color:#222; font-size:11px; }
+    .correction-ligne small { display:block; margin-top:3px; color:#777; font-size:9px; }
+    .correction-ligne input { width:100%; min-width:0; box-sizing:border-box; }
+    @media (max-width:560px) { .correction-ligne { grid-template-columns:1fr; } }
+
     .aide-annulation { margin:0 0 12px; padding:10px 12px; border:1px solid #f0d2d2; border-radius:10px; background:#fff7f7; color:#7f2020; font-size:11px; line-height:1.45; }
 
 
@@ -1307,8 +1314,49 @@
         <div class="detail-vide">Chargement…</div>
       </div>
       <div class="modal-actions">
+        <button id="corrigerOperationStock" class="bouton-modal action-operation" type="button" hidden>Modifier l’opération</button>
         <button id="annulerOperationStock" class="bouton-modal danger action-operation" type="button" hidden>Annuler l’opération</button>
         <button id="fermerModalDetailBas" class="bouton-modal" type="button">Fermer</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="modalCorrectionOperation" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalCorrectionOperation">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalCorrectionOperation">Modifier l’opération</h2>
+          <p>L’opération d’origine sera conservée. Seule la différence de quantité sera appliquée au stock.</p>
+        </div>
+        <button id="fermerModalCorrectionOperation" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="modal-contenu">
+        <div class="modal-note">
+          L’opération d’origine passera au statut <strong>Corrigée</strong>. Les mouvements déjà réalisés resteront intacts.
+        </div>
+        <div class="champ">
+          <label>Nouvelles quantités *</label>
+          <div id="lignesCorrectionOperation" class="correction-lignes"></div>
+        </div>
+        <div class="champ">
+          <label for="motifCorrectionOperation">Motif de la correction *</label>
+          <select id="motifCorrectionOperation">
+            <option value="">Choisir un motif…</option>
+            <option value="Erreur de saisie">Erreur de saisie</option>
+            <option value="Mauvaise quantité">Mauvaise quantité</option>
+            <option value="Mauvais type d’opération">Mauvais type d’opération</option>
+            <option value="Doublon">Doublon</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="commentaireCorrectionOperation">Commentaire <span id="commentaireCorrectionObligatoire" hidden>(obligatoire pour « Autre »)</span></label>
+          <textarea id="commentaireCorrectionOperation" rows="3" placeholder="Précision facultative"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="abandonnerCorrectionOperation" class="bouton-modal" type="button">Retour</button>
+        <button id="confirmerCorrectionOperation" class="bouton-modal valider" type="button">Confirmer la correction</button>
       </div>
     </section>
   </div>
@@ -1389,7 +1437,16 @@
       const contenuModalDetail = document.getElementById("contenuModalDetail");
       const fermerModalDetail = document.getElementById("fermerModalDetail");
       const fermerModalDetailBas = document.getElementById("fermerModalDetailBas");
+      const corrigerOperationStock = document.getElementById("corrigerOperationStock");
       const annulerOperationStock = document.getElementById("annulerOperationStock");
+      const modalCorrectionOperation = document.getElementById("modalCorrectionOperation");
+      const fermerModalCorrectionOperation = document.getElementById("fermerModalCorrectionOperation");
+      const abandonnerCorrectionOperation = document.getElementById("abandonnerCorrectionOperation");
+      const confirmerCorrectionOperation = document.getElementById("confirmerCorrectionOperation");
+      const lignesCorrectionOperation = document.getElementById("lignesCorrectionOperation");
+      const motifCorrectionOperation = document.getElementById("motifCorrectionOperation");
+      const commentaireCorrectionOperation = document.getElementById("commentaireCorrectionOperation");
+      const commentaireCorrectionObligatoire = document.getElementById("commentaireCorrectionObligatoire");
 
       const modalAnnulationOperation = document.getElementById("modalAnnulationOperation");
       const fermerModalAnnulationOperation = document.getElementById("fermerModalAnnulationOperation");
@@ -1834,6 +1891,7 @@
       function fermerDetail() {
         operationDetailCourante = null;
         controleAnnulationCourant = null;
+        corrigerOperationStock.hidden = true;
         annulerOperationStock.hidden = true;
         modalDetail.classList.remove("visible");
         modalDetail.setAttribute("aria-hidden", "true");
@@ -1848,6 +1906,132 @@
         contenuModalDetail.innerHTML = '<div class="detail-vide">Chargement…</div>';
         modalDetail.classList.add("visible");
         modalDetail.setAttribute("aria-hidden", "false");
+      }
+
+      function fermerCorrectionOperation() {
+        modalCorrectionOperation.classList.remove("visible");
+        modalCorrectionOperation.setAttribute("aria-hidden", "true");
+        motifCorrectionOperation.value = "";
+        commentaireCorrectionOperation.value = "";
+        commentaireCorrectionObligatoire.hidden = true;
+        lignesCorrectionOperation.innerHTML = "";
+        confirmerCorrectionOperation.disabled = false;
+        confirmerCorrectionOperation.textContent = "Confirmer la correction";
+      }
+
+      function preparerCorrectionOperation() {
+        const op = operationDetailCourante;
+        const lignes = Array.isArray(op?.lignes_vaisselle) ? op.lignes_vaisselle : [];
+
+        if (!op?.id || op.type_operation !== "livraison_vaisselle") {
+          afficherMessage("Cette opération ne peut pas être corrigée avec ce workflow.", "erreur");
+          return;
+        }
+
+        if (String(op.statut || "valide").toLowerCase() !== "valide") {
+          afficherMessage("Seule une opération encore valide peut être corrigée.", "erreur");
+          return;
+        }
+
+        if (Array.isArray(op.contenants_vides) && op.contenants_vides.length > 0) {
+          afficherMessage("Cette livraison contient des contenants vides. Leur correction n’est pas encore prise en charge.", "erreur");
+          return;
+        }
+
+        lignesCorrectionOperation.innerHTML = lignes.map(function(ligne) {
+          const vaisselleId = ligne.vaisselle_id || "";
+          const article = ligne.article || ligne.nom || "Article";
+          const quantite = entier(ligne.quantite_totale ?? ligne.quantite);
+          return `<div class="correction-ligne">
+            <div><strong>${echapperHtml(article)}</strong><small>Quantité enregistrée : ${formatNombre(quantite)}</small></div>
+            <input type="number" min="0" step="1" value="${quantite}"
+              data-vaisselle-id="${echapperHtml(vaisselleId)}"
+              data-ancienne-quantite="${quantite}"
+              aria-label="Nouvelle quantité pour ${echapperHtml(article)}">
+          </div>`;
+        }).join("");
+
+        motifCorrectionOperation.value = "";
+        commentaireCorrectionOperation.value = "";
+        commentaireCorrectionObligatoire.hidden = true;
+        fermerDetail();
+        modalCorrectionOperation.classList.add("visible");
+        modalCorrectionOperation.setAttribute("aria-hidden", "false");
+      }
+
+      async function confirmerCorrectionStock() {
+        const op = operationDetailCourante;
+        if (!op?.id) {
+          afficherMessage("Aucune opération sélectionnée.", "erreur");
+          return;
+        }
+
+        const motifChoisi = String(motifCorrectionOperation.value || "").trim();
+        const commentaire = String(commentaireCorrectionOperation.value || "").trim();
+
+        if (!motifChoisi) {
+          afficherMessage("Le motif de la correction est obligatoire.", "erreur");
+          motifCorrectionOperation.focus();
+          return;
+        }
+
+        if (motifChoisi === "Autre" && !commentaire) {
+          afficherMessage("Le commentaire est obligatoire lorsque le motif « Autre » est sélectionné.", "erreur");
+          commentaireCorrectionOperation.focus();
+          return;
+        }
+
+        const champs = Array.from(lignesCorrectionOperation.querySelectorAll("input[data-vaisselle-id]"));
+        const lignes = [];
+        let modificationDetectee = false;
+
+        for (const champ of champs) {
+          const valeur = String(champ.value ?? "").trim();
+          if (!/^\d+$/.test(valeur)) {
+            afficherMessage("Chaque nouvelle quantité doit être un entier supérieur ou égal à 0.", "erreur");
+            champ.focus();
+            return;
+          }
+
+          const nouvelleQuantite = Number(valeur);
+          const ancienneQuantite = Number(champ.dataset.ancienneQuantite || 0);
+          if (nouvelleQuantite !== ancienneQuantite) modificationDetectee = true;
+
+          lignes.push({
+            vaisselle_id: champ.dataset.vaisselleId,
+            nouvelle_quantite: nouvelleQuantite
+          });
+        }
+
+        if (!modificationDetectee) {
+          afficherMessage("Aucune modification de quantité n’a été détectée.", "erreur");
+          return;
+        }
+
+        const motif = commentaire ? motifChoisi + " — " + commentaire : motifChoisi;
+        confirmerCorrectionOperation.disabled = true;
+        confirmerCorrectionOperation.textContent = "Correction…";
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc("corriger_livraison_stock_vaisselle", {
+            p_operation_id: op.id,
+            p_lignes: lignes,
+            p_motif: motif,
+            p_is_demo: modeDemo
+          });
+
+          if (error) throw error;
+          if (data?.ok === false) throw new Error(data?.message || "La correction a été refusée.");
+
+          fermerCorrectionOperation();
+          await chargerStocks();
+          afficherMessage("Correction enregistrée. L’opération d’origine reste visible avec le statut « Corrigée ».", "succes");
+        } catch (erreur) {
+          console.error("[MDN Sion] Correction opération stock impossible :", erreur);
+          afficherMessage(erreur?.message || "Impossible de corriger cette opération.", "erreur");
+          confirmerCorrectionOperation.disabled = false;
+          confirmerCorrectionOperation.textContent = "Confirmer la correction";
+        }
       }
 
       function fermerAnnulationOperation() {
@@ -2080,6 +2264,7 @@
           const op = d.operation || d;
 
           operationDetailCourante = op;
+          operationDetailCourante.lignes_vaisselle = lignes;
           operationDetailCourante.contenants_vides = Array.isArray(d.contenants_vides) ? d.contenants_vides : [];
 
           const typeOperation = String(op.type_operation || "");
@@ -2091,6 +2276,13 @@
           const statutValide = String(op.statut || "valide").toLowerCase() === "valide";
           const estOperationOriginale = !op.operation_originale_id;
           annulerOperationStock.hidden = !(typeAnnulable && statutValide && estOperationOriginale);
+
+          corrigerOperationStock.hidden = !(
+            typeOperation === "livraison_vaisselle" &&
+            statutValide &&
+            estOperationOriginale &&
+            operationDetailCourante.contenants_vides.length === 0
+          );
 
           const titreOperation = estContreOperation
             ? "Annulation d’une opération de stock"
@@ -2104,6 +2296,8 @@
           let explication = "";
           if (estContreOperation) {
             explication = "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
+          } else if (String(op.statut || "").toLowerCase() === "corrige" && operationCompensatrice) {
+            explication = "Cette opération a été corrigée. Elle reste dans l’historique avec ses valeurs d’origine. Une opération compensatrice distincte applique uniquement la différence de quantité.";
           } else if (estAnnulee && operationCompensatrice) {
             explication = "Cette opération a été annulée. Elle reste dans l’historique pour conserver la trace de ce qui avait été enregistré. Une contre-opération distincte a compensé son effet sur le stock.";
           } else if (estAnnulee) {
@@ -2202,6 +2396,9 @@
             commentaireVisible = operation.motif_correction || operation.motif || "";
           } else if (statut === "annule") {
             explication = "Opération conservée dans l’historique et compensée par une contre-opération.";
+            commentaireVisible = operation.motif_correction || operation.motif || "";
+          } else if (statut === "corrige") {
+            explication = "Opération d’origine conservée dans l’historique. Une opération compensatrice applique uniquement la différence corrigée.";
             commentaireVisible = operation.motif_correction || operation.motif || "";
           }
 
@@ -2392,6 +2589,23 @@
       fermerModalDetail.addEventListener("click", fermerDetail);
       fermerModalDetailBas.addEventListener("click", fermerDetail);
       modalDetail.addEventListener("click", function (event) { if (event.target === modalDetail) fermerDetail(); });
+
+      corrigerOperationStock.addEventListener("click", preparerCorrectionOperation);
+      fermerModalCorrectionOperation.addEventListener("click", fermerCorrectionOperation);
+      abandonnerCorrectionOperation.addEventListener("click", fermerCorrectionOperation);
+      confirmerCorrectionOperation.addEventListener("click", confirmerCorrectionStock);
+
+      motifCorrectionOperation.addEventListener("change", function () {
+        const autre = motifCorrectionOperation.value === "Autre";
+        commentaireCorrectionObligatoire.hidden = !autre;
+        commentaireCorrectionOperation.placeholder = autre
+          ? "Précise obligatoirement le motif de la correction"
+          : "Précision facultative";
+      });
+
+      modalCorrectionOperation.addEventListener("click", function (event) {
+        if (event.target === modalCorrectionOperation) fermerCorrectionOperation();
+      });
 
       annulerOperationStock.addEventListener("click", preparerAnnulationOperation);
       fermerModalAnnulationOperation.addEventListener("click", fermerAnnulationOperation);
