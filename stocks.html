@@ -1176,6 +1176,79 @@
       vertical-align: middle;
     }
 
+  
+    #modalReapprovisionnement .livraison-table th:first-child,
+    #modalReapprovisionnement .livraison-table td:first-child {
+      width: 230px;
+      min-width: 230px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    #modalReapprovisionnement .livraison-table th:first-child {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    #modalReapprovisionnement .livraison-table td:first-child > div {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 8px !important;
+      margin: 0 auto;
+    }
+
+    #modalReapprovisionnement .reapprovisionnement-selection-unique {
+      display: block;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 760px) {
+      #modalReapprovisionnement .livraison-table th:first-child,
+      #modalReapprovisionnement .livraison-table td:first-child {
+        width: 180px;
+        min-width: 180px;
+      }
+
+      #modalReapprovisionnement .bouton-quantite-reappro {
+        width: 32px;
+        min-width: 32px;
+        height: 32px;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-nombre {
+        width: 52px !important;
+        height: 32px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      #modalReapprovisionnement .livraison-table th:first-child,
+      #modalReapprovisionnement .livraison-table td:first-child {
+        width: 156px;
+        min-width: 156px;
+      }
+
+      #modalReapprovisionnement .bouton-quantite-reappro {
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+      }
+
+      #modalReapprovisionnement .reapprovisionnement-nombre {
+        width: 46px !important;
+        height: 30px;
+      }
+    }
+
+  
+    #modalReapprovisionnement .reapprovisionnement-nombre::placeholder {
+      color: #9a9a9a;
+      opacity: 1;
+      font-weight: 700;
+    }
+
   </style>
 </head>
 
@@ -1378,11 +1451,6 @@
             </table>
           </div>
         </div>
-
-        <div class="champ" style="margin-top:14px;">
-          <label for="commentaireReapprovisionnement">Commentaire (facultatif)</label>
-          <textarea id="commentaireReapprovisionnement" rows="3" placeholder="Remarque sur le transfert"></textarea>
-        </div>
       </div>
 
       <div class="modal-actions">
@@ -1518,7 +1586,6 @@
       const validerReapprovisionnement = document.getElementById("validerReapprovisionnement");
       const corpsReapprovisionnement = document.getElementById("corpsReapprovisionnement");
       const resumeReapprovisionnement = document.getElementById("resumeReapprovisionnement");
-      const commentaireReapprovisionnement = document.getElementById("commentaireReapprovisionnement");
 
 
       const corpsTableStocks = document.getElementById("corpsTableStocks");
@@ -2202,7 +2269,8 @@
                       min="0"
                       max="${groupe.ids.length}"
                       step="1"
-                      value="0"
+                      value=""
+                      placeholder="0"
                       data-groupe-cle="${echapperHtml(groupe.cle)}"
                       style="width:58px;text-align:center;">
 
@@ -2273,7 +2341,6 @@
       }
 
       async function ouvrirReapprovisionnement() {
-        commentaireReapprovisionnement.value = "";
         modalReapprovisionnement.classList.add("visible");
         modalReapprovisionnement.setAttribute("aria-hidden", "false");
 
@@ -2331,7 +2398,7 @@
                   conditionnement_ids: conditionnementIds
                 }
               ],
-              p_commentaire: commentaireReapprovisionnement.value.trim() || null
+              p_commentaire: null
             }
           );
 
