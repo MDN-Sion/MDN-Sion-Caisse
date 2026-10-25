@@ -1382,6 +1382,49 @@
       }
     }
 
+  
+    .correction-transfert-selecteur {
+      display: grid;
+      grid-template-columns: 40px minmax(52px, 90px) 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .correction-transfert-selecteur .correction-transfert-nombre {
+      width: 100%;
+      height: 40px;
+      box-sizing: border-box;
+      text-align: center;
+      border: 1px solid #d7d7d7;
+      border-radius: 9px;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .correction-transfert-unique {
+      display: block !important;
+      width: 42px !important;
+      height: 42px !important;
+      margin: 0 auto !important;
+    }
+
+    @media (max-width: 600px) {
+      .correction-transfert-selecteur {
+        grid-template-columns: 36px minmax(46px, 72px) 36px;
+        gap: 6px;
+      }
+
+      .correction-transfert-selecteur .correction-transfert-nombre {
+        height: 36px;
+      }
+
+      .correction-transfert-unique {
+        width: 38px !important;
+        height: 38px !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -2596,13 +2639,13 @@
         confirmerCorrectionOperation.textContent = "Confirmer la correction";
       }
 
-      function preparerCorrectionOperation() {
+      async function preparerCorrectionOperation() {
         const op = operationDetailCourante;
         const lignes = Array.isArray(op?.lignes_vaisselle) ? op.lignes_vaisselle : [];
         const contenants = Array.isArray(op?.contenants_vides) ? op.contenants_vides : [];
 
-        if (!op?.id || op.type_operation !== "livraison_vaisselle") {
-          afficherMessage("Cette opération ne peut pas être corrigée avec ce workflow.", "erreur");
+        if (!op?.id) {
+          afficherMessage("Aucune opération sélectionnée.", "erreur");
           return;
         }
 
@@ -2611,71 +2654,216 @@
           return;
         }
 
-        /* SQL 107 corrige dans une seule transaction une livraison contenant
-           de la vaisselle, des contenants vides, ou les deux simultanément. */
-        if (lignes.length === 0 && contenants.length === 0) {
-          afficherMessage("Cette livraison ne contient aucune ligne corrigeable.", "erreur");
-          return;
-        }
-
-        const lignesVaisselleHtml = lignes.map(function(ligne) {
-          const vaisselleId = ligne.vaisselle_id || "";
-          const article = ligne.article || ligne.nom || "Article";
-          const quantite = entier(ligne.quantite_totale ?? ligne.quantite);
-
-          return `<div class="correction-ligne">
-            <div>
-              <strong>${echapperHtml(article)}</strong>
-              <small>Quantité enregistrée : ${formatNombre(quantite)}</small>
-            </div>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value="${quantite}"
-              data-vaisselle-id="${echapperHtml(vaisselleId)}"
-              data-ancienne-quantite="${quantite}"
-              aria-label="Nouvelle quantité pour ${echapperHtml(article)}">
-          </div>`;
-        }).join("");
-
-        const lignesContenantsHtml = contenants.map(function(ligne) {
-          const typeContenantId = ligne.type_contenant_id || "";
-          const nomContenant =
-            ligne.type_contenant ||
-            ligne.contenant ||
-            ligne.nom ||
-            "Contenant vide";
-
-          const quantite = entier(ligne.quantite);
-
-          return `<div class="correction-ligne">
-            <div>
-              <strong>${echapperHtml(nomContenant)}</strong>
-              <small>Contenants vides propres enregistrés : ${formatNombre(quantite)}</small>
-            </div>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value="${quantite}"
-              data-type-contenant-id="${echapperHtml(typeContenantId)}"
-              data-ancienne-quantite="${quantite}"
-              aria-label="Nouvelle quantité pour ${echapperHtml(nomContenant)}">
-          </div>`;
-        }).join("");
-
-        lignesCorrectionOperation.innerHTML =
-          lignesVaisselleHtml +
-          lignesContenantsHtml;
-
         motifCorrectionOperation.value = "";
         commentaireCorrectionOperation.value = "";
         commentaireCorrectionObligatoire.hidden = true;
 
-        /* On ferme uniquement visuellement la fenêtre de détail.
-           operationDetailCourante doit rester disponible jusqu'à
-           la confirmation de la correction. */
+        if (op.type_operation === "transfert_reserve_operationnel") {
+          corrigerOperationStock.disabled = true;
+          corrigerOperationStock.textContent = "Chargement…";
+
+          try {
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+              "lister_conditionnements_correction_transfert",
+              {
+                p_operation_id: op.id,
+                p_is_demo: modeDemo
+              }
+            );
+
+            if (error) throw error;
+
+            const conditionnements = Array.isArray(data) ? data : [];
+
+            if (conditionnements.length === 0) {
+              throw new Error("Aucun conditionnement physique n’est disponible pour corriger ce transfert.");
+            }
+
+            const groupes = new Map();
+
+            conditionnements.forEach(function (ligne) {
+              const quantite = entier(ligne.quantite_actuelle);
+              const standard = entier(ligne.quantite_standard);
+              const complet = standard > 0 && quantite === standard;
+              const origine = ligne.selectionne_initialement ? "original" : "reserve";
+              const type = String(ligne.type_conditionnement || "caisse").trim().toLowerCase();
+              const cle = [
+                origine,
+                ligne.vaisselle_id,
+                type,
+                complet ? "complet" : "partiel",
+                quantite
+              ].join("|");
+
+              if (!groupes.has(cle)) {
+                groupes.set(cle, {
+                  cle,
+                  origine,
+                  article: ligne.article || "Gobelets",
+                  type_conditionnement: type,
+                  quantite_unitaire: quantite,
+                  complet,
+                  ids: []
+                });
+              }
+
+              groupes.get(cle).ids.push(ligne.conditionnement_id);
+            });
+
+            const groupesListe = Array.from(groupes.values()).sort(function (a, b) {
+              if (a.origine !== b.origine) return a.origine === "original" ? -1 : 1;
+              if (a.complet !== b.complet) return a.complet ? -1 : 1;
+              return b.quantite_unitaire - a.quantite_unitaire;
+            });
+
+            const lignesHtml = groupesListe.map(function (groupe) {
+              const nomType = libelleTypeConditionnementReapprovisionnement(
+                groupe.type_conditionnement
+              );
+              const original = groupe.origine === "original";
+              const nombreInitial = original ? groupe.ids.length : 0;
+
+              if (groupe.complet) {
+                return `
+                  <div class="correction-ligne correction-transfert-ligne"
+                       data-correction-transfert-groupe="${echapperHtml(groupe.cle)}"
+                       data-ids="${echapperHtml(JSON.stringify(groupe.ids))}"
+                       data-quantite-unitaire="${groupe.quantite_unitaire}">
+                    <div>
+                      <strong>${echapperHtml(groupe.article)} — ${echapperHtml(nomType)} complète</strong>
+                      <small>
+                        ${original ? "Transfert d’origine" : "Disponible en Réserve MDN"} ·
+                        ${formatNombre(groupe.ids.length)} disponible(s) ·
+                        ${formatNombre(groupe.quantite_unitaire)} unité(s) / ${nomType.toLowerCase()}
+                      </small>
+                    </div>
+                    <div class="correction-transfert-selecteur">
+                      <button type="button" class="bouton-quantite-reappro correction-transfert-moins">−</button>
+                      <input
+                        class="correction-transfert-nombre"
+                        type="number"
+                        min="0"
+                        max="${groupe.ids.length}"
+                        step="1"
+                        value="${nombreInitial}"
+                        data-initial="${nombreInitial}"
+                        aria-label="Nombre de ${echapperHtml(nomType.toLowerCase())} complètes">
+                      <button type="button" class="bouton-quantite-reappro correction-transfert-plus">+</button>
+                    </div>
+                  </div>
+                `;
+              }
+
+              return groupe.ids.map(function (id, index) {
+                return `
+                  <div class="correction-ligne correction-transfert-ligne"
+                       data-correction-transfert-id="${echapperHtml(id)}"
+                       data-initial="${original ? "1" : "0"}"
+                       data-quantite-unitaire="${groupe.quantite_unitaire}">
+                    <div>
+                      <strong>${echapperHtml(groupe.article)} — ${echapperHtml(nomType)} partielle (${formatNombre(groupe.quantite_unitaire)})</strong>
+                      <small>${original ? "Transfert d’origine" : "Disponible en Réserve MDN"}</small>
+                    </div>
+                    <input
+                      class="correction-transfert-unique"
+                      type="checkbox"
+                      ${original ? "checked" : ""}
+                      aria-label="Conserver ce conditionnement dans le transfert corrigé">
+                  </div>
+                `;
+              }).join("");
+            }).join("");
+
+            lignesCorrectionOperation.innerHTML = `
+              <div class="modal-note" style="margin-bottom:12px;">
+                Sélectionne ce qui aurait réellement dû être transféré.
+                Tout conditionnement retiré du transfert d’origine sera automatiquement
+                remis dans la <strong>Réserve MDN</strong>.
+              </div>
+              ${lignesHtml}
+            `;
+
+            titreModalCorrectionOperation.textContent = "Modifier le transfert";
+            modalCorrectionOperation.querySelector(".modal-entete p").textContent =
+              "L’opération d’origine sera conservée. Les conditionnements retirés seront remis en Réserve MDN.";
+
+          } catch (erreur) {
+            console.error("[MDN Sion] Préparation correction transfert impossible :", erreur);
+            afficherMessage(
+              erreur?.message || "Impossible de préparer la correction de ce transfert.",
+              "erreur"
+            );
+            return;
+          } finally {
+            corrigerOperationStock.disabled = false;
+            corrigerOperationStock.textContent = "Modifier l’opération";
+          }
+
+        } else if (op.type_operation === "livraison_vaisselle") {
+          if (lignes.length === 0 && contenants.length === 0) {
+            afficherMessage("Cette livraison ne contient aucune ligne corrigeable.", "erreur");
+            return;
+          }
+
+          titreModalCorrectionOperation.textContent = "Modifier l’opération";
+          modalCorrectionOperation.querySelector(".modal-entete p").textContent =
+            "L’opération d’origine sera conservée. Seule la différence de quantité sera appliquée au stock.";
+
+          const lignesVaisselleHtml = lignes.map(function(ligne) {
+            const vaisselleId = ligne.vaisselle_id || "";
+            const article = ligne.article || ligne.nom || "Article";
+            const quantite = entier(ligne.quantite_totale ?? ligne.quantite);
+
+            return `<div class="correction-ligne">
+              <div>
+                <strong>${echapperHtml(article)}</strong>
+                <small>Quantité enregistrée : ${formatNombre(quantite)}</small>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value="${quantite}"
+                data-vaisselle-id="${echapperHtml(vaisselleId)}"
+                data-ancienne-quantite="${quantite}"
+                aria-label="Nouvelle quantité pour ${echapperHtml(article)}">
+            </div>`;
+          }).join("");
+
+          const lignesContenantsHtml = contenants.map(function(ligne) {
+            const typeContenantId = ligne.type_contenant_id || "";
+            const nomContenant =
+              ligne.type_contenant ||
+              ligne.contenant ||
+              ligne.nom ||
+              "Contenant vide";
+            const quantite = entier(ligne.quantite);
+
+            return `<div class="correction-ligne">
+              <div>
+                <strong>${echapperHtml(nomContenant)}</strong>
+                <small>Contenants vides propres enregistrés : ${formatNombre(quantite)}</small>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value="${quantite}"
+                data-type-contenant-id="${echapperHtml(typeContenantId)}"
+                data-ancienne-quantite="${quantite}"
+                aria-label="Nouvelle quantité pour ${echapperHtml(nomContenant)}">
+            </div>`;
+          }).join("");
+
+          lignesCorrectionOperation.innerHTML =
+            lignesVaisselleHtml +
+            lignesContenantsHtml;
+
+        } else {
+          afficherMessage("Cette opération ne peut pas être corrigée avec ce workflow.", "erreur");
+          return;
+        }
+
         modalDetail.classList.remove("visible");
         modalDetail.setAttribute("aria-hidden", "true");
         corrigerOperationStock.hidden = true;
@@ -2684,6 +2872,7 @@
         modalCorrectionOperation.classList.add("visible");
         modalCorrectionOperation.setAttribute("aria-hidden", "false");
       }
+
 
       async function confirmerCorrectionStock() {
         const op = operationDetailCourante;
@@ -2708,6 +2897,102 @@
             "erreur"
           );
           commentaireCorrectionOperation.focus();
+          return;
+        }
+
+        if (op.type_operation === "transfert_reserve_operationnel") {
+          const idsFinaux = [];
+          let modificationDetectee = false;
+
+          const groupes = Array.from(
+            lignesCorrectionOperation.querySelectorAll("[data-correction-transfert-groupe]")
+          );
+
+          groupes.forEach(function (ligne) {
+            let ids = [];
+
+            try {
+              ids = JSON.parse(ligne.dataset.ids || "[]");
+            } catch (_) {
+              ids = [];
+            }
+
+            const champ = ligne.querySelector(".correction-transfert-nombre");
+            const max = ids.length;
+            const nombre = Math.max(0, Math.min(max, entier(champ?.value)));
+            const initial = entier(champ?.dataset.initial);
+
+            if (nombre !== initial) {
+              modificationDetectee = true;
+            }
+
+            for (let index = 0; index < nombre; index += 1) {
+              idsFinaux.push(ids[index]);
+            }
+          });
+
+          const uniques = Array.from(
+            lignesCorrectionOperation.querySelectorAll("[data-correction-transfert-id]")
+          );
+
+          uniques.forEach(function (ligne) {
+            const coche = ligne.querySelector(".correction-transfert-unique")?.checked === true;
+            const initial = ligne.dataset.initial === "1";
+
+            if (coche !== initial) {
+              modificationDetectee = true;
+            }
+
+            if (coche) {
+              idsFinaux.push(ligne.dataset.correctionTransfertId);
+            }
+          });
+
+          if (!modificationDetectee) {
+            afficherMessage("Aucune modification du transfert n’a été détectée.", "erreur");
+            return;
+          }
+
+          const motif = commentaire
+            ? motifChoisi + " — " + commentaire
+            : motifChoisi;
+
+          confirmerCorrectionOperation.disabled = true;
+          confirmerCorrectionOperation.textContent = "Correction…";
+
+          try {
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+              "corriger_transfert_reserve_vers_stock_mdn",
+              {
+                p_operation_id: op.id,
+                p_conditionnement_ids: idsFinaux,
+                p_motif: motif,
+                p_is_demo: modeDemo
+              }
+            );
+
+            if (error) throw error;
+            if (data?.ok === false) {
+              throw new Error(data?.message || "La correction du transfert a été refusée.");
+            }
+
+            fermerCorrectionOperation();
+            await chargerStocks();
+
+            afficherMessage(
+              "Transfert corrigé. Les conditionnements retirés ont été remis en Réserve MDN.",
+              "succes"
+            );
+          } catch (erreur) {
+            console.error("[MDN Sion] Correction transfert impossible :", erreur);
+            afficherMessage(
+              erreur?.message || "Impossible de corriger ce transfert.",
+              "erreur"
+            );
+            confirmerCorrectionOperation.disabled = false;
+            confirmerCorrectionOperation.textContent = "Confirmer la correction";
+          }
+
           return;
         }
 
@@ -3123,11 +3408,16 @@
           const livraisonCorrigeable =
             nbLignesVaisselleCorrection > 0 || nbLignesContenantsCorrection > 0;
 
+          const transfertCorrigeable =
+            typeOperation === "transfert_reserve_operationnel";
+
           corrigerOperationStock.hidden = !(
-            typeOperation === "livraison_vaisselle" &&
             statutValide &&
             estOperationOriginale &&
-            livraisonCorrigeable
+            (
+              (typeOperation === "livraison_vaisselle" && livraisonCorrigeable) ||
+              transfertCorrigeable
+            )
           );
 
           const operationOrigineLiee = estContreOperation
@@ -3710,6 +4000,36 @@
         commentaireCorrectionOperation.placeholder = autre
           ? "Précise obligatoirement le motif de la correction"
           : "Précision facultative";
+      });
+
+      lignesCorrectionOperation.addEventListener("click", function (event) {
+        const moins = event.target.closest(".correction-transfert-moins");
+        const plus = event.target.closest(".correction-transfert-plus");
+        const bouton = moins || plus;
+
+        if (!bouton) return;
+
+        const ligne = bouton.closest("[data-correction-transfert-groupe]");
+        const champ = ligne?.querySelector(".correction-transfert-nombre");
+
+        if (!champ) return;
+
+        const max = entier(champ.max);
+        const variation = plus ? 1 : -1;
+        champ.value = String(
+          Math.max(0, Math.min(max, entier(champ.value) + variation))
+        );
+      });
+
+      lignesCorrectionOperation.addEventListener("input", function (event) {
+        if (!event.target.classList.contains("correction-transfert-nombre")) {
+          return;
+        }
+
+        const max = entier(event.target.max);
+        event.target.value = String(
+          Math.max(0, Math.min(max, entier(event.target.value)))
+        );
       });
 
       modalCorrectionOperation.addEventListener("click", function (event) {
