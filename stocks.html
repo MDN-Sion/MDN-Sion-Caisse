@@ -2616,6 +2616,55 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 112 - RELEVÉ VALIDÉ VERROUILLÉ
+       ======================================================== */
+
+    .releve-sale-input:disabled {
+      background: #f6f6f6;
+      color: #333;
+      cursor: default;
+      opacity: 1;
+      -webkit-text-fill-color: #333;
+    }
+
+    .releve-validation-confirmee {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 13px;
+      padding: 10px 12px;
+      border: 1px solid #b9dfc2;
+      border-radius: 11px;
+      background: #eef9f1;
+      color: #28733a;
+      font-size: 13px;
+    }
+
+    .releve-validation-confirmee strong {
+      font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .releve-validation-confirmee {
+        margin-left: 14px;
+        margin-right: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+        text-align: center;
+      }
+    }
+
+    @media print {
+      .releve-validation-confirmee {
+        border: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -5409,6 +5458,8 @@
                           releve && releve.sale_prestataire !== null
                             ? entier(releve.sale_prestataire)
                             : null;
+                        const releveVerrouille =
+                          dernierRelevePrestataire?.statut === "valide";
                         const nonRevenu =
                           calculerNonRevenu(utilise, salePrestataire);
                         const taux =
@@ -5436,6 +5487,7 @@
                                 value="${salePrestataire === null ? "" : salePrestataire}"
                                 placeholder="Saisir"
                                 aria-label="Sale prestataire - ${echapperHtml(ligne.article || "Article")}"
+                                ${releveVerrouille ? "disabled" : ""}
                               >
                             </td>
                             <td
@@ -5451,15 +5503,35 @@
                 </div>
               </div>
 
-              <div class="releve-actions">
-                <button id="enregistrerBrouillonRelevePrestataire" type="button">
-                  💾 Enregistrer le brouillon
-                </button>
+              ${
+                dernierRelevePrestataire?.statut === "valide"
+                  ? `
+                    <div class="releve-validation-confirmee">
+                      <strong>✓ Relevé validé</strong>
+                      <span>
+                        ${
+                          dernierRelevePrestataire?.valide_at
+                            ? "le " +
+                              new Date(
+                                dernierRelevePrestataire.valide_at
+                              ).toLocaleString("fr-FR")
+                            : ""
+                        }
+                      </span>
+                    </div>
+                  `
+                  : `
+                    <div class="releve-actions">
+                      <button id="enregistrerBrouillonRelevePrestataire" type="button">
+                        💾 Enregistrer le brouillon
+                      </button>
 
-                <button id="enregistrerRelevePrestataire" type="button">
-                  ✓ Valider le relevé
-                </button>
-              </div>
+                      <button id="enregistrerRelevePrestataire" type="button">
+                        ✓ Valider le relevé
+                      </button>
+                    </div>
+                  `
+              }
             </div>
           </section>
         `;
