@@ -1147,6 +1147,35 @@
         display: none;
       }
     }
+  
+    .bouton-quantite-reappro {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #d7d7d7;
+      border-radius: 9px;
+      background: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .bouton-quantite-reappro:hover {
+      background: #f4f4f4;
+    }
+
+    .reapprovisionnement-nombre {
+      height: 34px;
+      border: 1px solid #d7d7d7;
+      border-radius: 9px;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    #corpsReapprovisionnement td {
+      vertical-align: middle;
+    }
+
   </style>
 </head>
 
@@ -1953,11 +1982,151 @@
       }
 
 
+      let groupesReapprovisionnement = [];
+
+      function cleGroupeReapprovisionnement(ligne) {
+        const quantite = entier(ligne.quantite_actuelle);
+        const standard = entier(ligne.quantite_standard);
+        const type = String(ligne.type_conditionnement || "caisse").trim().toLowerCase();
+        const complet = standard > 0 && quantite === standard;
+
+        if (complet) {
+          return [
+            ligne.vaisselle_id,
+            type,
+            "complet",
+            standard
+          ].join("|");
+        }
+
+        return [
+          ligne.vaisselle_id,
+          type,
+          "partiel",
+          quantite
+        ].join("|");
+      }
+
+      function libelleTypeConditionnementReapprovisionnement(type) {
+        const valeur = String(type || "caisse").trim().toLowerCase();
+
+        if (valeur === "sachet") {
+          return "Sachet";
+        }
+
+        if (valeur === "bac") {
+          return "Bac";
+        }
+
+        return "Caisse";
+      }
+
+      function construireGroupesReapprovisionnement(conditionnements) {
+        const groupes = new Map();
+
+        conditionnements.forEach(function (ligne) {
+          const cle = cleGroupeReapprovisionnement(ligne);
+
+          if (!groupes.has(cle)) {
+            const quantite = entier(ligne.quantite_actuelle);
+            const standard = entier(ligne.quantite_standard);
+            const complet = standard > 0 && quantite === standard;
+
+            groupes.set(cle, {
+              cle,
+              vaisselle_id: ligne.vaisselle_id,
+              article: ligne.article || "Gobelets",
+              type_conditionnement: ligne.type_conditionnement || "caisse",
+              quantite_standard: standard,
+              quantite_unitaire: quantite,
+              complet,
+              ids: []
+            });
+          }
+
+          groupes.get(cle).ids.push(ligne.conditionnement_id);
+        });
+
+        return Array.from(groupes.values()).sort(function (a, b) {
+          if (a.complet !== b.complet) {
+            return a.complet ? -1 : 1;
+          }
+
+          return b.quantite_unitaire - a.quantite_unitaire;
+        });
+      }
+
+      function valeurSelectionGroupeReapprovisionnement(groupe) {
+        const ligne = corpsReapprovisionnement.querySelector(
+          `tr[data-groupe-cle="${CSS.escape(groupe.cle)}"]`
+        );
+
+        if (!ligne) {
+          return 0;
+        }
+
+        if (groupe.complet) {
+          return Math.max(
+            0,
+            Math.min(
+              groupe.ids.length,
+              entier(ligne.querySelector(".reapprovisionnement-nombre")?.value)
+            )
+          );
+        }
+
+        return ligne.querySelector(".reapprovisionnement-selection-unique")?.checked
+          ? 1
+          : 0;
+      }
+
+      function idsSelectionnesReapprovisionnement() {
+        const ids = [];
+
+        groupesReapprovisionnement.forEach(function (groupe) {
+          const nombre = valeurSelectionGroupeReapprovisionnement(groupe);
+
+          for (let index = 0; index < nombre; index += 1) {
+            ids.push(groupe.ids[index]);
+          }
+        });
+
+        return ids;
+      }
+
+      function modifierNombreReapprovisionnement(cle, variation) {
+        const groupe = groupesReapprovisionnement.find(function (item) {
+          return item.cle === cle;
+        });
+
+        if (!groupe || !groupe.complet) {
+          return;
+        }
+
+        const ligne = corpsReapprovisionnement.querySelector(
+          `tr[data-groupe-cle="${CSS.escape(cle)}"]`
+        );
+        const champ = ligne?.querySelector(".reapprovisionnement-nombre");
+
+        if (!champ) {
+          return;
+        }
+
+        const nouvelleValeur = Math.max(
+          0,
+          Math.min(groupe.ids.length, entier(champ.value) + variation)
+        );
+
+        champ.value = String(nouvelleValeur);
+        actualiserResumeSelectionReapprovisionnement();
+      }
+
       async function chargerConditionnementsReservePourTransfert() {
         if (!editionCourante?.id) {
           throw new Error("Aucune édition active n’est disponible.");
         }
 
+        groupesReapprovisionnement = [];
         resumeReapprovisionnement.textContent = "Chargement de la Réserve MDN…";
         corpsReapprovisionnement.innerHTML = `
           <tr>
@@ -1990,13 +2159,17 @@
           return total + entier(ligne.quantite_actuelle);
         }, 0);
 
+        groupesReapprovisionnement = construireGroupesReapprovisionnement(
+          conditionnements
+        );
+
         resumeReapprovisionnement.innerHTML = `
           <strong>Réserve MDN — Gobelets</strong><br>
           ${formatNombre(conditionnements.length)} conditionnement(s) physique(s) disponible(s) ·
           ${formatNombre(totalUnites)} unité(s)
         `;
 
-        if (conditionnements.length === 0) {
+        if (groupesReapprovisionnement.length === 0) {
           corpsReapprovisionnement.innerHTML = `
             <tr>
               <td colspan="4">Aucun conditionnement de Gobelets n’est actuellement disponible dans la Réserve MDN.</td>
@@ -2006,28 +2179,70 @@
           return;
         }
 
-        corpsReapprovisionnement.innerHTML = conditionnements.map(function (ligne, index) {
-          const quantite = entier(ligne.quantite_actuelle);
-          const standard = entier(ligne.quantite_standard);
-          const complet = standard > 0 && quantite === standard;
-          const type = String(ligne.type_conditionnement || "caisse");
-          const libelle = complet
-            ? `${type.charAt(0).toUpperCase() + type.slice(1)} complète`
-            : `${type.charAt(0).toUpperCase() + type.slice(1)} partielle`;
+        corpsReapprovisionnement.innerHTML = groupesReapprovisionnement.map(function (groupe) {
+          const nomType = libelleTypeConditionnementReapprovisionnement(
+            groupe.type_conditionnement
+          );
+
+          if (groupe.complet) {
+            return `
+              <tr data-groupe-cle="${echapperHtml(groupe.cle)}">
+                <td>
+                  <div style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap;">
+                    <button
+                      class="bouton-quantite-reappro"
+                      type="button"
+                      data-action="moins"
+                      data-groupe-cle="${echapperHtml(groupe.cle)}"
+                      aria-label="Retirer un conditionnement">−</button>
+
+                    <input
+                      class="reapprovisionnement-nombre"
+                      type="number"
+                      min="0"
+                      max="${groupe.ids.length}"
+                      step="1"
+                      value="0"
+                      data-groupe-cle="${echapperHtml(groupe.cle)}"
+                      style="width:58px;text-align:center;">
+
+                    <button
+                      class="bouton-quantite-reappro"
+                      type="button"
+                      data-action="plus"
+                      data-groupe-cle="${echapperHtml(groupe.cle)}"
+                      aria-label="Ajouter un conditionnement">+</button>
+                  </div>
+                </td>
+                <td><strong>${echapperHtml(groupe.article)}</strong></td>
+                <td>
+                  ${echapperHtml(nomType)} complète
+                  <small style="display:block;color:#777;margin-top:3px;">
+                    ${formatNombre(groupe.ids.length)} disponible(s)
+                  </small>
+                </td>
+                <td><strong>${formatNombre(groupe.quantite_unitaire)}</strong> / ${nomType.toLowerCase()}</td>
+              </tr>
+            `;
+          }
 
           return `
-            <tr data-conditionnement-id="${echapperHtml(ligne.conditionnement_id)}"
-                data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}"
-                data-quantite="${quantite}">
+            <tr data-groupe-cle="${echapperHtml(groupe.cle)}">
               <td style="text-align:center;">
                 <input
-                  class="reapprovisionnement-selection"
+                  class="reapprovisionnement-selection-unique"
                   type="checkbox"
-                  aria-label="Sélectionner le conditionnement ${index + 1}">
+                  data-groupe-cle="${echapperHtml(groupe.cle)}"
+                  aria-label="Sélectionner le conditionnement partiel de ${formatNombre(groupe.quantite_unitaire)} unités">
               </td>
-              <td><strong>Gobelets</strong></td>
-              <td>${echapperHtml(libelle)}</td>
-              <td><strong>${formatNombre(quantite)}</strong></td>
+              <td><strong>${echapperHtml(groupe.article)}</strong></td>
+              <td>
+                ${echapperHtml(nomType)} partielle
+                ${groupe.ids.length > 1
+                  ? `<small style="display:block;color:#777;margin-top:3px;">${formatNombre(groupe.ids.length)} identique(s)</small>`
+                  : ""}
+              </td>
+              <td><strong>${formatNombre(groupe.quantite_unitaire)}</strong></td>
             </tr>
           `;
         }).join("");
@@ -2037,29 +2252,22 @@
       }
 
       function actualiserResumeSelectionReapprovisionnement() {
-        const lignesSelectionnees = Array.from(
-          corpsReapprovisionnement.querySelectorAll(
-            "tr[data-conditionnement-id]"
-          )
-        ).filter(function (tr) {
-          return tr.querySelector(".reapprovisionnement-selection")?.checked === true;
+        const idsSelectionnes = idsSelectionnesReapprovisionnement();
+        let totalUnites = 0;
+
+        groupesReapprovisionnement.forEach(function (groupe) {
+          totalUnites +=
+            valeurSelectionGroupeReapprovisionnement(groupe) *
+            groupe.quantite_unitaire;
         });
 
-        const totalUnites = lignesSelectionnees.reduce(function (total, tr) {
-          return total + entier(tr.dataset.quantite);
-        }, 0);
-
-        const toutesLesLignes = corpsReapprovisionnement.querySelectorAll(
-          "tr[data-conditionnement-id]"
-        );
-
-        if (toutesLesLignes.length === 0) {
+        if (groupesReapprovisionnement.length === 0) {
           return;
         }
 
         resumeReapprovisionnement.innerHTML = `
           <strong>Réserve MDN — Gobelets</strong><br>
-          ${formatNombre(lignesSelectionnees.length)} conditionnement(s) sélectionné(s) ·
+          ${formatNombre(idsSelectionnes.length)} conditionnement(s) sélectionné(s) ·
           ${formatNombre(totalUnites)} unité(s) à mettre en Stock MDN
         `;
       }
@@ -2087,26 +2295,26 @@
           return;
         }
 
-        const lignesSelectionnees = Array.from(
-          corpsReapprovisionnement.querySelectorAll(
-            "tr[data-conditionnement-id]"
-          )
-        ).filter(function (tr) {
-          return tr.querySelector(".reapprovisionnement-selection")?.checked === true;
-        });
+        const conditionnementIds = idsSelectionnesReapprovisionnement();
 
-        if (lignesSelectionnees.length === 0) {
+        if (conditionnementIds.length === 0) {
           throw new Error("Sélectionne au moins un conditionnement à mettre en Stock MDN.");
         }
 
-        const vaisselleId = lignesSelectionnees[0].dataset.vaisselleId;
-        const conditionnementIds = lignesSelectionnees.map(function (tr) {
-          return tr.dataset.conditionnementId;
-        });
+        const premierGroupe = groupesReapprovisionnement[0];
+        const vaisselleId = premierGroupe?.vaisselle_id;
 
-        const totalUnites = lignesSelectionnees.reduce(function (total, tr) {
-          return total + entier(tr.dataset.quantite);
-        }, 0);
+        if (!vaisselleId) {
+          throw new Error("Impossible d’identifier les Gobelets à transférer.");
+        }
+
+        let totalUnites = 0;
+
+        groupesReapprovisionnement.forEach(function (groupe) {
+          totalUnites +=
+            valeurSelectionGroupeReapprovisionnement(groupe) *
+            groupe.quantite_unitaire;
+        });
 
         validerReapprovisionnement.disabled = true;
         validerReapprovisionnement.textContent = "Transfert…";
@@ -3374,8 +3582,42 @@
         }
       });
 
+      corpsReapprovisionnement.addEventListener("click", function (event) {
+        const bouton = event.target.closest(".bouton-quantite-reappro");
+
+        if (!bouton) {
+          return;
+        }
+
+        const cle = bouton.dataset.groupeCle;
+        const variation = bouton.dataset.action === "plus" ? 1 : -1;
+
+        modifierNombreReapprovisionnement(cle, variation);
+      });
+
+      corpsReapprovisionnement.addEventListener("input", function (event) {
+        if (!event.target.classList.contains("reapprovisionnement-nombre")) {
+          return;
+        }
+
+        const cle = event.target.dataset.groupeCle;
+        const groupe = groupesReapprovisionnement.find(function (item) {
+          return item.cle === cle;
+        });
+
+        if (!groupe) {
+          return;
+        }
+
+        event.target.value = String(
+          Math.max(0, Math.min(groupe.ids.length, entier(event.target.value)))
+        );
+
+        actualiserResumeSelectionReapprovisionnement();
+      });
+
       corpsReapprovisionnement.addEventListener("change", function (event) {
-        if (event.target.classList.contains("reapprovisionnement-selection")) {
+        if (event.target.classList.contains("reapprovisionnement-selection-unique")) {
           actualiserResumeSelectionReapprovisionnement();
         }
       });
