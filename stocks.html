@@ -808,6 +808,17 @@
     }
     .champ textarea { min-height:72px; resize:vertical; }
 
+    .livraison-table-cadre {
+      overflow: visible;
+    }
+
+    .livraison-table-cadre .tableau-defilement {
+      height: auto;
+      overflow-x: auto;
+      overflow-y: visible;
+      overscroll-behavior: auto;
+    }
+
     .livraison-table { width:100%; min-width:720px; }
     .livraison-table th, .livraison-table td { text-align:left; }
     .livraison-table input {
@@ -1263,7 +1274,7 @@
           Toute la vaisselle doit être dans un conditionnement. Saisis le nombre de caisses/sachets complets puis ajoute chaque conditionnement partiel séparément avec sa quantité réelle.
         </div>
 
-        <div class="tableau-cadre">
+        <div class="tableau-cadre livraison-table-cadre">
           <div class="tableau-defilement">
             <table class="livraison-table">
               <thead>
@@ -2448,12 +2459,13 @@
 
           const d = data || {};
           const lignes = Array.isArray(d.lignes_vaisselle) ? d.lignes_vaisselle : (Array.isArray(d.lignes) ? d.lignes : []);
+          const contenantsVidesDetail = Array.isArray(d.contenants_vides) ? d.contenants_vides : [];
           const operationsLiees = Array.isArray(d.operations_liees) ? d.operations_liees : [];
           const op = d.operation || d;
 
           operationDetailCourante = op;
           operationDetailCourante.lignes_vaisselle = lignes;
-          operationDetailCourante.contenants_vides = Array.isArray(d.contenants_vides) ? d.contenants_vides : [];
+          operationDetailCourante.contenants_vides = contenantsVidesDetail;
 
           const typeOperation = String(op.type_operation || "");
           const estContreOperation = typeOperation === "ajustement_stock" && !!op.operation_originale_id;
@@ -2559,19 +2571,100 @@
 
               <section class="detail-carte">
                 <h3>Détail par article</h3>
-                ${lignes.length ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Article</th><th>Conditionnement</th><th>Quantité</th></tr></thead><tbody>${lignes.map(function(x){
-                  const partiels = Array.isArray(x.conditionnements_partiels) ? x.conditionnements_partiels : [];
-                  const physique = [];
-                  if (entier(x.nombre_conditionnements_complets) > 0) physique.push(formatNombre(x.nombre_conditionnements_complets) + " complet(s)");
-                  if (partiels.length > 0) physique.push(formatNombre(partiels.length) + " partiel(s) (" + partiels.map(function(q){ return formatNombre(q); }).join(", ") + ")");
-                  return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${signeQuantiteDetail}${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;
-                }).join("")}</tbody></table></div>` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
+                ${(lignes.length || contenantsVidesDetail.length) ? `
+                  <div class="tableau-defilement">
+                    <table class="detail-table">
+                      <thead>
+                        <tr>
+                          <th>Article</th>
+                          <th>Conditionnement</th>
+                          <th>Quantité</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${lignes.map(function(x){
+                          const partiels = Array.isArray(x.conditionnements_partiels) ? x.conditionnements_partiels : [];
+                          const physique = [];
+                          if (entier(x.nombre_conditionnements_complets) > 0) physique.push(formatNombre(x.nombre_conditionnements_complets) + " complet(s)");
+                          if (partiels.length > 0) physique.push(formatNombre(partiels.length) + " partiel(s) (" + partiels.map(function(q){ return formatNombre(q); }).join(", ") + ")");
+                          return `<tr><td>${echapperHtml(x.article || x.nom || "Article")}</td><td>${echapperHtml(physique.length ? physique.join(" · ") : libelleConditionnement(x.type_conditionnement, x.quantite_standard))}</td><td><strong>${signeQuantiteDetail}${formatNombre(x.quantite_totale ?? x.quantite)}</strong></td></tr>`;
+                        }).join("")}
+                        ${contenantsVidesDetail.map(function(x){
+                          const nomContenant = x.type_contenant || x.contenant || x.nom || "Contenant";
+                          return `<tr><td>${echapperHtml(nomContenant)}</td><td>Vide propre</td><td><strong>${signeQuantiteDetail}${formatNombre(x.quantite)}</strong></td></tr>`;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : '<div class="detail-vide">Aucune ligne détaillée.</div>'}
               </section>
             </div>`;
         } catch (erreur) {
           console.error("[MDN Sion] Détail opération impossible :", erreur);
           contenuModalDetail.innerHTML = `<div class="detail-vide">${echapperHtml(erreur?.message || "Impossible de charger le détail de cette opération.")}</div>`;
         }
+      }
+
+      async function enrichirHistoriqueContenants(operations) {
+        if (!Array.isArray(operations) || operations.length === 0) {
+          return operations;
+        }
+
+        const operationsACompleter = operations.filter(function(operation) {
+          const typeOperation = String(operation.type_operation || operation.type_mouvement || "");
+          const quantiteActuelle = Number(
+            operation.quantite_totale ??
+            operation.total_unites ??
+            operation.quantite ??
+            0
+          );
+
+          return (
+            typeOperation === "livraison_vaisselle" &&
+            quantiteActuelle === 0 &&
+            !!(operation.operation_id || operation.id)
+          );
+        });
+
+        if (operationsACompleter.length === 0) {
+          return operations;
+        }
+
+        await Promise.all(
+          operationsACompleter.map(async function(operation) {
+            const operationId = operation.operation_id || operation.id;
+
+            try {
+              const { data, error } = await window.MDN_SUPABASE.rpc(
+                "detail_operation_stock_vaisselle",
+                {
+                  p_operation_id: operationId,
+                  p_is_demo: modeDemo
+                }
+              );
+
+              if (error) throw error;
+
+              const contenants = Array.isArray(data?.contenants_vides)
+                ? data.contenants_vides
+                : [];
+
+              if (contenants.length > 0) {
+                operation.quantite_affichage = contenants.reduce(function(total, ligne) {
+                  return total + entier(ligne.quantite);
+                }, 0);
+              }
+            } catch (erreur) {
+              console.warn(
+                "[MDN Sion] Impossible d’enrichir la quantité de l’opération de contenants :",
+                operationId,
+                erreur
+              );
+            }
+          })
+        );
+
+        return operations;
       }
 
       function afficherHistorique(operations) {
@@ -2588,7 +2681,12 @@
 
         historiqueListe.innerHTML = operations.map(function(operation) {
           const operationId = String(operation.operation_id || operation.id || "");
-          const quantite = operation.quantite_totale ?? operation.total_unites ?? operation.quantite ?? 0;
+          const quantite =
+            operation.quantite_affichage ??
+            operation.quantite_totale ??
+            operation.total_unites ??
+            operation.quantite ??
+            0;
           const statut = String(operation.statut || "valide").toLowerCase();
           const classeStatut = statut === "annule" ? "annulee" : (statut === "corrige" ? "corrigee" : statut);
 
@@ -2786,6 +2884,8 @@
 
           afficherStocks(stocks);
           ajouterContenantsAuTableau(contenants);
+
+          await enrichirHistoriqueContenants(mouvements);
           afficherHistorique(mouvements);
         } finally {
           chargementEnCours = false;
