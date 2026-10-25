@@ -2303,7 +2303,14 @@
 
           let explication = "";
           if (estContreOperation) {
-            explication = "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
+            const estCorrectionDetail =
+              String(op.reference_type || "") === "correction_operation_stock" ||
+              String(op.motif || "").toLowerCase().includes("correction") ||
+              String(op.commentaire || "").toLowerCase().includes("corriger la livraison");
+
+            explication = estCorrectionDetail
+              ? "Cette opération compensatrice a été créée automatiquement pour appliquer uniquement la différence entre la quantité d’origine et la quantité corrigée. Elle reste valide car c’est elle qui ajuste réellement le stock."
+              : "Cette contre-opération a été créée automatiquement pour compenser l’opération annulée. Elle reste valide car c’est elle qui applique réellement l’annulation dans le stock.";
           } else if (String(op.statut || "").toLowerCase() === "corrige" && operationCompensatrice) {
             explication = "Cette opération a été corrigée. Elle reste dans l’historique avec ses valeurs d’origine. Une opération compensatrice distincte applique uniquement la différence de quantité.";
           } else if (estAnnulee && operationCompensatrice) {
