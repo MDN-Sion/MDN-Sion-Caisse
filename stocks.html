@@ -2584,9 +2584,22 @@
             0
           );
 
+          const typeOperation = String(
+            operation.type_operation ||
+            operation.type_mouvement ||
+            ""
+          ).toLowerCase();
+
+          /* On enrichit :
+             - les opérations dont la quantité principale vaut 0, comme avant ;
+             - toutes les opérations compensatrices "ajustement_stock", afin de
+               détecter aussi les contenants d'une correction mixte SQL 107. */
           return (
-            quantiteActuelle === 0 &&
-            !!(operation.operation_id || operation.id)
+            !!(operation.operation_id || operation.id) &&
+            (
+              quantiteActuelle === 0 ||
+              typeOperation === "ajustement_stock"
+            )
           );
         });
 
@@ -2699,9 +2712,28 @@
                   }
                 }
 
-                operation.quantite_affichage = signe * quantiteContenants;
+                const quantitePrincipale = Number(
+                  operation.quantite_totale ??
+                  operation.total_unites ??
+                  operation.quantite ??
+                  0
+                );
+
+                if (quantitePrincipale === 0) {
+                  /* Correction composée uniquement de contenants :
+                     on conserve le comportement validé de SQL 106. */
+                  operation.quantite_affichage = signe * quantiteContenants;
+                  operation.quantite_contenants_secondaire = null;
+                } else {
+                  /* Correction mixte SQL 107 :
+                     on NE mélange PAS les unités de vaisselle et les contenants.
+                     La vaisselle reste la quantité principale de la carte. */
+                  operation.quantite_contenants_secondaire =
+                    signe * quantiteContenants;
+                }
               } else {
                 operation.quantite_affichage = quantiteContenants;
+                operation.quantite_contenants_secondaire = null;
               }
 
             } catch (erreur) {
@@ -2754,6 +2786,19 @@
           let commentaireVisible = operation.motif_correction || operation.motif || operation.commentaire || "";
           let quantiteAffichee = formatNombre(quantite);
 
+          const quantiteContenantsSecondaire =
+            operation.quantite_contenants_secondaire === null ||
+            operation.quantite_contenants_secondaire === undefined
+              ? null
+              : Number(operation.quantite_contenants_secondaire);
+
+          const libelleContenantsSecondaire =
+            quantiteContenantsSecondaire === null ||
+            !Number.isFinite(quantiteContenantsSecondaire) ||
+            quantiteContenantsSecondaire === 0
+              ? ""
+              : `${quantiteContenantsSecondaire < 0 ? "−" : "+"}${formatNombre(Math.abs(quantiteContenantsSecondaire))} contenant${Math.abs(quantiteContenantsSecondaire) > 1 ? "s" : ""}`;
+
           if (estContreOperation) {
             const typeOriginal = operationOriginale
               ? libelleTypeMouvement(operationOriginale.type_operation)
@@ -2787,7 +2832,14 @@
             <article class="mouvement" data-operation-id="${echapperHtml(operationId)}">
               <div class="mouvement-haut">
                 <div class="mouvement-article">${echapperHtml(titre)}</div>
-                <div class="mouvement-quantite">${quantiteAffichee}</div>
+                <div>
+                  <div class="mouvement-quantite">${quantiteAffichee}</div>
+                  ${libelleContenantsSecondaire ? `
+                    <div style="margin-top:2px;font-size:11px;font-weight:800;color:#6b7280;text-align:right;white-space:nowrap;">
+                      ${echapperHtml(libelleContenantsSecondaire)}
+                    </div>
+                  ` : ""}
+                </div>
               </div>
 
               <span class="mouvement-statut ${classeStatut}">${echapperHtml(statutOperation(statut))}</span>
