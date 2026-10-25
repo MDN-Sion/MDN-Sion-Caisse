@@ -1881,6 +1881,210 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 109 - IMPRESSION / ENREGISTREMENT PDF DU BILAN
+       ======================================================== */
+
+    #imprimerBilan {
+      min-width: 190px;
+      min-height: 44px;
+      padding: 10px 22px;
+      border: 1px solid #8d6b00;
+      border-radius: 12px;
+      background: #8d6b00;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    #imprimerBilan:hover {
+      background: #725700;
+      border-color: #725700;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    #imprimerBilan:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    #modalBilan .modal-actions {
+      gap: 10px;
+    }
+
+    @media (max-width: 700px) {
+      #modalBilan .modal-actions {
+        flex-direction: column;
+      }
+
+      #imprimerBilan,
+      #modalBilan #fermerBilanBas {
+        width: 100%;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+
+      html,
+      body {
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+
+      body > * {
+        display: none !important;
+      }
+
+      body > #modalBilan {
+        display: block !important;
+      }
+
+      #modalBilan {
+        position: static !important;
+        inset: auto !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+
+      #modalBilan .modal-carte.large {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+
+      #modalBilan .modal-entete {
+        padding: 0 0 8mm !important;
+        border-bottom: 1px solid #d9d9d9 !important;
+      }
+
+      #modalBilan .modal-entete h2 {
+        margin-top: 0 !important;
+      }
+
+      #modalBilan #fermerModalBilan,
+      #modalBilan .modal-actions {
+        display: none !important;
+      }
+
+      #modalBilan .modal-contenu {
+        display: block !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 7mm 0 0 !important;
+      }
+
+      #modalBilan .bilan-resume {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 3mm !important;
+        break-inside: avoid;
+      }
+
+      #modalBilan .bilan-indicateur {
+        padding: 3mm !important;
+        border-radius: 3mm !important;
+      }
+
+      #modalBilan .bilan-indicateur strong {
+        font-size: 15pt !important;
+      }
+
+      #modalBilan .bilan-table-cadre,
+      #modalBilan .tableau-defilement {
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: 0 !important;
+      }
+
+      #modalBilan .bilan-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+        font-size: 7.5pt !important;
+      }
+
+      #modalBilan .bilan-table th,
+      #modalBilan .bilan-table td {
+        position: static !important;
+        padding: 2.2mm 1.2mm !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        background: #fff !important;
+      }
+
+      #modalBilan .bilan-table th:first-child,
+      #modalBilan .bilan-table td:first-child {
+        width: 14% !important;
+      }
+
+      #modalBilan .bilan-table thead {
+        display: table-header-group;
+      }
+
+      #modalBilan .bilan-table tr {
+        break-inside: avoid;
+      }
+
+      #modalBilan .bilan-analyse {
+        margin-top: 6mm !important;
+        padding: 4mm !important;
+        break-inside: avoid;
+      }
+
+      #modalBilan .bilan-analyse-grille {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3mm !important;
+      }
+
+      #modalBilan .bilan-analyse-carte {
+        padding: 3mm !important;
+      }
+
+      #modalBilan .bilan-aide {
+        margin-top: 5mm !important;
+        padding: 4mm !important;
+        font-size: 8.5pt !important;
+        break-inside: avoid;
+      }
+
+      #modalBilan .bilan-analyse-valeur {
+        font-size: 13pt !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -2012,6 +2216,7 @@
       </div>
 
       <div class="modal-actions">
+        <button id="imprimerBilan" type="button">🖨️ Imprimer / Enregistrer en PDF</button>
         <button id="fermerBilanBas" class="bouton-secondaire" type="button">Fermer</button>
       </div>
     </section>
@@ -2254,6 +2459,7 @@
       const modalBilan = document.getElementById("modalBilan");
       const fermerModalBilan = document.getElementById("fermerModalBilan");
       const fermerBilanBas = document.getElementById("fermerBilanBas");
+      const imprimerBilan = document.getElementById("imprimerBilan");
       const contenuBilan = document.getElementById("contenuBilan");
       const sousTitreModalBilan = document.getElementById("sousTitreModalBilan");
 
@@ -4481,6 +4687,14 @@
         modalBilan.setAttribute("aria-hidden", "true");
       }
 
+      function imprimerOuEnregistrerBilan() {
+        if (!modalBilan.classList.contains("visible")) {
+          return;
+        }
+
+        window.print();
+      }
+
       async function ouvrirBilan() {
         if (!editionCourante?.id) {
           afficherMessage("Aucune édition n’est disponible pour établir le bilan.", "erreur");
@@ -4699,6 +4913,7 @@
       boutonBilan.addEventListener("click", ouvrirBilan);
       fermerModalBilan.addEventListener("click", fermerBilan);
       fermerBilanBas.addEventListener("click", fermerBilan);
+      imprimerBilan.addEventListener("click", imprimerOuEnregistrerBilan);
 
       const defilementTableauBilan = modalBilan.querySelector(".bilan-table-cadre .tableau-defilement");
       const contenuScrollableBilan = modalBilan.querySelector(".modal-contenu");
