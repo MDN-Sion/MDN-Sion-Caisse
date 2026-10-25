@@ -1815,6 +1815,72 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 109 - ANALYSE D'UTILISATION POUR L'ÉDITION SUIVANTE
+       ======================================================== */
+
+    .bilan-analyse {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #e1e1e1;
+      border-radius: 15px;
+      background: #fafafa;
+    }
+
+    .bilan-analyse h3 {
+      margin: 0 0 5px;
+      font-size: 17px;
+      color: #333;
+    }
+
+    .bilan-analyse-intro {
+      margin: 0 0 13px;
+      color: #777;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .bilan-analyse-grille {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bilan-analyse-carte {
+      padding: 13px 14px;
+      border: 1px solid #e1e1e1;
+      border-radius: 13px;
+      background: #fff;
+    }
+
+    .bilan-analyse-carte strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .bilan-analyse-carte span {
+      display: block;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .bilan-analyse-carte .bilan-analyse-valeur {
+      margin-top: 7px;
+      color: #5d4700;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 800px) {
+      .bilan-analyse-grille {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 
@@ -4349,6 +4415,64 @@
               </table>
             </div>
           </div>
+
+          <section class="bilan-analyse">
+            <h3>Préparation de l’édition suivante</h3>
+            <p class="bilan-analyse-intro">
+              Ces indicateurs utilisent l’historique de l’édition pour aider à dimensionner les besoins futurs.
+              Ils restent informatifs : ils ne modifient aucun stock.
+            </p>
+
+            <div class="bilan-analyse-grille">
+              <div class="bilan-analyse-carte">
+                <strong>Article le plus sollicité</strong>
+                <span>Plus grand nombre de retraits cumulés pendant l’édition.</span>
+                <span class="bilan-analyse-valeur">${
+                  (() => {
+                    const ligne = [...articles].sort(
+                      (a, b) => entier(b.retraits_cumules) - entier(a.retraits_cumules)
+                    )[0];
+
+                    return ligne && entier(ligne.retraits_cumules) > 0
+                      ? echapperHtml(ligne.article || "Article") +
+                        " — " +
+                        formatNombre(ligne.retraits_cumules)
+                      : "Aucune utilisation";
+                  })()
+                }</span>
+              </div>
+
+              <div class="bilan-analyse-carte">
+                <strong>Pic le plus élevé</strong>
+                <span>Plus grande quantité simultanément sortie sur le marché.</span>
+                <span class="bilan-analyse-valeur">${
+                  (() => {
+                    const ligne = [...articles].sort(
+                      (a, b) => entier(b.pic_sur_le_marche) - entier(a.pic_sur_le_marche)
+                    )[0];
+
+                    return ligne && entier(ligne.pic_sur_le_marche) > 0
+                      ? echapperHtml(ligne.article || "Article") +
+                        " — " +
+                        formatNombre(ligne.pic_sur_le_marche)
+                      : "Aucun pic";
+                  })()
+                }</span>
+              </div>
+
+              <div class="bilan-analyse-carte">
+                <strong>Articles non utilisés</strong>
+                <span>Aucun retrait enregistré pendant cette édition.</span>
+                <span class="bilan-analyse-valeur">${
+                  formatNombre(
+                    articles.filter(
+                      (ligne) => entier(ligne.retraits_cumules) === 0
+                    ).length
+                  )
+                }</span>
+              </div>
+            </div>
+          </section>
         `;
       }
 
