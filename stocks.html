@@ -2611,7 +2611,6 @@
         }
 
         const operationsACompleter = operations.filter(function(operation) {
-          const typeOperation = String(operation.type_operation || operation.type_mouvement || "");
           const quantiteActuelle = Number(
             operation.quantite_totale ??
             operation.total_unites ??
@@ -2620,7 +2619,6 @@
           );
 
           return (
-            typeOperation === "livraison_vaisselle" &&
             quantiteActuelle === 0 &&
             !!(operation.operation_id || operation.id)
           );
@@ -2649,11 +2647,97 @@
                 ? data.contenants_vides
                 : [];
 
-              if (contenants.length > 0) {
-                operation.quantite_affichage = contenants.reduce(function(total, ligne) {
-                  return total + entier(ligne.quantite);
-                }, 0);
+              if (contenants.length === 0) {
+                return;
               }
+
+              const quantiteContenants = contenants.reduce(function(total, ligne) {
+                return total + entier(ligne.quantite);
+              }, 0);
+
+              if (quantiteContenants <= 0) {
+                return;
+              }
+
+              const typeOperation = String(
+                operation.type_operation ||
+                operation.type_mouvement ||
+                ""
+              ).toLowerCase();
+
+              const operationOriginaleId =
+                operation.operation_originale_id ||
+                data?.operation_originale_id ||
+                data?.operation?.operation_originale_id ||
+                null;
+
+              const estOperationCompensatrice =
+                !!operationOriginaleId ||
+                typeOperation === "ajustement_stock";
+
+              if (estOperationCompensatrice) {
+                /* Pour SQL 106, la ligne de traçabilité contient la valeur
+                   absolue du delta. Le mouvement lié indique son sens :
+                   "retrait" = correction négative ;
+                   "livraison_vaisselle" = correction positive. */
+                const mouvementsContenants = Array.isArray(data?.mouvements_contenants)
+                  ? data.mouvements_contenants
+                  : [];
+
+                let signe = 1;
+
+                const mouvementRetrait = mouvementsContenants.some(function(mouvement) {
+                  return String(mouvement.type_mouvement || "").toLowerCase() === "retrait";
+                });
+
+                if (mouvementRetrait) {
+                  signe = -1;
+                } else {
+                  /* Le détail SQL 106 restitue déjà la quantité avec son signe
+                     dans certains états de la RPC. On l'utilise en priorité. */
+                  const quantiteSignee = contenants.reduce(function(total, ligne) {
+                    const q = Number(
+                      ligne.quantite_signee ??
+                      ligne.delta ??
+                      ligne.quantite_delta ??
+                      0
+                    );
+                    return total + (Number.isFinite(q) ? q : 0);
+                  }, 0);
+
+                  if (quantiteSignee < 0) {
+                    signe = -1;
+                  } else if (quantiteSignee > 0) {
+                    signe = 1;
+                  } else {
+                    /* SQL 106 crée un mouvement "retrait" pour une diminution.
+                       Si la RPC de détail ne remonte pas encore ce mouvement,
+                       le commentaire/motif technique de l'opération constitue
+                       le dernier indicateur d'affichage, sans modifier les données. */
+                    const texteTechnique = [
+                      data?.commentaire,
+                      data?.operation?.commentaire,
+                      operation.commentaire,
+                      operation.description
+                    ]
+                      .filter(Boolean)
+                      .join(" ")
+                      .toLowerCase();
+
+                    if (
+                      texteTechnique.includes("retrait compensateur") ||
+                      texteTechnique.includes("retirer")
+                    ) {
+                      signe = -1;
+                    }
+                  }
+                }
+
+                operation.quantite_affichage = signe * quantiteContenants;
+              } else {
+                operation.quantite_affichage = quantiteContenants;
+              }
+
             } catch (erreur) {
               console.warn(
                 "[MDN Sion] Impossible d’enrichir la quantité de l’opération de contenants :",
