@@ -2793,7 +2793,7 @@
 
         if (op.type_operation === "transfert_reserve_operationnel") {
           labelLignesCorrectionOperation.hidden = true;
-          labelLignesCorrectionOperation.style.display = "none";
+          labelLignesCorrectionOperation.style.setProperty("display", "none", "important");
           corrigerOperationStock.disabled = true;
           corrigerOperationStock.textContent = "Chargement…";
 
