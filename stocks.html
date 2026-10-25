@@ -1283,7 +1283,7 @@
         <div id="blocCaissesVides" class="modal-grille" style="margin-top:14px;">
           <div class="champ">
             <label for="caissesVidesLivraison">Caisses vides propres reçues séparément</label>
-            <input id="caissesVidesLivraison" type="number" min="0" step="1" value="0">
+            <input id="caissesVidesLivraison" type="number" min="0" step="1" value="" placeholder="0">
           </div>
           <div class="champ">
             <label for="commentaireLivraison">Commentaire (facultatif)</label>
@@ -1673,7 +1673,7 @@
 
         const lignesContenants = contenants.map(function (ligne) {
           return `
-            <tr class="ligne-contenant">
+            <tr class="ligne-stock-cliquable ligne-contenant" data-type-contenant-id="${echapperHtml(ligne.type_contenant_id || "")}">
               <td class="article-cell">
                 <strong>${echapperHtml(ligne.contenant)}</strong>
                 <small>Vide propre</small>
@@ -1772,7 +1772,7 @@
                 data-type-conditionnement="${echapperHtml(type)}">
               <td><strong>${echapperHtml(ligne.article)}</strong></td>
               <td>${echapperHtml(libelleConditionnement(type, ligne.quantite_standard))}</td>
-              <td><input class="livraison-complets" type="number" min="0" step="1" value="0" aria-label="${pluriel} complets"></td>
+              <td><input class="livraison-complets" type="number" min="0" step="1" value="" placeholder="0" aria-label="${pluriel} complets"></td>
               <td>
                 <div class="liste-partiels"></div>
                 <button class="ajouter-partiel" type="button">+ Ajouter ${type === "caisse" ? "une caisse" : "un sachet"} partiel${type === "caisse" ? "le" : ""}</button>
@@ -1784,7 +1784,7 @@
         }).join("");
 
         blocCaissesVides.style.display = destinationReserve ? "none" : "grid";
-        if (destinationReserve) caissesVidesLivraison.value = "0";
+        if (destinationReserve) caissesVidesLivraison.value = "";
 
         corpsLivraison.querySelectorAll("tr[data-vaisselle-id]").forEach(function (tr) {
           tr.querySelector(".livraison-complets").addEventListener("input", recalculerTotauxLivraison);
@@ -1801,7 +1801,7 @@
         destinationLivraison.value = "operationnel_propre";
         referenceLivraison.value = "";
         commentaireLivraison.value = "";
-        caissesVidesLivraison.value = "0";
+        caissesVidesLivraison.value = "";
         construireFormulaireLivraison();
         modalLivraison.classList.add("visible");
         modalLivraison.setAttribute("aria-hidden", "false");
@@ -2277,6 +2277,50 @@
         }
       }
 
+      function afficherDetailContenant(typeContenantId) {
+        if (!typeContenantId) return;
+
+        const ligne = contenantsCourants.find(function (x) {
+          return x.type_contenant_id === typeContenantId;
+        });
+
+        if (!ligne) {
+          afficherMessage("Détail du contenant introuvable.", "erreur");
+          return;
+        }
+
+        ouvrirDetail(
+          "📦 " + (ligne.contenant || "Contenant"),
+          "Situation actuelle du contenant vide propre"
+        );
+
+        contenuModalDetail.innerHTML = `
+          <div class="detail-sections">
+            <section class="detail-carte">
+              <h3>Situation actuelle</h3>
+              <div class="detail-grille">
+                <div class="detail-indicateur">
+                  <span>Stock MDN</span>
+                  <strong>${formatNombre(ligne.stock_vide_propre)}</strong>
+                </div>
+                <div class="detail-indicateur">
+                  <span>État</span>
+                  <strong>Vide propre</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="detail-carte">
+              <h3>À propos de ce stock</h3>
+              <div class="detail-aide">
+                Ce stock correspond aux contenants vides propres actuellement disponibles au Stock MDN.
+                Les livraisons et corrections de contenants sont conservées dans l’historique des opérations de stock.
+              </div>
+            </section>
+          </div>
+        `;
+      }
+
       async function afficherDetailArticle(vaisselleId) {
         if (!editionCourante?.id || !vaisselleId) return;
         const ligneStock = stocksCourants.find(function (x) { return x.vaisselle_id === vaisselleId; });
@@ -2750,8 +2794,16 @@
       }
 
       corpsTableStocks.addEventListener("click", function (event) {
-        const ligne = event.target.closest("tr[data-vaisselle-id]");
-        if (ligne) afficherDetailArticle(ligne.dataset.vaisselleId);
+        const ligneVaisselle = event.target.closest("tr[data-vaisselle-id]");
+        if (ligneVaisselle) {
+          afficherDetailArticle(ligneVaisselle.dataset.vaisselleId);
+          return;
+        }
+
+        const ligneContenant = event.target.closest("tr[data-type-contenant-id]");
+        if (ligneContenant) {
+          afficherDetailContenant(ligneContenant.dataset.typeContenantId);
+        }
       });
 
       historiqueListe.addEventListener("click", function (event) {
