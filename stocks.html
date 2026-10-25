@@ -1457,7 +1457,7 @@
 
     .correction-transfert-entete > div,
     .correction-transfert-retour-ligne > div {
-      padding: 10px 12px;
+      padding: 6px 10px;
       box-sizing: border-box;
     }
 
@@ -1472,7 +1472,7 @@
     }
 
     .correction-transfert-retour-ligne {
-      min-height: 66px;
+      min-height: 50px;
       border-bottom: 1px solid #ececec;
     }
 
@@ -1490,10 +1490,10 @@
 
     .correction-transfert-retour-checkbox {
       display: block !important;
-      width: 38px !important;
-      height: 38px !important;
-      min-width: 38px !important;
-      min-height: 38px !important;
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
       margin: 0 auto !important;
       padding: 0 !important;
       box-sizing: border-box;
@@ -1531,10 +1531,10 @@
       }
 
       .correction-transfert-retour-checkbox {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
-        min-height: 36px !important;
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
       }
     }
 
@@ -1795,8 +1795,8 @@
         <div class="modal-note">
           L’opération d’origine passera au statut <strong>Corrigée</strong>. Les mouvements déjà réalisés resteront intacts.
         </div>
-        <div class="champ">
-          <label>Nouvelles quantités *</label>
+        <div id="blocLignesCorrectionOperation" class="champ">
+          <label id="labelLignesCorrectionOperation">Nouvelles quantités *</label>
           <div id="lignesCorrectionOperation" class="correction-lignes"></div>
         </div>
         <div class="champ">
@@ -1810,9 +1810,10 @@
             <option value="Autre">Autre</option>
           </select>
         </div>
-        <div class="champ">
-          <label for="commentaireCorrectionOperation">Commentaire <span id="commentaireCorrectionObligatoire" hidden>(obligatoire pour « Autre »)</span></label>
-          <textarea id="commentaireCorrectionOperation" rows="3" placeholder="Précision facultative"></textarea>
+        <div id="blocCommentaireCorrectionOperation" class="champ" hidden>
+          <label for="commentaireCorrectionOperation">Commentaire *</label>
+          <span id="commentaireCorrectionObligatoire" hidden></span>
+          <textarea id="commentaireCorrectionOperation" rows="3" placeholder="Précise obligatoirement le motif de la correction"></textarea>
         </div>
       </div>
       <div class="modal-actions">
@@ -1916,6 +1917,8 @@
       const motifCorrectionOperation = document.getElementById("motifCorrectionOperation");
       const commentaireCorrectionOperation = document.getElementById("commentaireCorrectionOperation");
       const commentaireCorrectionObligatoire = document.getElementById("commentaireCorrectionObligatoire");
+      const blocCommentaireCorrectionOperation = document.getElementById("blocCommentaireCorrectionOperation");
+      const labelLignesCorrectionOperation = document.getElementById("labelLignesCorrectionOperation");
 
       const modalAnnulationOperation = document.getElementById("modalAnnulationOperation");
       const fermerModalAnnulationOperation = document.getElementById("fermerModalAnnulationOperation");
@@ -2758,6 +2761,8 @@
         motifCorrectionOperation.value = "";
         commentaireCorrectionOperation.value = "";
         commentaireCorrectionObligatoire.hidden = true;
+        blocCommentaireCorrectionOperation.hidden = true;
+        labelLignesCorrectionOperation.hidden = false;
         lignesCorrectionOperation.innerHTML = "";
         confirmerCorrectionOperation.disabled = false;
         confirmerCorrectionOperation.textContent = "Confirmer la correction";
@@ -2781,8 +2786,11 @@
         motifCorrectionOperation.value = "";
         commentaireCorrectionOperation.value = "";
         commentaireCorrectionObligatoire.hidden = true;
+        blocCommentaireCorrectionOperation.hidden = true;
+        labelLignesCorrectionOperation.hidden = false;
 
         if (op.type_operation === "transfert_reserve_operationnel") {
+          labelLignesCorrectionOperation.hidden = true;
           corrigerOperationStock.disabled = true;
           corrigerOperationStock.textContent = "Chargement…";
 
@@ -4062,10 +4070,12 @@
 
       motifCorrectionOperation.addEventListener("change", function () {
         const autre = motifCorrectionOperation.value === "Autre";
-        commentaireCorrectionObligatoire.hidden = !autre;
-        commentaireCorrectionOperation.placeholder = autre
-          ? "Précise obligatoirement le motif de la correction"
-          : "Précision facultative";
+        blocCommentaireCorrectionOperation.hidden = !autre;
+        commentaireCorrectionObligatoire.hidden = true;
+        commentaireCorrectionOperation.placeholder = "Précise obligatoirement le motif de la correction";
+        if (!autre) {
+          commentaireCorrectionOperation.value = "";
+        }
       });
 
       modalCorrectionOperation.addEventListener("click", function (event) {
