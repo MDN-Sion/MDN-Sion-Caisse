@@ -2665,6 +2665,99 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 113 - CORRECTION TRACÉE DU RELEVÉ
+       ======================================================== */
+
+    .releve-validation-confirmee {
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .releve-validation-texte {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .releve-correction-demarrer,
+    .releve-correction-annuler,
+    .releve-correction-valider {
+      min-height: 38px;
+      padding: 7px 12px;
+      border-radius: 9px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .releve-correction-demarrer,
+    .releve-correction-annuler {
+      border: 1px solid #8d6b00;
+      background: #fff;
+      color: #6e5300;
+    }
+
+    .releve-correction-valider {
+      border: 1px solid #8d6b00;
+      background: #8d6b00;
+      color: #fff;
+    }
+
+    .releve-correction-zone {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 1 1 520px;
+    }
+
+    .releve-correction-motif {
+      flex: 1 1 220px;
+      min-width: 180px;
+      min-height: 38px;
+      padding: 7px 10px;
+      border: 1px solid #cfcfcf;
+      border-radius: 9px;
+      background: #fff;
+      color: #333;
+      font: inherit;
+      outline: none;
+    }
+
+    .releve-correction-motif::placeholder {
+      color: #aaa;
+    }
+
+    .releve-correction-motif:focus {
+      border-color: #8d6b00;
+      box-shadow: 0 0 0 3px rgba(141, 107, 0, 0.10);
+    }
+
+    @media (max-width: 700px) {
+      .releve-correction-zone {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .releve-correction-motif,
+      .releve-correction-demarrer,
+      .releve-correction-annuler,
+      .releve-correction-valider {
+        width: 100%;
+      }
+    }
+
+    @media print {
+      .releve-correction-demarrer,
+      .releve-correction-zone {
+        display: none !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -3045,6 +3138,7 @@
       let dernierBilanGlobal = null;
       let dernierRelevePrestataire = null;
       let relevePrestataireOuvert = false;
+      let correctionRelevePrestataireActive = false;
 
       const modalReapprovisionnement = document.getElementById("modalReapprovisionnement");
       const fermerModalReapprovisionnement = document.getElementById("fermerModalReapprovisionnement");
@@ -5255,6 +5349,93 @@
         }
       }
 
+
+      async function enregistrerCorrectionRelevePrestataire() {
+        if (!editionCourante?.id) {
+          afficherMessage("Aucune édition active.", "erreur");
+          return;
+        }
+
+        const motif =
+          document.getElementById("motifCorrectionReleve")?.value.trim() || "";
+
+        if (!motif) {
+          afficherMessage(
+            "Indique le motif de la correction.",
+            "erreur"
+          );
+          return;
+        }
+
+        const inputs = Array.from(
+          contenuBilan.querySelectorAll(".releve-sale-input")
+        );
+
+        if (inputs.some((input) => input.value.trim() === "")) {
+          afficherMessage(
+            "Toutes les quantités doivent être renseignées pour corriger un relevé validé.",
+            "erreur"
+          );
+          return;
+        }
+
+        const lignes = inputs.map((input) => ({
+          vaisselle_id: input.dataset.vaisselleId,
+          quantite_sale_prestataire: Math.max(0, entier(input.value))
+        }));
+
+        try {
+          const bouton =
+            document.getElementById("validerCorrectionReleve");
+
+          if (bouton) {
+            bouton.disabled = true;
+            bouton.textContent = "Enregistrement…";
+          }
+
+          const { error } = await window.MDN_SUPABASE.rpc(
+            "corriger_releve_final_prestataire",
+            {
+              p_edition_id: editionCourante.id,
+              p_lignes: lignes,
+              p_motif: motif,
+              p_is_demo: modeDemo
+            }
+          );
+
+          if (error) throw error;
+
+          const { data: releve, error: erreurLecture } =
+            await window.MDN_SUPABASE.rpc(
+              "releve_final_prestataire",
+              {
+                p_edition_id: editionCourante.id,
+                p_is_demo: modeDemo
+              }
+            );
+
+          if (erreurLecture) throw erreurLecture;
+
+          dernierRelevePrestataire = releve || null;
+          correctionRelevePrestataireActive = false;
+          afficherBilanGlobal(dernierBilanGlobal || {});
+          afficherMessage(
+            "Correction du relevé enregistrée et tracée.",
+            "succes"
+          );
+        } catch (erreur) {
+          console.error(
+            "[MDN Sion] Correction du relevé prestataire impossible :",
+            erreur
+          );
+          afficherMessage(
+            erreur?.message ||
+              "Impossible d’enregistrer la correction du relevé.",
+            "erreur"
+          );
+        }
+      }
+
       function afficherBilanGlobal(bilan) {
         const resume = bilan && bilan.resume ? bilan.resume : {};
         const articles = bilan && Array.isArray(bilan.articles) ? bilan.articles : [];
@@ -5487,7 +5668,7 @@
                                 value="${salePrestataire === null ? "" : salePrestataire}"
                                 placeholder="Saisir"
                                 aria-label="Sale prestataire - ${echapperHtml(ligne.article || "Article")}"
-                                ${releveVerrouille ? "disabled" : ""}
+                                ${releveVerrouille && !correctionRelevePrestataireActive ? "disabled" : ""}
                               >
                             </td>
                             <td
@@ -5507,17 +5688,58 @@
                 dernierRelevePrestataire?.statut === "valide"
                   ? `
                     <div class="releve-validation-confirmee">
-                      <strong>✓ Relevé validé</strong>
-                      <span>
-                        ${
-                          dernierRelevePrestataire?.valide_at
-                            ? "le " +
-                              new Date(
-                                dernierRelevePrestataire.valide_at
-                              ).toLocaleString("fr-FR")
-                            : ""
-                        }
-                      </span>
+                      <div class="releve-validation-texte">
+                        <strong>✓ Relevé validé</strong>
+                        <span>
+                          ${
+                            dernierRelevePrestataire?.valide_at
+                              ? "le " +
+                                new Date(
+                                  dernierRelevePrestataire.valide_at
+                                ).toLocaleString("fr-FR")
+                              : ""
+                          }
+                        </span>
+                      </div>
+
+                      ${
+                        correctionRelevePrestataireActive
+                          ? `
+                            <div class="releve-correction-zone">
+                              <input
+                                id="motifCorrectionReleve"
+                                class="releve-correction-motif"
+                                type="text"
+                                autocomplete="off"
+                                placeholder="Motif de la correction"
+                                aria-label="Motif de la correction du relevé"
+                              >
+                              <button
+                                id="annulerCorrectionReleve"
+                                class="releve-correction-annuler"
+                                type="button"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                id="validerCorrectionReleve"
+                                class="releve-correction-valider"
+                                type="button"
+                              >
+                                ✓ Enregistrer la correction
+                              </button>
+                            </div>
+                          `
+                          : `
+                            <button
+                              id="corrigerRelevePrestataire"
+                              class="releve-correction-demarrer"
+                              type="button"
+                            >
+                              ✏️ Corriger le relevé
+                            </button>
+                          `
+                      }
                     </div>
                   `
                   : `
@@ -5576,6 +5798,36 @@
           boutonEnregistrerReleve.addEventListener("click", function () {
             enregistrerRelevePrestataireDepuisBilan("final");
           });
+        }
+
+        const boutonCorriger =
+          document.getElementById("corrigerRelevePrestataire");
+
+        if (boutonCorriger) {
+          boutonCorriger.addEventListener("click", function () {
+            correctionRelevePrestataireActive = true;
+            afficherBilanGlobal(dernierBilanGlobal || {});
+          });
+        }
+
+        const boutonAnnulerCorrection =
+          document.getElementById("annulerCorrectionReleve");
+
+        if (boutonAnnulerCorrection) {
+          boutonAnnulerCorrection.addEventListener("click", function () {
+            correctionRelevePrestataireActive = false;
+            afficherBilanGlobal(dernierBilanGlobal || {});
+          });
+        }
+
+        const boutonValiderCorrection =
+          document.getElementById("validerCorrectionReleve");
+
+        if (boutonValiderCorrection) {
+          boutonValiderCorrection.addEventListener(
+            "click",
+            enregistrerCorrectionRelevePrestataire
+          );
         }
       }
 
