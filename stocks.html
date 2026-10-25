@@ -2468,6 +2468,82 @@
       }
     }
 
+
+    /* ========================================================
+       SQL 110 - FINITIONS RESPONSIVE / ACCORDÉON
+       ======================================================== */
+
+    /* Bouton d'ouverture du relevé : chevron sobre, sans "puce". */
+    .releve-prestataire-resume-droite {
+      gap: 10px;
+    }
+
+    .releve-prestataire-chevron {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #6e5300;
+      font-size: 0;
+      line-height: 1;
+      box-shadow: none;
+      transition: transform .18s ease;
+    }
+
+    .releve-prestataire-chevron::before {
+      content: "";
+      display: block;
+      width: 9px;
+      height: 9px;
+      margin: 6px auto 0;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg);
+    }
+
+    .releve-prestataire-resume[aria-expanded="true"]
+      .releve-prestataire-chevron {
+      transform: rotate(180deg);
+    }
+
+    /*
+      TABLEAU STOCK ACTUEL — tablette/téléphone
+      Le grand vide provenait d'une hauteur/min-height prévue pour le bureau.
+      Sur écran étroit, le tableau prend maintenant uniquement la hauteur utile
+      disponible et le défilement reste dans la zone de stock.
+    */
+    @media (max-width: 900px) {
+      .stock-table-wrap,
+      .table-wrap,
+      .table-scroll,
+      .stock-table-scroll {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+
+      /*
+        Le cadre principal du tableau ne conserve plus une grande hauteur
+        artificielle après les lignes visibles.
+      */
+      .stock-card .tableau-defilement,
+      .stock-card .tableau-cadre,
+      .stocks-card .tableau-defilement,
+      .stocks-card .tableau-cadre {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+
+      /* Arrondis propres : rien ne dépasse du cadre. */
+      .stock-card,
+      .stocks-card,
+      .stock-table-wrap,
+      .table-wrap {
+        overflow: hidden;
+      }
+    }
+
   </style>
 </head>
 
@@ -5219,7 +5295,7 @@
                     ? "Brouillon enregistré"
                     : "Aucun relevé enregistré"
                 }</span>
-                <span class="releve-prestataire-chevron" aria-hidden="true">⌄</span>
+                <span class="releve-prestataire-chevron" aria-hidden="true"></span>
               </span>
             </button>
 
