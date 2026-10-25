@@ -1311,6 +1311,59 @@
   </div>
 
 
+  <div id="modalReapprovisionnement" class="modal-fond" aria-hidden="true">
+    <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalReapprovisionnement">
+      <div class="modal-entete">
+        <div>
+          <h2 id="titreModalReapprovisionnement">🔄 Mettre la réserve en stock</h2>
+          <p>Sélectionner les conditionnements de Gobelets à déplacer de la Réserve MDN vers le Stock MDN.</p>
+        </div>
+        <button id="fermerModalReapprovisionnement" class="modal-fermer" type="button" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="modal-contenu">
+        <div class="modal-note">
+          Seuls les conditionnements physiques de Gobelets actuellement disponibles dans la Réserve MDN sont proposés. Le transfert ne crée ni ne supprime de vaisselle : il déplace les conditionnements sélectionnés vers le Stock MDN.
+        </div>
+
+        <div id="resumeReapprovisionnement" class="detail-carte" style="margin-top:14px;">
+          Chargement de la Réserve MDN…
+        </div>
+
+        <div class="tableau-cadre livraison-table-cadre" style="margin-top:14px;">
+          <div class="tableau-defilement">
+            <table class="livraison-table">
+              <thead>
+                <tr>
+                  <th style="width:70px;">Choisir</th>
+                  <th>Article</th>
+                  <th>Conditionnement</th>
+                  <th>Quantité</th>
+                </tr>
+              </thead>
+              <tbody id="corpsReapprovisionnement">
+                <tr>
+                  <td colspan="4">Chargement…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="champ" style="margin-top:14px;">
+          <label for="commentaireReapprovisionnement">Commentaire (facultatif)</label>
+          <textarea id="commentaireReapprovisionnement" rows="3" placeholder="Remarque sur le transfert"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="annulerReapprovisionnement" class="bouton-modal" type="button">Annuler</button>
+        <button id="validerReapprovisionnement" class="bouton-modal valider" type="button">Mettre en stock</button>
+      </div>
+    </section>
+  </div>
+
+
 
   <div id="modalDetail" class="modal-fond" aria-hidden="true">
     <section class="modal-carte" role="dialog" aria-modal="true" aria-labelledby="titreModalDetail">
@@ -1429,6 +1482,15 @@
       const boutonActualiser = document.getElementById("boutonActualiser");
       const boutonLivraison = document.getElementById("boutonLivraison");
       const boutonReapprovisionnement = document.getElementById("boutonReapprovisionnement");
+
+      const modalReapprovisionnement = document.getElementById("modalReapprovisionnement");
+      const fermerModalReapprovisionnement = document.getElementById("fermerModalReapprovisionnement");
+      const annulerReapprovisionnement = document.getElementById("annulerReapprovisionnement");
+      const validerReapprovisionnement = document.getElementById("validerReapprovisionnement");
+      const corpsReapprovisionnement = document.getElementById("corpsReapprovisionnement");
+      const resumeReapprovisionnement = document.getElementById("resumeReapprovisionnement");
+      const commentaireReapprovisionnement = document.getElementById("commentaireReapprovisionnement");
+
 
       const corpsTableStocks = document.getElementById("corpsTableStocks");
       const historiqueListe = document.getElementById("historiqueListe");
@@ -1887,6 +1949,204 @@
         } finally {
           validerLivraison.disabled = false;
           validerLivraison.textContent = "Enregistrer la livraison";
+        }
+      }
+
+
+      async function chargerConditionnementsReservePourTransfert() {
+        if (!editionCourante?.id) {
+          throw new Error("Aucune édition active n’est disponible.");
+        }
+
+        resumeReapprovisionnement.textContent = "Chargement de la Réserve MDN…";
+        corpsReapprovisionnement.innerHTML = `
+          <tr>
+            <td colspan="4">Chargement…</td>
+          </tr>
+        `;
+
+        const gobelets = stocksCourants.find(function (ligne) {
+          return String(ligne.article || "").trim().toLowerCase() === "gobelets";
+        });
+
+        if (!gobelets?.vaisselle_id) {
+          throw new Error("Impossible d’identifier l’article « Gobelets ».");
+        }
+
+        const { data, error } = await window.MDN_SUPABASE
+          .from("stock_conditionnements_vaisselle")
+          .select("id, vaisselle_id, type_conditionnement, quantite_standard, quantite_actuelle, emplacement, created_at")
+          .eq("edition_id", editionCourante.id)
+          .eq("vaisselle_id", gobelets.vaisselle_id)
+          .eq("is_demo", modeDemo)
+          .eq("emplacement", "reserve_mdn_propre")
+          .gt("quantite_actuelle", 0)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        const conditionnements = Array.isArray(data) ? data : [];
+        const totalUnites = conditionnements.reduce(function (total, ligne) {
+          return total + entier(ligne.quantite_actuelle);
+        }, 0);
+
+        resumeReapprovisionnement.innerHTML = `
+          <strong>Réserve MDN — Gobelets</strong><br>
+          ${formatNombre(conditionnements.length)} conditionnement(s) physique(s) disponible(s) ·
+          ${formatNombre(totalUnites)} unité(s)
+        `;
+
+        if (conditionnements.length === 0) {
+          corpsReapprovisionnement.innerHTML = `
+            <tr>
+              <td colspan="4">Aucun conditionnement de Gobelets n’est actuellement disponible dans la Réserve MDN.</td>
+            </tr>
+          `;
+          validerReapprovisionnement.disabled = true;
+          return;
+        }
+
+        corpsReapprovisionnement.innerHTML = conditionnements.map(function (ligne, index) {
+          const quantite = entier(ligne.quantite_actuelle);
+          const standard = entier(ligne.quantite_standard);
+          const complet = standard > 0 && quantite === standard;
+          const type = String(ligne.type_conditionnement || "caisse");
+          const libelle = complet
+            ? `${type.charAt(0).toUpperCase() + type.slice(1)} complète`
+            : `${type.charAt(0).toUpperCase() + type.slice(1)} partielle`;
+
+          return `
+            <tr data-conditionnement-id="${echapperHtml(ligne.id)}"
+                data-vaisselle-id="${echapperHtml(ligne.vaisselle_id)}"
+                data-quantite="${quantite}">
+              <td style="text-align:center;">
+                <input
+                  class="reapprovisionnement-selection"
+                  type="checkbox"
+                  aria-label="Sélectionner le conditionnement ${index + 1}">
+              </td>
+              <td><strong>Gobelets</strong></td>
+              <td>${echapperHtml(libelle)}</td>
+              <td><strong>${formatNombre(quantite)}</strong></td>
+            </tr>
+          `;
+        }).join("");
+
+        validerReapprovisionnement.disabled = false;
+        actualiserResumeSelectionReapprovisionnement();
+      }
+
+      function actualiserResumeSelectionReapprovisionnement() {
+        const lignesSelectionnees = Array.from(
+          corpsReapprovisionnement.querySelectorAll(
+            "tr[data-conditionnement-id]"
+          )
+        ).filter(function (tr) {
+          return tr.querySelector(".reapprovisionnement-selection")?.checked === true;
+        });
+
+        const totalUnites = lignesSelectionnees.reduce(function (total, tr) {
+          return total + entier(tr.dataset.quantite);
+        }, 0);
+
+        const toutesLesLignes = corpsReapprovisionnement.querySelectorAll(
+          "tr[data-conditionnement-id]"
+        );
+
+        if (toutesLesLignes.length === 0) {
+          return;
+        }
+
+        resumeReapprovisionnement.innerHTML = `
+          <strong>Réserve MDN — Gobelets</strong><br>
+          ${formatNombre(lignesSelectionnees.length)} conditionnement(s) sélectionné(s) ·
+          ${formatNombre(totalUnites)} unité(s) à mettre en Stock MDN
+        `;
+      }
+
+      async function ouvrirReapprovisionnement() {
+        commentaireReapprovisionnement.value = "";
+        modalReapprovisionnement.classList.add("visible");
+        modalReapprovisionnement.setAttribute("aria-hidden", "false");
+
+        try {
+          await chargerConditionnementsReservePourTransfert();
+        } catch (erreur) {
+          fermerReapprovisionnement();
+          throw erreur;
+        }
+      }
+
+      function fermerReapprovisionnement() {
+        modalReapprovisionnement.classList.remove("visible");
+        modalReapprovisionnement.setAttribute("aria-hidden", "true");
+      }
+
+      async function enregistrerReapprovisionnement() {
+        if (!editionCourante?.id) {
+          return;
+        }
+
+        const lignesSelectionnees = Array.from(
+          corpsReapprovisionnement.querySelectorAll(
+            "tr[data-conditionnement-id]"
+          )
+        ).filter(function (tr) {
+          return tr.querySelector(".reapprovisionnement-selection")?.checked === true;
+        });
+
+        if (lignesSelectionnees.length === 0) {
+          throw new Error("Sélectionne au moins un conditionnement à mettre en Stock MDN.");
+        }
+
+        const vaisselleId = lignesSelectionnees[0].dataset.vaisselleId;
+        const conditionnementIds = lignesSelectionnees.map(function (tr) {
+          return tr.dataset.conditionnementId;
+        });
+
+        const totalUnites = lignesSelectionnees.reduce(function (total, tr) {
+          return total + entier(tr.dataset.quantite);
+        }, 0);
+
+        validerReapprovisionnement.disabled = true;
+        validerReapprovisionnement.textContent = "Transfert…";
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE.rpc(
+            "transferer_reserve_vers_stock_mdn",
+            {
+              p_idempotency_key: uuidAleatoire(),
+              p_edition_id: editionCourante.id,
+              p_lignes: [
+                {
+                  vaisselle_id: vaisselleId,
+                  conditionnement_ids: conditionnementIds
+                }
+              ],
+              p_commentaire: commentaireReapprovisionnement.value.trim() || null
+            }
+          );
+
+          if (error) {
+            throw error;
+          }
+
+          fermerReapprovisionnement();
+          await chargerStocks();
+
+          afficherMessage(
+            "Transfert enregistré : " +
+            formatNombre(conditionnementIds.length) +
+            " conditionnement(s), " +
+            formatNombre(data?.total_unites || totalUnites) +
+            " unité(s) mises en Stock MDN.",
+            "succes"
+          );
+        } finally {
+          validerReapprovisionnement.disabled = false;
+          validerReapprovisionnement.textContent = "Mettre en stock";
         }
       }
 
@@ -3105,11 +3365,41 @@
         }
       });
 
-      boutonReapprovisionnement.addEventListener("click", function () {
-        afficherMessage(
-          "Le transfert Réserve MDN → Stock MDN sera raccordé à cette page à l'étape suivante.",
-          "info"
-        );
+      boutonReapprovisionnement.addEventListener("click", async function () {
+        try {
+          await ouvrirReapprovisionnement();
+        } catch (erreur) {
+          console.error("[MDN Sion] Ouverture du transfert Réserve impossible :", erreur);
+          afficherMessage(
+            erreur?.message || "Impossible de charger la Réserve MDN."
+          );
+        }
+      });
+
+      corpsReapprovisionnement.addEventListener("change", function (event) {
+        if (event.target.classList.contains("reapprovisionnement-selection")) {
+          actualiserResumeSelectionReapprovisionnement();
+        }
+      });
+
+      fermerModalReapprovisionnement.addEventListener("click", fermerReapprovisionnement);
+      annulerReapprovisionnement.addEventListener("click", fermerReapprovisionnement);
+
+      modalReapprovisionnement.addEventListener("click", function (event) {
+        if (event.target === modalReapprovisionnement) {
+          fermerReapprovisionnement();
+        }
+      });
+
+      validerReapprovisionnement.addEventListener("click", async function () {
+        try {
+          await enregistrerReapprovisionnement();
+        } catch (erreur) {
+          console.error("[MDN Sion] Transfert Réserve → Stock impossible :", erreur);
+          afficherMessage(
+            erreur?.message || "Impossible de mettre la Réserve MDN en Stock MDN."
+          );
+        }
       });
 
       fermerMessageStocks.addEventListener("click", fermerMessage);
