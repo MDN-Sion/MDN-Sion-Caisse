@@ -2204,7 +2204,13 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .stand-manage-button.show{display:flex}
 .selected-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}
 /* Ajustement ciblé : fiche du stand compacte pour conserver l’alignement des deux panneaux */
-.selected.show{grid-template-columns:minmax(0,1fr) auto !important;gap:8px}
+.selected.show{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:8px;
+    /* Conserve la même hauteur de bandeau que la zone d’onglets à gauche.
+       Les boutons restent compacts, mais le séparateur sous la fiche reste aligné. */
+    min-height:70px !important;
+}
 .selected-actions .stand-manage-button,
 .selected-actions .change{
     min-height:28px !important;
