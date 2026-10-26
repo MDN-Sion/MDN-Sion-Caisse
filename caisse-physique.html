@@ -279,9 +279,10 @@
 			min-width: 0;
 			min-height: 78px;
 			padding: 11px 12px;
-			display: grid;
-			grid-template-rows: 26px 1fr;
-			align-items: center;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			justify-content: center;
 			border: 1px solid #dfe3e8;
 			border-radius: 12px;
 			background: #fafafa;
@@ -289,20 +290,28 @@
 		}
 
 		.metric .label {
-			height: 26px;
-			display: flex;
-			align-items: flex-start;
+			width: 100%;
+			height: 24px;
+			min-height: 24px;
+			display: block;
 			color: var(--muted);
 			font-size: 10px;
 			line-height: 1.2;
 			font-weight: 850;
 			text-transform: uppercase;
 			letter-spacing: .02em;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.metric .value {
+			width: 100%;
+			height: 28px;
 			margin: 0;
-			align-self: center;
+			display: flex;
+			align-items: flex-end;
+			justify-content: flex-start;
 			font-size: clamp(17px, 1.45vw, 22px);
 			line-height: 1.05;
 			font-weight: 950;
@@ -378,10 +387,6 @@
 
 		.notice strong {
 			color: var(--mdn);
-		}
-
-		#rightsNote {
-			margin-top: 8px !important;
 		}
 
 		.journal {
@@ -1008,7 +1013,6 @@
               <button class="action light manager-only" id="xBtn">État de la caisse (Ticket X)</button>
               <button class="action danger manager-only" id="zBtn">🔒 Clôturer la caisse</button>
             </div>
-            <div class="notice" id="rightsNote" style="margin-top:11px"></div>
           </div>
         </section>
 			<section class="panel">
@@ -1072,7 +1076,7 @@
     const $ = id => document.getElementById(id);
     const loading=$("loading"), topbar=$("top"), demoBanner=$("demoBanner"), pageTitle=$("pageTitle"), identity=$("identity");
     const statusBadge=$("statusBadge"), sessionMeta=$("sessionMeta"), openingAmount=$("openingAmount"), inAmount=$("inAmount"), outAmount=$("outAmount"), expectedAmount=$("expectedAmount");
-    const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets"), rightsNote=$("rightsNote");
+    const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets");
     const simpleModal=$("simpleModal"), simpleTitle=$("simpleTitle"), amountLabel=$("amountLabel"), simpleAmount=$("simpleAmount"), reasonField=$("reasonField"), simpleReason=$("simpleReason"), simpleComment=$("simpleComment");
     const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
     const toast=$("toast"), toastText=$("toastText");
