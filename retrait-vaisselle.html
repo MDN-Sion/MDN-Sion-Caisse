@@ -2220,9 +2220,63 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     font-size:12px;
     line-height:1;
 }
-@media(max-width:430px){
-    .selected.show{grid-template-columns:minmax(0,1fr) !important}
-    .selected-actions{justify-content:flex-start}
+/* Alignement définitif du séparateur gauche / droite.
+   La zone d’identité garde une hauteur stable, même si le nom passe sur 2 lignes. */
+.selected.show{
+    min-height:69px !important;
+    max-height:69px !important;
+}
+.selected.show > div:first-child{
+    min-width:0;
+    overflow:hidden;
+}
+.selected.show #selectedName{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    line-clamp:2;
+    overflow:hidden;
+}
+.selected-actions{
+    flex:0 0 auto;
+    flex-wrap:nowrap;
+}
+/* Sur les colonnes plus étroites, on conserve les boutons sur la même ligne
+   et on donne la priorité à l’identité du stand sans débordement. */
+@container (max-width:430px){
+    .selected.show{
+        grid-template-columns:minmax(0,1fr) auto !important;
+        gap:5px !important;
+        padding-left:8px !important;
+        padding-right:8px !important;
+    }
+    .selected-actions{gap:4px}
+    .selected-actions .stand-manage-button,
+    .selected-actions .change{
+        min-width:0 !important;
+        padding:3px 7px !important;
+        font-size:11px !important;
+    }
+    .selected strong{font-size:12px !important}
+}
+/* Les résultats de recherche restent contenus dans la largeur réelle
+   de la colonne droite, y compris sur iPad / fenêtre réduite. */
+.standline > div:first-child{min-width:0}
+.results{
+    width:100% !important;
+    max-width:100% !important;
+    box-sizing:border-box;
+}
+.result{
+    min-width:0;
+    overflow:hidden;
+}
+.result strong,
+.result small{
+    display:block;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
 }
 .stand-admin-card{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .stand-admin-body{padding:14px 16px;overflow:auto;min-height:0}
