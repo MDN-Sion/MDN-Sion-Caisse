@@ -1148,31 +1148,82 @@
     }
 
     async function loadSession(){
+      if(demo){
+        const data=await rpc("detail_caisse_physique_demo",{p_edition_id:edition.id});
+
+        session=data?.session||null;
+        movements=data?.mouvements||[];
+        counts=data?.comptages||[];
+
+        return;
+      }
+
       const {data,error}=await client.rpc("session_caisse_ouverte",{p_edition_id:edition.id});
-      if (error) {
-			throw error;
-		}
-		
+
+      if(error){
+        throw error;
+      }
+
       session=Array.isArray(data)?(data[0]||null):data;
     }
 
     async function loadDetails(){
+      if(demo){
+        const {data,error}=await client
+          .from("coupures_chf")
+          .select("valeur,type_coupure,ordre_affichage,actif")
+          .eq("actif",true)
+          .order("ordre_affichage",{ascending:true});
+
+        if(error){
+          throw error;
+        }
+
+        denominations=data||[];
+
+        return;
+      }
+
       movements=[];
-		 counts=[];
-      if (!session?.session_caisse_id) {
-			return;
-		}
+      counts=[];
+
+      if(!session?.session_caisse_id){
+        return;
+      }
 
       const [m,c,d]=await Promise.all([
-        client.from("mouvements_caisse").select("id,numero_mouvement,type_mouvement,montant,reference_type,reference_id,motif,commentaire,created_at,utilisateur_id").eq("session_caisse_id",session.session_caisse_id).order("created_at",{ascending:true}),
-        client.from("vue_comptages_caisse_detail").select("*").eq("session_caisse_id",session.session_caisse_id).order("created_at",{ascending:false}),
-        client.from("coupures_chf").select("valeur,type_coupure,ordre_affichage,actif").eq("actif",true).order("ordre_affichage",{ascending:true})
+        client
+          .from("mouvements_caisse")
+          .select("id,numero_mouvement,type_mouvement,montant,reference_type,reference_id,motif,commentaire,created_at,utilisateur_id")
+          .eq("session_caisse_id",session.session_caisse_id)
+          .order("created_at",{ascending:true}),
+        client
+          .from("vue_comptages_caisse_detail")
+          .select("*")
+          .eq("session_caisse_id",session.session_caisse_id)
+          .order("created_at",{ascending:false}),
+        client
+          .from("coupures_chf")
+          .select("valeur,type_coupure,ordre_affichage,actif")
+          .eq("actif",true)
+          .order("ordre_affichage",{ascending:true})
       ]);
-      if(m.error) throw m.error;if(c.error) throw c.error;if(d.error) throw d.error;
-		
+
+      if(m.error){
+        throw m.error;
+      }
+
+      if(c.error){
+        throw c.error;
+      }
+
+      if(d.error){
+        throw d.error;
+      }
+
       movements=m.data||[];
-		counts=c.data||[];
-		denominations=d.data||[];
+      counts=c.data||[];
+      denominations=d.data||[];
     }
 
     function render(){
@@ -1224,7 +1275,6 @@
     }
 
     function openSimple(mode){
-      if(demo){msg("Le backend Caisse physique Démo doit être raccordé avant toute écriture. Aucune donnée réelle n'a été touchée.");return;}
       simpleMode=mode;
 		simpleAmount.value="";
 		simpleReason.value="";
@@ -1249,15 +1299,30 @@
         if(simpleMode!=="open"&&!simpleReason.value.trim()) throw new Error("Le motif est obligatoire.");
         $("simpleConfirm").disabled=true;
         if(simpleMode==="open"){
-          await rpc("ouvrir_caisse",{p_edition_id:edition.id,p_fond_initial:amount});
-          msg("Caisse ouverte.","ok");
+          await rpc(
+            demo?"ouvrir_caisse_demo":"ouvrir_caisse",
+            {
+              p_edition_id:edition.id,
+              p_fond_initial:amount
+            }
+          );
+
+          msg(demo?"Caisse Démo ouverte.":"Caisse ouverte.","ok");
         }else{
-          await rpc("enregistrer_mouvement_caisse",{
-            p_session_caisse_id:session.session_caisse_id,
-            p_type_mouvement:simpleMode==="add"?"entree_manuelle":"sortie_manuelle",
-            p_montant:amount,p_reference_type:null,p_reference_id:null,
-            p_motif:simpleReason.value.trim(),p_commentaire:simpleComment.value.trim()||null,p_idempotency_key:null
-          });
+          await rpc(
+            demo?"enregistrer_mouvement_caisse_demo":"enregistrer_mouvement_caisse",
+            {
+              p_session_caisse_id:session.session_caisse_id,
+              p_type_mouvement:simpleMode==="add"?"entree_manuelle":"sortie_manuelle",
+              p_montant:amount,
+              p_reference_type:null,
+              p_reference_id:null,
+              p_motif:simpleReason.value.trim(),
+              p_commentaire:simpleComment.value.trim()||null,
+              p_idempotency_key:null
+            }
+          );
+
           msg(simpleMode==="add"?"Argent ajouté.":"Retrait enregistré.","ok");
         }
         closeSimple();await refresh();
@@ -1266,8 +1331,9 @@
     }
 
     function openCount(mode){
-      if(demo){msg("Le backend Caisse physique Démo doit être raccordé avant tout comptage. Aucune donnée réelle n'a été touchée.");return;}
-      if(!session?.session_caisse_id)return;
+      if(!session?.session_caisse_id){
+        return;
+      }
 		
       countMode=mode;
       countTitle.textContent=mode==="verification"?"Vérifier la caisse":mode==="x"?"État de la caisse (Ticket X)":"Clôturer la caisse (Ticket Z)";
@@ -1301,17 +1367,35 @@
         $("countConfirm").disabled=true;
         if(countMode==="z"){
           const keep=Number(keepFloat.value||0);
-          if(!Number.isFinite(keep)||keep<0||keep>total) throw new Error("L'argent à laisser dans le tiroir doit être compris entre CHF 0.00 et le montant compté.");
-          await rpc("cloturer_caisse_avec_ticket_z",{
-            p_session_caisse_id:session.session_caisse_id,p_lignes:lines,p_fond_a_conserver:keep,
-            p_motif_ecart:countReason.value.trim()||null,p_commentaire_cloture:countComment.value.trim()||null
-          });
-          msg("Caisse clôturée. Ticket Z enregistré.","ok");
+
+          if(!Number.isFinite(keep)||keep<0||keep>total){
+            throw new Error("L'argent à laisser dans le tiroir doit être compris entre CHF 0.00 et le montant compté.");
+          }
+
+          await rpc(
+            demo?"cloturer_caisse_avec_ticket_z_demo":"cloturer_caisse_avec_ticket_z",
+            {
+              p_session_caisse_id:session.session_caisse_id,
+              p_lignes:lines,
+              p_fond_a_conserver:keep,
+              p_motif_ecart:countReason.value.trim()||null,
+              p_commentaire_cloture:countComment.value.trim()||null
+            }
+          );
+
+          msg(demo?"Caisse Démo clôturée. Ticket Z enregistré.":"Caisse clôturée. Ticket Z enregistré.","ok");
         }else{
-          await rpc("enregistrer_comptage_caisse",{
-            p_session_caisse_id:session.session_caisse_id,p_type_comptage:countMode,p_lignes:lines,
-            p_motif_ecart:countReason.value.trim()||null,p_commentaire:countComment.value.trim()||null
-          });
+          await rpc(
+            demo?"enregistrer_comptage_caisse_demo":"enregistrer_comptage_caisse",
+            {
+              p_session_caisse_id:session.session_caisse_id,
+              p_type_comptage:countMode,
+              p_lignes:lines,
+              p_motif_ecart:countReason.value.trim()||null,
+              p_commentaire:countComment.value.trim()||null
+            }
+          );
+
           msg(countMode==="x"?"Ticket X enregistré.":"Vérification enregistrée.","ok");
         }
         closeCount();await refresh();
@@ -1367,17 +1451,11 @@
         }
 
         await loadEdition();
-        if(demo){
-          session=null;
-		movements=[];
-		counts=[];
-          const {data:d,error}=await client.from("coupures_chf").select("valeur,type_coupure,ordre_affichage,actif").eq("actif",true).order("ordre_affichage",{ascending:true});
-          if(error)throw error;
-		denominations=d||[];
-        }else{
-          await loadSession();await loadDetails();
-        }
-        bind();render();
+        await loadSession();
+        await loadDetails();
+
+        bind();
+        render();
         window.MDN_AUTH.surveillerSession({redirigerApresDeconnexion:true});
       }catch(e){
         console.error("Initialisation Caisse physique :",e);msg(e.message||"Impossible de charger la caisse physique.");
