@@ -607,13 +607,13 @@ footer {
 }
   
 /* Historique complet + QR Démo */
-.action-row{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.action-row{display:grid;grid-template-columns:repeat(var(--action-count,3),minmax(0,1fr));gap:7px;width:100%}
 .action.history{background:#eef2ff;color:#00126b;border-color:#c7d2fe}
 .action.qr{background:#fff8e8;color:#7a5200;border-color:#e6c36a}
 .history-modal-card{width:min(980px,calc(100vw - 28px));max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
 .history-body{overflow:auto;padding:14px}.history-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}.history-summary>div{background:#f7f8fc;border:1px solid #e3e6ef;border-radius:12px;padding:12px}.history-summary span{display:block;color:#667085;font-size:12px;margin-bottom:4px}.history-summary strong{color:#00126b}.amount-factured{color:#b42318!important}.amount-credited{color:#107c10!important}.amount-paid{color:#175cd3!important}.amount-balance-debt{color:#b42318!important}.amount-balance-credit{color:#107c10!important}.amount-balance-zero{color:#00126b!important}.history-list{display:grid;gap:7px}.movement{border:1px solid #e3e6ef;border-radius:14px;overflow:hidden}.movement-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:9px 12px;background:#f8f9fc}.movement-title{font-weight:800;color:#172b6a}.movement-meta{color:#667085;font-size:12px}.movement-amount{text-align:right;font-weight:900}.movement-amount.debit{color:#b42318}.movement-amount.credit{color:#107c10}.movement-detail{padding:8px 12px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:12px;font-size:13px}.running-balance{margin-top:9px;padding-top:9px;border-top:1px dashed #d0d5dd}.running-balance strong{color:#00126b}.history-empty{text-align:center;padding:24px;color:#667085}.qr-modal-card{width:min(520px,calc(100vw - 20px));max-height:calc(100dvh - 20px);display:flex;flex-direction:column;overflow:hidden}.qr-modal-card .modal-head{flex:0 0 auto;padding:11px 16px}.qr-modal-card .modal-head h3{font-size:17px}.qr-body{text-align:center;padding:10px 16px 8px;overflow-y:auto;min-height:0}.qr-body p{margin:8px 0}.qr-demo-warning{background:#fff5d6;border:1px solid #e6c36a;color:#694b00;border-radius:12px;padding:8px 10px;font-weight:800}.qr-link{font-size:11px;line-height:1.25;color:#667085;overflow-wrap:anywhere}.qr-box{margin:8px auto;display:flex;justify-content:center;align-items:center;min-height:180px}.qr-box img,.qr-box canvas{width:180px!important;height:180px!important}.qr-modal-card .modal-actions{flex:0 0 auto;padding:8px 16px 10px}.qr-modal-card .modal-actions button{min-height:38px}
-@media(max-width:760px){.history-summary{grid-template-columns:1fr 1fr}.movement-head{grid-template-columns:minmax(0,1fr) auto}.action-row{width:100%}.action-row .action{flex:1 1 145px}}
-@media(max-width:430px){.history-summary{grid-template-columns:1fr}.movement-head{grid-template-columns:minmax(0,1fr) auto}.detail-line,.running-balance{flex-direction:column;gap:3px}.movement-amount{text-align:right}}
+@media(max-width:760px){.history-summary{grid-template-columns:1fr 1fr}.movement-head{grid-template-columns:minmax(0,1fr) auto}.action-row{grid-template-columns:1fr 1fr}.action-row .action{width:100%}}
+@media(max-width:430px){.history-summary{grid-template-columns:1fr}.movement-head{grid-template-columns:minmax(0,1fr) auto}.detail-line,.running-balance{flex-direction:column;gap:3px}.movement-amount{text-align:right}.action-row{grid-template-columns:1fr}}
 
 
 .detail-product { margin: 4px 0 7px; padding: 5px 0; border-top: 1px dashed #d0d5dd; }
@@ -637,8 +637,8 @@ footer {
 .passage-group .movement-head{background:rgba(248,249,252,.78)}
 
 /* Ajustements validés Comptes stands — historique, fiche et QR */
-.qr-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
-.qr-actions button{flex:0 0 auto}
+.qr-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qr-actions button{width:100%;min-width:0}
 #qrGenerate{background:#001b87;color:#fff}
 #qrGenerate[hidden]{display:none!important}
 #qrSaveImage:disabled,#qrPrint:disabled{opacity:.45;cursor:not-allowed}
@@ -646,7 +646,8 @@ footer {
 .stand-admin-card .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e6e9;background:#fff}
 .stand-admin-card .modal-head h3{margin:0;font-size:19px;color:#202124}
 .stand-admin-card .modal-close{width:38px;height:38px;border:0;border-radius:10px;background:#fff;font-size:25px;line-height:1;cursor:pointer}
-@media(max-width:620px){.qr-actions{display:grid;grid-template-columns:1fr 1fr}.qr-actions button{width:100%}#qrDone{grid-column:1/-1}}
+@media(max-width:720px){.qr-actions{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.qr-actions{grid-template-columns:1fr}}
 
 @media print{.passage-group.passage-b{background:#f2f6fb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.passage-group{break-inside:avoid}}
 
@@ -891,8 +892,8 @@ main{min-height:0;overflow:auto;padding:14px 18px 16px}
     </div>
     <div class="modal-actions qr-actions">
       <button id="qrGenerate" class="cancel" type="button">Générer le QR et l’URL</button>
-      <button id="qrSaveImage" class="cancel" type="button" disabled>Enregistrer le QR</button>
-      <button id="qrPrint" class="cancel" type="button" disabled>Imprimer le QR</button>
+      <button id="qrSaveImage" class="cancel" type="button" disabled>💾 QR</button>
+      <button id="qrPrint" class="cancel" type="button" disabled>🖨️ QR</button>
       <button id="qrDone" class="confirm" type="button">Fermer</button>
     </div>
   </div>
@@ -1185,7 +1186,7 @@ function actionHtml(r) {
   if(r.statut==="a_facturer"){
     buttons.push(`<button class="action invoice" data-invoice="${esc(r.id)}" type="button">Marquer comme facturé</button>`);
   }
-  return `<div class="action-row">${buttons.join("")}</div>`;
+  return `<div class="action-row" style="--action-count:${buttons.length}">${buttons.join("")}</div>`;
 }
 function render() {
   renderStats();
@@ -1438,6 +1439,17 @@ async function openHistory(id){
   try{const fn=demo?"charger_historique_compte_stand_demo_v3":"charger_historique_compte_stand_v3";const args=demo?{p_stand_demo_id:id}:{p_participation_id:id};const {data,error}=await avecDelai(client.rpc(fn,args),12000,"Le chargement de l’historique prend trop de temps.");if(error)throw error;if(!data?.ok)throw new Error("Historique non confirmé par le serveur.");currentHistoryData=data;currentHistoryDay="all";currentHistoryType="all";$("historyBody").innerHTML=historyHtml(data);bindHistoryFilters()}catch(e){console.error(e);$("historyBody").innerHTML=`<div class="history-empty">Impossible de charger l’historique : ${esc(e?.message||"erreur inconnue")}</div>`}
 }
 function closeHistory(){$("historyModal").classList.remove("show")}
+function printHistory(){
+  const title=$("historyTitle")?.textContent||"Historique du stand";
+  const content=$("historyBody")?.innerHTML||"";
+  const w=window.open("","_blank","width=900,height=1000");
+  if(!w)return msg("Le navigateur a bloqué la fenêtre d’impression.");
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172b6a;margin:0;padding:24px;background:#fff}h1{font-size:22px;color:#00126b;margin:0 0 18px}.history-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.history-summary>div{border:1px solid #d9deea;border-radius:10px;padding:10px}.history-summary span{display:block;color:#667085;font-size:11px;margin-bottom:4px}.history-summary strong{font-size:15px}.history-filters{display:none}.history-list{display:grid;gap:7px}.passage-group,.movement{break-inside:avoid;border:1px solid #dbe1ea;border-radius:10px;padding:7px;margin-bottom:7px}.passage-title{font-size:11px;font-weight:700;color:#667085}.movement-head{display:grid;grid-template-columns:1fr auto;gap:10px}.movement-title{font-weight:700}.movement-meta,.signature-time{font-size:11px;color:#667085}.movement-detail{padding-top:6px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:10px;font-size:12px}.signature-link,.modal-actions,button{display:none!important}.history-empty{text-align:center;color:#667085;padding:20px}@media print{body{padding:0}@page{margin:12mm}}
+  </style></head><body><h1>${esc(title)}</h1>${content}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),250);
+}
 function renderQrUrl(url){
   currentQrUrl=String(url||"");
   $("qrCode").innerHTML="";
@@ -1452,7 +1464,15 @@ function renderQrUrl(url){
 async function generateRealQr(){
   if(demo||!currentQrStandId)return;
   const button=$("qrGenerate");
-  button.disabled=true;button.textContent="Génération…";
+  const alreadyExists=Boolean(currentQrUrl);
+  if(alreadyExists){
+    const ok=window.confirm(
+      "Générer un nouveau QR code ?\n\n"+
+      "L’ancien QR sera immédiatement invalidé. Cette action est à utiliser uniquement en cas de perte, vol ou remplacement volontaire du QR."
+    );
+    if(!ok)return;
+  }
+  button.disabled=true;button.textContent=alreadyExists?"Remplacement…":"Génération…";
   try{
     const {data,error}=await avecDelai(client.rpc("generer_qr_exposant",{p_participation_id:currentQrStandId}),12000,"La génération du QR prend trop de temps.");
     if(error)throw error;
@@ -1460,25 +1480,25 @@ async function generateRealQr(){
     if(!token)throw new Error("Le serveur n’a pas renvoyé le token du QR.");
     const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("token",token);
     renderQrUrl(url.href);
-    button.textContent="Régénérer le QR";
-    msg("QR et URL du relevé générés.",true);
+    try{localStorage.setItem(`mdn_qr_ticket_${currentQrStandId}`,url.href)}catch(_e){}
+    button.textContent="Nouveau QR";
+    msg(alreadyExists?"Nouveau QR généré. L’ancien QR n’est plus valable.":"QR et URL du relevé générés.",true);
   }catch(e){console.error(e);msg(e?.message||"Impossible de générer le QR du stand.")}
-  finally{button.disabled=false;if(!currentQrUrl)button.textContent="Générer le QR et l’URL"}
+  finally{button.disabled=false;if(!currentQrUrl)button.textContent="Générer le QR"}
 }
-
 async function openQr(id){
   const r=rows.find(x=>x.id===id);if(!r)return;
   currentQrStandId=id;currentQrUrl="";
   const isAdmin=currentRole==="administrateur";
   $("qrStand").textContent=`${r.numero} · ${r.nom}`;
   $("qrCode").innerHTML="";
-  $("qrLink").textContent=demo?"Préparation du QR…":"Clique sur « Générer le QR et l’URL » pour créer l’accès au relevé.";
+  $("qrLink").textContent=demo?"Préparation du QR…":"Chargement du QR…";
   $("qrAccessCode").textContent="------";
   $("qrNewAccessCode").value="";
   $("qrCodeAdmin").classList.toggle("show",isAdmin);
   $("qrModeWarning").style.display=demo?"block":"none";
   $("qrGenerate").hidden=demo;
-  $("qrGenerate").textContent="Générer le QR et l’URL";
+  $("qrGenerate").textContent="Générer le QR";
   $("qrSaveImage").disabled=true;$("qrPrint").disabled=true;
   $("qrModal").classList.add("show");
   try{
@@ -1498,6 +1518,14 @@ async function openQr(id){
       if(error)throw error;
       if(!data?.code_acces)throw new Error("Code d’accès indisponible.");
       $("qrAccessCode").textContent=data.code_acces;
+      let savedUrl="";
+      try{savedUrl=localStorage.getItem(`mdn_qr_ticket_${id}`)||""}catch(_e){}
+      if(savedUrl){
+        renderQrUrl(savedUrl);
+        $("qrGenerate").textContent="Nouveau QR";
+      }else{
+        $("qrLink").textContent="Aucun QR enregistré sur cet appareil. Clique sur « Générer le QR » pour créer l’accès au relevé.";
+      }
     }
   }catch(e){
     console.error(e);$("qrCode").innerHTML="";$("qrAccessCode").textContent="------";$("qrLink").textContent=e?.message||"Impossible de préparer l’accès au relevé.";
@@ -1624,7 +1652,7 @@ function events() {
   invoiceConfirm.onclick=markInvoiced;
   $("historyClose").onclick=closeHistory;
   $("historyDone").onclick=closeHistory;
-  $("historyPrint").onclick=()=>window.print();
+  $("historyPrint").onclick=printHistory;
   $("historyModal").onclick=x=>{if(x.target===$("historyModal"))closeHistory()};
   $("signatureClose").onclick=closeSignature;
   $("signatureDone").onclick=closeSignature;
