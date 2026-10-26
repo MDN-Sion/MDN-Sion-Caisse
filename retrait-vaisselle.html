@@ -4015,8 +4015,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         .slice(0,25);
         results.innerHTML=arr.length?arr.map(s=>`<button class="result" data-stand="${s.id}">
         <strong>${esc(standName(s))}</strong>
-        <br>
-        <small>${esc(s.type_partenaire||"")}</small>
         </button>`).join(""):`<div style="padding:10px;color:#777">Aucun stand trouvé.</div>`;
         results.classList.add("show");
         results.querySelectorAll("[data-stand]").forEach(b=>b.onclick=()=>selectStand(b.dataset.stand))
