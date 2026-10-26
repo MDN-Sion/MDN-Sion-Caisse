@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#8B0000"/>
+  <link rel="icon" href="logo-mdn.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="logo-mdn.png"/>
+  <title>Caisse physique - MDN Sion</title>
+  <style>
+* {
+	box-sizing:border-box
+}
+:root {
+	--mdn:#8b0000;
+	--mdn2:#a51414;
+	--green:#107c10;
+	--orange:#a85f00;
+	--blue:#0b5cab;
+	--bg:#f1f3f5;
+	--card:#fff;
+	--line:#dde1e6;
+	--text:#171717;
+	--muted:#657080;
+	--shadow:0 8px 24px rgba(0,0,0,.08);
+	--mdn-visible-height:100dvh
+}
+html,body {
+	margin:0;
+	width:100%;
+	height:100%;
+	overflow:hidden
+}
+body {
+	font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+	background:var(--bg);
+	color:var(--text)
+}
+button,input,textarea {
+	font:inherit
+}
+button {
+	cursor:pointer
+}
+button:disabled {
+	cursor:not-allowed;
+	opacity:.55
+}
+.loading {
+	position:fixed;
+	inset:0;
+	z-index:1000;
+	background:#fff;
+	display:grid;
+	place-items:center;
+	text-align:center
+}
+.loading.hide {
+	display:none
+}
+.loading img {
+	width:84px;
+	height:84px;
+	object-fit:contain
+}
+.spin {
+	width:34px;
+	height:34px;
+	margin:14px auto;
+	border:4px solid #e2e2e2;
+	border-top-color:var(--mdn);
+	border-radius:50%;
+	animation:spin .8s linear infinite
+}
+@keyframes spin {
+	to {
+		transform:rotate(360deg)
+	}
+}
+.app {
+	height:100vh;
+	height:var(--mdn-visible-height);
+	display:flex;
+	flex-direction:column;
+	overflow:hidden
+}
+.top {
+	flex:0 0 auto;
+	min-height:68px;
+	padding:9px 18px;
+	background:var(--mdn);
+	color:#fff;
+	display:grid;
+	grid-template-columns:auto 1fr auto;
+	align-items:center;
+	gap:14px;
+	box-shadow:0 2px 8px rgba(0,0,0,.15);
+	z-index:5
+}
+.top.demo {
+	background:#6d3c8f
+}
+.headbtn {
+	min-height:40px;
+	border:1px solid rgba(255,255,255,.5);
+	border-radius:10px;
+	background:rgba(255,255,255,.12);
+	color:#fff;
+	padding:8px 13px;
+	font-weight:800
+}
+.title {
+	text-align:center;
+	min-width:0
+}
+.title h1 {
+	margin:0;
+	font-size:23px
+}
+.title p {
+	margin:3px 0 0;
+	font-size:12px;
+	opacity:.92
+}
+.demo-banner {
+	display:none;
+	flex:0 0 auto;
+	padding:8px 14px;
+	background:#f3e9fa;
+	color:#54296f;
+	border-bottom:1px solid #d8bce8;
+	text-align:center;
+	font-size:12px;
+	font-weight:900
+}
+.demo-banner.show {
+	display:block
+}
+.main {
+	flex:1 1 auto;
+	min-height:0;
+	overflow:auto;
+	padding:14px;
+	display:grid;
+	grid-template-columns:minmax(0,1fr) minmax(330px,.62fr);
+	gap:14px
+}
+.column {
+	min-width:0;
+	display:flex;
+	flex-direction:column;
+	gap:14px
+}
+.panel {
+	background:var(--card);
+	border:1px solid var(--line);
+	border-radius:14px;
+	box-shadow:var(--shadow);
+	overflow:hidden
+}
+.panel-head {
+	padding:13px 15px;
+	border-bottom:1px solid var(--line);
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:10px
+}
+.panel-head h2 {
+	margin:0;
+	font-size:17px
+}
+.panel-body {
+	padding:14px
+}
+.status-row {
+	display:flex;
+	align-items:center;
+	gap:9px;
+	flex-wrap:wrap
+}
+.badge {
+	display:inline-flex;
+	align-items:center;
+	gap:6px;
+	border-radius:999px;
+	padding:6px 10px;
+	font-size:12px;
+	font-weight:900
+}
+.badge.open {
+	background:#e9f7e9;
+	color:#0a6810
+}
+.badge.closed {
+	background:#f0f1f3;
+	color:#5f6772
+}
+.badge.demo {
+	background:#f3e9fa;
+	color:#54296f
+}
+.session-meta {
+	font-size:12px;
+	color:var(--muted);
+	margin-top:7px
+}
+.cards {
+	display:grid;
+	grid-template-columns:repeat(4,minmax(0,1fr));
+	gap:10px
+}
+.metric {
+	border:1px solid var(--line);
+	border-radius:12px;
+	padding:13px;
+	background:#fafbfc;
+	min-width:0
+}
+.metric .label {
+	font-size:11px;
+	font-weight:800;
+	color:var(--muted);
+	text-transform:uppercase;
+	letter-spacing:.03em
+}
+.metric .value {
+	margin-top:5px;
+	font-size:23px;
+	font-weight:950;
+	white-space:nowrap
+}
+.metric.main .value {
+	color:var(--mdn)
+}
+.actions {
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	gap:9px
+}
+.action {
+	min-height:48px;
+	border:0;
+	border-radius:11px;
+	padding:10px 12px;
+	font-weight:900
+}
+.action.primary {
+	background:var(--mdn);
+	color:#fff
+}
+.action.green {
+	background:var(--green);
+	color:#fff
+}
+.action.blue {
+	background:var(--blue);
+	color:#fff
+}
+.action.light {
+	background:#edf0f4;
+	color:#25314f
+}
+.action.orange {
+	background:#fff3e3;
+	color:#7a4300;
+	border:1px solid #e7bd7d
+}
+.action.danger {
+	background:#fff0f0;
+	color:#8b0000;
+	border:1px solid #e6aaaa
+}
+.journal {
+	max-height:52vh;
+	overflow:auto
+}
+.movement {
+	display:grid;
+	grid-template-columns:82px 1fr auto;
+	gap:10px;
+	align-items:center;
+	padding:11px 14px;
+	border-bottom:1px solid #eceff2
+}
+.movement:last-child {
+	border-bottom:0
+}
+.movement .time {
+	font-size:11px;
+	color:var(--muted)
+}
+.movement .name {
+	font-weight:850;
+	font-size:13px
+}
+.movement .sub {
+	font-size:11px;
+	color:var(--muted);
+	margin-top:2px
+}
+.amount {
+	font-weight:950;
+	white-space:nowrap
+}
+.amount.in {
+	color:var(--green)
+}
+.amount.out {
+	color:var(--mdn)
+}
+.empty {
+	padding:28px 14px;
+	text-align:center;
+	color:var(--muted)
+}
+.notice {
+	border-radius:11px;
+	padding:11px 12px;
+	font-size:12px;
+	line-height:1.4;
+	background:#f7f8fa;
+	border:1px solid var(--line)
+}
+.notice strong {
+	color:var(--mdn)
+}
+.tickets {
+	display:grid;
+	gap:8px
+}
+.ticket {
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:10px;
+	border:1px solid var(--line);
+	border-radius:10px;
+	padding:10px 12px
+}
+.ticket strong {
+	font-size:13px
+}
+.ticket small {
+	display:block;
+	color:var(--muted);
+	margin-top:2px
+}
+.modal {
+	position:fixed;
+	inset:0;
+	z-index:100;
+	background:rgba(0,0,0,.5);
+	display:none;
+	align-items:center;
+	justify-content:center;
+	padding:14px
+}
+.modal.show {
+	display:flex
+}
+.modal-card {
+	width:min(560px,100%);
+	max-height:calc(100dvh - 28px);
+	overflow:auto;
+	background:#fff;
+	border-radius:15px;
+	box-shadow:0 18px 55px rgba(0,0,0,.3)
+}
+.modal-head {
+	padding:14px 16px;
+	border-bottom:1px solid var(--line);
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:10px
+}
+.modal-head h3 {
+	margin:0;
+	font-size:18px
+}
+.close {
+	width:36px;
+	height:36px;
+	border:0;
+	border-radius:9px;
+	background:#edf0f4;
+	font-weight:900
+}
+.modal-body {
+	padding:15px
+}
+.field {
+	display:grid;
+	gap:6px;
+	margin-bottom:12px
+}
+.field label {
+	font-size:12px;
+	font-weight:850
+}
+.field input,.field textarea {
+	width:100%;
+	border:1px solid #cbd1d8;
+	border-radius:9px;
+	padding:10px 11px;
+	background:#fff
+}
+.field textarea {
+	min-height:78px;
+	resize:vertical
+}
+.modal-actions {
+	padding:12px 15px;
+	border-top:1px solid var(--line);
+	display:flex;
+	justify-content:flex-end;
+	gap:9px
+}
+.modal-actions button {
+	min-height:42px;
+	border:0;
+	border-radius:9px;
+	padding:8px 14px;
+	font-weight:900
+}
+.cancel {
+	background:#edf0f4;
+	color:#25314f
+}
+.confirm {
+	background:var(--mdn);
+	color:#fff
+}
+.count-grid {
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	gap:8px
+}
+.denom {
+	display:grid;
+	grid-template-columns:1fr 90px;
+	gap:8px;
+	align-items:center;
+	border:1px solid var(--line);
+	border-radius:9px;
+	padding:8px 10px
+}
+.denom span {
+	font-weight:850
+}
+.denom input {
+	width:100%;
+	border:1px solid #cbd1d8;
+	border-radius:8px;
+	padding:8px;
+	text-align:center
+}
+.count-total {
+	margin-top:12px;
+	padding:12px;
+	border-radius:10px;
+	background:#f7f8fa;
+	display:grid;
+	grid-template-columns:1fr auto;
+	gap:6px
+}
+.count-total strong:last-child {
+	font-size:19px
+}
+.toast {
+	position:fixed;
+	z-index:200;
+	left:50%;
+	bottom:18px;
+	transform:translateX(-50%);
+	width:min(620px,calc(100% - 24px));
+	display:none;
+	align-items:center;
+	justify-content:space-between;
+	gap:10px;
+	padding:11px 13px;
+	border-radius:11px;
+	background:#20242a;
+	color:#fff;
+	box-shadow:0 10px 35px rgba(0,0,0,.28)
+}
+.toast.show {
+	display:flex
+}
+.toast.error {
+	background:#8b0000
+}
+.toast.ok {
+	background:#116b2c
+}
+.toast button {
+	border:0;
+	background:transparent;
+	color:#fff;
+	font-size:18px
+}
+@media(max-width:1000px) {
+	.main {
+		grid-template-columns:1fr
+	}
+	.cards {
+		grid-template-columns:repeat(2,minmax(0,1fr))
+	}
+	.journal {
+		max-height:42vh
+	}
+}
+@media(max-width:680px) {
+	html,body {
+		overflow:auto
+	}
+	.app {
+		height:auto;
+		min-height:100dvh;
+		overflow:visible
+	}
+	.top {
+		grid-template-columns:auto 1fr auto;
+		padding:7px 9px;
+		gap:7px;
+		min-height:62px
+	}
+	.headbtn {
+		min-height:38px;
+		padding:6px 8px;
+		font-size:12px
+	}
+	.title h1 {
+		font-size:17px
+	}
+	.title p {
+		font-size:10px
+	}
+	.main {
+		overflow:visible;
+		padding:9px;
+		gap:9px
+	}
+	.cards {
+		grid-template-columns:repeat(2,minmax(0,1fr));
+		gap:7px
+	}
+	.metric {
+		padding:10px
+	}
+	.metric .value {
+		font-size:19px
+	}
+	.actions {
+		grid-template-columns:1fr
+	}
+	.movement {
+		grid-template-columns:62px 1fr auto;
+		padding:10px
+	}
+	.count-grid {
+		grid-template-columns:1fr
+	}
+	.modal {
+		padding:6px
+	}
+	.modal-card {
+		max-height:calc(100dvh - 12px)
+	}
+}
+@media(max-width:430px) {
+	.top .headbtn {
+		font-size:0
+	}
+	.top #back::after {
+		content:"←";
+		font-size:18px
+	}
+	.top #logout::after {
+		content:"↪";
+		font-size:18px
+	}
+	.cards {
+		grid-template-columns:1fr 1fr
+	}
+	.metric .label {
+		font-size:9px
+	}
+	.metric .value {
+		font-size:17px
+	}
+}
+@media(max-height:600px) and (orientation:landscape) {
+	html,body {
+		overflow:hidden
+	}
+	.app {
+		height:100dvh;
+		min-height:100dvh;
+		overflow:hidden
+	}
+	.top {
+		min-height:54px;
+		padding:6px 14px
+	}
+	.headbtn {
+		min-height:36px
+	}
+	.title h1 {
+		font-size:18px
+	}
+	.title p {
+		display:none
+	}
+	.main {
+		padding:9px;
+		gap:9px;
+		overflow:auto
+	}
+	.cards {
+		grid-template-columns:repeat(4,minmax(0,1fr))
+	}
+	.metric {
+		padding:9px
+	}
+	.metric .value {
+		font-size:18px
+	}
+	.journal {
+		max-height:44vh
+	}
+}
+@media print {
+	.top,.demo-banner,.actions,.toast,.no-print {
+		display:none!important
+	}
+	html,body,.app,.main {
+		height:auto!important;
+		overflow:visible!important;
+		background:#fff!important
+	}
+	.main {
+		display:block;
+		padding:0
+	}
+	.panel {
+		box-shadow:none;
+		border:0
+	}
+	.column {
+		display:block
+	}
+	.panel {
+		margin-bottom:12px
+	}
+	.journal {
+		max-height:none;
+		overflow:visible
+	}
+}
+	</style>
+</head>
+<body>
+  <div class="loading" id="loading">
+    <div>
+			<img src="logo-mdn.png" alt="MDN"/>
+			<div class="spin"></div>
+			<strong>Chargement de la caisse physique…</strong>
+		</div>
+  </div>
+
+  <div class="app" id="app">
+    <header class="top" id="top">
+      <button class="headbtn" id="back">← Accueil</button>
+      <div class="title">
+        <h1 id="pageTitle">💰 Caisse physique</h1>
+        <p id="identity">Chargement…</p>
+      </div>
+      <button class="headbtn" id="logout">Déconnexion</button>
+    </header>
+
+    <div class="demo-banner" id="demoBanner">🎓 MODE DÉMO / FORMATION — aucune donnée réelle ne sera utilisée</div>
+
+    <main class="main">
+      <div class="column">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>État de la caisse</h2>
+              <div class="session-meta" id="sessionMeta">Recherche de la session…</div>
+            </div>
+            <div class="status-row"><span class="badge closed" id="statusBadge">Fermée</span></div>
+          </div>
+          <div class="panel-body">
+            <div class="cards">
+              <div class="metric"><div class="label">Argent de départ</div><div class="value" id="openingAmount">CHF 0.00</div></div>
+              <div class="metric"><div class="label">Entrées espèces</div><div class="value" id="inAmount">CHF 0.00</div></div>
+              <div class="metric"><div class="label">Sorties espèces</div><div class="value" id="outAmount">CHF 0.00</div></div>
+              <div class="metric main"><div class="label">Montant attendu</div><div class="value" id="expectedAmount">CHF 0.00</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Actions</h2></div>
+          <div class="panel-body">
+            <div class="actions">
+              <button class="action green" id="openBtn">Ouvrir la caisse</button>
+              <button class="action light manager-only" id="addBtn">＋ Ajouter de l'argent</button>
+              <button class="action orange manager-only" id="removeBtn">− Retirer de l'argent</button>
+              <button class="action blue manager-only" id="countBtn">✓ Vérifier la caisse</button>
+              <button class="action light manager-only" id="xBtn">État de la caisse (Ticket X)</button>
+              <button class="action danger manager-only" id="zBtn">🔒 Clôturer la caisse</button>
+            </div>
+            <div class="notice" id="rightsNote" style="margin-top:11px"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Mouvements du tiroir</h2><button class="headbtn no-print" style="color:#25314f;background:#edf0f4;border-color:#d8dde4" id="refreshBtn">Actualiser</button></div>
+          <div class="journal" id="journal"><div class="empty">Aucun mouvement.</div></div>
+        </section>
+      </div>
+
+      <div class="column">
+        <section class="panel">
+          <div class="panel-head"><h2>Contrôles et tickets</h2></div>
+          <div class="panel-body">
+            <div class="tickets" id="tickets"><div class="empty">Aucun contrôle enregistré.</div></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>À retenir</h2></div>
+          <div class="panel-body">
+            <div class="notice">
+              <strong>Montant attendu</strong> = argent de départ + entrées espèces − sorties espèces.<br/><br/>
+              Les paiements par carte ou TWINT ne modifient pas le tiroir physique.<br/><br/>
+              Le <strong>Ticket X</strong> donne un état sans fermer la caisse. Le <strong>Ticket Z</strong> est créé lors de la clôture.
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="simpleModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="simpleTitle">Opération</h3><button class="close" id="simpleClose">×</button></div>
+      <div class="modal-body">
+        <div class="field"><label id="amountLabel" for="simpleAmount">Montant</label><input id="simpleAmount" type="number" min="0" step="0.05" inputmode="decimal"/></div>
+        <div class="field" id="reasonField"><label for="simpleReason">Motif</label><input id="simpleReason" type="text" maxlength="200"/></div>
+        <div class="field"><label for="simpleComment">Commentaire facultatif</label><textarea id="simpleComment" maxlength="1000"></textarea></div>
+      </div>
+      <div class="modal-actions"><button class="cancel" id="simpleCancel">Annuler</button><button class="confirm" id="simpleConfirm">Valider</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="countModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="countTitle">Vérifier la caisse</h3><button class="close" id="countClose">×</button></div>
+      <div class="modal-body">
+        <div class="notice" id="countIntro">Indiquez le nombre de billets et de pièces présents dans le tiroir.</div>
+        <div class="count-grid" id="countGrid" style="margin-top:12px"></div>
+        <div class="count-total">
+          <span>Montant attendu</span><strong id="countExpected">CHF 0.00</strong>
+          <span>Montant compté</span><strong id="countActual">CHF 0.00</strong>
+          <span>Différence</span><strong id="countDiff">CHF 0.00</strong>
+        </div>
+        <div class="field" id="countReasonField" style="margin-top:12px;display:none"><label for="countReason">Motif de la différence</label><input id="countReason" type="text" maxlength="250"/></div>
+        <div class="field"><label for="countComment">Commentaire facultatif</label><textarea id="countComment" maxlength="1000"></textarea></div>
+        <div class="field" id="keepFloatField" style="display:none"><label for="keepFloat">Argent à laisser dans le tiroir pour la prochaine ouverture</label><input id="keepFloat" type="number" min="0" step="0.05" inputmode="decimal" value="0"/></div>
+      </div>
+      <div class="modal-actions"><button class="cancel" id="countCancel">Annuler</button><button class="confirm" id="countConfirm">Valider</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span id="toastText"></span><button id="toastClose">×</button></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    const $ = id => document.getElementById(id);
+    const loading=$("loading"), topbar=$("top"), demoBanner=$("demoBanner"), pageTitle=$("pageTitle"), identity=$("identity");
+    const statusBadge=$("statusBadge"), sessionMeta=$("sessionMeta"), openingAmount=$("openingAmount"), inAmount=$("inAmount"), outAmount=$("outAmount"), expectedAmount=$("expectedAmount");
+    const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets"), rightsNote=$("rightsNote");
+    const simpleModal=$("simpleModal"), simpleTitle=$("simpleTitle"), amountLabel=$("amountLabel"), simpleAmount=$("simpleAmount"), reasonField=$("reasonField"), simpleReason=$("simpleReason"), simpleComment=$("simpleComment");
+    const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
+    const toast=$("toast"), toastText=$("toastText");
+
+    let client=null, auth=null, edition=null, session=null, movements=[], counts=[], denominations=[];
+    let demo=false, role="", canManage=false, simpleMode="", countMode="verification";
+
+    function syncVisibleViewport(){
+      const height=window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--mdn-visible-height",`${Math.round(height)}px`);
+    }
+    syncVisibleViewport();
+    window.addEventListener("resize",syncVisibleViewport,{passive:true});
+    window.addEventListener("orientationchange",()=>setTimeout(syncVisibleViewport,60),{passive:true});
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize",syncVisibleViewport,{passive:true});
+      window.visualViewport.addEventListener("scroll",syncVisibleViewport,{passive:true});
+    }
+
+    const money=v=>"CHF "+Number(v||0).toFixed(2);
+    const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const dateTime=v=>v?new Intl.DateTimeFormat("fr-CH",{dateStyle:"short",timeStyle:"short"}).format(new Date(v)):"—";
+    const time=v=>v?new Intl.DateTimeFormat("fr-CH",{hour:"2-digit",minute:"2-digit"}).format(new Date(v)):"—";
+
+    function msg(text,type="error"){
+      toastText.textContent=text;
+      toast.className="toast show "+type;
+      clearTimeout(msg.timer);
+      msg.timer=setTimeout(()=>toast.classList.remove("show"),7000);
+    }
+
+    function movementLabel(type){
+      const labels={
+        fond_initial:"Argent de départ",vente_especes:"Vente en espèces",don_especes:"Don en espèces",
+        paiement_stand_especes:"Règlement d'un stand",remboursement_vente_especes:"Remboursement d'une vente",
+        remboursement_consigne_especes:"Remboursement vaisselle / consigne",entree_manuelle:"Ajout d'argent",
+        sortie_manuelle:"Retrait d'argent",depot_coffre:"Dépôt / retrait du tiroir",correction:"Correction"
+      };
+      return labels[type]||type||"Mouvement";
+    }
+
+    async function rpc(name,args={}){
+      const {data,error}=await client.rpc(name,args);
+      if (error) {
+			throw error;
+		}
+      return data;
+    }
+
+    async function loadEdition(){
+      const {data,error}=await client.from("editions").select("id,annee,est_active").eq("est_active",true).order("annee",{ascending:false}).limit(1).maybeSingle();
+      if (error) {
+			throw error;
+		}
+      if (!data?.id) {
+			throw new Error("Aucune édition active.");
+		}
+		
+      edition=data;
+    }
+
+    async function loadSession(){
+      const {data,error}=await client.rpc("session_caisse_ouverte",{p_edition_id:edition.id});
+      if (error) {
+			throw error;
+		}
+		
+      session=Array.isArray(data)?(data[0]||null):data;
+    }
+
+    async function loadDetails(){
+      movements=[];
+		 counts=[];
+      if (!session?.session_caisse_id) {
+			return;
+		}
+
+      const [m,c,d]=await Promise.all([
+        client.from("mouvements_caisse").select("id,numero_mouvement,type_mouvement,montant,reference_type,reference_id,motif,commentaire,created_at,utilisateur_id").eq("session_caisse_id",session.session_caisse_id).order("created_at",{ascending:true}),
+        client.from("vue_comptages_caisse_detail").select("*").eq("session_caisse_id",session.session_caisse_id).order("created_at",{ascending:false}),
+        client.from("coupures_chf").select("valeur,type_coupure,ordre_affichage,actif").eq("actif",true).order("ordre_affichage",{ascending:true})
+      ]);
+      if(m.error) throw m.error;if(c.error) throw c.error;if(d.error) throw d.error;
+		
+      movements=m.data||[];
+		counts=c.data||[];
+		denominations=d.data||[];
+    }
+
+    function render(){
+      const isOpen=Boolean(session?.session_caisse_id);
+      statusBadge.textContent=isOpen?"Ouverte":"Fermée";
+      statusBadge.className="badge "+(isOpen?"open":"closed");
+      sessionMeta.textContent=isOpen
+        ?`${session.numero_session} · ouverte le ${dateTime(session.ouverte_at)}`
+        :`Édition ${edition?.annee||""} · aucune session ouverte`;
+
+      const fond=Number(session?.fond_initial||0);
+      const entries=movements.filter(m=>Number(m.montant)>0 && m.type_mouvement!=="fond_initial").reduce((s,m)=>s+Number(m.montant),0);
+      const exits=Math.abs(movements.filter(m=>Number(m.montant)<0).reduce((s,m)=>s+Number(m.montant),0));
+      const expected=movements.reduce((s,m)=>s+Number(m.montant),0);
+
+      openingAmount.textContent=money(fond);
+		inAmount.textContent=money(entries);
+		outAmount.textContent=money(exits);
+		expectedAmount.textContent=money(expected);
+
+      openBtn.style.display=isOpen?"none":"block";
+      [addBtn,removeBtn,countBtn,xBtn,zBtn].forEach(b=>b.disabled=!isOpen || !canManage);
+
+      if(demo){
+        rightsNote.innerHTML="<strong>Mode Démo :</strong> l'écran est prêt, mais les écritures de caisse physique Démo seront activées avec le raccordement backend Démo afin de garantir qu'aucune donnée réelle ne puisse être touchée.";
+      }else if(canManage){
+        rightsNote.innerHTML="<strong>Réel :</strong> vous pouvez gérer les mouvements manuels, les contrôles, le Ticket X et la clôture.";
+      }else{
+        rightsNote.innerHTML="<strong>Réel :</strong> l'ouverture peut être déclenchée par tout utilisateur actif. La gestion complète de cette page reste réservée aux Responsables et Administrateurs.";
+      }
+
+      journal.innerHTML=movements.length?movements.slice().reverse().map(m=>{
+        const amount=Number(m.montant);
+        return `<div class="movement"><div class="time">${esc(time(m.created_at))}<br>${esc(m.numero_mouvement||"")}</div><div><div class="name">${esc(movementLabel(m.type_mouvement))}</div><div class="sub">${esc(m.motif||m.commentaire||m.reference_type||"")}</div></div><div class="amount ${amount>=0?"in":"out"}">${amount>=0?"+":"−"} ${money(Math.abs(amount))}</div></div>`;
+      }).join(""):'<div class="empty">Aucun mouvement pour la session en cours.</div>';
+
+      tickets.innerHTML=counts.length?counts.map(c=>{
+        const label=c.type_comptage==="x"?"Ticket X":c.type_comptage==="z"?"Ticket Z":"Vérification";
+        return `<div class="ticket"><div><strong>${esc(label)}</strong><small>${esc(dateTime(c.created_at))} · compté ${esc(money(c.montant_compte))}</small></div><div class="amount ${Number(c.ecart)===0?"in":Number(c.ecart)<0?"out":""}">${Number(c.ecart)>0?"+":""}${esc(money(c.ecart))}</div></div>`;
+      }).join(""):'<div class="empty">Aucun contrôle enregistré pour cette session.</div>';
+    }
+
+    async function refresh(){
+      try{
+        await loadSession();
+        await loadDetails();
+        render();
+      }catch(e){console.error(e);msg(e.message||"Impossible d'actualiser la caisse.");}
+    }
+
+    function openSimple(mode){
+      if(demo){msg("Le backend Caisse physique Démo doit être raccordé avant toute écriture. Aucune donnée réelle n'a été touchée.");return;}
+      simpleMode=mode;
+		simpleAmount.value="";
+		simpleReason.value="";
+		simpleComment.value="";
+      if(mode==="open"){simpleTitle.textContent="Ouverture de la caisse";
+		amountLabel.textContent="Argent de départ";
+		reasonField.style.display="none";}
+      if(mode==="add"){simpleTitle.textContent="Ajouter de l'argent";
+		amountLabel.textContent="Montant ajouté";
+		reasonField.style.display="grid";}
+      if(mode==="remove"){simpleTitle.textContent="Retirer de l'argent";
+		amountLabel.textContent="Montant retiré";
+		reasonField.style.display="grid";}
+      simpleModal.classList.add("show");simpleModal.setAttribute("aria-hidden","false");setTimeout(()=>simpleAmount.focus(),50);
+    }
+    function closeSimple(){simpleModal.classList.remove("show");simpleModal.setAttribute("aria-hidden","true");}
+
+    async function confirmSimple(){
+      try{
+        const amount=Number(simpleAmount.value);
+        if(!Number.isFinite(amount)||amount<0||(simpleMode!=="open"&&amount<=0)) throw new Error("Indiquez un montant valide.");
+        if(simpleMode!=="open"&&!simpleReason.value.trim()) throw new Error("Le motif est obligatoire.");
+        $("simpleConfirm").disabled=true;
+        if(simpleMode==="open"){
+          await rpc("ouvrir_caisse",{p_edition_id:edition.id,p_fond_initial:amount});
+          msg("Caisse ouverte.","ok");
+        }else{
+          await rpc("enregistrer_mouvement_caisse",{
+            p_session_caisse_id:session.session_caisse_id,
+            p_type_mouvement:simpleMode==="add"?"entree_manuelle":"sortie_manuelle",
+            p_montant:amount,p_reference_type:null,p_reference_id:null,
+            p_motif:simpleReason.value.trim(),p_commentaire:simpleComment.value.trim()||null,p_idempotency_key:null
+          });
+          msg(simpleMode==="add"?"Argent ajouté.":"Retrait enregistré.","ok");
+        }
+        closeSimple();await refresh();
+      }catch(e){console.error(e);msg(e.message||"Opération impossible.");}
+      finally{$("simpleConfirm").disabled=false;}
+    }
+
+    function openCount(mode){
+      if(demo){msg("Le backend Caisse physique Démo doit être raccordé avant tout comptage. Aucune donnée réelle n'a été touchée.");return;}
+      if(!session?.session_caisse_id)return;
+		
+      countMode=mode;
+      countTitle.textContent=mode==="verification"?"Vérifier la caisse":mode==="x"?"État de la caisse (Ticket X)":"Clôturer la caisse (Ticket Z)";
+      keepFloatField.style.display=mode==="z"?"grid":"none";
+		keepFloat.value="0";
+		countReason.value="";
+		countComment.value="";
+      countGrid.innerHTML=denominations.map(d=>`<label class="denom"><span>${money(d.valeur)}</span><input class="denomQty" data-value="${Number(d.valeur)}" type="number" min="0" step="1" inputmode="numeric" value="0"/></label>`).join("");
+      countGrid.querySelectorAll(".denomQty").forEach(i=>i.addEventListener("input",updateCount));
+      updateCount();countModal.classList.add("show");countModal.setAttribute("aria-hidden","false");
+    }
+    function closeCount(){countModal.classList.remove("show");countModal.setAttribute("aria-hidden","true");}
+    function getLines(){return [...countGrid.querySelectorAll(".denomQty")].map(i=>({valeur:Number(i.dataset.value),quantite:Math.max(0,parseInt(i.value||"0",10)||0)}));}
+    function updateCount(){
+      const total=getLines().reduce((s,l)=>s+l.valeur*l.quantite,0);
+      const expected=Number(session?.montant_theorique||movements.reduce((s,m)=>s+Number(m.montant),0));
+      const diff=total-expected;
+      countExpected.textContent=money(expected);
+		countActual.textContent=money(total);
+		countDiff.textContent=(diff>0?"+ ":"")+money(diff);
+      countReasonField.style.display=Math.abs(diff)>.0001?"grid":"none";
+    }
+
+    async function confirmCount(){
+      try{
+        const lines=getLines();
+        const total=lines.reduce((s,l)=>s+l.valeur*l.quantite,0);
+        const expected=movements.reduce((s,m)=>s+Number(m.montant),0);
+        const diff=total-expected;
+        if(Math.abs(diff)>.0001&&!countReason.value.trim()) throw new Error("Indiquez le motif de la différence de caisse.");
+        $("countConfirm").disabled=true;
+        if(countMode==="z"){
+          const keep=Number(keepFloat.value||0);
+          if(!Number.isFinite(keep)||keep<0||keep>total) throw new Error("L'argent à laisser dans le tiroir doit être compris entre CHF 0.00 et le montant compté.");
+          await rpc("cloturer_caisse_avec_ticket_z",{
+            p_session_caisse_id:session.session_caisse_id,p_lignes:lines,p_fond_a_conserver:keep,
+            p_motif_ecart:countReason.value.trim()||null,p_commentaire_cloture:countComment.value.trim()||null
+          });
+          msg("Caisse clôturée. Ticket Z enregistré.","ok");
+        }else{
+          await rpc("enregistrer_comptage_caisse",{
+            p_session_caisse_id:session.session_caisse_id,p_type_comptage:countMode,p_lignes:lines,
+            p_motif_ecart:countReason.value.trim()||null,p_commentaire:countComment.value.trim()||null
+          });
+          msg(countMode==="x"?"Ticket X enregistré.":"Vérification enregistrée.","ok");
+        }
+        closeCount();await refresh();
+      }catch(e){console.error(e);msg(e.message||"Comptage impossible.");}
+      finally{$("countConfirm").disabled=false;}
+    }
+
+    function bind(){
+      $("back").onclick=()=>location.href="accueil.html";
+      $("logout").onclick=async()=>{await window.MDN_AUTH.deconnexion();};
+      $("refreshBtn").onclick=refresh;$("toastClose").onclick=()=>toast.classList.remove("show");
+      openBtn.onclick=()=>openSimple("open");
+		addBtn.onclick=()=>openSimple("add");
+		removeBtn.onclick=()=>openSimple("remove");
+      countBtn.onclick=()=>openCount("verification");
+		xBtn.onclick=()=>openCount("x");
+		zBtn.onclick=()=>openCount("z");
+      $("simpleClose").onclick=closeSimple;$("simpleCancel").onclick=closeSimple;$("simpleConfirm").onclick=confirmSimple;
+      simpleModal.onclick=e=>{if(e.target===simpleModal)closeSimple();};
+      $("countClose").onclick=closeCount;$("countCancel").onclick=closeCount;$("countConfirm").onclick=confirmCount;
+      countModal.onclick=e=>{if(e.target===countModal)closeCount();};
+    }
+
+    async function init(){
+      try{
+        if (!window.MDN_AUTH) {
+				throw new Error("Module d'authentification indisponible.");
+			}
+		
+        auth=await window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]);
+        if (!auth) {
+				return;
+			}
+		
+        client=window.MDN_SUPABASE;if (!client) {
+				throw new Error("Client Supabase indisponible.");
+			}
+		
+        role=String(auth.profil?.role||auth.role||"").trim().toLocaleLowerCase("fr");
+        const etat=await rpc("etat_session_demo");
+		
+        demo=etat?.mode_demo===true;
+		
+        canManage=demo || ["responsable","administrateur"].includes(role);
+
+        const first=String(auth.profil?.prenom||"Utilisateur").trim();
+        const roleLabel=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
+        identity.textContent=`${first} · ${roleLabel}`;
+
+        if(demo){
+          topbar.classList.add("demo");demoBanner.classList.add("show");
+		pageTitle.textContent="💰 Caisse physique · MODE DÉMO";document.title="Caisse physique Démo - MDN Sion";
+        }
+
+        await loadEdition();
+        if(demo){
+          session=null;
+		movements=[];
+		counts=[];
+          const {data:d,error}=await client.from("coupures_chf").select("valeur,type_coupure,ordre_affichage,actif").eq("actif",true).order("ordre_affichage",{ascending:true});
+          if(error)throw error;
+		denominations=d||[];
+        }else{
+          await loadSession();await loadDetails();
+        }
+        bind();render();
+        window.MDN_AUTH.surveillerSession({redirigerApresDeconnexion:true});
+      }catch(e){
+        console.error("Initialisation Caisse physique :",e);msg(e.message||"Impossible de charger la caisse physique.");
+      }finally{loading.classList.add("hide");}
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
