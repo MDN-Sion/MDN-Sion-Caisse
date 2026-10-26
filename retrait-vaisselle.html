@@ -4334,7 +4334,21 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         }
         catch(e){
             console.error(e);
-            msg(e?.message||(demo?"QR Démo invalide.":"QR invalide ou stand indisponible."))
+            msg(e?.message||(demo?"QR Démo invalide.":"QR invalide ou stand indisponible."));
+
+            /*
+             * Le scanner reste ouvert après un QR invalide.
+             * On relance simplement la lecture après un court délai afin
+             * de laisser le temps de retirer le QR erroné du cadre.
+             */
+            if(modal.classList.contains("show") && stream){
+                setTimeout(()=>{
+                    if(modal.classList.contains("show") && stream && !scanLoop){
+                        scanLoop=true;
+                        scan();
+                    }
+                },900);
+            }
         }
     }
     async function openQr(){
