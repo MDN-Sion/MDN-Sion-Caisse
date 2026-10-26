@@ -194,7 +194,7 @@
 		}
 
 		.column:first-child {
-			grid-template-rows: auto auto minmax(250px, 1fr);
+			grid-template-rows: auto auto minmax(0, 1fr);
 		}
 
 		.column:last-child {
@@ -280,8 +280,8 @@
 			min-height: 78px;
 			padding: 11px 12px;
 			display: grid;
-			grid-template-rows: 28px 28px;
-			align-content: center;
+			grid-template-rows: 26px 1fr;
+			align-items: center;
 			border: 1px solid #dfe3e8;
 			border-radius: 12px;
 			background: #fafafa;
@@ -289,10 +289,9 @@
 		}
 
 		.metric .label {
-			height: 28px;
+			height: 26px;
 			display: flex;
 			align-items: flex-start;
-			justify-content: flex-start;
 			color: var(--muted);
 			font-size: 10px;
 			line-height: 1.2;
@@ -302,11 +301,8 @@
 		}
 
 		.metric .value {
-			height: 28px;
 			margin: 0;
-			display: flex;
-			align-items: center;
-			justify-content: flex-start;
+			align-self: center;
 			font-size: clamp(17px, 1.45vw, 22px);
 			line-height: 1.05;
 			font-weight: 950;
@@ -330,7 +326,7 @@
 
 		.action {
 			min-width: 0;
-			min-height: 40px;
+			min-height: 44px;
 			padding: 8px 9px;
 			border: 0;
 			border-radius: 10px;
@@ -385,10 +381,7 @@
 		}
 
 		#rightsNote {
-			display: none;
-			margin: 0 !important;
-			padding: 0;
-			border: 0;
+			margin-top: 8px !important;
 		}
 
 		.journal {
@@ -676,17 +669,6 @@
 		}
 
 
-
-		@media (min-width: 761px) {
-			.column:first-child > .panel:last-child {
-				min-height: 260px;
-			}
-
-			.column:last-child > .panel:first-child {
-				height: 100%;
-			}
-		}
-
 		@media (min-width: 901px) and (max-width: 1250px) {
 			.main {
 				grid-template-columns: minmax(0, 1.45fr) minmax(360px, .85fr);
@@ -901,19 +883,13 @@
 			}
 
 			.metric {
-				min-height: 66px;
+				min-height: 62px;
 				padding: 8px 10px;
-				grid-template-rows: 24px 26px;
 			}
 
 			.metric .label {
-				height: 24px;
-				min-height: 24px;
+				min-height: 20px;
 				font-size: 9px;
-			}
-
-			.metric .value {
-				height: 26px;
 			}
 
 			.metric .value {
@@ -1035,19 +1011,18 @@
             <div class="notice" id="rightsNote" style="margin-top:11px"></div>
           </div>
         </section>
-
-        <section class="panel">
-          <div class="panel-head"><h2>Mouvements du tiroir</h2><button class="headbtn no-print" style="color:#25314f;background:#edf0f4;border-color:#d8dde4" id="refreshBtn">Actualiser</button></div>
-          <div class="journal" id="journal"><div class="empty">Aucun mouvement.</div></div>
-        </section>
-      </div>
-
-      <div class="column">
-        <section class="panel">
+			<section class="panel">
           <div class="panel-head"><h2>Contrôles et tickets</h2></div>
           <div class="panel-body">
             <div class="tickets" id="tickets"><div class="empty">Aucun contrôle enregistré.</div></div>
           </div>
+        </section>
+      </div>
+
+      <div class="column">
+			<section class="panel">
+          <div class="panel-head"><h2>Mouvements du tiroir</h2><button class="headbtn no-print" style="color:#25314f;background:#edf0f4;border-color:#d8dde4" id="refreshBtn">Actualiser</button></div>
+          <div class="journal" id="journal"><div class="empty">Aucun mouvement.</div></div>
         </section>
       </div>
     </main>
@@ -1208,8 +1183,13 @@
       openBtn.style.display=isOpen?"none":"block";
       [addBtn,removeBtn,countBtn,xBtn,zBtn].forEach(b=>b.disabled=!isOpen || !canManage);
 
-      rightsNote.style.display = "none";
-      rightsNote.innerHTML = "";
+      if (demo) {
+        rightsNote.style.display = "block";
+        rightsNote.innerHTML = "<strong>Mode Démo / Formation :</strong> aucune donnée réelle ne sera utilisée.";
+      } else {
+        rightsNote.style.display = "none";
+        rightsNote.innerHTML = "";
+      }
 
       journal.innerHTML=movements.length?movements.slice().reverse().map(m=>{
         const amount=Number(m.montant);
