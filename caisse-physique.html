@@ -46,6 +46,7 @@
 
 		button,
 		input,
+		select,
 		textarea {
 			font: inherit;
 		}
@@ -555,6 +556,7 @@
 		}
 
 		.field input,
+		.field select,
 		.field textarea {
 			width: 100%;
 			padding: 10px 11px;
@@ -1051,8 +1053,16 @@
       <div class="modal-head"><h3 id="simpleTitle">Opération</h3><button class="close" id="simpleClose">×</button></div>
       <div class="modal-body">
         <div class="field"><label id="amountLabel" for="simpleAmount">Montant</label><input id="simpleAmount" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0"/></div>
-        <div class="field" id="reasonField"><label for="simpleReason">Motif</label><input id="simpleReason" type="text" maxlength="200"/></div>
-        <div class="field"><label for="simpleComment">Commentaire facultatif</label><textarea id="simpleComment" maxlength="1000"></textarea></div>
+        <div class="field" id="reasonField">
+          <label for="simpleReason">Motif</label>
+          <select id="simpleReason">
+            <option value="">Sélectionner un motif</option>
+          </select>
+        </div>
+        <div class="field" id="simpleCommentField" style="display:none">
+          <label for="simpleComment">Précisez le motif</label>
+          <textarea id="simpleComment" maxlength="1000" placeholder="Indiquez le motif"></textarea>
+        </div>
       </div>
       <div class="modal-actions"><button class="cancel" id="simpleCancel">Annuler</button><button class="confirm" id="simpleConfirm">Valider</button></div>
     </div>
@@ -1309,29 +1319,83 @@
       }catch(e){console.error(e);msg(e.message||"Impossible d'actualiser la caisse.");}
     }
 
+    const addReasons=[
+      "Ajout de monnaie",
+      "Renfort du fond de caisse",
+      "Correction de caisse",
+      "Autre"
+    ];
+
+    const removeReasons=[
+      "Dépôt au coffre",
+      "Retrait de sécurité",
+      "Réduction du fond de caisse",
+      "Correction de caisse",
+      "Autre"
+    ];
+
+    function fillSimpleReasons(mode){
+      const reasons=mode==="add"?addReasons:removeReasons;
+
+      simpleReason.innerHTML=
+        '<option value="">Sélectionner un motif</option>'+
+        reasons.map(reason=>`<option value="${esc(reason)}">${esc(reason)}</option>`).join("");
+
+      simpleReason.value="";
+      simpleComment.value="";
+      simpleCommentField.style.display="none";
+    }
+
+    function updateSimpleCommentVisibility(){
+      const isOther=simpleReason.value==="Autre";
+
+      simpleCommentField.style.display=isOther?"grid":"none";
+
+      if(!isOther){
+        simpleComment.value="";
+      }
+    }
+
     function openSimple(mode){
       simpleMode=mode;
-		simpleAmount.value="";
-		simpleReason.value="";
-		simpleComment.value="";
-      if(mode==="open"){simpleTitle.textContent="Ouverture de la caisse";
-		amountLabel.textContent="Argent de départ";
-		reasonField.style.display="none";}
-      if(mode==="add"){simpleTitle.textContent="Ajouter de l'argent";
-		amountLabel.textContent="Montant ajouté";
-		reasonField.style.display="grid";}
-      if(mode==="remove"){simpleTitle.textContent="Retirer de l'argent";
-		amountLabel.textContent="Montant retiré";
-		reasonField.style.display="grid";}
-      simpleModal.classList.add("show");simpleModal.setAttribute("aria-hidden","false");setTimeout(()=>simpleAmount.focus(),50);
+      simpleAmount.value="";
+      simpleReason.value="";
+      simpleComment.value="";
+      simpleCommentField.style.display="none";
+
+      if(mode==="open"){
+        simpleTitle.textContent="Ouverture de la caisse";
+        amountLabel.textContent="Argent de départ";
+        reasonField.style.display="none";
+      }
+
+      if(mode==="add"){
+        simpleTitle.textContent="Ajouter de l'argent";
+        amountLabel.textContent="Montant ajouté";
+        reasonField.style.display="grid";
+        fillSimpleReasons(mode);
+      }
+
+      if(mode==="remove"){
+        simpleTitle.textContent="Retirer de l'argent";
+        amountLabel.textContent="Montant retiré";
+        reasonField.style.display="grid";
+        fillSimpleReasons(mode);
+      }
+
+      simpleModal.classList.add("show");
+      simpleModal.setAttribute("aria-hidden","false");
+      setTimeout(()=>simpleAmount.focus(),50);
     }
+
     function closeSimple(){simpleModal.classList.remove("show");simpleModal.setAttribute("aria-hidden","true");}
 
     async function confirmSimple(){
       try{
         const amount=Number(simpleAmount.value);
         if(!Number.isFinite(amount)||amount<0||(simpleMode!=="open"&&amount<=0)) throw new Error("Indiquez un montant valide.");
-        if(simpleMode!=="open"&&!simpleReason.value.trim()) throw new Error("Le motif est obligatoire.");
+        if(simpleMode!=="open"&&!simpleReason.value.trim()) throw new Error("Sélectionnez un motif.");
+        if(simpleMode!=="open"&&simpleReason.value==="Autre"&&!simpleComment.value.trim()) throw new Error("Précisez le motif.");
         $("simpleConfirm").disabled=true;
         if(simpleMode==="open"){
           await rpc(
@@ -1448,7 +1512,10 @@
       countBtn.onclick=()=>openCount("verification");
 		xBtn.onclick=()=>openCount("x");
 		zBtn.onclick=()=>openCount("z");
-      $("simpleClose").onclick=closeSimple;$("simpleCancel").onclick=closeSimple;$("simpleConfirm").onclick=confirmSimple;
+      $("simpleClose").onclick=closeSimple;
+      $("simpleCancel").onclick=closeSimple;
+      $("simpleConfirm").onclick=confirmSimple;
+      simpleReason.onchange=updateSimpleCommentVisibility;
       simpleModal.onclick=e=>{if(e.target===simpleModal)closeSimple();};
       $("countClose").onclick=closeCount;$("countCancel").onclick=closeCount;$("countConfirm").onclick=confirmCount;
       countModal.onclick=e=>{if(e.target===countModal)closeCount();};
