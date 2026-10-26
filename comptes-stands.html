@@ -607,6 +607,7 @@ footer {
 }
   
 /* Historique complet + QR Démo */
+.action-cell{grid-column:1 / -1;width:100%}
 .action-row{display:grid;grid-template-columns:repeat(var(--action-count,3),minmax(0,1fr));gap:7px;width:100%}
 .action.history{background:#eef2ff;color:#00126b;border-color:#c7d2fe}
 .action.qr{background:#fff8e8;color:#7a5200;border-color:#e6c36a}
@@ -637,8 +638,11 @@ footer {
 .passage-group .movement-head{background:rgba(248,249,252,.78)}
 
 /* Ajustements validés Comptes stands — historique, fiche et QR */
-.qr-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.qr-actions button{width:100%;min-width:0}
+.qr-actions{display:flex!important;flex-direction:row!important;justify-content:center;align-items:center;flex-wrap:wrap;gap:7px}
+.qr-actions button{width:auto!important;min-width:0;min-height:34px!important;padding:7px 11px!important;font-size:13px!important;border-radius:9px!important}
+#qrGenerate{min-width:112px}
+#qrSaveImage,#qrPrint{min-width:72px}
+#qrDone{min-width:78px}
 #qrGenerate{background:#001b87;color:#fff}
 #qrGenerate[hidden]{display:none!important}
 #qrSaveImage:disabled,#qrPrint:disabled{opacity:.45;cursor:not-allowed}
@@ -646,8 +650,7 @@ footer {
 .stand-admin-card .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e6e9;background:#fff}
 .stand-admin-card .modal-head h3{margin:0;font-size:19px;color:#202124}
 .stand-admin-card .modal-close{width:38px;height:38px;border:0;border-radius:10px;background:#fff;font-size:25px;line-height:1;cursor:pointer}
-@media(max-width:720px){.qr-actions{grid-template-columns:1fr 1fr}}
-@media(max-width:430px){.qr-actions{grid-template-columns:1fr}}
+@media(max-width:520px){.qr-actions{gap:6px}.qr-actions button{font-size:12px!important;padding:7px 9px!important}#qrGenerate{min-width:104px}#qrSaveImage,#qrPrint{min-width:64px}#qrDone{min-width:70px}}
 
 @media print{.passage-group.passage-b{background:#f2f6fb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.passage-group{break-inside:avoid}}
 
@@ -891,7 +894,7 @@ main{min-height:0;overflow:auto;padding:14px 18px 16px}
       <div class="qr-access"><span>Code d’accès au relevé</span><strong id="qrAccessCode">------</strong><small>Ce code reste identique jusqu’à sa modification volontaire par un Administrateur.</small><div id="qrCodeAdmin" class="qr-code-admin"><label for="qrNewAccessCode">Modifier le code d’accès</label><div class="qr-code-edit-row"><input id="qrNewAccessCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="6 chiffres"><button id="qrSaveAccessCode" type="button">Enregistrer le nouveau code</button></div><small class="qr-code-help">Administrateur uniquement. L’ancien code cessera immédiatement de fonctionner.</small></div></div>
     </div>
     <div class="modal-actions qr-actions">
-      <button id="qrGenerate" class="cancel" type="button">Générer le QR et l’URL</button>
+      <button id="qrGenerate" class="cancel" type="button">Générer le QR</button>
       <button id="qrSaveImage" class="cancel" type="button" disabled>💾 QR</button>
       <button id="qrPrint" class="cancel" type="button" disabled>🖨️ QR</button>
       <button id="qrDone" class="confirm" type="button">Fermer</button>
@@ -1442,13 +1445,29 @@ function closeHistory(){$("historyModal").classList.remove("show")}
 function printHistory(){
   const title=$("historyTitle")?.textContent||"Historique du stand";
   const content=$("historyBody")?.innerHTML||"";
-  const w=window.open("","_blank","width=900,height=1000");
-  if(!w)return msg("Le navigateur a bloqué la fenêtre d’impression.");
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
-    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172b6a;margin:0;padding:24px;background:#fff}h1{font-size:22px;color:#00126b;margin:0 0 18px}.history-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.history-summary>div{border:1px solid #d9deea;border-radius:10px;padding:10px}.history-summary span{display:block;color:#667085;font-size:11px;margin-bottom:4px}.history-summary strong{font-size:15px}.history-filters{display:none}.history-list{display:grid;gap:7px}.passage-group,.movement{break-inside:avoid;border:1px solid #dbe1ea;border-radius:10px;padding:7px;margin-bottom:7px}.passage-title{font-size:11px;font-weight:700;color:#667085}.movement-head{display:grid;grid-template-columns:1fr auto;gap:10px}.movement-title{font-weight:700}.movement-meta,.signature-time{font-size:11px;color:#667085}.movement-detail{padding-top:6px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:10px;font-size:12px}.signature-link,.modal-actions,button{display:none!important}.history-empty{text-align:center;color:#667085;padding:20px}@media print{body{padding:0}@page{margin:12mm}}
+  const oldFrame=document.getElementById("mdnPrintFrame");
+  if(oldFrame)oldFrame.remove();
+  const frame=document.createElement("iframe");
+  frame.id="mdnPrintFrame";
+  frame.setAttribute("aria-hidden","true");
+  frame.style.position="fixed";
+  frame.style.right="0";
+  frame.style.bottom="0";
+  frame.style.width="0";
+  frame.style.height="0";
+  frame.style.border="0";
+  frame.style.visibility="hidden";
+  document.body.appendChild(frame);
+  const doc=frame.contentDocument||frame.contentWindow.document;
+  doc.open();
+  doc.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    *{box-sizing:border-box}html,body{margin:0!important;padding:0!important;background:#fff!important;color:#172b6a;font-family:Arial,sans-serif}body{padding:12mm!important}h1{font-size:22px;color:#00126b;margin:0 0 18px}.history-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.history-summary>div{border:1px solid #d9deea;border-radius:10px;padding:10px}.history-summary span{display:block;color:#667085;font-size:11px;margin-bottom:4px}.history-summary strong{font-size:15px}.history-filters{display:none!important}.history-list{display:grid;gap:7px}.passage-group,.movement{break-inside:avoid;border:1px solid #dbe1ea;border-radius:10px;padding:7px;margin-bottom:7px;background:#fff!important}.passage-title{font-size:11px;font-weight:700;color:#667085}.movement-head{display:grid;grid-template-columns:1fr auto;gap:10px}.movement-title{font-weight:700}.movement-meta,.signature-time{font-size:11px;color:#667085}.movement-detail{padding-top:6px}.detail-line,.running-balance{display:flex;justify-content:space-between;gap:10px;font-size:12px}.signature-link,.modal-actions,button{display:none!important}.history-empty{text-align:center;color:#667085;padding:20px}@page{margin:0} @media print{html,body{background:#fff!important}.passage-group,.movement{break-inside:avoid}}
   </style></head><body><h1>${esc(title)}</h1>${content}</body></html>`);
-  w.document.close();
-  setTimeout(()=>w.print(),250);
+  doc.close();
+  setTimeout(()=>{
+    try{frame.contentWindow.focus();frame.contentWindow.print()}catch(e){console.error(e);msg("Impossible d’ouvrir l’impression.")}
+    setTimeout(()=>frame.remove(),1500);
+  },300);
 }
 function renderQrUrl(url){
   currentQrUrl=String(url||"");
@@ -1474,13 +1493,12 @@ async function generateRealQr(){
   }
   button.disabled=true;button.textContent=alreadyExists?"Remplacement…":"Génération…";
   try{
-    const {data,error}=await avecDelai(client.rpc("generer_qr_exposant",{p_participation_id:currentQrStandId}),12000,"La génération du QR prend trop de temps.");
+    const {data,error}=await avecDelai(client.rpc("generer_qr_exposant_persistant",{p_participation_id:currentQrStandId}),12000,"La génération du QR prend trop de temps.");
     if(error)throw error;
     const token=String(data?.token||"").trim();
     if(!token)throw new Error("Le serveur n’a pas renvoyé le token du QR.");
     const url=new URL("ticket-stand.html",window.location.href);url.searchParams.set("token",token);
     renderQrUrl(url.href);
-    try{localStorage.setItem(`mdn_qr_ticket_${currentQrStandId}`,url.href)}catch(_e){}
     button.textContent="Nouveau QR";
     msg(alreadyExists?"Nouveau QR généré. L’ancien QR n’est plus valable.":"QR et URL du relevé générés.",true);
   }catch(e){console.error(e);msg(e?.message||"Impossible de générer le QR du stand.")}
@@ -1518,13 +1536,20 @@ async function openQr(id){
       if(error)throw error;
       if(!data?.code_acces)throw new Error("Code d’accès indisponible.");
       $("qrAccessCode").textContent=data.code_acces;
-      let savedUrl="";
-      try{savedUrl=localStorage.getItem(`mdn_qr_ticket_${id}`)||""}catch(_e){}
-      if(savedUrl){
-        renderQrUrl(savedUrl);
+      const {data:qrActif,error:qrError}=await avecDelai(
+        client.rpc("obtenir_qr_exposant_actif",{p_participation_id:id}),
+        12000,
+        "Le chargement du QR actif prend trop de temps."
+      );
+      if(qrError)throw qrError;
+      const token=String(qrActif?.token||"").trim();
+      if(qrActif?.existe&&token){
+        const url=new URL("ticket-stand.html",window.location.href);
+        url.searchParams.set("token",token);
+        renderQrUrl(url.href);
         $("qrGenerate").textContent="Nouveau QR";
       }else{
-        $("qrLink").textContent="Aucun QR enregistré sur cet appareil. Clique sur « Générer le QR » pour créer l’accès au relevé.";
+        $("qrLink").textContent="Aucun QR persistant n’est encore enregistré pour ce stand. Clique sur « Générer le QR » une seule fois.";
       }
     }
   }catch(e){
