@@ -4279,23 +4279,62 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const text=String(v||"").trim();
         if(!text)return msg("QR vide ou illisible.");
         try{
-            const {data:r,error}=await client.rpc(
-                demo ? "resoudre_qr_stand_demo" : "resoudre_qr_interne",
-                demo
-                    ? {p_qr_payload:text}
-                    : {p_valeur_qr:text}
-            );
-            if(error)throw error;
-            const participationId=demo
-                ?(r?.stand?.id||r?.stand?.participation_id)
-                :r?.participation_id;
-            if(!participationId)throw new Error(demo?"QR Démo sans stand valide.":"QR sans participation valide.");
+            let participationId=null;
+
+            if(demo){
+                const {data:r,error}=await client.rpc(
+                    "resoudre_qr_stand_demo",
+                    {p_qr_payload:text}
+                );
+                if(error)throw error;
+                participationId=r?.stand?.id||r?.stand?.participation_id||null;
+                if(!participationId)throw new Error("QR Démo sans stand valide.");
+            }else{
+                /*
+                 * La page accepte désormais les deux QR utilisés par MDN :
+                 * - QR interne historique ;
+                 * - QR exposant / URL du relevé généré depuis Comptes stands.
+                 */
+                let tokenExposant="";
+
+                if(text.toLocaleLowerCase("fr").startsWith("mdn-exposant:")){
+                    tokenExposant=text;
+                }else{
+                    try{
+                        const url=new URL(text,window.location.href);
+                        const token=String(url.searchParams.get("token")||"").trim();
+                        if(token)tokenExposant=token;
+                    }catch(_){
+                        tokenExposant="";
+                    }
+                }
+
+                if(tokenExposant){
+                    const {data:r,error}=await client.rpc(
+                        "espace_exposant",
+                        {p_token:tokenExposant}
+                    );
+                    if(error)throw error;
+                    participationId=r?.identite?.participation_id||null;
+                    if(!participationId)throw new Error("QR exposant sans participation valide.");
+                }else{
+                    const {data:r,error}=await client.rpc(
+                        "resoudre_qr_interne",
+                        {p_valeur_qr:text}
+                    );
+                    if(error)throw error;
+                    participationId=r?.participation_id||null;
+                    if(!participationId)throw new Error("QR interne sans participation valide.");
+                }
+            }
+
             if(!selectStand(participationId))throw new Error("Stand indisponible pour la vaisselle.");
             closeQr();
             msg(`Stand sélectionné : ${standName(stand)}.`,true)
         }
         catch(e){
-            msg(e?.message||(demo?"QR Démo invalide.":"QR interne invalide."))
+            console.error(e);
+            msg(e?.message||(demo?"QR Démo invalide.":"QR invalide ou stand indisponible."))
         }
     }
     async function openQr(){
