@@ -318,12 +318,12 @@
 			white-space: nowrap;
 		}
 
-		.metric.main {
+		.metric.expected {
 			background: #fff7f7;
 			border-color: #e5caca;
 		}
 
-		.metric.main .value {
+		.metric.expected .value {
 			color: var(--mdn);
 		}
 
@@ -712,14 +712,23 @@
 
 			.cards {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 7px;
 			}
 
 			.metric {
-				min-height: 64px;
+				min-height: 58px;
+				padding: 8px 10px;
 			}
 
 			.metric .label {
-				min-height: 0;
+				height: 19px;
+				min-height: 19px;
+				line-height: 1.1;
+			}
+
+			.metric .value {
+				height: 24px;
+				align-items: center;
 			}
 
 			.actions {
@@ -997,7 +1006,7 @@
               <div class="metric"><div class="label">Argent de départ</div><div class="value" id="openingAmount">CHF 0.00</div></div>
               <div class="metric"><div class="label">Entrées espèces</div><div class="value" id="inAmount">CHF 0.00</div></div>
               <div class="metric"><div class="label">Sorties espèces</div><div class="value" id="outAmount">CHF 0.00</div></div>
-              <div class="metric main"><div class="label">Montant attendu</div><div class="value" id="expectedAmount">CHF 0.00</div></div>
+              <div class="metric expected"><div class="label">Montant attendu</div><div class="value" id="expectedAmount">CHF 0.00</div></div>
             </div>
           </div>
         </section>
