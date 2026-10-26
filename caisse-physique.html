@@ -563,6 +563,11 @@
 			background: #ffffff;
 		}
 
+		.field input::placeholder {
+			color: #9aa3ad;
+			opacity: 1;
+		}
+
 		.field textarea {
 			min-height: 78px;
 			resize: vertical;
@@ -1045,7 +1050,7 @@
     <div class="modal-card">
       <div class="modal-head"><h3 id="simpleTitle">Opération</h3><button class="close" id="simpleClose">×</button></div>
       <div class="modal-body">
-        <div class="field"><label id="amountLabel" for="simpleAmount">Montant</label><input id="simpleAmount" type="number" min="0" step="0.05" inputmode="decimal"/></div>
+        <div class="field"><label id="amountLabel" for="simpleAmount">Montant</label><input id="simpleAmount" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0"/></div>
         <div class="field" id="reasonField"><label for="simpleReason">Motif</label><input id="simpleReason" type="text" maxlength="200"/></div>
         <div class="field"><label for="simpleComment">Commentaire facultatif</label><textarea id="simpleComment" maxlength="1000"></textarea></div>
       </div>
@@ -1284,14 +1289,6 @@
 
       openBtn.style.display=isOpen?"none":"block";
       [addBtn,removeBtn,countBtn,xBtn,zBtn].forEach(b=>b.disabled=!isOpen || !canManage);
-
-      if (demo) {
-        rightsNote.style.display = "block";
-        rightsNote.innerHTML = "<strong>Mode Démo / Formation :</strong> aucune donnée réelle ne sera utilisée.";
-      } else {
-        rightsNote.style.display = "none";
-        rightsNote.innerHTML = "";
-      }
 
       journal.innerHTML=movements.length?movements.slice().reverse().map(m=>{
         const amount=Number(m.montant);
