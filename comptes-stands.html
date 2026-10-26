@@ -517,11 +517,16 @@ footer {
   .stats {
     grid-template-columns:repeat(3,1fr)
   }
+  /* Conserver toutes les informations du compte quelle que soit la largeur. */
   .account {
-    grid-template-columns:minmax(200px,1.5fr) repeat(2,minmax(120px,.7fr));
+    grid-template-columns:1fr 1fr;
+    gap:10px 14px;
+  }
+  .stand-cell {
+    grid-column:1/-1;
   }
   .account .mode-cell {
-    display:none
+    display:block
   }
   .account .action-cell {
     grid-column:1/-1
