@@ -1136,14 +1136,52 @@
     }
 
     async function loadEdition(){
-      const {data,error}=await client.from("editions").select("id,annee,est_active").eq("est_active",true).order("annee",{ascending:false}).limit(1).maybeSingle();
-      if (error) {
-			throw error;
-		}
-      if (!data?.id) {
-			throw new Error("Aucune édition active.");
-		}
-		
+      if(demo){
+        /*
+         * MODE DÉMO :
+         * 1. édition active si elle existe ;
+         * 2. sinon dernière édition configurée.
+         *
+         * Cette règle est déjà celle du moteur Démo de l'application.
+         */
+        const data=await rpc("charger_catalogue_caisse_demo");
+
+        if(!data?.edition?.id){
+          throw new Error(
+            data?.message ||
+            "Aucune édition n'est configurée pour le Mode Démo."
+          );
+        }
+
+        edition={
+          id:data.edition.id,
+          annee:data.edition.annee,
+          est_active:data.edition.est_active===true
+        };
+
+        return;
+      }
+
+      /*
+       * MODE RÉEL :
+       * comportement inchangé, édition réelle active obligatoire.
+       */
+      const {data,error}=await client
+        .from("editions")
+        .select("id,annee,est_active")
+        .eq("est_active",true)
+        .order("annee",{ascending:false})
+        .limit(1)
+        .maybeSingle();
+
+      if(error){
+        throw error;
+      }
+
+      if(!data?.id){
+        throw new Error("Aucune édition active.");
+      }
+
       edition=data;
     }
 
