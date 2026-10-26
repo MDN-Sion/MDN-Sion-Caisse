@@ -198,7 +198,7 @@
 		}
 
 		.column:last-child {
-			grid-template-rows: minmax(0, 1fr) auto;
+			grid-template-rows: minmax(0, 1fr);
 		}
 
 		.panel {
@@ -279,9 +279,9 @@
 			min-width: 0;
 			min-height: 78px;
 			padding: 11px 12px;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
+			display: grid;
+			grid-template-rows: 26px 1fr;
+			align-items: center;
 			border: 1px solid #dfe3e8;
 			border-radius: 12px;
 			background: #fafafa;
@@ -289,7 +289,9 @@
 		}
 
 		.metric .label {
-			min-height: 26px;
+			height: 26px;
+			display: flex;
+			align-items: flex-start;
 			color: var(--muted);
 			font-size: 10px;
 			line-height: 1.2;
@@ -299,7 +301,8 @@
 		}
 
 		.metric .value {
-			margin-top: 2px;
+			margin: 0;
+			align-self: center;
 			font-size: clamp(17px, 1.45vw, 22px);
 			line-height: 1.05;
 			font-weight: 950;
@@ -665,7 +668,37 @@
 			font-size: 18px;
 		}
 
-		@media (max-width: 1050px) {
+
+		@media (min-width: 901px) and (max-width: 1250px) {
+			.main {
+				grid-template-columns: minmax(0, 1.45fr) minmax(360px, .85fr);
+				gap: 10px;
+				padding: 10px;
+			}
+
+			.cards {
+				gap: 7px;
+			}
+
+			.metric {
+				padding-left: 9px;
+				padding-right: 9px;
+			}
+
+			.metric .label {
+				font-size: 9px;
+			}
+
+			.actions {
+				gap: 7px;
+			}
+
+			.action {
+				font-size: 12px;
+			}
+		}
+
+		@media (max-width: 900px) {
 			.main {
 				grid-template-columns: minmax(0, 1.35fr) minmax(300px, .8fr);
 				gap: 10px;
@@ -992,17 +1025,6 @@
             <div class="tickets" id="tickets"><div class="empty">Aucun contrôle enregistré.</div></div>
           </div>
         </section>
-
-        <section class="panel">
-          <div class="panel-head"><h2>À retenir</h2></div>
-          <div class="panel-body">
-            <div class="notice">
-              <strong>Montant attendu</strong> = argent de départ + entrées espèces − sorties espèces.<br/><br/>
-              Les paiements par carte ou TWINT ne modifient pas le tiroir physique.<br/><br/>
-              Le <strong>Ticket X</strong> donne un état sans fermer la caisse. Le <strong>Ticket Z</strong> est créé lors de la clôture.
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   </div>
@@ -1162,12 +1184,12 @@
       openBtn.style.display=isOpen?"none":"block";
       [addBtn,removeBtn,countBtn,xBtn,zBtn].forEach(b=>b.disabled=!isOpen || !canManage);
 
-      if(demo){
-        rightsNote.innerHTML="<strong>Mode Démo :</strong> l'écran est prêt, mais les écritures de caisse physique Démo seront activées avec le raccordement backend Démo afin de garantir qu'aucune donnée réelle ne puisse être touchée.";
-      }else if(canManage){
-        rightsNote.innerHTML="<strong>Réel :</strong> vous pouvez gérer les mouvements manuels, les contrôles, le Ticket X et la clôture.";
-      }else{
-        rightsNote.innerHTML="<strong>Réel :</strong> l'ouverture peut être déclenchée par tout utilisateur actif. La gestion complète de cette page reste réservée aux Responsables et Administrateurs.";
+      if (demo) {
+        rightsNote.style.display = "block";
+        rightsNote.innerHTML = "<strong>Mode Démo / Formation :</strong> aucune donnée réelle ne sera utilisée.";
+      } else {
+        rightsNote.style.display = "none";
+        rightsNote.innerHTML = "";
       }
 
       journal.innerHTML=movements.length?movements.slice().reverse().map(m=>{
