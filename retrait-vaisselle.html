@@ -51,37 +51,6 @@ button{
 .top.demo{
     background:#8a6800
 }
-
-.demo-protected-banner{
-    display:none;
-    flex:0 0 auto;
-    padding:8px 14px;
-    border-bottom:1px solid #d7b33e;
-    background:#fff0a8;
-    color:#5f4900;
-    text-align:center;
-    font-size:13px;
-    font-weight:950;
-    line-height:1.25;
-}
-
-.demo-protected-banner.show{
-    display:block;
-}
-
-@media(max-height:700px) and (orientation:landscape){
-    .demo-protected-banner{
-        padding:5px 10px;
-        font-size:11px;
-    }
-}
-
-@media(max-width:680px){
-    .demo-protected-banner{
-        padding:6px 8px;
-        font-size:10.5px;
-    }
-}
 .headbtn{
     height:50px;
     border:1px solid #ffffff88;
@@ -387,7 +356,7 @@ button{
 }
 .standline{
     display:grid;
-    grid-template-columns:1fr 48px auto;
+    grid-template-columns:1fr 48px;
     gap:7px
 }
 .search{
@@ -1570,30 +1539,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     .pay-account,.close-account{width:100%;flex:1 1 100%}
 }
 
-
-/* CORRECTION / ANNULATION VAISSELLE */
-.correct-account{min-height:36px;padding:7px 14px;border:1px solid #b26a00;border-radius:10px;background:#fff7e8;color:#7a4600;font-weight:800;cursor:pointer}
-.correct-account:disabled{border-color:#d5d7da;background:#f0f1f2;color:#999;cursor:default}
-.correction-card{width:min(760px,calc(100vw - 28px));max-height:min(86vh,760px);display:flex;flex-direction:column}
-.correction-body{padding:16px;overflow:auto;display:grid;gap:12px}
-.correction-note{margin:0;padding:11px 12px;border-radius:10px;background:#fff4e5;color:#704500;font-size:13px;line-height:1.4}
-.correction-list{display:grid;gap:9px}
-.correction-operation{border:1px solid #dfe2e6;border-radius:12px;background:#fff;padding:12px;display:grid;gap:7px}
-.correction-operation.annulee{opacity:.68;background:#f5f5f5}
-.correction-op-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
-.correction-op-head strong{min-width:0;overflow-wrap:anywhere}.correction-op-head small{white-space:nowrap;color:#666}
-.correction-op-type{font-weight:800;color:#8b0000}.correction-op-detail{font-size:13px;line-height:1.45;color:#444}
-.correction-op-finance{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}.correction-op-finance strong{color:#222}
-.correction-op-actions{display:flex;justify-content:flex-end;margin-top:2px}
-.correction-select{min-height:38px;padding:7px 12px;border:1px solid #b26a00;border-radius:9px;background:#fff7e8;color:#7a4600;font-weight:800;cursor:pointer}
-.correction-form{display:none;border-top:1px solid #e2e4e7;padding-top:13px;gap:10px}.correction-form.show{display:grid}
-.correction-selected{padding:10px 11px;border-radius:10px;background:#f5f6f7;font-size:13px;line-height:1.4}
-.correction-form label{display:grid;gap:6px;font-size:13px;font-weight:700}.correction-form textarea{width:100%;min-height:82px;resize:vertical;border:1px solid #cfd3d8;border-radius:10px;padding:10px 11px;font:inherit}
-.correction-form-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.correction-form-actions button{min-height:44px;border-radius:10px;font-weight:800}
-.correction-cancel{border:1px solid #d3d7dc;background:#fff}.correction-confirm{border:1px solid #8b0000;background:#8b0000;color:#fff}.correction-confirm:disabled{border-color:#d5d7da;background:#d5d7da;color:#888}
-.correction-empty{padding:20px;text-align:center;color:#666;border:1px dashed #d4d7db;border-radius:12px}
-@media(max-width:760px){.correct-account{width:100%;flex:1 1 100%}.correction-card{width:calc(100vw - 16px);max-height:calc(var(--mdn-visible-height,100vh) - 16px)}.correction-body{padding:12px}.correction-form-actions{grid-template-columns:1fr}.correction-op-head{display:grid;gap:3px}.correction-op-head small{white-space:normal}}
-
 /* CONFIRMATION DE CLÔTURE DU COMPTE */
 .close-confirm-card{width:min(560px,calc(100vw - 28px))}
 .close-confirm-body{padding:18px}
@@ -1610,686 +1555,21 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 .close-confirm-button:disabled{border-color:#d5d7da;background:#d5d7da;color:#888;cursor:default}
 @media (max-width:520px){.close-confirm-row{grid-template-columns:1fr}.close-confirm-row strong{text-align:left}.close-confirm-actions{grid-template-columns:1fr}}
 
-/* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64
-   Responsive basé sur la zone réellement visible du navigateur. */
-#passageConfirmModal{
-    padding:clamp(6px,1.5vh,16px);
-    overflow:hidden;
-}
-.passage-confirm-card{
-    width:min(1080px,calc(100vw - 24px));
-    height:min(760px,calc(var(--mdn-visible-height,100dvh) - 16px));
-    max-height:calc(var(--mdn-visible-height,100dvh) - 16px);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-}
-.passage-confirm-card .modalhead{
-    flex:0 0 auto;
-}
-.passage-confirm-body{
-    padding:10px 14px;
-    display:grid;
-    grid-template-rows:auto minmax(0,1fr);
-    gap:8px;
-    min-height:0;
-    flex:1;
-    overflow:hidden;
-}
-.passage-confirm-stand{
-    padding:7px 11px;
-    border:1px solid #e0e2e5;
-    border-radius:10px;
-    background:#f7f8f9;
-}
-.passage-confirm-columns{
-    display:grid;
-    grid-template-columns:minmax(0,1.45fr) minmax(330px,.85fr);
-    gap:12px;
-    min-height:0;
-    overflow:hidden;
-}
-.passage-confirm-left{
-    min-width:0;
-    min-height:0;
-    overflow:auto;
-    overscroll-behavior:contain;
-    padding-right:2px;
-}
-.passage-confirm-right{
-    min-width:0;
-    min-height:0;
-    overflow:auto;
-    overscroll-behavior:contain;
-    display:flex;
-    flex-direction:column;
-    padding-right:2px;
-}
-.passage-confirm-detail{
-    border:1px solid #e0e2e5;
-    border-radius:10px;
-    padding:6px 9px;
-    background:#fff;
-    min-height:100%;
-}
+/* CONFIRMATION ET SIGNATURE DU PASSAGE - SQL 64 */
+.passage-confirm-card{width:min(980px,calc(100vw - 24px));max-height:96vh;display:flex;flex-direction:column}
+.passage-confirm-body{padding:10px 14px;overflow:auto}
+.passage-confirm-stand{padding:7px 11px;border:1px solid #e0e2e5;border-radius:10px;background:#f7f8f9;margin-bottom:7px}
+.passage-confirm-detail{border:1px solid #e0e2e5;border-radius:10px;padding:6px 9px;background:#fff}
 /* La confirmation est en lecture seule : aucun bouton de suppression ici. */
-.passage-confirm-detail .remove,
-.passage-confirm-detail [data-rm],
-.passage-confirm-detail button{
-    display:none!important;
-}
+.passage-confirm-detail .remove,.passage-confirm-detail [data-rm]{display:none!important}
 .passage-confirm-detail .op{padding:6px 0}
 .passage-confirm-detail .item{padding:4px 0}
-.passage-confirm-totals{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    gap:4px 12px;
-    margin:0 0 8px;
-    padding:9px 11px;
-    border-radius:10px;
-    background:#f7f8f9;
-}
-.passage-confirm-totals strong{
-    text-align:right;
-    white-space:nowrap;
-}
-.signature-label{
-    display:block;
-    flex:0 0 auto;
-    font-weight:900;
-    margin:2px 0 4px;
-}
-.signature-wrap{
-    flex:0 0 auto;
-    min-height:92px;
-    border:2px solid #cfd4da;
-    border-radius:10px;
-    background:#fff;
-    overflow:hidden;
-}
-.signature-canvas{
-    display:block;
-    width:100%;
-    height:118px;
-    min-height:92px;
-    touch-action:none;
-    cursor:crosshair;
-}
-.signature-tools{
-    display:flex;
-    flex:0 0 auto;
-    justify-content:flex-end;
-    margin-top:5px;
-}
-.signature-clear{
-    border:1px solid #d3d7dc;
-    background:#fff;
-    border-radius:9px;
-    padding:6px 11px;
-    font-weight:800;
-}
-.passage-confirm-check{
-    display:flex;
-    flex:0 0 auto;
-    gap:9px;
-    align-items:flex-start;
-    margin-top:8px;
-    padding:8px;
-    border:1px solid #d8dce1;
-    border-radius:10px;
-    font-size:12px;
-    line-height:1.3;
-}
-.passage-confirm-check input{
-    width:18px;
-    height:18px;
-    flex:0 0 auto;
-    accent-color:#8b0000;
-}
-/* Les deux actions restent dans la colonne de droite et sont empilées. */
-.passage-confirm-actions{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:7px;
-    margin-top:8px;
-    flex:0 0 auto;
-}
-.passage-confirm-actions button{
-    width:100%;
-    min-height:40px;
-    border-radius:10px;
-    font-weight:900;
-    white-space:normal;
-}
-.passage-confirm-cancel{
-    border:1px solid #d3d7dc;
-    background:#fff;
-}
-.passage-confirm-save{
-    border:0;
-    background:#17834a;
-    color:#fff;
-}
-.passage-confirm-save:disabled{
-    background:#cfd2d6;
-    color:#888;
-    cursor:not-allowed;
-}
-
-/* Téléphone / petite largeur en portrait : une seule colonne.
-   La hauteur vient toujours de la zone réellement visible du navigateur. */
-@media(max-width:760px) and (orientation:portrait){
-    #passageConfirmModal{padding:6px}
-    .passage-confirm-card{
-        width:calc(100vw - 12px);
-        height:calc(var(--mdn-visible-height,100dvh) - 12px);
-        max-height:calc(var(--mdn-visible-height,100dvh) - 12px);
-    }
-    .passage-confirm-card .modalhead{padding:10px 12px}
-    .passage-confirm-card .modalhead h3{font-size:18px}
-    .passage-confirm-body{
-        padding:8px 10px;
-        gap:7px;
-        overflow:auto;
-        overscroll-behavior:contain;
-    }
-    .passage-confirm-stand{padding:7px 10px}
-    .passage-confirm-columns{
-        display:flex;
-        flex-direction:column;
-        min-height:auto;
-        overflow:visible;
-        gap:8px;
-    }
-    .passage-confirm-left{
-        flex:0 0 auto;
-        max-height:42vh;
-        overflow:auto;
-        padding:0;
-    }
-    .passage-confirm-right{
-        flex:0 0 auto;
-        overflow:visible;
-        padding:0;
-    }
-    .passage-confirm-detail{
-        min-height:0;
-        height:auto;
-        padding:5px 8px;
-    }
-    .passage-confirm-detail .op{padding:4px 0}
-    .passage-confirm-detail .item{padding:3px 0}
-    .passage-confirm-totals{margin:0 0 6px;padding:7px 9px;gap:2px 8px}
-    .signature-label{margin:0 0 3px}
-    .signature-wrap{min-height:88px}
-    .signature-canvas{height:96px;min-height:88px}
-    .signature-tools{margin-top:4px}
-    .signature-clear{padding:5px 9px}
-    .passage-confirm-check{margin-top:6px;padding:7px;font-size:11px}
-    .passage-confirm-actions{margin-top:7px;gap:7px}
-    .passage-confirm-actions button{min-height:40px}
-}
-
-/* Téléphone/tablette en paysage avec peu de hauteur :
-   deux colonnes, chacune défile indépendamment. La signature ne peut plus
-   être écrasée jusqu'à devenir une simple ligne. */
-@media(orientation:landscape) and (max-height:700px){
-    #passageConfirmModal{padding:5px}
-    .passage-confirm-card{
-        width:min(1180px,calc(100vw - 10px));
-        height:calc(var(--mdn-visible-height,100dvh) - 10px);
-        max-height:calc(var(--mdn-visible-height,100dvh) - 10px);
-        border-radius:14px;
-    }
-    .passage-confirm-card .modalhead{
-        padding:7px 12px;
-        min-height:42px;
-    }
-    .passage-confirm-card .modalhead h3{font-size:18px}
-    .passage-confirm-body{
-        padding:7px 10px 8px;
-        gap:6px;
-    }
-    .passage-confirm-stand{
-        padding:5px 9px;
-        line-height:1.2;
-    }
-    .passage-confirm-columns{
-        grid-template-columns:minmax(0,1.45fr) minmax(290px,.85fr);
-        gap:9px;
-    }
-    .passage-confirm-left,
-    .passage-confirm-right{
-        min-height:0;
-        overflow:auto;
-    }
-    .passage-confirm-detail{
-        min-height:100%;
-        padding:4px 7px;
-        font-size:11px;
-    }
-    .passage-confirm-detail .op{padding:3px 0}
-    .passage-confirm-detail .item{padding:2px 0}
-    .passage-confirm-totals{
-        margin:0 0 4px;
-        padding:5px 8px;
-        gap:1px 7px;
-        font-size:12px;
-    }
-    .signature-label{
-        margin:0 0 2px;
-        font-size:14px;
-    }
-    .signature-wrap{
-        min-height:74px;
-    }
-    .signature-canvas{
-        height:82px;
-        min-height:74px;
-    }
-    .signature-tools{margin-top:3px}
-    .signature-clear{
-        padding:4px 8px;
-        font-size:12px;
-    }
-    .passage-confirm-check{
-        margin-top:4px;
-        padding:6px;
-        gap:7px;
-        font-size:10.5px;
-        line-height:1.2;
-    }
-    .passage-confirm-check input{
-        width:17px;
-        height:17px;
-    }
-    .passage-confirm-actions{
-        margin-top:5px;
-        gap:5px;
-    }
-    .passage-confirm-actions button{
-        min-height:34px;
-        padding:5px 8px;
-        font-size:12px;
-    }
-}
-
-/* Très petit téléphone portrait. */
-@media(max-width:430px) and (orientation:portrait){
-    .passage-confirm-card .modalhead h3{font-size:17px}
-    .passage-confirm-body{padding:7px 8px;gap:6px}
-    .passage-confirm-stand{font-size:14px}
-    .passage-confirm-left{max-height:39vh}
-    .passage-confirm-detail{font-size:12px}
-    .passage-confirm-totals{font-size:13px}
-    .signature-label{font-size:15px}
-    .signature-wrap{min-height:78px}
-    .signature-canvas{height:84px;min-height:78px}
-    .passage-confirm-check{font-size:10.5px;line-height:1.2}
-    .passage-confirm-actions button{min-height:38px}
-}
-
-
-/* =========================================================
-   CORRECTION STEPPER RESPONSIVE — iPad Pro / tablettes
-   Les boutons − / quantité / + restent toujours dans la tuile.
-   ========================================================= */
-.stepper {
-    grid-template-columns: 32px minmax(40px, 1fr) 32px;
-    gap: 4px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-.stepper .step,
-.stepper .qty {
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-@media (min-width: 1100px) {
-    .stepper {
-        grid-template-columns: 34px minmax(44px, 1fr) 34px;
-        gap: 5px;
-    }
-}
-
-@media (max-width: 900px) {
-    .stepper {
-        grid-template-columns: 30px minmax(38px, 1fr) 30px;
-        gap: 4px;
-    }
-}
-
-
-/* =========================================================
-   AJUSTEMENT RESPONSIVE TABLETTES — iPad A16 / iPad Pro 12,9
-   - Onglets Retrait / Retours stables en portrait et paysage.
-   - Stepper − / quantité / + strictement contenu dans la carte.
-   ========================================================= */
-.tabs {
-    justify-content: flex-start;
-}
-
-.tabs > .tab {
-    flex: 0 0 auto;
-    width: 112px;
-    min-width: 112px;
-    padding-left: 12px;
-    padding-right: 12px;
-    text-align: center;
-}
-
-.stepper {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
-    column-gap: 6px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    margin-left: 0;
-    margin-right: 0;
-    overflow: visible;
-}
-
-.stepper .step,
-.stepper .qty {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    margin: 0;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-}
-
-.stepper .step {
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-/* Tablettes en portrait : deux onglets identiques et bien cadrés. */
-@media (min-width: 681px) and (max-width: 1100px) and (orientation: portrait) {
-    .tabs > .tab {
-        width: 112px;
-        min-width: 112px;
-    }
-
-    .stepper {
-        grid-template-columns: 40px minmax(0, 1fr) 40px;
-        column-gap: 6px;
-    }
-}
-
-/* Tablettes en paysage : conserve les onglets à la même largeur. */
-@media (min-width: 681px) and (max-width: 1400px) and (orientation: landscape) {
-    .tabs > .tab {
-        width: 112px;
-        min-width: 112px;
-    }
-
-    .stepper {
-        grid-template-columns: 36px minmax(0, 1fr) 36px;
-        column-gap: 5px;
-    }
-}
-
-/* Grand iPad / écrans larges : évite tout chevauchement du stepper
-   même lorsque cinq cartes sont affichées sur une ligne. */
-@media (min-width: 1101px) {
-    .stepper {
-        grid-template-columns: 36px minmax(0, 1fr) 36px;
-        column-gap: 5px;
-    }
-}
-
-/* Téléphones : on conserve le comportement compact déjà validé. */
-@media (max-width: 680px) {
-    .tabs > .tab {
-        width: auto;
-        min-width: 0;
-        flex: 1 1 0;
-    }
-
-    .stepper {
-        grid-template-columns: 34px minmax(0, 1fr) 34px;
-        column-gap: 4px;
-    }
-}
-
-/* =========================================================
-   MODIFICATION / ANNULATION VAISSELLE
-   Bouton placé à droite des onglets Retrait / Retours.
-   ========================================================= */
-.correction-top-button{
-    margin-left:auto;
-    min-height:38px;
-    padding:7px 15px;
-    white-space:nowrap;
-}
-.correction-op-actions{
-    gap:8px;
-    flex-wrap:wrap;
-}
-.correction-edit{
-    min-height:38px;
-    padding:7px 12px;
-    border:1px solid #8b0000;
-    border-radius:9px;
-    background:#8b0000;
-    color:#fff;
-    font-weight:800;
-    cursor:pointer;
-}
-.correction-delete{
-    min-height:38px;
-    padding:7px 12px;
-    border:1px solid #b26a00;
-    border-radius:9px;
-    background:#fff7e8;
-    color:#7a4600;
-    font-weight:800;
-    cursor:pointer;
-}
-@media(max-width:680px){
-    .correction-top-button{
-        flex:0 0 auto;
-        width:auto;
-        min-width:0;
-        padding:7px 10px;
-        font-size:13px;
-    }
-}
-
-
-/* === Navigation horizontale sur écrans étroits === */
-@media(max-width:680px){
-  .tabs{
-    display:flex !important;
-    flex-wrap:nowrap !important;
-    align-items:center;
-    gap:8px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-    padding-bottom:4px;
-  }
-  .tabs::-webkit-scrollbar{display:none}
-  .tabs > *{flex:0 0 auto !important}
-  .return-subtabs{display:flex;flex:0 0 auto;gap:8px}
-  .tab,.subtab,.correction-top-button{white-space:nowrap}
-}
-
-/* === Modification / annulation dans l'écran principal === */
-.correction-work-banner{
-  display:none;
-  margin:10px 0 0;
-  padding:12px 14px;
-  border:1px solid #d69a28;
-  border-radius:12px;
-  background:#fff6df;
-}
-.correction-work-banner.show{display:block}
-.correction-work-title{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  column-gap:8px;
-  row-gap:2px;
-  font-weight:900;
-  color:#8b0000;
-  margin-bottom:4px
-}
-.correction-work-title .correction-work-mode,
-.correction-work-title .correction-work-reference{
-  display:inline;
-}
-.correction-work-title .correction-work-reference{
-  margin:0;
-}
-.correction-work-detail{font-size:13px;line-height:1.4;color:#5b4630}
-.correction-work-actions{display:grid;grid-template-columns:1fr 1.45fr;gap:8px;margin-top:10px}
-.correction-work-actions button{
-  min-height:38px;border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer
-}
-.correction-work-cancel{border:1px solid #c9cfd6;background:#fff}
-.correction-work-confirm{border:1px solid #8b0000;background:#8b0000;color:#fff}
-.correction-work-confirm.annulation{border-color:#b26a00;background:#fff7e8;color:#7a4600}
-
-
-.correction-signature-fields{
-  display:grid;
-  gap:5px;
-  padding:9px 10px;
-  margin:7px 0;
-  border:1px solid #e0c58d;
-  border-radius:10px;
-  background:#fff8e9;
-}
-.correction-signature-fields[hidden]{
-  display:none!important;
-}
-.correction-signature-fields label{font-weight:800;font-size:13px}
-.correction-signature-fields select,
-.correction-signature-fields textarea{
-  width:100%;box-sizing:border-box;border:1px solid #c9cfd6;border-radius:8px;
-  background:#fff;padding:8px 9px;font:inherit
-}
-.correction-signature-fields textarea{resize:vertical;min-height:52px}
-#correctionCommentRequired{font-weight:600;color:#a40000}
-@media(max-width:680px){
-  .correction-work-actions{grid-template-columns:1fr}
-}
-.correction-work-reference{
-  display:block;
-  margin-top:2px;
-  font-size:.92em;
-  line-height:1.18;
-  overflow-wrap:anywhere;
-}
-
-/* SQL114 — fiche administrative du stand intégrée */
-/* Barre stand : recherche + création + QR sur UNE seule ligne */
-.standbar{display:block}
-.standline{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 42px 48px;gap:7px;align-items:center}
-.standline .search{width:100%;min-width:0}
-#newStandAdmin{width:42px;min-width:42px;padding:0}
-.qr{display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
-.stand-manage-button{height:42px;min-width:42px;border:1px solid #c7d2fe;border-radius:11px;background:#eef2ff;color:#00126b;font-weight:900;padding:0 10px;display:none;align-items:center;justify-content:center;white-space:nowrap}
-.stand-manage-button.show{display:flex}
-.selected-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}
-/* Ajustement ciblé : fiche du stand compacte pour conserver l’alignement des deux panneaux */
-.selected.show{
-    grid-template-columns:minmax(0,1fr) auto !important;
-    gap:8px;
-    /* Conserve la même hauteur de bandeau que la zone d’onglets à gauche.
-       Les boutons restent compacts, mais le séparateur sous la fiche reste aligné. */
-    min-height:70px !important;
-}
-.selected-actions .stand-manage-button,
-.selected-actions .change{
-    min-height:28px !important;
-    height:28px !important;
-    padding:3px 9px !important;
-    border-radius:8px;
-    font-size:12px;
-    line-height:1;
-}
-/* Alignement définitif du séparateur gauche / droite.
-   La zone d’identité garde une hauteur stable, même si le nom passe sur 2 lignes. */
-.selected.show{
-    min-height:69px !important;
-    max-height:69px !important;
-}
-.selected.show > div:first-child{
-    min-width:0;
-    overflow:hidden;
-}
-.selected.show #selectedName{
-    display:-webkit-box;
-    -webkit-box-orient:vertical;
-    -webkit-line-clamp:2;
-    line-clamp:2;
-    overflow:hidden;
-}
-.selected-actions{
-    flex:0 0 auto;
-    flex-wrap:nowrap;
-}
-/* Sur les colonnes plus étroites, on conserve les boutons sur la même ligne
-   et on donne la priorité à l’identité du stand sans débordement. */
-@container (max-width:430px){
-    .selected.show{
-        grid-template-columns:minmax(0,1fr) auto !important;
-        gap:5px !important;
-        padding-left:8px !important;
-        padding-right:8px !important;
-    }
-    .selected-actions{gap:4px}
-    .selected-actions .stand-manage-button,
-    .selected-actions .change{
-        min-width:0 !important;
-        padding:3px 7px !important;
-        font-size:11px !important;
-    }
-    .selected strong{font-size:12px !important}
-}
-/* Les résultats de recherche restent contenus dans la largeur réelle
-   de la colonne droite, y compris sur iPad / fenêtre réduite. */
-.standline > div:first-child{min-width:0}
-.results{
-    width:100% !important;
-    max-width:100% !important;
-    box-sizing:border-box;
-}
-.result{
-    min-width:0;
-    overflow:hidden;
-}
-.result strong,
-.result small{
-    display:block;
-    white-space:normal;
-    overflow-wrap:anywhere;
-    word-break:normal;
-}
-.stand-admin-card{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden}
-.stand-admin-body{padding:14px 16px;overflow:auto;min-height:0}
-.stand-admin-section{margin-bottom:15px}.stand-admin-section:last-child{margin-bottom:0}
-.stand-admin-section h4{margin:0 0 9px;color:#00126b;font-size:14px;text-transform:uppercase;letter-spacing:.03em}
-.stand-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
-.stand-admin-field{display:flex;flex-direction:column;gap:4px;min-width:0}.stand-admin-field.full{grid-column:1/-1}
-.stand-admin-field span{font-size:12px;font-weight:800;color:#4b5563}
-.stand-admin-field input,.stand-admin-field select,.stand-admin-field textarea{width:100%;border:1px solid #cbd2df;border-radius:9px;padding:8px 9px;background:#fff;color:#1f2937;outline:none}
-.stand-admin-field input,.stand-admin-field select{height:40px}.stand-admin-field textarea{min-height:68px;resize:vertical}
-.stand-admin-checks{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.stand-admin-check{display:flex;align-items:center;gap:8px;border:1px solid #d9deea;border-radius:9px;padding:9px;background:#f8f9fc;font-size:13px;font-weight:800}.stand-admin-check input{width:18px;height:18px}
-.stand-admin-actions{padding:10px 16px 14px;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #e4e6e9;background:#fafbfc}.stand-admin-actions button{min-height:40px;border:0;border-radius:9px;padding:8px 13px;font-weight:900}.stand-admin-cancel{background:#e9edf5;color:#25314f}.stand-admin-save{background:#107c10;color:#fff}
-@media(max-width:620px){.stand-admin-grid,.stand-admin-checks{grid-template-columns:1fr}.stand-admin-field.full{grid-column:auto}.stand-admin-card{width:100%;max-height:calc(100dvh - 12px)}.stand-admin-actions{flex-direction:column}.stand-admin-actions button{width:100%}}
+.passage-confirm-totals{display:grid;grid-template-columns:1fr auto;gap:3px 12px;margin:7px 0;padding:7px 11px;border-radius:10px;background:#f7f8f9}.passage-confirm-totals strong{text-align:right}
+.signature-label{display:block;font-weight:900;margin:7px 0 4px}.signature-wrap{border:2px solid #cfd4da;border-radius:10px;background:#fff;overflow:hidden}.signature-canvas{display:block;width:100%;height:82px;touch-action:none;cursor:crosshair}
+.signature-tools{display:flex;justify-content:flex-end;margin-top:5px}.signature-clear{border:1px solid #d3d7dc;background:#fff;border-radius:9px;padding:6px 11px;font-weight:800}
+.passage-confirm-check{display:flex;gap:9px;align-items:flex-start;margin-top:7px;padding:7px 8px;border:1px solid #d8dce1;border-radius:10px;font-size:12px;line-height:1.3}.passage-confirm-check input{width:18px;height:18px;flex:0 0 auto;accent-color:#8b0000}
+.passage-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:7px}.passage-confirm-actions button{min-height:42px;border-radius:10px;font-weight:900}.passage-confirm-cancel{border:1px solid #d3d7dc;background:#fff}.passage-confirm-save{border:0;background:#17834a;color:#fff}.passage-confirm-save:disabled{background:#cfd2d6;color:#888;cursor:not-allowed}
+@media(max-width:560px){.passage-confirm-card{max-height:98vh}.signature-canvas{height:88px}.passage-confirm-actions{grid-template-columns:1fr}}
 
 </style>
  </head>
@@ -2321,11 +1601,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
      Déconnexion
     </button>
    </header>
-
-   <div class="demo-protected-banner" id="demoProtectedBanner">
-    🎓 MODE DÉMO / FORMATION — Aucune opération réelle ne sera enregistrée
-   </div>
-
    <main class="main">
     <section class="panel catalog">
      <div class="tabs">
@@ -2343,9 +1618,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         Propre
        </button>
       </div>
-      <button class="correct-account correction-top-button" disabled id="correctAccount" type="button" style="display:none">
-       Modifier / annuler
-      </button>
+      <span class="edition" id="edition">
+       MDN Sion
+      </span>
      </div>
      <div class="catalog-scroll" id="catalogScroll">
      </div>
@@ -2361,7 +1636,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
        <button class="qr" id="qr" title="Scanner le QR du stand">
         📷
        </button>
-       <button class="stand-manage-button" id="newStandAdmin" title="Créer un nouveau stand" type="button">＋</button>
       </div>
       <div class="selected" id="selected">
        <div>
@@ -2370,12 +1644,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         <small id="selectedType">
         </small>
        </div>
-       <div class="selected-actions">
-        <button class="stand-manage-button" id="editStandAdmin" type="button">Fiche</button>
-        <button class="change" id="change">
-         Changer
-        </button>
-       </div>
+       <button class="change" id="change">
+        Changer
+       </button>
       </div>
           <div class="account-strip" id="accountStrip">
        <div class="account-balance">
@@ -2420,14 +1691,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         CHF 0.00
        </strong>
       </div>
-     <div class="correction-work-banner" id="correctionWorkBanner">
-      <div class="correction-work-title" id="correctionWorkTitle"></div>
-      <div class="correction-work-detail" id="correctionWorkDetail"></div>
-      <div class="correction-work-actions">
-       <button class="correction-work-cancel" id="correctionWorkCancel" type="button">Quitter</button>
-       <button class="correction-work-confirm" id="correctionWorkConfirm" type="button"></button>
-      </div>
-     </div>
       <button class="validate" disabled="" id="validate">
        Valider sur le compte du stand
       </button>
@@ -2473,48 +1736,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     </div>
    </div>
   </div>
-
-  <div aria-hidden="true" class="modal" id="standAdminModal">
-   <div class="modalcard stand-admin-card">
-    <div class="modalhead">
-     <h3 id="standAdminTitle">Fiche du stand</h3>
-     <button class="close" id="standAdminClose" type="button">×</button>
-    </div>
-    <div class="stand-admin-body">
-     <div class="stand-admin-section">
-      <h4>Partenaire</h4>
-      <div class="stand-admin-grid">
-       <label class="stand-admin-field"><span>Nom du stand</span><input id="standAdminNom" type="text"></label>
-       <label class="stand-admin-field"><span>Raison sociale</span><input id="standAdminRaison" type="text"></label>
-       <label class="stand-admin-field"><span>Personne de contact</span><input id="standAdminContact" type="text"></label>
-       <label class="stand-admin-field"><span>Téléphone</span><input id="standAdminTelephone" type="tel"></label>
-       <label class="stand-admin-field full"><span>Adresse e-mail</span><input id="standAdminEmail" type="email"></label>
-       <label class="stand-admin-field full"><span>Adresse</span><input id="standAdminAdresse" type="text"></label>
-       <label class="stand-admin-field"><span>NPA</span><input id="standAdminNpa" type="text" inputmode="numeric"></label>
-       <label class="stand-admin-field"><span>Localité</span><input id="standAdminLocalite" type="text"></label>
-       <label class="stand-admin-field full"><span>Notes internes</span><textarea id="standAdminNotes"></textarea></label>
-      </div>
-     </div>
-     <div class="stand-admin-section">
-      <h4>Participation à l’édition</h4>
-      <div class="stand-admin-grid">
-       <label class="stand-admin-field"><span>N° de stand *</span><input id="standAdminNumero" type="text"></label>
-       <label class="stand-admin-field"><span>Type de stand *</span><select id="standAdminType"><option value="">Choisir…</option><option>Associatif</option><option>Métier de la bouche</option><option>Restaurateur</option><option>Artisan</option><option>Comité</option></select></label>
-       <label class="stand-admin-field full"><span>Mode de règlement habituel *</span><select id="standAdminMode"><option value="direct">Règlement direct</option><option value="facture">Facturation</option></select></label>
-      </div>
-      <div class="stand-admin-checks">
-       <label class="stand-admin-check"><input id="standAdminVaisselle" type="checkbox"><span>Utilise la vaisselle réutilisable MDN</span></label>
-       <label class="stand-admin-check"><input id="standAdminActif" type="checkbox" checked><span>Partenaire actif</span></label>
-      </div>
-     </div>
-    </div>
-    <div class="stand-admin-actions">
-     <button class="stand-admin-cancel" id="standAdminCancel" type="button">Annuler</button>
-     <button class="stand-admin-save" id="standAdminSave" type="button">Enregistrer</button>
-    </div>
-   </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <div aria-hidden="true" class="modal" id="paymentModal">
    <div class="modalcard payment-card">
@@ -2571,59 +1792,18 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   </div>
   <div aria-hidden="true" class="modal" id="closeAccountModal"><div class="modalcard close-confirm-card"><div class="modalhead"><h3 id="closeAccountModalTitle">Confirmer la clôture</h3><button class="close" id="closeAccountModalClose" type="button">×</button></div><div class="close-confirm-body"><div class="close-confirm-summary"><div class="close-confirm-row"><span>Stand</span><strong id="closeAccountStand">—</strong></div><div class="close-confirm-row"><span>Type de règlement</span><strong id="closeAccountMode">—</strong></div><div class="close-confirm-row"><span>Solde actuel</span><strong id="closeAccountBalance">CHF 0.00</strong></div><div class="close-confirm-row" id="closeAccountInvoiceRow" hidden><span>Montant figé à facturer</span><strong class="invoice-value" id="closeAccountInvoice">CHF 0.00</strong></div></div><p class="close-warning" id="closeAccountWarning">Après confirmation, le compte sera clôturé et aucune nouvelle opération ne pourra être enregistrée.</p><label class="close-check"><input id="closeAccountCheck" type="checkbox"/><span>Je confirme avoir vérifié le compte du stand et souhaite le clôturer définitivement.</span></label><div class="close-confirm-actions"><button class="close-confirm-cancel" id="closeAccountCancel" type="button">Annuler</button><button class="close-confirm-button" disabled id="closeAccountConfirm" type="button">Confirmer la clôture</button></div></div></div></div>
  
-  <div aria-hidden="true" class="modal" id="correctionModal">
-   <div class="modalcard correction-card">
-    <div class="modalhead">
-     <h3>Modifier / annuler une opération de vaisselle</h3>
-     <button class="close" id="correctionClose" type="button">×</button>
-    </div>
-    <div class="correction-body">
-     <p class="correction-note">Choisis « Modifier » ou « Annuler ». L’opération sera chargée dans l’écran principal afin que tu voies directement les articles et les quantités concernés.</p>
-     <div class="correction-list" id="correctionList"></div>
-     <div class="correction-form" id="correctionForm" style="display:none !important">
-      <div class="correction-selected" id="correctionSelected"></div>
-      <label>Motif obligatoire<textarea id="correctionReason" maxlength="500" placeholder="Ex. Mauvaise quantité saisie, mauvais type de retour…"></textarea></label>
-      <div class="correction-form-actions">
-       <button class="correction-cancel" id="correctionFormCancel" type="button">Retour</button>
-       <button class="correction-confirm" id="correctionConfirm" type="button" disabled>Annuler cette opération</button>
-      </div>
-     </div>
-    </div>
-   </div>
-  </div>
-
   <div aria-hidden="true" class="modal" id="passageConfirmModal">
    <div class="modalcard passage-confirm-card">
     <div class="modalhead"><h3>Confirmer le passage du stand</h3><button class="close" id="passageConfirmClose" type="button">×</button></div>
     <div class="passage-confirm-body">
      <div class="passage-confirm-stand"><strong id="passageConfirmStand">—</strong><br><small id="passageConfirmType">—</small></div>
-     <div class="passage-confirm-columns">
-      <div class="passage-confirm-left">
-       <div class="passage-confirm-detail" id="passageConfirmDetail"></div>
-      </div>
-      <div class="passage-confirm-right">
-       <div class="passage-confirm-totals"><span>Retraits facturés</span><strong id="passageConfirmInvoice">0.00 CHF</strong><span>Retours crédités</span><strong id="passageConfirmCredit">0.00 CHF</strong><span>Impact du passage</span><strong id="passageConfirmNet">0.00 CHF</strong></div>
-       <label class="signature-label">Signature du stand</label>
-       <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
-       <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
-       <div class="correction-signature-fields" id="correctionSignatureFields" hidden>
-        <label for="correctionReasonSelect">Motif <span aria-hidden="true">*</span></label>
-        <select id="correctionReasonSelect">
-         <option value="">Choisir un motif…</option>
-         <option value="Erreur de saisie">Erreur de saisie</option>
-         <option value="Mauvaise quantité">Mauvaise quantité</option>
-         <option value="Mauvais type d’opération">Mauvais type d’opération</option>
-         <option value="Mauvais stand">Mauvais stand</option>
-         <option value="Doublon">Doublon</option>
-         <option value="Autre">Autre</option>
-        </select>
-        <label for="correctionReasonComment">Commentaire <span id="correctionCommentRequired" hidden>(obligatoire pour « Autre »)</span></label>
-        <textarea id="correctionReasonComment" rows="2" placeholder="Précision facultative"></textarea>
-       </div>
-       <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
-       <div class="passage-confirm-actions"><button class="passage-confirm-cancel" id="passageConfirmCancel" type="button">Annuler</button><button class="passage-confirm-save" id="passageConfirmSave" type="button" disabled>Confirmer et enregistrer</button></div>
-      </div>
-     </div>
+     <div class="passage-confirm-detail" id="passageConfirmDetail"></div>
+     <div class="passage-confirm-totals"><span>Retraits facturés</span><strong id="passageConfirmInvoice">0.00 CHF</strong><span>Retours crédités</span><strong id="passageConfirmCredit">0.00 CHF</strong><span>Impact du passage</span><strong id="passageConfirmNet">0.00 CHF</strong></div>
+     <label class="signature-label">Signature du stand</label>
+     <div class="signature-wrap"><canvas class="signature-canvas" id="passageSignature"></canvas></div>
+     <div class="signature-tools"><button class="signature-clear" id="passageSignatureClear" type="button">Effacer la signature</button></div>
+     <label class="passage-confirm-check"><input id="passageConfirmCheck" type="checkbox"><span>Je confirme que les opérations ci-dessus correspondent aux retraits et/ou retours effectués pour mon stand.</span></label>
+     <div class="passage-confirm-actions"><button class="passage-confirm-cancel" id="passageConfirmCancel" type="button">Annuler</button><button class="passage-confirm-save" id="passageConfirmSave" type="button" disabled>Confirmer et enregistrer</button></div>
     </div>
    </div>
   </div>
@@ -2634,26 +1814,12 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
   <script>
 (()=>{
     "use strict";
-
-    // Hauteur réellement visible : s’adapte aux barres de Safari, Chrome,
-    // Android, iPadOS et aux changements portrait/paysage.
-    function syncVisibleViewport(){
-        const viewport=window.visualViewport;
-        const height=viewport?.height||window.innerHeight||document.documentElement.clientHeight;
-        document.documentElement.style.setProperty("--mdn-visible-height",`${Math.round(height)}px`);
-    }
-    syncVisibleViewport();
-    window.addEventListener("resize",syncVisibleViewport,{passive:true});
-    window.addEventListener("orientationchange",()=>setTimeout(syncVisibleViewport,60),{passive:true});
-    if(window.visualViewport){
-        window.visualViewport.addEventListener("resize",syncVisibleViewport,{passive:true});
-        window.visualViewport.addEventListener("scroll",syncVisibleViewport,{passive:true});
-    }
     const $=id=>document.getElementById(id);
     const app=$("app");
     const topbar=$("top");
     const loading=$("loading");
     const catalog=$("catalogScroll");
+    const edition=$("edition");
     const search=$("search");
     const results=$("results");
     const searchZone=$("searchZone");
@@ -2675,18 +1841,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const accountStrip=$("accountStrip");
     const accountBalance=$("accountBalance");
     const payAccount=$("payAccount");
-    const correctAccount=$("correctAccount");
-    const correctionModal=$("correctionModal");
-    const correctionList=$("correctionList");
-    const correctionForm=$("correctionForm");
-    const correctionSelected=$("correctionSelected");
-    const correctionReason=$("correctionReason");
-    const correctionConfirm=$("correctionConfirm");
-    const correctionWorkBanner=$("correctionWorkBanner");
-    const correctionWorkTitle=$("correctionWorkTitle");
-    const correctionWorkDetail=$("correctionWorkDetail");
-    const correctionWorkCancel=$("correctionWorkCancel");
-    const correctionWorkConfirm=$("correctionWorkConfirm");
     const closeAccount=$("closeAccount");
     const paymentModal=$("paymentModal");
     const paymentBalance=$("paymentBalance");
@@ -2711,14 +1865,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     const closeAccountCheck=$("closeAccountCheck");
     const closeAccountConfirm=$("closeAccountConfirm");
     let client=null,data=null,stand=null,filter="retrait",returnFilter="sale",demo=false,keys=null,stream=null,scanLoop=false,timer=null;
-    let userRole="";
-    let correctionOperations=[];
-    let correctionOperation=null;
-    let correctionAction="annuler";
-    let correctionKey=null;
-    let correctionWorkOperation=null;
-    let correctionWorkAction=null;
-    let correctionPendingMotif=null;
     let accountData=null;
     let paymentKey=null;
     let refundKey=null;
@@ -2727,73 +1873,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
     ;
     const types=["retrait","retour_sale","retour_propre"];
-
-    let standAdminPartnerId=null;
-    let standAdminParticipationId=null;
-    const standAdminModal=$("standAdminModal");
-    function canManageStands(){return !demo&&(userRole==="responsable"||userRole==="administrateur")}
-    function closeStandAdmin(){standAdminModal.classList.remove("show");standAdminModal.setAttribute("aria-hidden","true")}
-    function adminValue(id){return String($(id)?.value||"").trim()}
-    function fillStandAdmin(item){
-        standAdminPartnerId=item?.id||null;
-        standAdminParticipationId=item?.participation_id||null;
-        $("standAdminNom").value=item?.nom||"";
-        $("standAdminRaison").value=item?.raison_sociale||"";
-        $("standAdminContact").value=item?.contact||"";
-        $("standAdminTelephone").value=item?.telephone||"";
-        $("standAdminEmail").value=item?.email||"";
-        $("standAdminAdresse").value=item?.adresse||"";
-        $("standAdminNpa").value=item?.npa||"";
-        $("standAdminLocalite").value=item?.localite||"";
-        $("standAdminNotes").value=item?.notes||"";
-        $("standAdminNumero").value=item?.numero_stand||"";
-        $("standAdminType").value=item?.type_partenaire||"";
-        $("standAdminMode").value=item?.mode_reglement_habituel||"direct";
-        $("standAdminVaisselle").checked=item ? Boolean(item?.utilise_vaisselle) : true;
-        $("standAdminActif").checked=item?.actif!==false;
-        $("standAdminTitle").textContent=item?"Modifier la fiche du stand":"Nouveau stand";
-    }
-    async function openStandAdmin(participationId=null){
-        if(!canManageStands())return msg("La gestion des stands est réservée aux Responsables et Administrateurs.");
-        try{
-            const {data:r,error}=await client.rpc("charger_gestion_stands");
-            if(error)throw error;
-            const item=participationId?(r?.partenaires||[]).find(x=>x.participation_id===participationId):null;
-            if(participationId&&!item)throw new Error("Fiche du stand introuvable.");
-            fillStandAdmin(item);
-            standAdminModal.classList.add("show");standAdminModal.setAttribute("aria-hidden","false");
-        }catch(e){console.error(e);msg(e?.message||"Impossible d'ouvrir la fiche du stand.")}
-    }
-    async function saveStandAdmin(){
-        const nom=adminValue("standAdminNom"),raison=adminValue("standAdminRaison"),numero=adminValue("standAdminNumero"),type=adminValue("standAdminType"),mode=adminValue("standAdminMode");
-        if(!nom&&!raison)return msg("Renseigne le nom du stand ou la raison sociale.");
-        if(!numero)return msg("Renseigne le numéro de stand.");
-        if(!type)return msg("Choisis le type de stand.");
-        const button=$("standAdminSave");button.disabled=true;button.textContent="Enregistrement…";
-        try{
-            const {data:r,error}=await client.rpc("enregistrer_partenaire_stand",{
-                p_partenaire_id:standAdminPartnerId,p_nom:nom||null,p_raison_sociale:raison||null,
-                p_contact:adminValue("standAdminContact")||null,p_adresse:adminValue("standAdminAdresse")||null,
-                p_npa:adminValue("standAdminNpa")||null,p_localite:adminValue("standAdminLocalite")||null,
-                p_telephone:adminValue("standAdminTelephone")||null,p_email:adminValue("standAdminEmail")||null,
-                p_notes:adminValue("standAdminNotes")||null,p_actif:$("standAdminActif").checked,
-                p_numero_stand:numero,p_type_partenaire:type,p_utilise_vaisselle:$("standAdminVaisselle").checked,
-                p_mode_reglement_habituel:mode
-            });
-            if(error)throw error;if(!r?.ok)throw new Error(r?.message||"Enregistrement impossible.");
-            const {data:g,error:ge}=await client.rpc("charger_gestion_stands");if(ge)throw ge;
-            const saved=(g?.partenaires||[]).find(x=>x.participation_id===r.participation_id);
-            if(saved){
-                const idx=(data.stands||[]).findIndex(x=>x.id===saved.participation_id);
-                const local={...(idx>=0?data.stands[idx]:{}),id:saved.participation_id,participation_id:saved.participation_id,numero_stand:saved.numero_stand,nom:saved.nom,raison_sociale:saved.raison_sociale,type_partenaire:saved.type_partenaire,mode_reglement_habituel:saved.mode_reglement_habituel,utilise_vaisselle:saved.utilise_vaisselle,actif:saved.actif};
-                if(idx>=0)data.stands[idx]=local;else (data.stands||(data.stands=[])).push(local);
-                if(stand?.id===local.id){stand=local;selectedName.textContent=standName(local);selectedType.textContent=local.type_partenaire||"";renderCatalog();renderSummary()}
-            }
-            closeStandAdmin();msg("Fiche du stand enregistrée.",true);
-        }catch(e){console.error(e);msg(e?.message||"Impossible d'enregistrer la fiche du stand.")}
-        finally{button.disabled=false;button.textContent="Enregistrer"}
-    }
-
     const uuid=()=>crypto?.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{
         const r=Math.random()*16|0,v=c==="x"?r:(r&3|8);
         return v.toString(16)
@@ -3269,319 +2348,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         return Math.max(0,-Number(accountData?.compte?.solde_restant||0));
     }
 
-    function canCorrectDishware(){
-        return demo||["responsable","administrateur"].includes(String(userRole||"").toLocaleLowerCase("fr"));
-    }
-    function operationTypeLabel(type){
-        return ({retrait:"Retrait",retour_propre:"Retour propre",retour_sale:"Retour sale"})[String(type||"")]||String(type||"Opération");
-    }
-    function formatZurichDate(value){
-        if(!value)return "—";
-        try{return new Intl.DateTimeFormat("fr-CH",{timeZone:"Europe/Zurich",dateStyle:"short",timeStyle:"short"}).format(new Date(value))}
-        catch{return String(value)}
-    }
-    function articleName(id){
-        return (data?.vaisselle||[]).find(x=>x.id===id)?.nom||"Article";
-    }
-    function correctionDetail(op){
-        const lines=Array.isArray(op?.vaisselle)?op.vaisselle:[];
-        const parts=[];
-        for(const l of lines){
-            const q=Number(l.quantite_unites??l.quantite??0)||0;
-            const cases=Number(l.nombre_caisses_completes??0)||0;
-            const units=Number(l.quantite_hors_caisses??0)||0;
-            const name=articleName(l.vaisselle_id);
-            let txt=`${q} × ${esc(name)}`;
-            if(cases>0||units>0)txt+=` (${cases>0?`${cases} conditionnement${cases>1?"s":""}`:""}${cases>0&&units>0?" + ":""}${units>0?`${units} unité${units>1?"s":""}`:""})`;
-            parts.push(txt);
-        }
-        const containers=Array.isArray(op?.contenants)?op.contenants:[];
-        for(const c of containers){
-            const q=Number(c.quantite||0)||0;
-            if(q>0)parts.push(`${q} contenant${q>1?"s":""}${c.usage_contenant?` · ${esc(c.usage_contenant)}`:""}`);
-        }
-        return parts.length?parts.join("<br>"):"Détail non disponible";
-    }
-    function closeCorrectionModal(){
-        correctionModal.classList.remove("show");
-        correctionModal.setAttribute("aria-hidden","true");
-        correctionOperation=null;
-        correctionAction="annuler";
-        correctionKey=null;
-        correctionReason.value="";
-        correctionForm.classList.remove("show");
-    }
-    function renderCorrectionOperations(){
-        const ops=correctionOperations||[];
-        if(!ops.length){
-            correctionList.innerHTML='<div class="correction-empty">Aucune opération de vaisselle enregistrée pour ce stand.</div>';
-            return;
-        }
-        correctionList.innerHTML=ops.map(op=>{
-            const valid=String(op.statut||"valide")==="valide";
-            const finance=demo
-                ?`<div class="correction-op-finance"><span>Facturé : <strong>${money(op.total_facture||0)}</strong></span><span>Crédit : <strong>${money(op.total_credit_compte||0)}</strong></span></div>`
-                :"";
-            return `<div class="correction-operation ${valid?"":"annulee"}">
-                <div class="correction-op-head"><div><div class="correction-op-type">${esc(operationTypeLabel(op.type_operation))}</div><strong>${esc(op.numero_operation||"")}</strong></div><small>${esc(formatZurichDate(op.date))}</small></div>
-                <div class="correction-op-detail">${correctionDetail(op)}</div>
-                ${finance}
-                ${op.motif_correction?`<div class="correction-op-detail"><strong>Motif :</strong> ${esc(op.motif_correction)}</div>`:""}
-                <div class="correction-op-actions">${valid?`
-                    <button class="correction-edit" type="button" data-correction-edit="${esc(op.id)}">Modifier</button>
-                    <button class="correction-delete" type="button" data-correction-cancel="${esc(op.id)}">Annuler</button>
-                `:`<strong>Opération annulée</strong>`}</div>
-            </div>`;
-        }).join("");
-        correctionList.querySelectorAll("[data-correction-edit]").forEach(button=>{
-            button.onclick=()=>selectCorrectionOperation(button.dataset.correctionEdit,"modifier");
-        });
-        correctionList.querySelectorAll("[data-correction-cancel]").forEach(button=>{
-            button.onclick=()=>selectCorrectionOperation(button.dataset.correctionCancel,"annuler");
-        });
-    }
-    function selectCorrectionOperation(id,action="annuler"){
-        const op=correctionOperations.find(x=>x.id===id);
-        if(!op)return;
-        closeCorrectionModal();
-        openCorrectionInMainScreen(op,action);
-    }
-
-    function openCorrectionInMainScreen(op,action){
-        correctionWorkOperation=op;
-        correctionWorkAction=action==="modifier"?"modifier":"annuler";
-        correctionKey=uuid();
-
-        initState();
-        const t=String(op?.type_operation||"");
-        if(!types.includes(t))return;
-
-        for(const ligne of (Array.isArray(op?.vaisselle)?op.vaisselle:[])){
-            const id=ligne.vaisselle_id;
-            if(!state.vaisselle[id])continue;
-            state.vaisselle[id][t].caisses=n(
-                ligne.nombre_caisses_completes ??
-                ligne.nombre_conditionnements_complets ??
-                0
-            );
-            state.vaisselle[id][t].unites=n(
-                ligne.quantite_hors_caisses ??
-                ligne.quantite_unites_hors_conditionnement ??
-                ligne.quantite_hors_conditionnement ??
-                0
-            );
-        }
-
-        let caissesVides=0;
-        for(const contenant of (Array.isArray(op?.contenants)?op.contenants:[])){
-            if(String(contenant.usage_contenant||"")==="vide"){
-                caissesVides+=n(contenant.quantite);
-            }
-        }
-        if(t!=="retour_propre")state.caissesVides[t]=caissesVides;
-
-        if(t==="retrait"){
-            filter="retrait";
-            document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retrait"));
-            $("returnSubtabs").hidden=true;
-        }else{
-            filter="retours";
-            returnFilter=t==="retour_propre"?"propre":"sale";
-            document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.filter==="retours"));
-            document.querySelectorAll(".subtab").forEach(b=>b.classList.toggle("active",b.dataset.returnFilter===returnFilter));
-            $("returnSubtabs").hidden=false;
-        }
-
-        const numero=op.numero_operation||"";
-        const libelle=operationTypeLabel(t);
-
-        if(correctionWorkAction==="modifier"){
-            correctionWorkTitle.innerHTML=`<span class="correction-work-mode">MODIFICATION</span><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
-            correctionWorkDetail.textContent="";
-            correctionWorkDetail.style.display="none";
-            correctionWorkConfirm.textContent="Valider";
-            correctionWorkConfirm.classList.remove("annulation");
-        }else{
-            correctionWorkTitle.innerHTML=`<span class="correction-work-mode">ANNULATION</span><span class="correction-work-reference">${esc(libelle)} ${esc(numero)}</span>`;
-            correctionWorkDetail.textContent="";
-            correctionWorkDetail.style.display="none";
-            correctionWorkConfirm.textContent="Confirmer";
-            correctionWorkConfirm.classList.add("annulation");
-        }
-
-        correctionWorkDetail.style.display="none";
-        correctionWorkBanner.classList.add("show");
-        syncCorrectionWorkspaceUi();
-        renderCatalog();
-        renderSummary();
-        applyCorrectionLock();
-        correctionWorkBanner.scrollIntoView({behavior:"smooth",block:"nearest"});
-    }
-
-    function syncCorrectionWorkspaceUi(){
-        const active=!!correctionWorkOperation;
-        validate.style.display=active?"none":"";
-        if(active){
-            correctionWorkBanner.classList.add("show");
-        }else{
-            correctionWorkBanner.classList.remove("show");
-        }
-    }
-
-    function applyCorrectionLock(){
-        if(correctionWorkAction!=="annuler")return;
-        catalogScroll.querySelectorAll("button").forEach(button=>{
-            if(button.matches(".minus,.plus,.qty-btn,[data-action]"))button.disabled=true;
-        });
-    }
-
-    function leaveCorrectionWork(){
-        correctionWorkOperation=null;
-        correctionWorkAction=null;
-        correctionOperation=null;
-        correctionKey=null;
-        correctionPendingMotif=null;
-        correctionWorkBanner.classList.remove("show");
-        syncCorrectionWorkspaceUi();
-        initState();
-        renderCatalog();
-        renderSummary();
-    }
-
-    function demanderMotif(action){
-        const mot=action==="modifier"?"modification":"annulation";
-        const valeur=window.prompt(`Motif obligatoire de la ${mot} :`);
-        if(valeur===null)return null;
-        const motif=String(valeur).trim();
-        if(!motif){
-            msg("Le motif est obligatoire.");
-            return null;
-        }
-        return motif;
-    }
-
-    async function annulerOperationCorrection(op,motif){
-        const {data:r,error}=await client.rpc(
-            demo?"annuler_operation_vaisselle_demo":"annuler_operation_vaisselle",
-            {
-                p_operation_id:op.id,
-                p_motif:motif,
-                p_idempotency_key:correctionKey||uuid()
-            }
-        );
-        if(error)throw error;
-        if(!r?.ok)throw new Error("Annulation non confirmée par le serveur.");
-        return r;
-    }
-
-    function prepareCorrectionConfirmation(){
-        if(!correctionWorkOperation||!correctionWorkAction)return;
-
-        let ops=[];
-        if(correctionWorkAction==="modifier"){
-            try{ops=types.map(buildOperation).filter(Boolean)}
-            catch(e){return msg(e.message)}
-            if(!ops.length){
-                // Une modification à zéro devient une annulation explicite.
-                correctionWorkAction="annuler";
-                correctionWorkTitle.innerHTML=`ANNULATION<br><span class="correction-work-reference">${esc(operationTypeLabel(correctionWorkOperation.type_operation))} ${esc(correctionWorkOperation.numero_operation||"")}</span>`;
-            }
-        }
-
-        pendingOps=ops;
-        correctionPendingMotif=null;
-
-        $("passageConfirmStand").textContent=standName(stand);
-        $("passageConfirmType").textContent=stand.type_partenaire||"";
-        $("passageConfirmDetail").innerHTML=summary.innerHTML;
-        $("passageConfirmDetail").querySelectorAll("button").forEach(button=>button.remove());
-        $("passageConfirmInvoice").textContent=invoice.textContent;
-        $("passageConfirmCredit").textContent=credit.textContent;
-        $("passageConfirmNet").textContent=net.textContent;
-
-        $("correctionSignatureFields").hidden=false;
-        $("correctionReasonSelect").value="";
-        $("correctionReasonComment").value="";
-        $("correctionCommentRequired").hidden=true;
-
-        $("passageConfirmCheck").checked=false;
-        signatureHasInk=false;
-        syncVisibleViewport();
-        $("passageConfirmModal").classList.add("show");
-        $("passageConfirmModal").setAttribute("aria-hidden","false");
-        requestAnimationFrame(resizeSignatureCanvas);
-        updatePassageConfirmButton();
-    }
-
-    async function executeCorrectionWork(){
-        prepareCorrectionConfirmation();
-    }
-
-    correctionWorkCancel.onclick=leaveCorrectionWork;
-    correctionWorkConfirm.onclick=executeCorrectionWork;
-
-    async function openCorrectionModal(){
-        if(!stand)return msg("Sélectionne d'abord le stand.");
-        if(!canCorrectDishware())return msg("Cette fonction est réservée aux Responsables et Administrateurs.");
-        if(accountClosed())return msg(demo?"Rouvre d'abord le compte Démo avant de corriger une opération.":"Ce compte est clôturé. La correction d'une opération n'est pas autorisée.");
-        correctionOperations=[];
-        correctionList.innerHTML='<div class="correction-empty">Chargement des opérations…</div>';
-        correctionForm.classList.remove("show");
-        correctionModal.classList.add("show");
-        correctionModal.setAttribute("aria-hidden","false");
-        try{
-            const {data:r,error}=await client.rpc(
-                demo?"charger_operations_vaisselle_corrigeables_demo":"charger_operations_vaisselle_corrigeables",
-                demo?{p_stand_demo_id:stand.id}:{p_participation_id:stand.id}
-            );
-            if(error)throw error;
-            if(!r?.ok)throw new Error("Chargement des opérations non confirmé par le serveur.");
-            correctionOperations=Array.isArray(r.operations)?r.operations:[];
-            renderCorrectionOperations();
-        }catch(e){
-            console.error(e);
-            correctionList.innerHTML=`<div class="correction-empty">${esc(e?.message||"Impossible de charger les opérations.")}</div>`;
-        }
-    }
-    async function confirmCorrectionCancellation(){
-        if(!correctionOperation)return;
-        const motif=String(correctionReason.value||"").trim();
-        if(!motif)return msg("Le motif de correction est obligatoire.");
-        if(!correctionKey)correctionKey=uuid();
-        correctionConfirm.disabled=true;
-        correctionConfirm.textContent=correctionAction==="modifier"?"Préparation…":"Annulation…";
-        try{
-            const {data:r,error}=await client.rpc(
-                demo?"annuler_operation_vaisselle_demo":"annuler_operation_vaisselle",
-                {p_operation_id:correctionOperation.id,p_motif:motif,p_idempotency_key:correctionKey}
-            );
-            if(error)throw error;
-            if(!r?.ok)throw new Error("Annulation non confirmée par le serveur.");
-            const opCorrigee=correctionOperation;
-            const numero=opCorrigee.numero_operation||"";
-            const action=correctionAction;
-            closeCorrectionModal();
-
-            if(action==="modifier"){
-                prefillOperationForModification(opCorrigee);
-                msg(`Opération ${numero} ouverte en modification. Ajuste les quantités puis valide le nouveau passage.`,true);
-            }else{
-                initState();
-                renderCatalog();
-                renderSummary();
-                msg(`Opération ${numero} annulée.`,true);
-            }
-
-            await loadAccount();
-        }catch(e){
-            console.error(e);
-            msg(e?.message||"Impossible d'annuler cette opération.");
-        }finally{
-            correctionConfirm.textContent=correctionAction==="modifier"?"Préparer la modification":"Annuler cette opération";
-            if(correctionModal.classList.contains("show"))correctionConfirm.disabled=!String(correctionReason.value||"").trim();
-        }
-    }
-
     function accountClosed(){
         const c=accountData?.compte||{};
         const statut=String(c.statut_compte||"");
@@ -3617,8 +2383,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         closeAccount.style.display="none";
         closeAccount.disabled=true;
         closeAccount.textContent="Clôturer le compte";
-        correctAccount.style.display=canCorrectDishware()?"inline-flex":"none";
-        correctAccount.disabled=true;
         if(!stand)return;
         try{
             const {data:r,error}=await client.rpc(
@@ -3634,8 +2398,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(demo)await chargerClotureDemo();
             const solde=Math.round(Number(accountData.compte?.solde_restant||0)*100)/100;
             const closed=accountClosed();
-            correctAccount.disabled=closed||!canCorrectDishware();
-            correctAccount.title=closed?"Compte clôturé":canCorrectDishware()?"Corriger ou annuler une opération de vaisselle":"Réservé aux Responsables et Administrateurs";
             accountBalance.classList.toggle("credit",solde<0);
 
             if(closed){
@@ -4015,6 +2777,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         .slice(0,25);
         results.innerHTML=arr.length?arr.map(s=>`<button class="result" data-stand="${s.id}">
         <strong>${esc(standName(s))}</strong>
+        <br>
+        <small>${esc(s.type_partenaire||"")}</small>
         </button>`).join(""):`<div style="padding:10px;color:#777">Aucun stand trouvé.</div>`;
         results.classList.add("show");
         results.querySelectorAll("[data-stand]").forEach(b=>b.onclick=()=>selectStand(b.dataset.stand))
@@ -4040,8 +2804,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         stand=null;
         accountData=null;
         accountStrip.classList.remove("show");
-        correctAccount.disabled=true;
-        closeCorrectionModal();
         selected.classList.remove("show");
         searchZone.style.display="grid";
         search.value="";
@@ -4081,19 +2843,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
     }
     let pendingOps=null;
     let signatureHasInk=false;
-    function correctionReasonValue(){
-        const select=$("correctionReasonSelect");
-        const comment=$("correctionReasonComment");
-        const reason=String(select?.value||"").trim();
-        const detail=String(comment?.value||"").trim();
-        if(!reason)return "";
-        if(reason==="Autre"&&!detail)return "";
-        return detail ? `${reason} — ${detail}` : reason;
-    }
     function updatePassageConfirmButton(){
-        const correctionActive=!!correctionWorkOperation;
-        const motifOk=!correctionActive||!!correctionReasonValue();
-        $("passageConfirmSave").disabled=!(signatureHasInk&&$("passageConfirmCheck").checked&&motifOk);
+        $("passageConfirmSave").disabled=!(signatureHasInk&&$("passageConfirmCheck").checked);
     }
     function resizeSignatureCanvas(){
         const canvas=$("passageSignature");
@@ -4110,10 +2861,8 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         $("passageConfirmModal").classList.remove("show");
         $("passageConfirmModal").setAttribute("aria-hidden","true");
         pendingOps=null;
-        correctionPendingMotif=null;
     }
     function openPassageConfirm(){
-        $("correctionSignatureFields").hidden=true;
         if(!stand)return msg("Sélectionne d'abord le stand.");
         if(accountClosed())return msg("Ce compte est clôturé. Aucune nouvelle opération ne peut être enregistrée.");
         try{pendingOps=types.map(buildOperation).filter(Boolean)}catch(e){return msg(e.message)}
@@ -4126,141 +2875,49 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         $("passageConfirmCredit").textContent=credit.textContent;
         $("passageConfirmNet").textContent=net.textContent;
         $("passageConfirmCheck").checked=false;signatureHasInk=false;
-        syncVisibleViewport();
         $("passageConfirmModal").classList.add("show");
         $("passageConfirmModal").setAttribute("aria-hidden","false");
         requestAnimationFrame(resizeSignatureCanvas);
     }
     async function performSignedSave(){
-        if(!stand)return msg("Aucun stand à confirmer.");
-        const correctionActive=!!correctionWorkOperation;
-        if(!correctionActive&&!pendingOps?.length)return msg("Aucun passage à confirmer.");
+        if(!stand||!pendingOps?.length)return msg("Aucun passage à confirmer.");
         if(!signatureHasInk)return msg("La signature du stand est obligatoire.");
         if(!$("passageConfirmCheck").checked)return msg("La confirmation du stand est obligatoire.");
-        const ops=Array.isArray(pendingOps)?pendingOps:[];
+        const ops=pendingOps;
         const signatureData=$("passageSignature").toDataURL("image/png");
-        if(correctionActive){
-            correctionPendingMotif=correctionReasonValue();
-            if(!correctionPendingMotif)return msg("Choisis un motif de correction.");
-        }
         validate.disabled=true;
         validate.classList.remove("on");
         validate.textContent=demo?"Enregistrement Démo…":"Enregistrement sur le compte…";
         try{
             let r=null;
-            const modificationEnCours=!!(
-                correctionWorkOperation &&
-                correctionWorkAction==="modifier" &&
-                correctionPendingMotif
+            const response=await client.rpc(
+                demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe",
+                demo
+                    ? {
+                        p_stand_demo_id:stand.id,
+                        p_operations:ops,
+                        p_signature_data:signatureData,
+                        p_commentaire:null
+                    }
+                    : {
+                        p_participation_id:stand.id,
+                        p_operations:ops,
+                        p_signature_data:signatureData,
+                        p_commentaire:null
+                    }
             );
-            const annulationEnCours=!!(
-                correctionWorkOperation &&
-                correctionWorkAction==="annuler" &&
-                correctionPendingMotif
-            );
-
-            let response;
-
-            if(annulationEnCours){
-                response=await client.rpc(
-                    demo ? "annuler_operation_vaisselle_demo_signee" : "annuler_operation_vaisselle_signee",
-                    demo
-                        ? {
-                            p_operation_id:correctionWorkOperation.id,
-                            p_motif:correctionPendingMotif,
-                            p_idempotency_key:correctionKey||uuid(),
-                            p_stand_demo_id:stand.id,
-                            p_signature_data:signatureData
-                        }
-                        : {
-                            p_operation_id:correctionWorkOperation.id,
-                            p_motif:correctionPendingMotif,
-                            p_idempotency_key:correctionKey||uuid(),
-                            p_participation_id:stand.id,
-                            p_signature_data:signatureData
-                        }
-                );
-            }else if(modificationEnCours){
-                response=await client.rpc(
-                    demo ? "modifier_operation_vaisselle_demo_signe" : "modifier_operation_vaisselle_signe",
-                    demo
-                        ? {
-                            p_operation_id:correctionWorkOperation.id,
-                            p_motif:correctionPendingMotif,
-                            p_idempotency_key:correctionKey||uuid(),
-                            p_stand_demo_id:stand.id,
-                            p_operations:ops,
-                            p_signature_data:signatureData,
-                            p_commentaire:null
-                        }
-                        : {
-                            p_operation_id:correctionWorkOperation.id,
-                            p_motif:correctionPendingMotif,
-                            p_idempotency_key:correctionKey||uuid(),
-                            p_participation_id:stand.id,
-                            p_operations:ops,
-                            p_signature_data:signatureData,
-                            p_commentaire:null
-                        }
-                );
-            }else{
-                response=await client.rpc(
-                    demo ? "valider_passage_vaisselle_demo_signe" : "valider_passage_vaisselle_signe",
-                    demo
-                        ? {
-                            p_stand_demo_id:stand.id,
-                            p_operations:ops,
-                            p_signature_data:signatureData,
-                            p_commentaire:null
-                        }
-                        : {
-                            p_participation_id:stand.id,
-                            p_operations:ops,
-                            p_signature_data:signatureData,
-                            p_commentaire:null
-                        }
-                );
-            }
             if(response.error)throw response.error;
             r=response.data;
             if(!r?.ok)throw new Error("Validation non confirmée par le serveur.");
             $("passageConfirmModal").classList.remove("show");
             $("passageConfirmModal").setAttribute("aria-hidden","true");
             pendingOps=null;
-            const etaitModification=!!(
-                correctionWorkOperation &&
-                correctionWorkAction==="modifier" &&
-                correctionPendingMotif
-            );
-            const etaitAnnulation=!!(
-                correctionWorkOperation &&
-                correctionWorkAction==="annuler" &&
-                correctionPendingMotif
-            );
-
             msg(
-                etaitModification
-                    ? `Modification enregistrée sur le compte de ${standName(stand)}.`
-                    : etaitAnnulation
-                        ? `Annulation enregistrée sur le compte de ${standName(stand)}.`
-                        : (
-                            demo
-                                ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
-                                :`Enregistré sur le compte de ${standName(stand)}.`
-                        ),
+                demo
+                    ?`Opération Démo enregistrée sur le compte de ${standName(stand)}.`
+                    :`Enregistré sur le compte de ${standName(stand)}.`,
                 true
             );
-
-            if(etaitModification||etaitAnnulation){
-                correctionWorkOperation=null;
-                correctionWorkAction=null;
-                correctionOperation=null;
-                correctionPendingMotif=null;
-                correctionKey=null;
-                correctionWorkBanner.classList.remove("show");
-                syncCorrectionWorkspaceUi();
-            }
-
             initState();
             renderCatalog();
             renderSummary();
@@ -4279,23 +2936,62 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         const text=String(v||"").trim();
         if(!text)return msg("QR vide ou illisible.");
         try{
-            const {data:r,error}=await client.rpc(
-                demo ? "resoudre_qr_stand_demo" : "resoudre_qr_interne",
-                demo
-                    ? {p_qr_payload:text}
-                    : {p_valeur_qr:text}
-            );
-            if(error)throw error;
-            const participationId=demo
-                ?(r?.stand?.id||r?.stand?.participation_id)
-                :r?.participation_id;
-            if(!participationId)throw new Error(demo?"QR Démo sans stand valide.":"QR sans participation valide.");
+            let participationId=null;
+
+            if(demo){
+                const {data:r,error}=await client.rpc(
+                    "resoudre_qr_stand_demo",
+                    {p_qr_payload:text}
+                );
+                if(error)throw error;
+                participationId=r?.stand?.id||r?.stand?.participation_id||null;
+                if(!participationId)throw new Error("QR Démo sans stand valide.");
+            }else{
+                /*
+                 * La page accepte désormais les deux QR utilisés par MDN :
+                 * - QR interne historique ;
+                 * - QR exposant / URL du relevé généré depuis Comptes stands.
+                 */
+                let tokenExposant="";
+
+                if(text.toLocaleLowerCase("fr").startsWith("mdn-exposant:")){
+                    tokenExposant=text;
+                }else{
+                    try{
+                        const url=new URL(text,window.location.href);
+                        const token=String(url.searchParams.get("token")||"").trim();
+                        if(token)tokenExposant=token;
+                    }catch(_){
+                        tokenExposant="";
+                    }
+                }
+
+                if(tokenExposant){
+                    const {data:r,error}=await client.rpc(
+                        "espace_exposant",
+                        {p_token:tokenExposant}
+                    );
+                    if(error)throw error;
+                    participationId=r?.identite?.participation_id||null;
+                    if(!participationId)throw new Error("QR exposant sans participation valide.");
+                }else{
+                    const {data:r,error}=await client.rpc(
+                        "resoudre_qr_interne",
+                        {p_valeur_qr:text}
+                    );
+                    if(error)throw error;
+                    participationId=r?.participation_id||null;
+                    if(!participationId)throw new Error("QR interne sans participation valide.");
+                }
+            }
+
             if(!selectStand(participationId))throw new Error("Stand indisponible pour la vaisselle.");
             closeQr();
             msg(`Stand sélectionné : ${standName(stand)}.`,true)
         }
         catch(e){
-            msg(e?.message||(demo?"QR Démo invalide.":"QR interne invalide."))
+            console.error(e);
+            msg(e?.message||(demo?"QR Démo invalide.":"QR invalide ou stand indisponible."))
         }
     }
     async function openQr(){
@@ -4374,8 +3070,9 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
                 renderCatalog();
             };
         });
-        $("back").onclick=()=>location.href="accueil.html";
+        $("back").onclick=()=>location.href=demo?"accueil.html?mode=demo":"accueil.html";
         $("logout").onclick=async()=>{
+            sessionStorage.removeItem("mdn_mode_demo_actif");
             await window.MDN_AUTH.deconnexion()
         }
         ;
@@ -4383,12 +3080,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         search.oninput=searchStands;
         $("change").onclick=changeStand;
         $("qr").onclick=openQr;
-        $("newStandAdmin").onclick=()=>openStandAdmin(null);
-        $("editStandAdmin").onclick=()=>openStandAdmin(stand?.id||null);
-        $("standAdminClose").onclick=closeStandAdmin;
-        $("standAdminCancel").onclick=closeStandAdmin;
-        $("standAdminSave").onclick=saveStandAdmin;
-        standAdminModal.onclick=e=>{if(e.target===standAdminModal)closeStandAdmin()};
         $("modalClose").onclick=closeQr;
         $("manualGo").onclick=()=>resolveQr(manualQr.value);
         manualQr.onkeydown=e=>{
@@ -4403,12 +3094,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             if(accountCredit()>0)openRefund();
             else openPayment();
         };
-        correctAccount.onclick=openCorrectionModal;
-        $("correctionClose").onclick=closeCorrectionModal;
-        $("correctionFormCancel").onclick=()=>{correctionOperation=null;correctionKey=null;correctionReason.value="";correctionForm.classList.remove("show")};
-        correctionReason.oninput=()=>{correctionConfirm.disabled=!String(correctionReason.value||"").trim()};
-        correctionConfirm.onclick=confirmCorrectionCancellation;
-        correctionModal.onclick=e=>{if(e.target===correctionModal)closeCorrectionModal()};
         closeAccount.onclick=openCloseAccount;
         $("closeAccountModalClose").onclick=closeCloseAccountModal;
         $("closeAccountCancel").onclick=closeCloseAccountModal;
@@ -4432,11 +3117,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
         validate.onclick=openPassageConfirm;
         $("passageConfirmClose").onclick=closePassageConfirm;
         $("passageConfirmCancel").onclick=closePassageConfirm;
-        $("correctionReasonSelect").onchange=()=>{
-            $("correctionCommentRequired").hidden=$("correctionReasonSelect").value!=="Autre";
-            updatePassageConfirmButton();
-        };
-        $("correctionReasonComment").oninput=updatePassageConfirmButton;
         $("passageConfirmCheck").onchange=updatePassageConfirmButton;
         $("passageSignatureClear").onclick=resizeSignatureCanvas;
         $("passageConfirmSave").onclick=performSignedSave;
@@ -4466,64 +3146,30 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
 
     async function init(){
         try{
+            const p=new URLSearchParams(location.search);
+            demo=p.get("mode")==="demo"||sessionStorage.getItem("mdn_mode_demo_actif")==="1";
             closeAccount.style.display="inline-flex";
-
-            if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
-
-            const auth=await avecDelai(
-                window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),
-                12000,
-                "La vérification de la connexion prend trop de temps. Recharge la page."
-            );
-
-            if(!auth)return;
-
-            /*
-             * Le Mode Démo n'est plus activable par URL ou sessionStorage.
-             * Il dépend uniquement de la session Démo dédiée reconnue
-             * côté serveur et transmise par js/auth.js.
-             */
-            demo=Boolean(auth.modeDemo);
-
             topbar.classList.toggle("demo",demo);
             demoNote.classList.toggle("show",demo);
-            $("demoProtectedBanner").classList.toggle("show",demo);
-
             document.querySelector(".title h1").textContent=demo
                 ?"🍽️ Vaisselle & Consignes · MODE DÉMO"
                 :"🍽️ Vaisselle & Consignes";
-
-            validate.textContent=demo
-                ?"Valider sur le compte Démo"
-                :"Valider sur le compte du stand";
-
+            validate.textContent=demo?"Valider sur le compte Démo":"Valider sur le compte du stand";
+            if(!window.MDN_AUTH)throw new Error("Module d'authentification indisponible.");
+            const auth=await avecDelai(window.MDN_AUTH.protegerPage(["utilisateur","responsable","administrateur"]),12000,"La vérification de la connexion prend trop de temps. Recharge la page.");
+            if(!auth)return;
             const first=String(auth.profil?.prenom||"Utilisateur").trim();
-            userRole=String(auth.profil?.role||"").trim().toLocaleLowerCase("fr");
-            $("newStandAdmin").classList.toggle("show",canManageStands());
-            $("editStandAdmin").classList.toggle("show",canManageStands());
-            const role=window.MDN_AUTH.libelleRole
-                ?window.MDN_AUTH.libelleRole(auth.profil?.role)
-                :String(auth.profil?.role||"");
-
+            const role=window.MDN_AUTH.libelleRole?window.MDN_AUTH.libelleRole(auth.profil?.role):String(auth.profil?.role||"");
             $("identity").textContent=`${first} · ${role}`;
-
             client=window.MDN_SUPABASE;
             if(!client)throw new Error("Client Supabase indisponible.");
-
-            const response=await avecDelai(
-                client.rpc(
-                    demo
-                        ?"charger_ecran_retrait_vaisselle_demo"
-                        :"charger_ecran_retrait_vaisselle"
-                ),
-                12000,
-                "Le chargement des données de vaisselle prend trop de temps. Recharge la page."
-            );
+            const response=await avecDelai(client.rpc(demo?"charger_ecran_retrait_vaisselle_demo":"charger_ecran_retrait_vaisselle"),12000,"Le chargement des données de vaisselle prend trop de temps. Recharge la page.");
             const d=response?.data;
             const error=response?.error;
             if(error)throw error;
             if(!d?.edition?.id)throw new Error("Aucune édition active.");
             data=d;
+            edition.textContent=`MDN Sion ${d.edition.annee||""}`;
             initState();
             events();
             renderCatalog();
@@ -4538,11 +3184,6 @@ VAISSELLE - MISE EN PAGE CALQUÉE SUR LA CAISSE VALIDÉE
             loading.classList.add("hide");
         }
     }
-
-    const correctionCatalogObserver=new MutationObserver(()=>{
-        if(correctionWorkAction==="annuler")applyCorrectionLock();
-    });
-    correctionCatalogObserver.observe(catalogScroll,{childList:true,subtree:true});
 
     const securiteChargement=setTimeout(()=>{
         if(!loading.classList.contains("hide")){
