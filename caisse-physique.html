@@ -1369,7 +1369,7 @@
           <label for="countComment">Précisez le motif</label>
           <textarea id="countComment" maxlength="1000" placeholder="Indiquez le motif"></textarea>
         </div>
-        <div class="field" id="keepFloatField" style="display:none"><label for="keepFloat">Argent à laisser dans le tiroir pour la prochaine ouverture</label><input id="keepFloat" type="number" min="0" step="0.05" inputmode="decimal" value="0"/></div>
+        <div class="field" id="keepFloatField" style="display:none"><label for="keepFloat">Argent à laisser dans le tiroir pour la prochaine ouverture</label><input id="keepFloat" type="number" min="0" step="0.05" inputmode="decimal" placeholder="0" value=""/></div>
       </div>
       <div class="modal-actions"><button class="cancel" id="countCancel">Annuler</button><button class="confirm" id="countConfirm">Valider</button></div>
     </div>
@@ -2314,7 +2314,7 @@
       countMode=mode;
       countTitle.textContent=mode==="verification"?"Vérifier la caisse":mode==="x"?"État de la caisse (Ticket X)":"Clôturer la caisse (Ticket Z)";
       keepFloatField.style.display=mode==="z"?"grid":"none";
-		keepFloat.value="0";
+		keepFloat.value="";
 		countReason.value="";
 		countComment.value="";
 		countCommentField.style.display="none";
