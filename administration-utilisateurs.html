@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="theme-color" content="#8B0000">
+	<link rel="icon" type="image/png" href="logo-mdn.png">
+	<link rel="apple-touch-icon" href="logo-mdn.png">
+	<title>Utilisateurs & rôles · MDN Sion</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+		html, body {
+			margin: 0;
+			min-height: 100%;
+		}
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
+			color: #222;
+			min-height: 100vh;
+		}
+		body.mode-demo {
+			background: linear-gradient(145deg, #b88d00 0%, #cfa514 48%, #816600 100%);
+		}
+		button, input, select {
+			font: inherit;
+		}
+		button {
+			cursor: pointer;
+		}
+		[hidden] {
+			display: none !important;
+		}
+		.entete {
+			height: 76px;
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-items: center;
+			padding: 8px 22px;
+			background: rgba(92, 0, 0, .45);
+			border-bottom: 1px solid rgba(255,255,255,.16);
+			color: #fff;
+		}
+		body.mode-demo .entete {
+			background: rgba(92, 70, 0, .45);
+		}
+		.entete-gauche {
+			justify-self: start;
+		}
+		.entete-centre {
+			text-align: center;
+		}
+		.entete-centre h1 {
+			margin: 0;
+			font-size: 27px;
+			line-height: 1.05;
+		}
+		.entete-centre p {
+			margin: 5px 0 0;
+			font-size: 14px;
+		}
+		.entete-droite {
+			justify-self: end;
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+		.identite-entete {
+			text-align: right;
+			line-height: 1.1;
+		}
+		.identite-entete strong, .identite-entete span {
+			display: block;
+		}
+		.identite-entete span {
+			margin-top: 4px;
+			font-size: 13px;
+		}
+		.bouton-entete {
+			min-height: 48px;
+			padding: 0 18px;
+			border: 1px solid rgba(255,255,255,.4);
+			border-radius: 14px;
+			background: rgba(255,255,255,.08);
+			color: #fff;
+			font-weight: 800;
+		}
+		.contenu {
+			width: min(1180px, calc(100% - 36px));
+			margin: 0 auto;
+			padding: 16px 0 24px;
+		}
+		.bandeau-demo {
+			margin-bottom: 14px;
+			padding: 11px 16px;
+			border: 1px solid #e1b228;
+			border-radius: 15px;
+			background: #fff3c7;
+			color: #664b00;
+			font-weight: 800;
+			text-align: center;
+		}
+		.panneau {
+			background: rgba(255,255,255,.97);
+			border: 1px solid rgba(255,255,255,.7);
+			border-radius: 18px;
+			box-shadow: 0 12px 28px rgba(0,0,0,.14);
+			overflow: hidden;
+		}
+		.barre-outils {
+			padding: 16px;
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			flex-wrap: wrap;
+			border-bottom: 1px solid #ddd;
+		}
+		.recherche {
+			flex: 1 1 320px;
+			min-height: 46px;
+			padding: 0 14px;
+			border: 1px solid #d5d5d5;
+			border-radius: 12px;
+		}
+		.filtre {
+			min-height: 46px;
+			padding: 0 12px;
+			border: 1px solid #d5d5d5;
+			border-radius: 12px;
+			background: #fff;
+		}
+		.stats {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 10px;
+			padding: 14px 16px;
+			border-bottom: 1px solid #ddd;
+		}
+		.stat {
+			padding: 11px;
+			border-radius: 12px;
+			background: #f6f6f6;
+			text-align: center;
+		}
+		.stat strong {
+			display: block;
+			font-size: 22px;
+			color: #8b0000;
+		}
+		body.mode-demo .stat strong {
+			color: #8a6900;
+		}
+		.liste {
+			padding: 14px 16px 18px;
+			display: grid;
+			gap: 10px;
+		}
+		.utilisateur {
+			display: grid;
+			grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr) 150px 120px 52px;
+			align-items: center;
+			gap: 12px;
+			padding: 13px 14px;
+			border: 1px solid #ddd;
+			border-radius: 14px;
+			background: #fff;
+		}
+		.nom {
+			font-weight: 800;
+			font-size: 17px;
+		}
+		.email {
+			color: #666;
+			font-size: 13px;
+			margin-top: 3px;
+			overflow-wrap: anywhere;
+		}
+		.badge {
+			display: inline-flex;
+			width: fit-content;
+			padding: 5px 9px;
+			border-radius: 999px;
+			background: #eee;
+			font-weight: 800;
+			font-size: 12px;
+		}
+		.badge.actif {
+			background: #e6f5e9;
+			color: #107c10;
+		}
+		.badge.inactif {
+			background: #fde8e8;
+			color: #b00020;
+		}
+		.badge.demo {
+			background: #fff0b8;
+			color: #755800;
+		}
+		.bouton-icone {
+			width: 46px;
+			height: 46px;
+			border: 1px solid #d4d4d4;
+			border-radius: 12px;
+			background: #fff;
+			font-size: 20px;
+		}
+		.erreur {
+			margin-bottom: 12px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			background: #fff0f0;
+			color: #a00000;
+			font-weight: 700;
+		}
+		.vide {
+			padding: 35px;
+			text-align: center;
+			color: #666;
+		}
+		.chargement {
+			position: fixed;
+			inset: 0;
+			z-index: 1000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(255,255,255,.96);
+			font-weight: 800;
+			color: #8b0000;
+		}
+		.fond-modale {
+			position: fixed;
+			inset: 0;
+			z-index: 1100;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			background: rgba(0,0,0,.55);
+		}
+		.modale {
+			width: min(620px, 100%);
+			max-height: 90vh;
+			overflow: auto;
+			background: #fff;
+			border-radius: 18px;
+			box-shadow: 0 24px 60px rgba(0,0,0,.3);
+		}
+		.modale-entete {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 18px 20px;
+			border-bottom: 1px solid #ddd;
+		}
+		.modale-entete h2 {
+			margin: 0;
+			color: #8b0000;
+		}
+		.fermer {
+			width: 42px;
+			height: 42px;
+			border: 0;
+			border-radius: 11px;
+			background: #f2f2f2;
+			font-size: 24px;
+		}
+		.formulaire {
+			padding: 18px 20px 20px;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 14px;
+		}
+		.champ {
+			display: grid;
+			gap: 6px;
+		}
+		.champ.large {
+			grid-column: 1 / -1;
+		}
+		.champ label {
+			font-weight: 800;
+		}
+		.champ input, .champ select {
+			min-height: 46px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: 11px;
+			background: #fff;
+		}
+		.actions {
+			grid-column: 1 / -1;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 6px;
+		}
+		.bouton-secondaire, .bouton-principal {
+			min-height: 44px;
+			padding: 0 18px;
+			border-radius: 11px;
+			font-weight: 800;
+		}
+		.bouton-secondaire {
+			border: 1px solid #ccc;
+			background: #fff;
+		}
+		.bouton-principal {
+			border: 0;
+			background: #8b0000;
+			color: #fff;
+		}
+		.message-formulaire {
+			grid-column: 1 / -1;
+			padding: 10px 12px;
+			border-radius: 10px;
+			background: #fff0f0;
+			color: #a00000;
+			font-weight: 700;
+		}
+		.note-demo {
+			grid-column: 1 / -1;
+			padding: 10px 12px;
+			border-radius: 10px;
+			background: #fff3c7;
+			color: #664b00;
+			font-weight: 700;
+		}
+		@media (max-width: 800px) {
+			.entete {
+				height: auto;
+				min-height: 70px;
+				padding: 8px 12px;
+			}
+			.entete-centre h1 {
+				font-size: 20px;
+			}
+			.entete-centre p {
+				font-size: 11px;
+			}
+			.identite-entete {
+				display: none;
+			}
+			.bouton-entete {
+				min-height: 40px;
+				padding: 0 10px;
+				font-size: 12px;
+			}
+			.contenu {
+				width: calc(100% - 20px);
+				padding-top: 10px;
+			}
+			.stats {
+				grid-template-columns: repeat(2, 1fr);
+			}
+			.utilisateur {
+				grid-template-columns: 1fr auto;
+			}
+			.utilisateur .col-role, .utilisateur .col-etat {
+				grid-column: auto;
+			}
+			.utilisateur .col-email {
+				grid-column: 1 / -1;
+			}
+		}
+		@media (max-width: 520px) {
+			.entete-centre p {
+				display: none;
+			}
+			.entete-centre h1 {
+				font-size: 17px;
+			}
+			.barre-outils {
+				padding: 10px;
+			}
+			.stats, .liste {
+				padding-left: 10px;
+				padding-right: 10px;
+			}
+			.formulaire {
+				grid-template-columns: 1fr;
+				padding: 14px;
+			}
+			.champ.large, .actions, .message-formulaire, .note-demo {
+				grid-column: 1;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div id="chargement" class="chargement">Chargement des utilisateurs…</div>
+
+	<header class="entete">
+		<div class="entete-gauche">
+			<button id="boutonRetour" class="bouton-entete" type="button">← Administration</button>
+		</div>
+		<div class="entete-centre">
+			<h1>👥 Utilisateurs & rôles</h1>
+			<p id="sousTitre">Administration</p>
+		</div>
+		<div class="entete-droite">
+			<div class="identite-entete">
+				<strong id="nomUtilisateurEntete">Mode</strong>
+				<span id="roleUtilisateurEntete">Utilisateur</span>
+			</div>
+			<button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
+		</div>
+	</header>
+
+	<main class="contenu">
+		<div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — consultation uniquement. Aucun utilisateur Réel ne peut être modifié.</div>
+		<div id="zoneErreur" class="erreur" hidden></div>
+		<section class="panneau">
+			<div class="barre-outils">
+				<input id="recherche" class="recherche" type="search" placeholder="Rechercher un utilisateur…">
+				<select id="filtreRole" class="filtre">
+					<option value="tous">Tous les rôles</option>
+					<option value="utilisateur">Utilisateur</option>
+					<option value="responsable">Responsable</option>
+					<option value="administrateur">Administrateur</option>
+				</select>
+				<select id="filtreEtat" class="filtre">
+					<option value="tous">Tous</option>
+					<option value="actifs">Actifs</option>
+					<option value="inactifs">Inactifs</option>
+				</select>
+			</div>
+			<div class="stats">
+				<div class="stat"><strong id="statTotal">0</strong><span>Comptes</span></div>
+				<div class="stat"><strong id="statActifs">0</strong><span>Actifs</span></div>
+				<div class="stat"><strong id="statResponsables">0</strong><span>Responsables</span></div>
+				<div class="stat"><strong id="statAdministrateurs">0</strong><span>Administrateurs</span></div>
+			</div>
+			<div id="listeUtilisateurs" class="liste"></div>
+		</section>
+	</main>
+
+	<div id="fondModale" class="fond-modale" hidden>
+		<section class="modale" role="dialog" aria-modal="true" aria-labelledby="titreModale">
+			<div class="modale-entete">
+				<h2 id="titreModale">Modifier l’utilisateur</h2>
+				<button id="fermerModale" class="fermer" type="button">×</button>
+			</div>
+			<form id="formulaire" class="formulaire">
+				<div id="noteDemo" class="note-demo" hidden>MODE DÉMO — cette fiche est en consultation uniquement.</div>
+				<div class="champ">
+					<label for="prenom">Prénom</label>
+					<input id="prenom" type="text" required>
+				</div>
+				<div class="champ">
+					<label for="nom">Nom</label>
+					<input id="nom" type="text" required>
+				</div>
+				<div class="champ large">
+					<label for="email">E-mail</label>
+					<input id="email" type="email" disabled>
+				</div>
+				<div class="champ">
+					<label for="role">Rôle</label>
+					<select id="role" required>
+						<option value="utilisateur">Utilisateur</option>
+						<option value="responsable">Responsable</option>
+						<option value="administrateur">Administrateur</option>
+					</select>
+				</div>
+				<div class="champ">
+					<label for="actif">État</label>
+					<select id="actif">
+						<option value="true">Actif</option>
+						<option value="false">Inactif</option>
+					</select>
+				</div>
+				<div id="messageFormulaire" class="message-formulaire" hidden></div>
+				<div class="actions">
+					<button id="annuler" class="bouton-secondaire" type="button">Fermer</button>
+					<button id="enregistrer" class="bouton-principal" type="submit">Enregistrer</button>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="js/auth.js"></script>
+	<script>
+		(function () {
+			"use strict";
+
+			const chargement = document.getElementById("chargement");
+			const bandeauDemo = document.getElementById("bandeauDemo");
+			const zoneErreur = document.getElementById("zoneErreur");
+			const listeUtilisateurs = document.getElementById("listeUtilisateurs");
+			const recherche = document.getElementById("recherche");
+			const filtreRole = document.getElementById("filtreRole");
+			const filtreEtat = document.getElementById("filtreEtat");
+			const fondModale = document.getElementById("fondModale");
+			const formulaire = document.getElementById("formulaire");
+			const titreModale = document.getElementById("titreModale");
+			const noteDemo = document.getElementById("noteDemo");
+			const messageFormulaire = document.getElementById("messageFormulaire");
+			const enregistrer = document.getElementById("enregistrer");
+			const prenom = document.getElementById("prenom");
+			const nom = document.getElementById("nom");
+			const email = document.getElementById("email");
+			const role = document.getElementById("role");
+			const actif = document.getElementById("actif");
+			let clientSupabase = null;
+			let donnees = null;
+			let utilisateurSelectionne = null;
+			let modeDemoActif = false;
+			let peutModifier = false;
+
+			function echapper(texte) {
+				return String(texte ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+			}
+
+			function afficherErreur(message) {
+				zoneErreur.textContent = message || "Une erreur est survenue.";
+				zoneErreur.hidden = false;
+			}
+
+			function roleLibelle(valeur) {
+				return ({ utilisateur: "Utilisateur", responsable: "Responsable", administrateur: "Administrateur" })[valeur] || valeur;
+			}
+
+			function afficherStats() {
+				const s = donnees?.synthese || {};
+				document.getElementById("statTotal").textContent = s.total ?? 0;
+				document.getElementById("statActifs").textContent = s.actifs ?? 0;
+				document.getElementById("statResponsables").textContent = s.responsables ?? 0;
+				document.getElementById("statAdministrateurs").textContent = s.administrateurs ?? 0;
+			}
+
+			function afficherListe() {
+				const q = recherche.value.trim().toLowerCase();
+				const fr = filtreRole.value;
+				const fe = filtreEtat.value;
+				const liste = (donnees?.utilisateurs || []).filter(u => {
+					const texte = `${u.prenom || ""} ${u.nom || ""} ${u.email || ""}`.toLowerCase();
+					if (q && !texte.includes(q)) return false;
+					if (fr !== "tous" && u.role !== fr) return false;
+					if (fe === "actifs" && !u.actif) return false;
+					if (fe === "inactifs" && u.actif) return false;
+					return true;
+				});
+
+				if (!liste.length) {
+					listeUtilisateurs.innerHTML = '<div class="vide">Aucun utilisateur ne correspond aux filtres.</div>';
+					return;
+				}
+
+				listeUtilisateurs.innerHTML = liste.map(u => `
+					<article class="utilisateur">
+						<div>
+							<div class="nom">${echapper(u.prenom)} ${echapper(u.nom)} ${u.is_demo ? '<span class="badge demo">Compte Démo protégé</span>' : ''}</div>
+							<div class="email">${echapper(u.email)}</div>
+						</div>
+						<div class="col-email"><span class="badge">${echapper(roleLibelle(u.role))}</span></div>
+						<div class="col-role">${u.compte_auth_lie ? '🔗 Compte lié' : '⚠️ Sans Auth'}</div>
+						<div class="col-etat"><span class="badge ${u.actif ? 'actif' : 'inactif'}">${u.actif ? '● Actif' : '● Inactif'}</span></div>
+						<button class="bouton-icone" type="button" data-id="${echapper(u.id)}" title="${u.modifiable ? 'Modifier' : 'Consulter'}">${u.modifiable ? '✏️' : '👁️'}</button>
+					</article>
+				`).join("");
+
+				listeUtilisateurs.querySelectorAll("[data-id]").forEach(b => b.addEventListener("click", () => ouvrirFiche(b.dataset.id)));
+			}
+
+			function ouvrirFiche(id) {
+				utilisateurSelectionne = (donnees?.utilisateurs || []).find(u => u.id === id);
+				if (!utilisateurSelectionne) return;
+				const modifiable = utilisateurSelectionne.modifiable === true && !utilisateurSelectionne.compte_protege;
+				prenom.value = utilisateurSelectionne.prenom || "";
+				nom.value = utilisateurSelectionne.nom || "";
+				email.value = utilisateurSelectionne.email || "";
+				role.value = utilisateurSelectionne.role || "utilisateur";
+				actif.value = utilisateurSelectionne.actif ? "true" : "false";
+				prenom.disabled = !modifiable;
+				nom.disabled = !modifiable;
+				role.disabled = !modifiable;
+				actif.disabled = !modifiable;
+				enregistrer.hidden = !modifiable;
+				noteDemo.hidden = !modeDemoActif && !utilisateurSelectionne.compte_protege;
+				noteDemo.textContent = utilisateurSelectionne.compte_protege
+					? "Compte système Mode Démo protégé : aucune modification n’est autorisée."
+					: "MODE DÉMO — cette fiche est en consultation uniquement.";
+				titreModale.textContent = modifiable ? "Modifier l’utilisateur" : "Consulter l’utilisateur";
+				messageFormulaire.hidden = true;
+				fondModale.hidden = false;
+				document.body.style.overflow = "hidden";
+			}
+
+			function fermerFiche() {
+				fondModale.hidden = true;
+				document.body.style.overflow = "";
+				utilisateurSelectionne = null;
+			}
+
+			async function charger() {
+				const { data, error } = await clientSupabase.rpc("charger_utilisateurs_administration");
+				if (error) throw error;
+				donnees = data;
+				modeDemoActif = data?.mode_demo === true;
+				peutModifier = data?.peut_modifier === true;
+				document.body.classList.toggle("mode-demo", modeDemoActif);
+				bandeauDemo.hidden = !modeDemoActif;
+				afficherStats();
+				afficherListe();
+			}
+
+			formulaire.addEventListener("submit", async e => {
+				e.preventDefault();
+				if (!utilisateurSelectionne || !peutModifier || !utilisateurSelectionne.modifiable) return;
+				enregistrer.disabled = true;
+				enregistrer.textContent = "Enregistrement…";
+				messageFormulaire.hidden = true;
+				try {
+					const { error } = await clientSupabase.rpc("enregistrer_utilisateur_administration", {
+						p_utilisateur_id: utilisateurSelectionne.id,
+						p_prenom: prenom.value.trim(),
+						p_nom: nom.value.trim(),
+						p_role: role.value,
+						p_actif: actif.value === "true"
+					});
+					if (error) throw error;
+					fermerFiche();
+					await charger();
+				} catch (err) {
+					messageFormulaire.textContent = err?.message || "Impossible d’enregistrer l’utilisateur.";
+					messageFormulaire.hidden = false;
+				} finally {
+					enregistrer.disabled = false;
+					enregistrer.textContent = "Enregistrer";
+				}
+			});
+
+			recherche.addEventListener("input", afficherListe);
+			filtreRole.addEventListener("change", afficherListe);
+			filtreEtat.addEventListener("change", afficherListe);
+			document.getElementById("fermerModale").addEventListener("click", fermerFiche);
+			document.getElementById("annuler").addEventListener("click", fermerFiche);
+			fondModale.addEventListener("click", e => { if (e.target === fondModale) fermerFiche(); });
+			document.getElementById("boutonRetour").addEventListener("click", () => { window.location.href = modeDemoActif ? "administration.html?mode=demo" : "administration.html"; });
+			document.getElementById("boutonDeconnexion").addEventListener("click", async () => { await window.MDN_AUTH.deconnexion(); });
+			window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion: true });
+
+			async function initialiser() {
+				try {
+					const auth = await window.MDN_AUTH.protegerPage();
+					if (!auth) return;
+					clientSupabase = window.MDN_SUPABASE;
+					if (!clientSupabase) throw new Error("Connexion Supabase indisponible.");
+					const { data: acces, error } = await clientSupabase.rpc("etat_acces_administration");
+					if (error) throw error;
+					if (!acces?.acces_administration) {
+						window.location.replace("accueil.html");
+						return;
+					}
+					modeDemoActif = acces.mode_demo === true;
+					document.body.classList.toggle("mode-demo", modeDemoActif);
+					document.getElementById("nomUtilisateurEntete").textContent = modeDemoActif ? "Mode" : (auth.profil?.prenom || "Administrateur");
+					document.getElementById("roleUtilisateurEntete").textContent = modeDemoActif ? "Utilisateur" : "Administrateur";
+					document.getElementById("sousTitre").textContent = modeDemoActif ? "MODE DÉMO · Consultation" : "Administration";
+					await charger();
+					chargement.hidden = true;
+				} catch (err) {
+					chargement.hidden = true;
+					afficherErreur(err?.message || "Impossible de charger les utilisateurs.");
+				}
+			}
+
+			initialiser();
+		})();
+	</script>
+</body>
+</html>
