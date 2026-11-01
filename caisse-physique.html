@@ -1037,6 +1037,135 @@
 			padding-bottom: 6px;
 		}
 
+	
+		.ticket.ticket-openable {
+			cursor: pointer;
+			transition: background .15s ease, border-color .15s ease, transform .15s ease;
+		}
+		.ticket.ticket-openable:hover {
+			background: #f6f8fb;
+			border-color: #aeb9c8;
+		}
+		.ticket.ticket-openable:focus-visible {
+			outline: 3px solid rgba(0,82,155,.22);
+			outline-offset: 2px;
+		}
+		.ticket-open-hint {
+			display: block;
+			margin-top: 3px;
+			font-size: 12px;
+			color: #667085;
+			font-weight: 700;
+		}
+		#ticketDetailModal .modal-card {
+			max-width: 760px;
+			max-height: 94dvh;
+		}
+		.ticket-sheet {
+			background: #fff;
+			color: #111827;
+		}
+		.ticket-sheet-head {
+			text-align: center;
+			padding-bottom: 14px;
+			border-bottom: 2px solid #111827;
+			margin-bottom: 14px;
+		}
+		.ticket-sheet-head h4 {
+			margin: 0 0 5px;
+			font-size: 24px;
+		}
+		.ticket-sheet-head p {
+			margin: 2px 0;
+			color: #475467;
+		}
+		.ticket-section {
+			margin-top: 14px;
+			padding-top: 12px;
+			border-top: 1px solid #d8dde4;
+		}
+		.ticket-section h5 {
+			margin: 0 0 9px;
+			font-size: 15px;
+		}
+		.ticket-row {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 16px;
+			padding: 5px 0;
+			align-items: baseline;
+		}
+		.ticket-row strong {
+			text-align: right;
+		}
+		.ticket-row.total {
+			margin-top: 5px;
+			padding-top: 9px;
+			border-top: 1px solid #d8dde4;
+			font-size: 17px;
+		}
+		.ticket-diff.ok { color: #107c10; }
+		.ticket-diff.bad { color: #a80000; }
+		.ticket-note {
+			margin-top: 8px;
+			padding: 9px 11px;
+			background: #f6f7f9;
+			border-radius: 8px;
+			white-space: pre-wrap;
+		}
+		.ticket-detail-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			padding: 12px 18px 16px;
+			border-top: 1px solid var(--line);
+		}
+		.ticket-print-btn {
+			border: 0;
+			border-radius: 10px;
+			padding: 12px 18px;
+			background: #a80000;
+			color: #fff;
+			font-weight: 900;
+			cursor: pointer;
+		}
+		@media print {
+			body.ticket-printing * {
+				visibility: hidden !important;
+			}
+			body.ticket-printing #ticketDetailModal,
+			body.ticket-printing #ticketDetailModal * {
+				visibility: visible !important;
+			}
+			body.ticket-printing #ticketDetailModal {
+				position: absolute !important;
+				inset: 0 !important;
+				display: block !important;
+				background: #fff !important;
+				padding: 0 !important;
+			}
+			body.ticket-printing #ticketDetailModal .modal-card {
+				position: static !important;
+				width: 100% !important;
+				max-width: none !important;
+				max-height: none !important;
+				box-shadow: none !important;
+				border: 0 !important;
+				overflow: visible !important;
+			}
+			body.ticket-printing #ticketDetailModal .modal-head,
+			body.ticket-printing #ticketDetailModal .ticket-detail-actions {
+				display: none !important;
+			}
+			body.ticket-printing #ticketDetailModal .modal-body {
+				overflow: visible !important;
+				padding: 0 !important;
+			}
+			body.ticket-printing .ticket-sheet {
+				padding: 12mm !important;
+			}
+		}
+
 	</style>
 </head>
 <body>
@@ -1163,6 +1292,23 @@
     </div>
   </div>
 
+
+  <div class="modal" id="ticketDetailModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Détail du Ticket X</h3>
+        <button class="close no-print" id="ticketDetailClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="ticket-sheet" id="ticketDetailContent"></div>
+      </div>
+      <div class="ticket-detail-actions no-print">
+        <button class="cancel" id="ticketDetailCancel">Fermer</button>
+        <button class="ticket-print-btn" id="ticketDetailPrint">🖨 Imprimer le Ticket X</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"><span id="toastText"></span><button id="toastClose">×</button></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1179,6 +1325,8 @@
     const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets");
     const simpleModal=$("simpleModal"), simpleTitle=$("simpleTitle"), amountLabel=$("amountLabel"), simpleAmount=$("simpleAmount"), reasonField=$("reasonField"), simpleReason=$("simpleReason"), simpleComment=$("simpleComment");
     const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countCommentField=$("countCommentField"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
+    const ticketDetailModal=$("ticketDetailModal"), ticketDetailContent=$("ticketDetailContent");
+    const ticketDetailClose=$("ticketDetailClose"), ticketDetailCancel=$("ticketDetailCancel"), ticketDetailPrint=$("ticketDetailPrint");
     const toast=$("toast"), toastText=$("toastText");
 
     let client=null, auth=null, edition=null, session=null, movements=[], counts=[], denominations=[];
@@ -1403,10 +1551,117 @@
         return `<div class="movement"><div class="time">${esc(time(m.created_at))}<br>${esc(m.numero_mouvement||"")}</div><div><div class="name">${esc(movementLabel(m.type_mouvement))}</div><div class="sub">${esc(m.motif||m.commentaire||m.reference_type||"")}</div></div><div class="amount ${amount>=0?"in":"out"}">${amount>=0?"+":"−"} ${money(Math.abs(amount))}</div></div>`;
       }).join(""):'<div class="empty">Aucun mouvement pour la session en cours.</div>';
 
-      tickets.innerHTML=counts.length?counts.map(c=>{
+      tickets.innerHTML=counts.length?counts.map((c,index)=>{
         const label=c.type_comptage==="x"?"Ticket X":c.type_comptage==="z"?"Ticket Z":"Vérification";
-        return `<div class="ticket"><div><strong>${esc(label)}</strong><small>${esc(dateTime(c.created_at))} · compté ${esc(money(c.montant_compte))}</small></div><div class="amount ${Number(c.ecart)===0?"in":Number(c.ecart)<0?"out":""}">${Number(c.ecart)>0?"+":""}${esc(money(c.ecart))}</div></div>`;
+        const openable=c.type_comptage==="x";
+        return `<div class="ticket ${openable?"ticket-openable":""}" ${openable?`data-ticket-index="${index}" role="button" tabindex="0" title="Ouvrir le détail du Ticket X"`:""}>
+          <div>
+            <strong>${esc(label)}</strong>
+            <small>${esc(dateTime(c.created_at))} · compté ${esc(money(c.montant_compte))}</small>
+            ${openable?'<span class="ticket-open-hint">Voir le détail / imprimer</span>':""}
+          </div>
+          <div class="amount ${Number(c.ecart)===0?"in":Number(c.ecart)<0?"out":""}">${Number(c.ecart)>0?"+":""}${esc(money(c.ecart))}</div>
+        </div>`;
       }).join(""):'<div class="empty">Aucun contrôle enregistré pour cette session.</div>';
+
+      tickets.querySelectorAll(".ticket-openable").forEach(el=>{
+        const open=()=>openTicketX(Number(el.dataset.ticketIndex));
+        el.addEventListener("click",open);
+        el.addEventListener("keydown",e=>{
+          if(e.key==="Enter" || e.key===" "){
+            e.preventDefault();
+            open();
+          }
+        });
+      });
+    }
+
+
+    function ticketSnapshotAt(createdAt){
+      const limit=new Date(createdAt).getTime();
+      const snapshot=movements.filter(m=>{
+        const ts=new Date(m.created_at).getTime();
+        return Number.isFinite(ts) && ts<=limit;
+      });
+      const fond=snapshot
+        .filter(m=>m.type_mouvement==="fond_initial")
+        .reduce((s,m)=>s+Number(m.montant||0),0);
+      const entries=snapshot
+        .filter(m=>Number(m.montant)>0 && m.type_mouvement!=="fond_initial")
+        .reduce((s,m)=>s+Number(m.montant||0),0);
+      const exits=Math.abs(snapshot
+        .filter(m=>Number(m.montant)<0)
+        .reduce((s,m)=>s+Number(m.montant||0),0));
+      const expected=snapshot.reduce((s,m)=>s+Number(m.montant||0),0);
+      return {fond,entries,exits,expected};
+    }
+
+    function ticketField(c,names,fallback=null){
+      for(const name of names){
+        if(c && c[name]!==undefined && c[name]!==null && c[name]!=="") return c[name];
+      }
+      return fallback;
+    }
+
+    function openTicketX(index){
+      const c=counts[index];
+      if(!c || c.type_comptage!=="x") return;
+
+      const snap=ticketSnapshotAt(c.created_at);
+      const expected=Number(ticketField(c,["montant_attendu","montant_theorique"],snap.expected));
+      const actual=Number(c.montant_compte||0);
+      const diff=Number(c.ecart ?? (actual-expected));
+      const reason=ticketField(c,["motif_ecart","motif"],"");
+      const comment=ticketField(c,["commentaire"],"");
+      const operator=ticketField(c,["utilisateur_nom","nom_utilisateur","utilisateur"],"");
+      const numero=ticketField(c,["numero_comptage","numero_ticket","numero"],"");
+
+      ticketDetailContent.innerHTML=`
+        <div class="ticket-sheet-head">
+          <h4>État de la caisse — Ticket X</h4>
+          <p><strong>${esc(session?.numero_session||"Caisse")}</strong></p>
+          <p>${esc(dateTime(c.created_at))}${numero?` · ${esc(numero)}`:""}</p>
+          ${operator?`<p>Utilisateur : ${esc(operator)}</p>`:""}
+          ${demo?'<p><strong>MODE DÉMO / FORMATION</strong></p>':""}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Situation du tiroir au moment du Ticket X</h5>
+          <div class="ticket-row"><span>Argent de départ</span><strong>${esc(money(snap.fond))}</strong></div>
+          <div class="ticket-row"><span>Entrées espèces</span><strong>${esc(money(snap.entries))}</strong></div>
+          <div class="ticket-row"><span>Sorties espèces</span><strong>${esc(money(snap.exits))}</strong></div>
+          <div class="ticket-row total"><span>Montant attendu</span><strong>${esc(money(expected))}</strong></div>
+        </div>
+
+        <div class="ticket-section">
+          <h5>Comptage physique</h5>
+          <div class="ticket-row"><span>Montant compté</span><strong>${esc(money(actual))}</strong></div>
+          <div class="ticket-row total"><span>Différence</span><strong class="ticket-diff ${diff===0?"ok":"bad"}">${diff>0?"+ ":""}${esc(money(diff))}</strong></div>
+          ${reason?`<div class="ticket-row"><span>Motif de la différence</span><strong>${esc(reason)}</strong></div>`:""}
+          ${comment?`<div class="ticket-note"><strong>Commentaire</strong><br>${esc(comment)}</div>`:""}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Information</h5>
+          <div class="ticket-note">Le Ticket X est un état intermédiaire. Il ne clôture pas la caisse et ne remet aucun compteur à zéro.</div>
+        </div>
+      `;
+
+      ticketDetailModal.classList.add("show");
+      ticketDetailModal.setAttribute("aria-hidden","false");
+    }
+
+    function closeTicketDetail(){
+      ticketDetailModal.classList.remove("show");
+      ticketDetailModal.setAttribute("aria-hidden","true");
+    }
+
+    function printTicketX(){
+      document.body.classList.add("ticket-printing");
+      const cleanup=()=>document.body.classList.remove("ticket-printing");
+      window.addEventListener("afterprint",cleanup,{once:true});
+      window.print();
+      setTimeout(cleanup,1500);
     }
 
     async function refresh(){
@@ -1659,6 +1914,10 @@
       $("back").onclick=()=>location.href="accueil.html";
       $("logout").onclick=async()=>{await window.MDN_AUTH.deconnexion();};
       $("refreshBtn").onclick=refresh;$("toastClose").onclick=()=>toast.classList.remove("show");
+      ticketDetailClose.onclick=closeTicketDetail;
+      ticketDetailCancel.onclick=closeTicketDetail;
+      ticketDetailPrint.onclick=printTicketX;
+      ticketDetailModal.addEventListener("click",e=>{if(e.target===ticketDetailModal) closeTicketDetail();});
       openBtn.onclick=()=>openSimple("open");
 		addBtn.onclick=()=>openSimple("add");
 		removeBtn.onclick=()=>openSimple("remove");
