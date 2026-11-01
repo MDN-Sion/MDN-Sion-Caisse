@@ -1079,8 +1079,22 @@
           <span>Montant compté</span><strong id="countActual">CHF 0.00</strong>
           <span>Différence</span><strong id="countDiff">CHF 0.00</strong>
         </div>
-        <div class="field" id="countReasonField" style="margin-top:12px;display:none"><label for="countReason">Motif de la différence</label><input id="countReason" type="text" maxlength="250"/></div>
-        <div class="field"><label for="countComment">Commentaire facultatif</label><textarea id="countComment" maxlength="1000"></textarea></div>
+        <div class="field" id="countReasonField" style="margin-top:12px;display:none">
+          <label for="countReason">Motif de la différence</label>
+          <select id="countReason">
+            <option value="">Sélectionner un motif</option>
+            <option value="Erreur de rendu de monnaie">Erreur de rendu de monnaie</option>
+            <option value="Erreur d'encaissement">Erreur d'encaissement</option>
+            <option value="Erreur de comptage">Erreur de comptage</option>
+            <option value="Mouvement d'espèces non enregistré">Mouvement d'espèces non enregistré</option>
+            <option value="Différence d'arrondi des centimes">Différence d'arrondi des centimes</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="field" id="countCommentField" style="display:none">
+          <label for="countComment">Précisez le motif</label>
+          <textarea id="countComment" maxlength="1000" placeholder="Indiquez le motif"></textarea>
+        </div>
         <div class="field" id="keepFloatField" style="display:none"><label for="keepFloat">Argent à laisser dans le tiroir pour la prochaine ouverture</label><input id="keepFloat" type="number" min="0" step="0.05" inputmode="decimal" value="0"/></div>
       </div>
       <div class="modal-actions"><button class="cancel" id="countCancel">Annuler</button><button class="confirm" id="countConfirm">Valider</button></div>
@@ -1102,7 +1116,7 @@
     const statusBadge=$("statusBadge"), sessionMeta=$("sessionMeta"), openingAmount=$("openingAmount"), inAmount=$("inAmount"), outAmount=$("outAmount"), expectedAmount=$("expectedAmount");
     const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets");
     const simpleModal=$("simpleModal"), simpleTitle=$("simpleTitle"), amountLabel=$("amountLabel"), simpleAmount=$("simpleAmount"), reasonField=$("reasonField"), simpleReason=$("simpleReason"), simpleComment=$("simpleComment");
-    const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
+    const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countCommentField=$("countCommentField"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
     const toast=$("toast"), toastText=$("toastText");
 
     let client=null, auth=null, edition=null, session=null, movements=[], counts=[], denominations=[];
@@ -1440,6 +1454,7 @@
 		keepFloat.value="0";
 		countReason.value="";
 		countComment.value="";
+		countCommentField.style.display="none";
       countGrid.innerHTML=denominations.map(d=>`<label class="denom"><span>${money(d.valeur)}</span><input class="denomQty" data-value="${Number(d.valeur)}" type="number" min="0" step="1" inputmode="numeric" value="0"/></label>`).join("");
       countGrid.querySelectorAll(".denomQty").forEach(i=>i.addEventListener("input",updateCount));
       updateCount();countModal.classList.add("show");countModal.setAttribute("aria-hidden","false");
@@ -1453,7 +1468,26 @@
       countExpected.textContent=money(expected);
 		countActual.textContent=money(total);
 		countDiff.textContent=(diff>0?"+ ":"")+money(diff);
-      countReasonField.style.display=Math.abs(diff)>.0001?"grid":"none";
+      
+      const hasDifference=Math.abs(diff)>.0001;
+      countReasonField.style.display=hasDifference?"grid":"none";
+
+      if(!hasDifference){
+        countReason.value="";
+        countComment.value="";
+        countCommentField.style.display="none";
+      }else{
+        updateCountCommentVisibility();
+      }
+    }
+
+    function updateCountCommentVisibility(){
+      const isOther=countReason.value==="Autre";
+      countCommentField.style.display=isOther?"grid":"none";
+
+      if(!isOther){
+        countComment.value="";
+      }
     }
 
     async function confirmCount(){
@@ -1462,7 +1496,8 @@
         const total=lines.reduce((s,l)=>s+l.valeur*l.quantite,0);
         const expected=movements.reduce((s,m)=>s+Number(m.montant),0);
         const diff=total-expected;
-        if(Math.abs(diff)>.0001&&!countReason.value.trim()) throw new Error("Indiquez le motif de la différence de caisse.");
+        if(Math.abs(diff)>.0001&&!countReason.value.trim()) throw new Error("Sélectionnez le motif de la différence de caisse.");
+        if(Math.abs(diff)>.0001&&countReason.value==="Autre"&&!countComment.value.trim()) throw new Error("Précisez le motif de la différence de caisse.");
         $("countConfirm").disabled=true;
         if(countMode==="z"){
           const keep=Number(keepFloat.value||0);
@@ -1517,6 +1552,7 @@
       $("simpleConfirm").onclick=confirmSimple;
       simpleReason.onchange=updateSimpleCommentVisibility;
       simpleModal.onclick=e=>{if(e.target===simpleModal)closeSimple();};
+      countReason.onchange=updateCountCommentVisibility;
       $("countClose").onclick=closeCount;$("countCancel").onclick=closeCount;$("countConfirm").onclick=confirmCount;
       countModal.onclick=e=>{if(e.target===countModal)closeCount();};
     }
