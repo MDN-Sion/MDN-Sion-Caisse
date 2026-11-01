@@ -203,9 +203,9 @@
 		.contenu  {
 			flex:1 1 auto;
 			min-height:0;
-			width:min(100%,1220px);
+			width:min(calc(100% - 36px),1220px);
 			margin:0 auto;
-			padding:12px max(18px, env(safe-area-inset-right)) 10px max(18px, env(safe-area-inset-left));
+			padding:12px 0 10px;
 			display:grid;
 			grid-template-rows:auto auto auto minmax(0,1fr) auto;
 			gap:10px;
@@ -290,12 +290,6 @@
 			display:grid;
 			grid-template-rows:auto auto minmax(0,1fr) auto;
 			align-content:start;
-		}
-		.module.actif  {
-			border-top:4px solid #8b0000;
-		}
-		body.mode-demo .module.actif  {
-			border-top-color:#c59614;
 		}
 		.icone  {
 			font-size:29px;
