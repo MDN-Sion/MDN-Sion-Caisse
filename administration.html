@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+  <meta name="description" content="Administration - Marché de Noël de Sion">
+  <title>Administration - MDN Sion</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f7f4ef;
+      color: #222;
+    }
+    button, a { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .chargement {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.96);
+    }
+    .chargement-contenu { text-align: center; font-weight: 800; color: #8b0000; }
+    .spinner {
+      width: 42px; height: 42px; margin: 0 auto 14px;
+      border: 4px solid #ead7d7; border-top-color: #8b0000;
+      border-radius: 50%; animation: rotation .8s linear infinite;
+    }
+    @keyframes rotation { to { transform: rotate(360deg); } }
+
+    .entete {
+      min-height: 88px;
+      display: grid;
+      grid-template-columns: minmax(180px,1fr) auto minmax(180px,1fr);
+      align-items: center;
+      gap: 18px;
+      padding: 14px 20px;
+      color: #fff;
+      background: #8b0000;
+      border-bottom: 4px solid #00a8d8;
+    }
+    .entete-centre { text-align: center; min-width: 0; }
+    .entete-centre h1 { margin: 0; font-size: 27px; line-height: 1.1; }
+    .entete-centre p { margin: 5px 0 0; font-size: 15px; }
+    .entete-droite { display: flex; justify-content: flex-end; }
+    .bouton-entete {
+      min-height: 52px; padding: 0 18px;
+      border: 1px solid rgba(255,255,255,.45); border-radius: 14px;
+      background: rgba(255,255,255,.10); color: #fff;
+      font-weight: 800; font-size: 17px;
+    }
+    .bouton-entete:hover { background: rgba(255,255,255,.18); }
+
+    body.mode-demo .entete { background: #a77b00; }
+    body.mode-demo .chargement-contenu { color: #7b5a00; }
+    body.mode-demo .spinner { border-color: #f3e5b5; border-top-color: #a77b00; }
+
+    .contenu { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 28px 0 42px; }
+
+    .bandeau-demo {
+      margin-bottom: 24px; padding: 16px 20px;
+      border: 1px solid #e2b33d; border-radius: 16px;
+      background: #fff3c7; color: #5d4300;
+      text-align: center; font-weight: 850; line-height: 1.35;
+    }
+
+    .intro { margin-bottom: 24px; }
+    .intro h2 { margin: 0 0 6px; color: #8b0000; font-size: 30px; }
+    .intro p { margin: 0; color: #5e5e5e; font-size: 17px; }
+    body.mode-demo .intro h2 { color: #7b5a00; }
+
+    .identite {
+      margin: 0 0 24px; padding: 14px 18px;
+      border: 1px solid #ddd; border-radius: 14px; background: #fff;
+      display: flex; justify-content: space-between; gap: 16px; align-items: center;
+    }
+    .identite strong { display: block; }
+    .identite span { color: #666; font-size: 14px; }
+    .badge {
+      flex: 0 0 auto; padding: 7px 11px; border-radius: 999px;
+      background: #f3e7e7; color: #8b0000; font-weight: 850; font-size: 13px;
+    }
+    body.mode-demo .badge { background: #fff0b7; color: #6b4d00; }
+
+    .grille {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 18px;
+    }
+    .module {
+      position: relative; min-height: 205px; padding: 22px;
+      border: 1px solid #ddd; border-radius: 18px;
+      background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.05);
+      display: flex; flex-direction: column;
+    }
+    .module.actif { border-top: 5px solid #8b0000; }
+    body.mode-demo .module.actif { border-top-color: #c59614; }
+    .icone { font-size: 35px; line-height: 1; margin-bottom: 14px; }
+    .module h3 { margin: 0 0 8px; font-size: 21px; color: #222; }
+    .module p { margin: 0 0 20px; color: #666; line-height: 1.45; flex: 1; }
+    .action-module {
+      width: 100%; min-height: 46px; border: 0; border-radius: 12px;
+      background: #8b0000; color: #fff; font-weight: 850;
+    }
+    body.mode-demo .action-module { background: #a77b00; }
+    .action-module:hover { filter: brightness(1.07); }
+    .action-module:disabled {
+      cursor: not-allowed; background: #e5e5e5 !important; color: #777; filter: none;
+    }
+    .etat-bientot {
+      position: absolute; top: 15px; right: 15px;
+      padding: 5px 9px; border-radius: 999px;
+      background: #f0f0f0; color: #666; font-size: 12px; font-weight: 800;
+    }
+
+    .erreur {
+      margin-bottom: 20px; padding: 16px 18px;
+      border: 1px solid #efb1b1; border-radius: 14px;
+      background: #fff1f1; color: #a00000; font-weight: 700;
+    }
+
+    .note-bas { margin: 26px 0 0; text-align: center; color: #666; font-size: 14px; font-weight: 650; }
+    body.mode-demo .note-bas { color: #6b4d00; }
+
+    @media (max-width: 900px) {
+      .grille { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .entete { grid-template-columns: 1fr auto; }
+      .entete-gauche { display: none; }
+      .entete-centre { text-align: left; }
+    }
+    @media (max-width: 620px) {
+      .entete { min-height: 76px; padding: 10px 12px; gap: 10px; }
+      .entete-centre h1 { font-size: 21px; }
+      .entete-centre p { font-size: 13px; }
+      .bouton-entete { min-height: 44px; padding: 0 12px; font-size: 14px; }
+      .contenu { width: min(100% - 22px, 1180px); padding-top: 18px; }
+      .grille { grid-template-columns: 1fr; gap: 13px; }
+      .module { min-height: 170px; padding: 18px; }
+      .intro h2 { font-size: 25px; }
+      .identite { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="chargement" class="chargement">
+    <div class="chargement-contenu">
+      <div class="spinner"></div>
+      Chargement de l’administration…
+    </div>
+  </div>
+
+  <header class="entete">
+    <div class="entete-gauche">
+      <button id="boutonAccueil" class="bouton-entete" type="button">← Accueil</button>
+    </div>
+    <div class="entete-centre">
+      <h1>⚙️ Administration</h1>
+      <p id="sousTitre">Gestion de l’application</p>
+    </div>
+    <div class="entete-droite">
+      <button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="contenu">
+    <div id="bandeauDemo" class="bandeau-demo" hidden>
+      MODE DÉMO — Administration accessible pour les tests. Les référentiels Réels restent protégés.
+    </div>
+
+    <div id="zoneErreur" class="erreur" hidden></div>
+
+    <section class="intro">
+      <h2>Administration</h2>
+      <p>Gérez les utilisateurs, les éditions, les référentiels et les paramètres du Marché de Noël de Sion.</p>
+    </section>
+
+    <section class="identite">
+      <div>
+        <strong id="identiteUtilisateur">—</strong>
+        <span id="descriptionDroits">Vérification des droits…</span>
+      </div>
+      <div id="badgeMode" class="badge">Administration</div>
+    </section>
+
+    <section class="grille" aria-label="Modules d’administration">
+      <article class="module">
+        <span class="etat-bientot">À venir</span>
+        <div class="icone">👥</div>
+        <h3>Utilisateurs & rôles</h3>
+        <p>Gérer les comptes internes, leurs rôles et leur état actif ou inactif.</p>
+        <button class="action-module" type="button" disabled>Ouvrir</button>
+      </article>
+
+      <article class="module">
+        <span class="etat-bientot">À venir</span>
+        <div class="icone">📅</div>
+        <h3>Éditions</h3>
+        <p>Préparer les prochaines éditions, leurs dates, leur statut et l’édition active.</p>
+        <button class="action-module" type="button" disabled>Ouvrir</button>
+      </article>
+
+      <article class="module actif">
+        <div class="icone">🛍️</div>
+        <h3>Articles & tarifs</h3>
+        <p>Consulter le catalogue, les catégories, les bénéficiaires, les tarifs et la gestion du stock.</p>
+        <button id="ouvrirArticles" class="action-module" type="button">Ouvrir</button>
+      </article>
+
+      <article class="module">
+        <span class="etat-bientot">À venir</span>
+        <div class="icone">🍽️</div>
+        <h3>Référentiel vaisselle</h3>
+        <p>Gérer le référentiel MDN, les conditionnements et les paramètres de vaisselle.</p>
+        <button class="action-module" type="button" disabled>Ouvrir</button>
+      </article>
+
+      <article class="module">
+        <span class="etat-bientot">À venir</span>
+        <div class="icone">💳</div>
+        <h3>Moyens de paiement</h3>
+        <p>Configurer les moyens de paiement disponibles et leur impact sur la caisse physique.</p>
+        <button class="action-module" type="button" disabled>Ouvrir</button>
+      </article>
+
+      <article class="module">
+        <span class="etat-bientot">À venir</span>
+        <div class="icone">🔧</div>
+        <h3>Paramètres</h3>
+        <p>Configurer les paramètres généraux propres à l’édition et à l’organisation.</p>
+        <button class="action-module" type="button" disabled>Ouvrir</button>
+      </article>
+    </section>
+
+    <p id="noteBas" class="note-bas">Administration réservée aux administrateurs.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const chargement = document.getElementById("chargement");
+      const bandeauDemo = document.getElementById("bandeauDemo");
+      const zoneErreur = document.getElementById("zoneErreur");
+      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
+      const descriptionDroits = document.getElementById("descriptionDroits");
+      const badgeMode = document.getElementById("badgeMode");
+      const sousTitre = document.getElementById("sousTitre");
+      const noteBas = document.getElementById("noteBas");
+      const boutonAccueil = document.getElementById("boutonAccueil");
+      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
+      const ouvrirArticles = document.getElementById("ouvrirArticles");
+
+      let modeDemoActif = false;
+
+      function masquerChargement() {
+        chargement.hidden = true;
+      }
+
+      function afficherErreur(message) {
+        zoneErreur.textContent = message || "Une erreur est survenue.";
+        zoneErreur.hidden = false;
+      }
+
+      boutonAccueil.addEventListener("click", function () {
+        window.location.href = modeDemoActif ? "accueil.html?mode=demo" : "accueil.html";
+      });
+
+      ouvrirArticles.addEventListener("click", function () {
+        window.location.href = modeDemoActif
+          ? "administration-articles.html?mode=demo"
+          : "administration-articles.html";
+      });
+
+      boutonDeconnexion.addEventListener("click", async function () {
+        boutonDeconnexion.disabled = true;
+        boutonDeconnexion.textContent = "Déconnexion…";
+        await window.MDN_AUTH.deconnexion();
+      });
+
+      window.MDN_AUTH.surveillerSession({
+        redirigerApresDeconnexion: true
+      });
+
+      async function initialiserPage() {
+        try {
+          const auth = await window.MDN_AUTH.protegerPage();
+
+          if (!auth) {
+            return;
+          }
+
+          const clientSupabase = window.MDN_SUPABASE;
+
+          if (!clientSupabase) {
+            throw new Error("Connexion Supabase indisponible.");
+          }
+
+          const { data: accesAdministration, error: erreurAccesAdministration } =
+            await clientSupabase.rpc("etat_acces_administration");
+
+          if (erreurAccesAdministration) {
+            throw erreurAccesAdministration;
+          }
+
+          if (!accesAdministration?.acces_administration) {
+            window.location.replace("accueil.html");
+            return;
+          }
+
+          modeDemoActif = accesAdministration.mode_demo === true;
+          document.body.classList.toggle("mode-demo", modeDemoActif);
+          bandeauDemo.hidden = !modeDemoActif;
+
+          const prenom = String(auth.profil?.prenom || "").trim();
+          const identite =
+            prenom ||
+            auth.profil?.email ||
+            auth.utilisateur?.email ||
+            (modeDemoActif ? "Mode Démo" : "Administrateur");
+
+          identiteUtilisateur.textContent = identite;
+
+          if (modeDemoActif) {
+            sousTitre.textContent = "MODE DÉMO · Administration de test";
+            descriptionDroits.textContent = "Accès Démo — référentiels partagés protégés contre les modifications.";
+            badgeMode.textContent = "MODE DÉMO";
+            noteBas.textContent = "Mode Démo : les tests ne doivent modifier aucune donnée Réelle.";
+          } else {
+            sousTitre.textContent = "Gestion de l’application";
+            descriptionDroits.textContent = "Administrateur · modifications des référentiels autorisées.";
+            badgeMode.textContent = "Administrateur";
+            noteBas.textContent = "Administration Réelle — accès administrateur.";
+          }
+
+          masquerChargement();
+
+        } catch (erreur) {
+          console.error("[MDN Sion] Impossible d’ouvrir Administration :", erreur);
+          masquerChargement();
+          afficherErreur(
+            erreur?.message ||
+            "Impossible de charger l’administration."
+          );
+        }
+      }
+
+      initialiserPage();
+    })();
+  </script>
+</body>
+</html>
