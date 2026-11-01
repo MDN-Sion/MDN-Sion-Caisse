@@ -1364,13 +1364,13 @@
           </p>
 
           <button
+            id="boutonCaissePhysique"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir la caisse physique"
+            data-texte-demo="Démo - Ouvrir la caisse physique"
           >
-            Bientôt disponible
+            Ouvrir la caisse physique
           </button>
 
         </article>
@@ -1641,6 +1641,12 @@ const zoneReinitialisationDemo =
         );
 
 
+      const boutonCaissePhysique =
+        document.getElementById(
+          "boutonCaissePhysique"
+        );
+
+
       const moduleRapports =
         document.getElementById(
           "moduleRapports"
@@ -1816,12 +1822,13 @@ const zoneReinitialisationDemo =
 
         /*
          * Caisse physique :
-         * Responsable ou Administrateur.
+         * - Mode Réel : Responsable ou Administrateur uniquement.
+         * - Session Démo dédiée : tous les utilisateurs actifs.
          */
 
         moduleCaissePhysique.classList.toggle(
           "masque",
-          !peutSuperviser
+          !(peutSuperviser || sessionDemoDediee)
         );
 
 
@@ -2202,6 +2209,24 @@ document.querySelectorAll(
             modeDemoActif
               ? "stocks.html?mode=demo"
               : "stocks.html";
+
+        }
+      );
+
+
+      /* ====================================================
+         NAVIGATION CAISSE PHYSIQUE
+         Réel et Démo restent strictement séparés.
+         ==================================================== */
+
+      boutonCaissePhysique.addEventListener(
+        "click",
+        function () {
+
+          window.location.href =
+            modeDemoActif
+              ? "caisse-physique.html?mode=demo"
+              : "caisse-physique.html";
 
         }
       );
