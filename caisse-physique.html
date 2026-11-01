@@ -2050,10 +2050,25 @@
       const numero=ticketField(c,["numero_comptage","numero_ticket","numero"],"");
       let periodMovements=ticketMovementsForCount(c);
 
-      // Ticket X / Z : privilégier la RPC qui relit exactement la période
-      // figée dans le comptage. C'est indispensable après une clôture Z,
-      // car la session est alors fermée mais son historique doit rester intact.
-      if(demo && c.comptage_caisse_id){
+      // Ticket X : période figée du comptage X.
+      // Ticket Z : clôture définitive = session complète depuis l'ouverture
+      // jusqu'à la clôture. Le Z ne doit PAS repartir du dernier Ticket X.
+      if(isZ){
+        const zStart=new Date(session?.ouverte_at||0).getTime();
+        const zEnd=new Date(
+          session?.cloturee_at ||
+          ticketField(c,["periode_fin"],c.created_at)
+        ).getTime();
+
+        periodMovements=(Array.isArray(movements)?movements:[])
+          .filter(m=>{
+            const t=new Date(m.created_at).getTime();
+            return Number.isFinite(t) &&
+                   (!Number.isFinite(zStart) || t>=zStart) &&
+                   (!Number.isFinite(zEnd) || t<=zEnd);
+          })
+          .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+      }else if(demo && c.comptage_caisse_id){
         try{
           const frozenMovements=await rpc("mouvements_periode_comptage_caisse_demo",{
             p_comptage_caisse_id:c.comptage_caisse_id
@@ -2074,8 +2089,12 @@
         try{
           activity=await rpc("detail_activite_ticket_x_demo",{
             p_edition_id:edition.id,
-            p_debut:session?.ouverte_at||null,
-            p_fin:c.created_at
+            p_debut:isZ
+              ? (session?.ouverte_at||null)
+              : (session?.ouverte_at||null),
+            p_fin:isZ
+              ? (session?.cloturee_at||c.created_at)
+              : c.created_at
           });
         }catch(e){
           console.error(`Activité ${ticketLabel} :`,e);
