@@ -1234,8 +1234,24 @@
       session=Array.isArray(data)?(data[0]||null):data;
     }
 
-    async function loadDetails(){
-      if(demo){
+    const denominationsChfFallback=[
+      {valeur:1000,type_coupure:"billet",ordre_affichage:1,actif:true},
+      {valeur:200,type_coupure:"billet",ordre_affichage:2,actif:true},
+      {valeur:100,type_coupure:"billet",ordre_affichage:3,actif:true},
+      {valeur:50,type_coupure:"billet",ordre_affichage:4,actif:true},
+      {valeur:20,type_coupure:"billet",ordre_affichage:5,actif:true},
+      {valeur:10,type_coupure:"billet",ordre_affichage:6,actif:true},
+      {valeur:5,type_coupure:"piece",ordre_affichage:7,actif:true},
+      {valeur:2,type_coupure:"piece",ordre_affichage:8,actif:true},
+      {valeur:1,type_coupure:"piece",ordre_affichage:9,actif:true},
+      {valeur:0.50,type_coupure:"piece",ordre_affichage:10,actif:true},
+      {valeur:0.20,type_coupure:"piece",ordre_affichage:11,actif:true},
+      {valeur:0.10,type_coupure:"piece",ordre_affichage:12,actif:true},
+      {valeur:0.05,type_coupure:"piece",ordre_affichage:13,actif:true}
+    ];
+
+    async function chargerCoupuresChf(){
+      try{
         const {data,error}=await client
           .from("coupures_chf")
           .select("valeur,type_coupure,ordre_affichage,actif")
@@ -1243,11 +1259,25 @@
           .order("ordre_affichage",{ascending:true});
 
         if(error){
-          throw error;
+          console.warn("Chargement coupures_chf impossible, utilisation du référentiel CHF intégré.",error);
+          return denominationsChfFallback.map(d=>({...d}));
         }
 
-        denominations=data||[];
+        if(!Array.isArray(data) || data.length===0){
+          console.warn("Aucune coupure CHF accessible, utilisation du référentiel CHF intégré.");
+          return denominationsChfFallback.map(d=>({...d}));
+        }
 
+        return data;
+      }catch(error){
+        console.warn("Erreur lors du chargement des coupures CHF, utilisation du référentiel CHF intégré.",error);
+        return denominationsChfFallback.map(d=>({...d}));
+      }
+    }
+
+    async function loadDetails(){
+      if(demo){
+        denominations=await chargerCoupuresChf();
         return;
       }
 
@@ -1269,11 +1299,7 @@
           .select("*")
           .eq("session_caisse_id",session.session_caisse_id)
           .order("created_at",{ascending:false}),
-        client
-          .from("coupures_chf")
-          .select("valeur,type_coupure,ordre_affichage,actif")
-          .eq("actif",true)
-          .order("ordre_affichage",{ascending:true})
+        chargerCoupuresChf()
       ]);
 
       if(m.error){
@@ -1284,13 +1310,9 @@
         throw c.error;
       }
 
-      if(d.error){
-        throw d.error;
-      }
-
       movements=m.data||[];
       counts=c.data||[];
-      denominations=d.data||[];
+      denominations=Array.isArray(d)?d:denominationsChfFallback.map(item=>({...item}));
     }
 
     function render(){
