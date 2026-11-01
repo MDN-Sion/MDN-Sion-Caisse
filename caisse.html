@@ -3701,11 +3701,29 @@
           await chargerCatalogueCaisse();
         } catch (erreur) {
           console.error("[MDN Sion] Remboursement impossible :", erreur);
-          erreurRemboursementVente.textContent = erreur?.message || "Impossible d'enregistrer le remboursement.";
+
+          const messageErreurRemboursement =
+            erreur?.message ||
+            erreur?.details ||
+            erreur?.hint ||
+            "Impossible d'enregistrer le remboursement.";
+
+          remboursementVenteEnCours = false;
+          confirmerRemboursementVente.textContent = "Confirmer le remboursement";
+
+          // Réactive correctement le bouton et les contrôles sans perdre
+          // le message d'erreur renvoyé par Supabase.
+          actualiserRemboursementVente();
+          erreurRemboursementVente.textContent = messageErreurRemboursement;
+
+          // Affiche également l'erreur dans le bandeau général pour qu'elle
+          // reste immédiatement visible pendant le diagnostic.
+          afficherMessage(messageErreurRemboursement, "erreur");
+
+          return;
         } finally {
           remboursementVenteEnCours = false;
           confirmerRemboursementVente.textContent = "Confirmer le remboursement";
-          actualiserRemboursementVente();
         }
       }
 
