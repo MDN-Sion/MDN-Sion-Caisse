@@ -964,6 +964,11 @@
 			}
 		}
 
+        /* Ticket X — PARTIE 2 : éviter les montants flottants redondants */
+        .ticket-section .ticket-movement-detail > div:only-child {
+          grid-column: 1 / -1;
+        }
+
 		@media print {
 			.top,
 			.demo-banner,
@@ -1895,7 +1900,6 @@
               ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
               <small>Total réglé : <strong>${esc(money(montant))}</strong></small>
             </div>
-            <strong>${esc(money(montant))}</strong>
           </div>`;
       }).join("");
     }
@@ -1916,7 +1920,6 @@
               ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
               <small>Montant remboursé : <strong>${esc(money(montant))}</strong></small>
             </div>
-            <strong>${esc(money(montant))}</strong>
           </div>`;
       }).join("");
     }
@@ -1958,7 +1961,6 @@
               ${!isRetour?ticketPaymentLines(paiements):""}
               ${!isRetour?`<small>Valeur de l'opération : <strong>${esc(money(montant))}</strong></small>`:""}
             </div>
-            <strong>${esc(isRetour?money(Math.abs(montant)):money(montant))}</strong>
           </div>`;
       }).join("");
     }
