@@ -604,15 +604,32 @@
 		.count-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 8px;
+			gap: 8px 12px;
+			align-items: start;
+		}
+
+		.count-column {
+			display: grid;
+			gap: 5px;
+			align-content: start;
+		}
+
+		.count-column-title {
+			margin: 0 0 2px;
+			font-size: 13px;
+			font-weight: 900;
+			color: #596579;
+			text-transform: uppercase;
+			letter-spacing: .04em;
 		}
 
 		.denom {
-			padding: 8px 10px;
+			padding: 5px 8px;
+			min-height: 34px;
 			display: grid;
-			grid-template-columns: 1fr 90px;
+			grid-template-columns: 1fr 76px;
 			align-items: center;
-			gap: 8px;
+			gap: 7px;
 			border: 1px solid var(--line);
 			border-radius: 9px;
 		}
@@ -623,15 +640,25 @@
 
 		.denom input {
 			width: 100%;
-			padding: 8px;
+			height: 32px;
+			padding: 4px 6px;
 			border: 1px solid #cbd1d8;
 			border-radius: 8px;
-			text-align: center;
+			text-align: center !important;
+			font-size: 16px;
+			font-weight: 700;
+			box-sizing: border-box;
+		}
+
+		.denom input::placeholder {
+			color: #a9afb8;
+			opacity: 1;
+			font-weight: 500;
 		}
 
 		.count-total {
-			margin-top: 12px;
-			padding: 12px;
+			margin-top: 8px;
+			padding: 8px 12px;
 			display: grid;
 			grid-template-columns: 1fr auto;
 			gap: 6px;
@@ -818,7 +845,7 @@
 			}
 
 			.count-grid {
-				grid-template-columns: 1fr;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 
 			.modal {
@@ -975,6 +1002,41 @@
 				overflow: visible;
 			}
 		}
+	
+		#countModal .modal-card {
+			max-width: 760px;
+			max-height: 98dvh;
+		}
+
+		#countModal .modal-head {
+			padding-top: 12px;
+			padding-bottom: 10px;
+		}
+
+		#countModal .modal-body {
+			padding-top: 10px;
+			padding-bottom: 8px;
+		}
+
+		#countModal .modal-foot {
+			padding-top: 8px;
+			padding-bottom: 8px;
+		}
+
+		#countModal .count-grid {
+			margin-top: 7px !important;
+		}
+
+		#countModal .field {
+			gap: 4px;
+		}
+
+		#countModal select {
+			min-height: 38px;
+			padding-top: 6px;
+			padding-bottom: 6px;
+		}
+
 	</style>
 </head>
 <body>
@@ -1477,8 +1539,42 @@
 		countReason.value="";
 		countComment.value="";
 		countCommentField.style.display="none";
-      countGrid.innerHTML=denominations.map(d=>`<label class="denom"><span>${money(d.valeur)}</span><input class="denomQty" data-value="${Number(d.valeur)}" type="number" min="0" step="1" inputmode="numeric" value="0"/></label>`).join("");
-      countGrid.querySelectorAll(".denomQty").forEach(i=>i.addEventListener("input",updateCount));
+      const billets=denominations.filter(d=>String(d.type_coupure||"").toLowerCase()==="billet");
+      const pieces=denominations.filter(d=>String(d.type_coupure||"").toLowerCase()==="piece");
+
+      const renderColumn=(titre,liste)=>`
+        <div class="count-column">
+          <div class="count-column-title">${titre}</div>
+          ${liste.map(d=>`
+            <label class="denom">
+              <span>${money(d.valeur)}</span>
+              <input
+                class="denomQty"
+                data-value="${Number(d.valeur)}"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                placeholder="0"
+                value=""
+              />
+            </label>
+          `).join("")}
+        </div>
+      `;
+
+      countGrid.innerHTML=
+        renderColumn("Billets",billets)+
+        renderColumn("Pièces",pieces);
+
+      countGrid.querySelectorAll(".denomQty").forEach(i=>{
+        i.addEventListener("focus",()=>{
+          if(i.value==="0") i.value="";
+          requestAnimationFrame(()=>i.select());
+        });
+        i.addEventListener("click",()=>i.select());
+        i.addEventListener("input",updateCount);
+      });
       updateCount();countModal.classList.add("show");countModal.setAttribute("aria-hidden","false");
     }
     function closeCount(){countModal.classList.remove("show");countModal.setAttribute("aria-hidden","true");}
