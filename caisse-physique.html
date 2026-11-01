@@ -2048,7 +2048,24 @@
       const comment=ticketField(c,["commentaire"],"");
       const operator=ticketField(c,["utilisateur_nom","nom_utilisateur","utilisateur"],"");
       const numero=ticketField(c,["numero_comptage","numero_ticket","numero"],"");
-      const periodMovements=ticketMovementsForCount(c);
+      let periodMovements=ticketMovementsForCount(c);
+
+      // Ticket X / Z : privilégier la RPC qui relit exactement la période
+      // figée dans le comptage. C'est indispensable après une clôture Z,
+      // car la session est alors fermée mais son historique doit rester intact.
+      if(demo && c.comptage_caisse_id){
+        try{
+          const frozenMovements=await rpc("mouvements_periode_comptage_caisse_demo",{
+            p_comptage_caisse_id:c.comptage_caisse_id
+          });
+          if(Array.isArray(frozenMovements)){
+            periodMovements=frozenMovements;
+          }
+        }catch(e){
+          console.error(`Mouvements figés ${ticketLabel} :`,e);
+        }
+      }
+
       const groups=ticketMovementGroups(periodMovements);
       const lines=Array.isArray(c.lignes)?c.lignes:[];
       let activity=null;
@@ -2122,7 +2139,7 @@
         </div>
 
         <div class="ticket-section">
-          <h5>Situation du tiroir au moment du Ticket X</h5>
+          <h5>Situation du tiroir au moment du ${ticketLabel}</h5>
           <div class="ticket-row"><span>Argent de départ</span><strong>${esc(money(snap.fond))}</strong></div>
           <div class="ticket-row"><span>Entrées espèces cumulées</span><strong>${esc(money(snap.entries))}</strong></div>
           <div class="ticket-row"><span>Sorties espèces cumulées</span><strong>${esc(money(snap.exits))}</strong></div>
