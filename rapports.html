@@ -898,6 +898,7 @@
       let role = "";
       let demo = false;
       let report = null;
+      let editionDatesInitialized = false;
 
       function esc(value) {
         return String(value ?? "")
@@ -961,6 +962,46 @@
         return `${y}-${m}-${d}T00:00:00`;
       }
 
+      function inputDate(value) {
+        if (!value) return "";
+        const text = String(value).trim();
+        const match = text.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+
+      function applyEditionDates() {
+        const edition = report?.edition || {};
+        const start = inputDate(edition.date_debut);
+        const end = inputDate(edition.date_fin);
+
+        if (start) {
+          dateStart.min = start;
+          dateEnd.min = start;
+        } else {
+          dateStart.removeAttribute("min");
+          dateEnd.removeAttribute("min");
+        }
+
+        if (end) {
+          dateStart.max = end;
+          dateEnd.max = end;
+        } else {
+          dateStart.removeAttribute("max");
+          dateEnd.removeAttribute("max");
+        }
+
+        dateStart.value = start;
+        dateEnd.value = end;
+      }
+
       function renderPaymentList(target, items, emptyText) {
         const list = Array.isArray(items) ? items : [];
         if (!list.length) {
@@ -989,12 +1030,17 @@
           ["Session", session.numero_session || "—"],
           ["Ouverture", dateTime(session.ouverte_at)],
           ["Fermeture", dateTime(session.fermee_at || session.cloturee_at)],
-          ["Fond d'ouverture", money(session.montant_ouverture || 0)],
+          ["Fond d'ouverture", money(session.fond_initial || 0)],
           ["Mouvements", Number(session.nombre_mouvements || 0)]
         ];
 
-        if (session.montant_theorique !== undefined && session.montant_theorique !== null) {
-          lines.push(["Montant théorique", money(session.montant_theorique)]);
+        const montantTheorique =
+          session.montant_theorique_courant ??
+          session.montant_theorique ??
+          null;
+
+        if (montantTheorique !== null) {
+          lines.push(["Montant théorique", money(montantTheorique)]);
         }
 
         if (controle) {
@@ -1062,12 +1108,33 @@
       }
 
       function renderPeriod() {
+        const edition = report?.edition || {};
+        const editionStart = inputDate(edition.date_debut);
+        const editionEnd = inputDate(edition.date_fin);
+
+        if (
+          dateStart.value === editionStart &&
+          dateEnd.value === editionEnd &&
+          editionStart &&
+          editionEnd
+        ) {
+          $("periodBadge").textContent = "Toute l’édition";
+          return;
+        }
+
         if (!dateStart.value && !dateEnd.value) {
           $("periodBadge").textContent = "Toute l’édition";
           return;
         }
-        const from = dateStart.value ? new Date(dateStart.value + "T00:00:00").toLocaleDateString("fr-CH") : "début";
-        const to = dateEnd.value ? new Date(dateEnd.value + "T00:00:00").toLocaleDateString("fr-CH") : "aujourd’hui";
+
+        const from = dateStart.value
+          ? new Date(dateStart.value + "T00:00:00").toLocaleDateString("fr-CH")
+          : "début";
+
+        const to = dateEnd.value
+          ? new Date(dateEnd.value + "T00:00:00").toLocaleDateString("fr-CH")
+          : "fin";
+
         $("periodBadge").textContent = `${from} → ${to}`;
       }
 
@@ -1128,6 +1195,11 @@
             throw new Error("Le moteur Suivi & Rapports n’a pas renvoyé de résultat valide.");
           }
 
+          if (!editionDatesInitialized) {
+            applyEditionDates();
+            editionDatesInitialized = true;
+          }
+
           render();
         } catch (error) {
           console.error("Chargement Suivi & Rapports :", error);
@@ -1142,8 +1214,7 @@
         $("logout").onclick = async () => { await window.MDN_AUTH.deconnexion(); };
         $("applyBtn").onclick = loadReport;
         $("resetBtn").onclick = async () => {
-          dateStart.value = "";
-          dateEnd.value = "";
+          applyEditionDates();
           await loadReport();
         };
         $("printBtn").onclick = () => window.print();
