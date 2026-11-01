@@ -1114,20 +1114,83 @@
 			white-space: pre-wrap;
 		}
 		.ticket-detail-actions {
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-			padding: 12px 18px 16px;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+			padding: 14px 18px 16px;
 			border-top: 1px solid var(--line);
+			background: #fff;
 		}
+		.ticket-detail-close-btn,
 		.ticket-print-btn {
-			border: 0;
-			border-radius: 10px;
+			min-height: 48px;
+			border-radius: 12px;
 			padding: 12px 18px;
-			background: #a80000;
-			color: #fff;
+			font-size: 16px;
 			font-weight: 900;
 			cursor: pointer;
+		}
+		.ticket-detail-close-btn {
+			border: 1px solid #cfd6df;
+			background: #f1f4f7;
+			color: #25314f;
+		}
+		.ticket-detail-close-btn:hover {
+			background: #e7ebf0;
+		}
+		.ticket-print-btn {
+			border: 1px solid #a80000;
+			background: #a80000;
+			color: #fff;
+		}
+		.ticket-print-btn:hover {
+			background: #8f0000;
+		}
+		.ticket-summary {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 10px;
+			margin: 12px 0 4px;
+		}
+		.ticket-summary-card {
+			border: 1px solid #d8dde4;
+			border-radius: 10px;
+			padding: 10px 12px;
+			background: #f8f9fb;
+			text-align: center;
+		}
+		.ticket-summary-card span {
+			display: block;
+			font-size: 12px;
+			font-weight: 800;
+			color: #667085;
+			text-transform: uppercase;
+			margin-bottom: 5px;
+		}
+		.ticket-summary-card strong {
+			display: block;
+			font-size: 18px;
+		}
+		.ticket-summary-card.balance strong {
+			color: #107c10;
+		}
+		.ticket-summary-card.balance.bad strong {
+			color: #a80000;
+		}
+		.ticket-summary-text {
+			margin-top: 10px;
+			padding: 10px 12px;
+			border-radius: 9px;
+			background: #f6f7f9;
+			line-height: 1.4;
+		}
+		@media (max-width: 620px) {
+			.ticket-detail-actions {
+				grid-template-columns: 1fr;
+			}
+			.ticket-summary {
+				grid-template-columns: 1fr;
+			}
 		}
 		@media print {
 			body.ticket-printing * {
@@ -1303,8 +1366,8 @@
         <div class="ticket-sheet" id="ticketDetailContent"></div>
       </div>
       <div class="ticket-detail-actions no-print">
-        <button class="cancel" id="ticketDetailCancel">Fermer</button>
-        <button class="ticket-print-btn" id="ticketDetailPrint">🖨 Imprimer le Ticket X</button>
+        <button class="ticket-detail-close-btn" id="ticketDetailCancel">Fermer</button>
+        <button class="ticket-print-btn" id="ticketDetailPrint">Imprimer le Ticket X</button>
       </div>
     </div>
   </div>
@@ -1623,6 +1686,29 @@
           <p>${esc(dateTime(c.created_at))}${numero?` · ${esc(numero)}`:""}</p>
           ${operator?`<p>Utilisateur : ${esc(operator)}</p>`:""}
           ${demo?'<p><strong>MODE DÉMO / FORMATION</strong></p>':""}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Résumé</h5>
+          <div class="ticket-summary">
+            <div class="ticket-summary-card">
+              <span>Attendu</span>
+              <strong>${esc(money(expected))}</strong>
+            </div>
+            <div class="ticket-summary-card">
+              <span>Compté</span>
+              <strong>${esc(money(actual))}</strong>
+            </div>
+            <div class="ticket-summary-card balance ${diff===0?"":"bad"}">
+              <span>Écart</span>
+              <strong>${diff>0?"+ ":""}${esc(money(diff))}</strong>
+            </div>
+          </div>
+          <div class="ticket-summary-text">
+            ${diff===0
+              ?`Caisse conforme : le montant compté correspond exactement au montant attendu.`
+              :`Écart constaté de ${diff>0?"+ ":""}${esc(money(diff))} entre le montant compté et le montant attendu.`}
+          </div>
         </div>
 
         <div class="ticket-section">
