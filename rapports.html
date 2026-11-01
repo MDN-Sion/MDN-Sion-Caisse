@@ -640,12 +640,20 @@
     }
 
     @media print {
-      @page { margin: 12mm; }
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
 
       html, body {
         height: auto !important;
         overflow: visible !important;
         background: #fff !important;
+      }
+
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
 
       .app {
@@ -655,17 +663,26 @@
 
       .top {
         display: block;
-        padding: 0 0 12px;
+        padding: 0 0 8px;
         background: #fff !important;
         color: #000 !important;
         box-shadow: none;
       }
 
-      .title h1 { color: #850000; }
-      .title p { color: #555; }
+      .title h1 {
+        color: #850000;
+        font-size: 18px;
+      }
+
+      .title p {
+        color: #555;
+        font-size: 9px;
+      }
 
       .demo-banner {
+        padding: 5px 8px;
         border: 1px solid #b98500;
+        font-size: 9px;
       }
 
       .main {
@@ -674,21 +691,222 @@
         overflow: visible !important;
       }
 
-      .no-print { display: none !important; }
+      .no-print {
+        display: none !important;
+      }
+
+      .edition-line {
+        margin: 4px 0 8px;
+        font-size: 9px;
+      }
+
+      .badge {
+        min-height: 20px;
+        padding: 3px 7px;
+        font-size: 8px;
+      }
 
       .panel,
       .metric {
         box-shadow: none;
         break-inside: avoid;
+        page-break-inside: avoid;
       }
 
-      .grid-2,
       .metrics {
+        gap: 8px;
+        margin-bottom: 8px;
         break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .metric {
+        padding: 10px 11px;
+      }
+
+      .metric .label {
+        font-size: 9px;
+      }
+
+      .metric .value {
+        margin-top: 5px;
+        font-size: 17px;
+      }
+
+      .metric .sub {
+        margin-top: 5px;
+        font-size: 8px;
+      }
+
+      .grid-2 {
+        gap: 8px;
+        margin-bottom: 8px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .panel-head {
+        min-height: 42px;
+        padding: 8px 10px;
+      }
+
+      .panel-head h2 {
+        font-size: 13px;
+      }
+
+      .panel-body {
+        padding: 9px 10px;
+      }
+
+      .payment-list {
+        gap: 3px;
+      }
+
+      .payment-row,
+      .cash-row {
+        padding: 5px 0;
+        font-size: 9px;
+      }
+
+      .cash-line {
+        font-size: 9px;
+        line-height: 1.25;
+      }
+
+      /*
+       * PAGE 2
+       * Ventes par article commence toujours sur une nouvelle page.
+       */
+      .print-articles-page {
+        break-before: page;
+        page-break-before: always;
+        margin-bottom: 0 !important;
+      }
+
+      /*
+       * PAGE 3
+       * Stocks vaisselle reste seul sur sa page.
+       */
+      .print-stocks-page {
+        break-before: page;
+        page-break-before: always;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      /*
+       * À l'impression il ne doit jamais y avoir de barre horizontale.
+       * Les tableaux sont adaptés à la largeur A4 portrait.
+       */
+      .table-wrap {
+        width: 100% !important;
+        overflow: visible !important;
+      }
+
+      table {
+        width: 100% !important;
+        table-layout: fixed;
+        font-size: 9px;
+      }
+
+      th,
+      td {
+        padding: 7px 6px;
+        overflow-wrap: anywhere;
+        word-break: normal;
+      }
+
+      th {
+        font-size: 8px;
+        white-space: normal;
+        line-height: 1.15;
+      }
+
+      /*
+       * Ventes par article : répartition des 5 colonnes.
+       */
+      .print-articles-page th:nth-child(1),
+      .print-articles-page td:nth-child(1) {
+        width: 25%;
+      }
+
+      .print-articles-page th:nth-child(2),
+      .print-articles-page td:nth-child(2) {
+        width: 23%;
+      }
+
+      .print-articles-page th:nth-child(3),
+      .print-articles-page td:nth-child(3) {
+        width: 14%;
+      }
+
+      .print-articles-page th:nth-child(4),
+      .print-articles-page td:nth-child(4) {
+        width: 18%;
+      }
+
+      .print-articles-page th:nth-child(5),
+      .print-articles-page td:nth-child(5) {
+        width: 20%;
+      }
+
+      /*
+       * Stocks vaisselle : répartition spécifique des 8 colonnes
+       * pour que tout tienne sur une page A4 portrait.
+       */
+      .print-stocks-page th:nth-child(1),
+      .print-stocks-page td:nth-child(1) {
+        width: 16%;
+      }
+
+      .print-stocks-page th:nth-child(2),
+      .print-stocks-page td:nth-child(2) {
+        width: 15%;
+      }
+
+      .print-stocks-page th:nth-child(3),
+      .print-stocks-page td:nth-child(3) {
+        width: 11%;
+      }
+
+      .print-stocks-page th:nth-child(4),
+      .print-stocks-page td:nth-child(4) {
+        width: 10%;
+      }
+
+      .print-stocks-page th:nth-child(5),
+      .print-stocks-page td:nth-child(5) {
+        width: 12%;
+      }
+
+      .print-stocks-page th:nth-child(6),
+      .print-stocks-page td:nth-child(6) {
+        width: 11%;
+      }
+
+      .print-stocks-page th:nth-child(7),
+      .print-stocks-page td:nth-child(7) {
+        width: 13%;
+      }
+
+      .print-stocks-page th:nth-child(8),
+      .print-stocks-page td:nth-child(8) {
+        width: 12%;
+      }
+
+      .print-stocks-page td {
+        font-size: 8.5px;
+        line-height: 1.2;
+      }
+
+      .print-stocks-page .num {
+        white-space: nowrap;
       }
 
       .footer-note {
+        padding-top: 8px;
         text-align: left;
+        font-size: 8px;
       }
     }
 
@@ -824,7 +1042,7 @@
         </section>
       </div>
 
-      <section class="panel" style="margin-bottom:16px">
+      <section class="panel print-articles-page" style="margin-bottom:16px">
         <div class="panel-head">
           <h2>🛒 Ventes par article</h2>
           <span class="badge" id="articleCount">0 article</span>
@@ -845,7 +1063,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel print-stocks-page">
         <div class="panel-head">
           <h2>🍽 Stocks vaisselle</h2>
           <span class="badge" id="stockAlertBadge">0 alerte</span>
