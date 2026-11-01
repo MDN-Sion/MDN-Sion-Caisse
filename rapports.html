@@ -898,7 +898,7 @@
       let role = "";
       let demo = false;
       let report = null;
-      let editionDatesInitialized = false;
+      let availablePeriodInitialized = false;
 
       function esc(value) {
         return String(value ?? "")
@@ -977,10 +977,10 @@
         return `${y}-${m}-${d}`;
       }
 
-      function applyEditionDates() {
-        const edition = report?.edition || {};
-        const start = inputDate(edition.date_debut);
-        const end = inputDate(edition.date_fin);
+      function applyAvailablePeriod() {
+        const available = report?.periode_disponible || {};
+        const start = inputDate(available.premiere_activite);
+        const end = inputDate(available.derniere_activite);
 
         if (start) {
           dateStart.min = start;
@@ -1108,22 +1108,22 @@
       }
 
       function renderPeriod() {
-        const edition = report?.edition || {};
-        const editionStart = inputDate(edition.date_debut);
-        const editionEnd = inputDate(edition.date_fin);
+        const available = report?.periode_disponible || {};
+        const availableStart = inputDate(available.premiere_activite);
+        const availableEnd = inputDate(available.derniere_activite);
 
         if (
-          dateStart.value === editionStart &&
-          dateEnd.value === editionEnd &&
-          editionStart &&
-          editionEnd
+          dateStart.value === availableStart &&
+          dateEnd.value === availableEnd &&
+          availableStart &&
+          availableEnd
         ) {
-          $("periodBadge").textContent = "Toute l’édition";
+          $("periodBadge").textContent = "Toute l’activité";
           return;
         }
 
         if (!dateStart.value && !dateEnd.value) {
-          $("periodBadge").textContent = "Toute l’édition";
+          $("periodBadge").textContent = "Toute l’activité";
           return;
         }
 
@@ -1195,9 +1195,21 @@
             throw new Error("Le moteur Suivi & Rapports n’a pas renvoyé de résultat valide.");
           }
 
-          if (!editionDatesInitialized) {
-            applyEditionDates();
-            editionDatesInitialized = true;
+          if (!availablePeriodInitialized) {
+            applyAvailablePeriod();
+            availablePeriodInitialized = true;
+
+            // Le premier appel récupère les bornes réelles d'activité.
+            // On recharge ensuite le rapport avec ces dates affichées
+            // afin que le filtre visible corresponde exactement aux données.
+            if (dateStart.value || dateEnd.value) {
+              report = await rpc("suivi_rapports", {
+                p_edition_id: null,
+                p_is_demo: demo,
+                p_date_debut: startIso(dateStart.value),
+                p_date_fin: endExclusiveIso(dateEnd.value)
+              });
+            }
           }
 
           render();
@@ -1214,7 +1226,7 @@
         $("logout").onclick = async () => { await window.MDN_AUTH.deconnexion(); };
         $("applyBtn").onclick = loadReport;
         $("resetBtn").onclick = async () => {
-          applyEditionDates();
+          applyAvailablePeriod();
           await loadReport();
         };
         $("printBtn").onclick = () => window.print();
