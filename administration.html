@@ -24,7 +24,13 @@
 			min-height: 100vh;
 			min-height: 100dvh;
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-			background: #f7f4ef;
+			background:
+				linear-gradient(
+					145deg,
+					#7b0000 0%,
+					#a00000 48%,
+					#650000 100%
+				);
 			color: #222;
 			display: flex;
 			flex-direction: column;
@@ -68,62 +74,138 @@
 		}
 		.entete  {
 			flex: 0 0 auto;
-			height: 74px;
-			display:grid;
-			grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr);
-			align-items:center;
-			gap:14px;
-			padding:8px 20px;
-			color:#fff;
-			background:#8b0000;
-			border-bottom:4px solid #00a8d8;
+			width: 100%;
+			padding:
+				max(14px, env(safe-area-inset-top))
+				max(18px, env(safe-area-inset-right))
+				14px
+				max(18px, env(safe-area-inset-left));
+			background: rgba(92, 0, 0, 0.45);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+			color: #ffffff;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
 		}
-		.entete-centre  {
-			text-align:center;
-			min-width:0;
+
+		.entete-contenu  {
+			width: min(100%, 1220px);
+			margin: 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 18px;
 		}
-		.entete-centre h1  {
-			margin:0;
-			font-size:clamp(22px,2vw,28px);
-			line-height:1.05;
+
+		.marque  {
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 12px;
 		}
-		.entete-centre p  {
-			margin:3px 0 0;
-			font-size:clamp(12px,1.15vw,15px);
+
+		.marque-embleme  {
+			flex: 0 0 auto;
+			width: 48px;
+			height: 48px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 14px;
+			background: rgba(255, 255, 255, 0.12);
+			overflow: hidden;
 		}
-		.entete-droite  {
-			display:flex;
-			justify-content:flex-end;
+
+		.marque-embleme img  {
+			width: 100%;
+			height: 100%;
+			display: block;
+			object-fit: contain;
 		}
+
+		.marque-titre  {
+			margin: 0;
+			font-size: 21px;
+			line-height: 1.1;
+			font-weight: 800;
+		}
+
+		.marque-sous-titre  {
+			margin: 3px 0 0;
+			color: rgba(255, 255, 255, 0.78);
+			font-size: 12px;
+		}
+
+		.zone-utilisateur-entete  {
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.identite-entete  {
+			min-width: 0;
+			text-align: right;
+		}
+
+		.nom-entete  {
+			max-width: 320px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 14px;
+			font-weight: 650;
+		}
+
+		.role-entete  {
+			margin-top: 2px;
+			color: rgba(255, 255, 255, 0.76);
+			font-size: 12px;
+		}
+
 		.bouton-entete  {
-			min-height:44px;
-			padding:0 16px;
-			border:1px solid rgba(255,255,255,.45);
-			border-radius:13px;
-			background:rgba(255,255,255,.10);
-			color:#fff;
-			font-weight:800;
-			font-size:15px;
+			flex: 0 0 auto;
+			min-height: 42px;
+			padding: 9px 14px;
+			border: 1px solid rgba(255, 255, 255, 0.35);
+			border-radius: 11px;
+			background: rgba(255, 255, 255, 0.10);
+			color: #ffffff;
+			font-weight: 700;
 		}
+
 		.bouton-entete:hover  {
-			background:rgba(255,255,255,.18);
+			background: rgba(255, 255, 255, 0.18);
 		}
+
+		body.mode-demo  {
+			background:
+				linear-gradient(
+					145deg,
+					#8d6d00 0%,
+					#c39a16 48%,
+					#6f5600 100%
+				);
+		}
+
 		body.mode-demo .entete  {
-			background:#a77b00;
+			background: rgba(92, 69, 0, 0.52);
+			border-bottom-color: rgba(255, 255, 255, 0.24);
 		}
+
 		body.mode-demo .chargement-contenu  {
-			color:#7b5a00;
+			color: #7b5a00;
 		}
+
 		body.mode-demo .spinner  {
-			border-color:#f3e5b5;
-			border-top-color:#a77b00;
+			border-color: #f3e5b5;
+			border-top-color: #a77b00;
 		}
 		.contenu  {
 			flex:1 1 auto;
 			min-height:0;
-			width:min(1400px,calc(100% - 32px));
+			width:min(100%,1220px);
 			margin:0 auto;
-			padding:12px 0 10px;
+			padding:12px max(18px, env(safe-area-inset-right)) 10px max(18px, env(safe-area-inset-left));
 			display:grid;
 			grid-template-rows:auto auto auto minmax(0,1fr) auto;
 			gap:10px;
@@ -145,17 +227,17 @@
 		}
 		.intro h2  {
 			margin:0 0 2px;
-			color:#8b0000;
+			color:#ffffff;
 			font-size:clamp(22px,2.2vw,30px);
 			line-height:1.05;
 		}
 		.intro p  {
 			margin:0;
-			color:#5e5e5e;
+			color:rgba(255,255,255,.82);
 			font-size:clamp(12px,1.2vw,16px);
 		}
 		body.mode-demo .intro h2  {
-			color:#7b5a00;
+			color:#ffffff;
 		}
 		.identite  {
 			margin:0;
@@ -278,15 +360,15 @@
 		.note-bas  {
 			margin:0;
 			text-align:center;
-			color:#666;
+			color:rgba(255,255,255,.76);
 			font-size:12px;
 			font-weight:650;
 			line-height:1.2;
 		}
 		body.mode-demo .note-bas  {
-			color:#6b4d00;
+			color:rgba(255,255,255,.78);
 		}
-		/* Écrans moins hauts : on compresse sans créer de défilement. **
+		/* Écrans moins hauts : on compresse sans créer de défilement. */
 		@media (max-height: 760px)  {
 			.entete  {
 				height:62px;
@@ -344,7 +426,7 @@
 				font-size:11px;
 			}
 		}
-		/* Tablettes / téléphone portrait : 2 colonnes x 3 lignes pour rester sur un écran. **
+		/* Tablettes / téléphone portrait : 2 colonnes x 3 lignes pour rester sur un écran. */
 		@media (max-width: 760px)  {
 			.entete  {
 				height:68px;
@@ -439,7 +521,7 @@
 				font-size:10px;
 			}
 		}
-		/* Téléphones très étroits : on conserve 2 colonnes mais masque les descriptions. **
+		/* Téléphones très étroits : on conserve 2 colonnes mais masque les descriptions. */
 		@media (max-width: 430px)  {
 			.entete-centre h1  {
 				font-size:18px;
@@ -489,7 +571,7 @@
 				font-size:8px;
 			}
 		}
-		/* Paysage très bas : 3 colonnes x 2 lignes, contenu secondaire réduit. **
+		/* Paysage très bas : 3 colonnes x 2 lignes, contenu secondaire réduit. */
 		@media (max-height: 560px)  {
 			.entete  {
 				height:54px;
@@ -571,6 +653,35 @@
 				font-size:9px;
 			}
 		}
+
+		@media (max-width: 620px) {
+			.entete-contenu {
+				gap: 10px;
+			}
+
+			.marque-embleme {
+				width: 40px;
+				height: 40px;
+			}
+
+			.marque-titre {
+				font-size: 18px;
+			}
+
+			.marque-sous-titre,
+			.identite-entete {
+				display: none;
+			}
+
+			.zone-utilisateur-entete {
+				gap: 6px;
+			}
+
+			.bouton-entete {
+				padding: 7px 9px;
+				font-size: 11px;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -582,15 +693,28 @@
 	</div>
 
 	<header class="entete">
-		<div class="entete-gauche">
-			<button id="boutonAccueil" class="bouton-entete" type="button">← Accueil</button>
-		</div>
-		<div class="entete-centre">
-			<h1>⚙️ Administration</h1>
-			<p id="sousTitre">Gestion de l’application</p>
-		</div>
-		<div class="entete-droite">
-			<button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
+		<div class="entete-contenu">
+			<div class="marque">
+				<div class="marque-embleme" aria-hidden="true">
+					<img src="logo-mdn.png" alt="">
+				</div>
+
+				<div>
+					<p class="marque-titre">MDN Sion</p>
+					<p class="marque-sous-titre">Marché de Noël de Sion</p>
+				</div>
+			</div>
+
+			<div class="zone-utilisateur-entete">
+				<button id="boutonAccueil" class="bouton-entete" type="button">← Accueil</button>
+
+				<div class="identite-entete">
+					<div id="nomUtilisateurEntete" class="nom-entete">—</div>
+					<div id="roleUtilisateurEntete" class="role-entete">—</div>
+				</div>
+
+				<button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
+			</div>
 		</div>
 	</header>
 
@@ -681,8 +805,9 @@
 			const identiteUtilisateur = document.getElementById("identiteUtilisateur");
 			const descriptionDroits = document.getElementById("descriptionDroits");
 			const badgeMode = document.getElementById("badgeMode");
-			const sousTitre = document.getElementById("sousTitre");
 			const noteBas = document.getElementById("noteBas");
+			const nomUtilisateurEntete = document.getElementById("nomUtilisateurEntete");
+			const roleUtilisateurEntete = document.getElementById("roleUtilisateurEntete");
 			const boutonAccueil = document.getElementById("boutonAccueil");
 			const boutonDeconnexion = document.getElementById("boutonDeconnexion");
 			const ouvrirArticles = document.getElementById("ouvrirArticles");
@@ -755,15 +880,15 @@
 						auth.utilisateur?.email ||
 						(modeDemoActif ? "Mode Démo" : "Administrateur");
 
-					identiteUtilisateur.textContent = identite;
+					identiteUtilisateur.textContent = modeDemoActif ? "Mode" : identite;
+					nomUtilisateurEntete.textContent = modeDemoActif ? "Mode" : identite;
+					roleUtilisateurEntete.textContent = modeDemoActif ? "Utilisateur" : "Administrateur";
 
 					if (modeDemoActif) {
-						sousTitre.textContent = "MODE DÉMO · Administration de test";
 						descriptionDroits.textContent = "Accès Démo — référentiels partagés protégés contre les modifications.";
 						badgeMode.textContent = "MODE DÉMO";
 						noteBas.textContent = "Mode Démo : les tests ne doivent modifier aucune donnée Réelle.";
 					} else {
-						sousTitre.textContent = "Gestion de l’application";
 						descriptionDroits.textContent = "Administrateur · modifications des référentiels autorisées.";
 						badgeMode.textContent = "Administrateur";
 						noteBas.textContent = "Administration Réelle — accès administrateur.";
