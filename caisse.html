@@ -3696,9 +3696,24 @@
             p_commentaire: String(commentaireRemboursementVente.value || "").trim() || null
           });
           if (error) throw error;
+
+          // Le remboursement est maintenant enregistré côté base.
+          // On libère d'abord le verrou d'interface afin que la fonction
+          // fermerModalRemboursementVente() puisse réellement fermer la fenêtre.
+          remboursementVenteEnCours = false;
+          confirmerRemboursementVente.textContent = "Confirmer le remboursement";
+
           fermerModalRemboursementVente();
-          afficherMessage(`${modeDemo ? "Mode Démo : " : ""}Remboursement ${data?.numero_remboursement || ""} enregistré — ${formaterCHF(data?.montant_total || 0)}.`, "succes");
+
+          // Recharge le catalogue et les stocks après le remboursement.
           await chargerCatalogueCaisse();
+
+          // Le message est affiché après le rechargement afin qu'il reste
+          // bien visible une fois la fenêtre de remboursement fermée.
+          afficherMessage(
+            `${modeDemo ? "Mode Démo : " : ""}Remboursement ${data?.numero_remboursement || ""} enregistré — ${formaterCHF(data?.montant_total || 0)}.`,
+            "succes"
+          );
         } catch (erreur) {
           console.error("[MDN Sion] Remboursement impossible :", erreur);
 
