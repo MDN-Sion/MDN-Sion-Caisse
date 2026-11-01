@@ -1400,95 +1400,58 @@
           throw new Error("Connexion Supabase indisponible.");
         }
 
+        /*
+         * SQL126 corrigé : le catalogue est chargé par une RPC sécurisée.
+         * Cela permet au Mode Démo de lire le catalogue partagé sans ouvrir
+         * les RLS ni autoriser la moindre écriture sur les données Réelles.
+         */
+        const { data: catalogue, error: erreurCatalogue } =
+          await clientSupabase.rpc("charger_catalogue_administration_articles");
 
-        const { data: edition, error: erreurEdition } =
-          await clientSupabase
-            .from("editions")
-            .select("id, annee, nom, statut, est_active")
-            .eq("est_active", true)
-            .maybeSingle();
-
-        if (erreurEdition) {
-          throw erreurEdition;
+        if (erreurCatalogue) {
+          throw erreurCatalogue;
         }
 
-        if (!edition) {
+        if (!catalogue?.ok) {
+          throw new Error(
+            catalogue?.message ||
+            "Impossible de charger le catalogue Articles & Tarifs."
+          );
+        }
+
+        const edition = catalogue.edition || null;
+
+        if (!edition?.id) {
           throw new Error("Aucune édition active n'est configurée.");
         }
 
         editionCourante = edition;
-        editionActive.textContent = edition.nom || ("Édition " + edition.annee);
+        editionActive.textContent =
+          edition.nom || ("Édition " + edition.annee);
 
+        const tarifs = Array.isArray(catalogue.tarifs)
+          ? catalogue.tarifs
+          : [];
 
-        const { data: tarifs, error: erreurTarifs } =
-          await clientSupabase
-            .from("edition_articles")
-            .select("id, edition_id, article_id, prix, gestion_stock, seuil_stock, actif, ordre_affichage")
-            .eq("edition_id", edition.id)
-            .order("ordre_affichage", { ascending: true });
+        const referentiel = Array.isArray(catalogue.articles)
+          ? catalogue.articles
+          : [];
 
-        if (erreurTarifs) {
-          throw erreurTarifs;
-        }
-
-
-        const idsArticles = Array.from(
-          new Set((tarifs || []).map(function (tarif) {
-            return tarif.article_id;
-          }))
-        );
-
-        if (idsArticles.length === 0) {
-          articles = [];
-          afficherArticles();
-          return;
-        }
-
-
-        const { data: referentiel, error: erreurArticles } =
-          await clientSupabase
-            .from("referentiel_articles")
-            .select("id, nom, description, beneficiaire, categorie_id, photo_path, actif")
-            .in("id", idsArticles);
-
-        if (erreurArticles) {
-          throw erreurArticles;
-        }
-
-
-        const idsCategories = Array.from(
-          new Set(
-            (referentiel || [])
-              .map(function (article) {
-                return article.categorie_id;
-              })
-              .filter(Boolean)
-          )
-        );
-
-        let categories = [];
-
-        if (idsCategories.length > 0) {
-          const { data, error } =
-            await clientSupabase
-              .from("categories_articles")
-              .select("id, nom, ordre_affichage, actif")
-              .in("id", idsCategories);
-
-          if (error) {
-            throw error;
-          }
-
-          categories = data || [];
-        }
+        const categories = Array.isArray(catalogue.categories)
+          ? catalogue.categories
+          : [];
 
         categoriesDisponibles = categories
-          .filter(function (categorie) { return categorie.actif === true; })
-          .sort(function (a, b) { return Number(a.ordre_affichage || 0) - Number(b.ordre_affichage || 0); });
-
+          .filter(function (categorie) {
+            return categorie.actif === true;
+          })
+          .sort(function (a, b) {
+            return Number(a.ordre_affichage || 0) -
+              Number(b.ordre_affichage || 0);
+          });
 
         const articlesParId = new Map(
-          (referentiel || []).map(function (article) {
+          referentiel.map(function (article) {
             return [article.id, article];
           })
         );
@@ -1499,8 +1462,7 @@
           })
         );
 
-
-        articles = (tarifs || [])
+        articles = tarifs
           .map(function (tarif) {
             const article = articlesParId.get(tarif.article_id);
 
@@ -1522,18 +1484,14 @@
               categorie: categorie ? categorie.nom : null,
               photoPath: article.photo_path || null,
               photoUrl: article.photo_path
-                ? clientSupabase.storage.from("articles").getPublicUrl(article.photo_path).data.publicUrl
+                ? clientSupabase.storage
+                    .from("articles")
+                    .getPublicUrl(article.photo_path).data.publicUrl
                 : null,
               prix: Number(tarif.prix || 0),
               gestionStock: tarif.gestion_stock === true,
               seuilStock: Number(tarif.seuil_stock || 0),
               ordreAffichage: Number(tarif.ordre_affichage || 0),
-
-              /*
-               * Pour l'administration, un article est considéré
-               * actif seulement si le référentiel ET son tarif
-               * de l'édition sont actifs.
-               */
               actifReferentiel: article.actif === true,
               actifTarif: tarif.actif === true,
               actif: article.actif === true && tarif.actif === true
