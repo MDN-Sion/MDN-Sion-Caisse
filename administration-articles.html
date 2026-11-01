@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#8B0000">
   <meta name="description" content="Administration des articles et tarifs - Marché de Noël de Sion">
   <title>Articles & Tarifs - MDN Sion</title>
+  <!-- SQL126 : accès Administration Réel/Démo sécurisé -->
 
   <style>
     * { box-sizing: border-box; }
@@ -872,6 +873,56 @@
       }
     }
 
+
+    /* ============================================================
+       MODE DÉMO — SQL126
+       ============================================================ */
+    body.mode-demo {
+      background: #fffaf0;
+    }
+
+    body.mode-demo .barre-haute {
+      background: linear-gradient(145deg, #8a6500, #b88900);
+    }
+
+    body.mode-demo .chargement-page {
+      background: linear-gradient(145deg, #735400 0%, #a77a00 48%, #5f4600 100%);
+    }
+
+    .bandeau-demo {
+      display: none;
+      width: min(calc(100% - 32px), 1500px);
+      margin: 14px auto 0;
+      padding: 12px 16px;
+      border: 1px solid #d7b34a;
+      border-radius: 12px;
+      background: #fff4c7;
+      color: #624900;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    body.mode-demo .bandeau-demo { display: block; }
+
+    body.mode-demo .bouton-principal { display: none; }
+
+    .bouton-consulter {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #d9c77e;
+      border-radius: 10px;
+      background: #fffaf0;
+      color: #725600;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .lecture-seule-demo {
+      color: #725600;
+      font-weight: 800;
+    }
+
     @keyframes rotation {
       to { transform: rotate(360deg); }
     }
@@ -899,6 +950,10 @@
       <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
     </div>
   </header>
+
+  <div id="bandeauDemo" class="bandeau-demo" role="status">
+    MODE DÉMO — catalogue partagé en consultation uniquement. Aucune modification des articles, tarifs ou photos n’est autorisée.
+  </div>
 
   <main class="contenu">
 
@@ -962,7 +1017,7 @@
 
     </section>
 
-    <p class="note-version">
+    <p id="noteVersion" class="note-version">
       Les administrateurs peuvent ajouter et modifier les articles, tarifs et photos de l’édition active.
     </p>
 
@@ -1124,6 +1179,8 @@
       let fichierPhotoSelectionne = null;
       let supprimerPhotoDemandee = false;
       let urlApercuLocale = null;
+      let modeDemoActif = false;
+      let peutModifierReferentiels = false;
 
 
       function masquerChargement() {
@@ -1295,6 +1352,7 @@
               </span>
             </div>
 
+            ${peutModifierReferentiels ? `
             <button
               class="bouton-modifier"
               type="button"
@@ -1302,7 +1360,15 @@
               data-article-id="${echapperHTML(article.articleId)}"
               aria-label="Modifier ${echapperHTML(article.nom)}"
               title="Modifier"
-            >✎</button>
+            >✎</button>` : `
+            <button
+              class="bouton-consulter"
+              type="button"
+              data-action="consulter"
+              data-article-id="${echapperHTML(article.articleId)}"
+              aria-label="Consulter ${echapperHTML(article.nom)}"
+              title="Consultation uniquement"
+            >👁</button>`}
 
           </article>
         `;
@@ -1668,6 +1734,12 @@
 
       function ouvrirModaleArticle(article) {
         masquerMessageFormulaire();
+
+        if (!peutModifierReferentiels && !article) {
+          afficherErreur("En Mode Démo, le catalogue partagé est disponible en consultation uniquement.");
+          return;
+        }
+
         articleEnModification = article || null;
 
         remplirCategories(article ? article.categorieId : null);
@@ -1689,7 +1761,23 @@
         infoEditionFormulaire.textContent =
           "Tarif configuré pour : " +
           (editionCourante?.nom || "l’édition active") +
-          ". Les modifications sont enregistrées directement dans Supabase.";
+          (peutModifierReferentiels
+            ? ". Les modifications sont enregistrées directement dans Supabase."
+            : ". MODE DÉMO : consultation uniquement, aucune modification n’est enregistrée.");
+
+        const champsEdition = [
+          champNom, champBeneficiaire, champCategorie, champPrix, champOrdre,
+          champSeuil, champGestionStock, champActif, champDescription
+        ];
+
+        champsEdition.forEach(function (champ) {
+          champ.disabled = !peutModifierReferentiels;
+        });
+
+        choisirPhoto.hidden = !peutModifierReferentiels;
+        supprimerPhoto.hidden = !peutModifierReferentiels || !article?.photoPath;
+        enregistrerArticle.hidden = !peutModifierReferentiels;
+        annulerFormulaire.textContent = peutModifierReferentiels ? "Annuler" : "Fermer";
 
         fondModaleArticle.hidden = false;
         document.body.style.overflow = "hidden";
@@ -1774,9 +1862,13 @@
 
 
       zoneListe.addEventListener("click", function (evenement) {
-        const bouton = evenement.target.closest("[data-action='modifier']");
+        const bouton = evenement.target.closest("[data-action='modifier'], [data-action='consulter']");
 
         if (!bouton) {
+          return;
+        }
+
+        if (bouton.dataset.action === "modifier" && !peutModifierReferentiels) {
           return;
         }
 
@@ -1791,6 +1883,10 @@
 
 
       boutonNouvelArticle.addEventListener("click", function () {
+        if (!peutModifierReferentiels) {
+          afficherErreur("En Mode Démo, l’ajout d’articles est désactivé afin de protéger le catalogue partagé.");
+          return;
+        }
         ouvrirModaleArticle(null);
       });
 
@@ -1814,6 +1910,11 @@
       formulaireArticle.addEventListener("submit", async function (evenement) {
         evenement.preventDefault();
         masquerMessageFormulaire();
+
+        if (!peutModifierReferentiels) {
+          afficherMessageFormulaire("Mode Démo : aucune modification du catalogue partagé n’est autorisée.");
+          return;
+        }
 
         const nom = champNom.value.trim();
         const beneficiaire = champBeneficiaire.value;
@@ -2002,13 +2103,48 @@
 
       async function initialiserPage() {
         try {
+          /*
+           * On vérifie d'abord uniquement que la session MDN est valide.
+           * Le droit Administration est ensuite décidé côté serveur par SQL126.
+           */
           const auth =
-            await window.MDN_AUTH.protegerPage([
-              "administrateur"
-            ]);
+            await window.MDN_AUTH.protegerPage();
 
           if (!auth) {
             return;
+          }
+
+          clientSupabase = window.MDN_SUPABASE;
+
+          if (!clientSupabase) {
+            throw new Error("Connexion Supabase indisponible.");
+          }
+
+          const { data: accesAdministration, error: erreurAccesAdministration } =
+            await clientSupabase.rpc("etat_acces_administration");
+
+          if (erreurAccesAdministration) {
+            throw erreurAccesAdministration;
+          }
+
+          if (!accesAdministration?.acces_administration) {
+            window.location.replace("accueil.html");
+            return;
+          }
+
+          modeDemoActif = accesAdministration.mode_demo === true;
+          peutModifierReferentiels =
+            accesAdministration.peut_modifier_referentiels === true;
+
+          document.body.classList.toggle("mode-demo", modeDemoActif);
+
+          boutonNouvelArticle.hidden = !peutModifierReferentiels;
+
+          const noteVersion = document.getElementById("noteVersion");
+          if (noteVersion) {
+            noteVersion.innerHTML = modeDemoActif
+              ? '<span class="lecture-seule-demo">Mode Démo : catalogue partagé en consultation uniquement. Aucune donnée Réelle n’est modifiée.</span>'
+              : "Les administrateurs peuvent ajouter et modifier les articles, tarifs et photos de l’édition active.";
           }
 
           const prenom =
@@ -2018,12 +2154,12 @@
             prenom ||
             auth.profil.email ||
             auth.utilisateur.email ||
-            "Administrateur";
+            (modeDemoActif ? "Mode Démo" : "Administrateur");
 
           identiteUtilisateur.textContent =
-            identite +
-            " · " +
-            auth.libelleRole;
+            modeDemoActif
+              ? identite + " · MODE DÉMO · Consultation"
+              : identite + " · " + auth.libelleRole;
 
           await chargerCatalogue();
 
@@ -2043,7 +2179,6 @@
           );
         }
       }
-
 
       initialiserPage();
 
