@@ -452,7 +452,7 @@
 
     .dish-metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       padding: 16px 18px 0;
     }
@@ -1162,7 +1162,7 @@
       <section class="panel print-dish-activity-page" style="margin-bottom:16px">
         <div class="panel-head">
           <h2>🍽 Activité vaisselle</h2>
-          <span class="badge" id="dishOperationsBadge">0 opération</span>
+          <span class="badge" id="dishOperationsBadge">0 mouvement</span>
         </div>
 
         <div class="dish-metrics">
@@ -1178,10 +1178,6 @@
             <div class="label">Retours sales</div>
             <div class="value" id="dishDirtyReturns">0</div>
           </div>
-          <div class="dish-metric">
-            <div class="label">Solde chez les stands</div>
-            <div class="value" id="dishStandBalance">0</div>
-          </div>
         </div>
 
         <div class="table-wrap" style="margin-top:14px">
@@ -1192,7 +1188,6 @@
                 <th class="num">Retraits</th>
                 <th class="num">Retours propres</th>
                 <th class="num">Retours sales</th>
-                <th class="num">Solde chez stands</th>
               </tr>
             </thead>
             <tbody id="dishActivityBody"></tbody>
@@ -1214,7 +1209,7 @@
                 <th class="num">Stock tente</th>
                 <th class="num">Réserve</th>
                 <th class="num">Propre total</th>
-                <th class="num">Chez stands</th>
+                <th class="num">À l’extérieur</th>
                 <th class="num">Retours sales</th>
                 <th>État</th>
               </tr>
@@ -1439,8 +1434,8 @@
         const operationCount = Number(activity.nombre_operations || 0);
         $("dishOperationsBadge").textContent = plural(
           operationCount,
-          "opération",
-          "opérations"
+          "mouvement",
+          "mouvements"
         );
 
         $("dishWithdrawals").textContent = Number(
@@ -1455,13 +1450,9 @@
           activity.quantite_retours_sales || 0
         ).toLocaleString("fr-CH");
 
-        $("dishStandBalance").textContent = Number(
-          activity.solde_chez_stands_sur_periode || 0
-        ).toLocaleString("fr-CH");
-
         if (!items.length) {
           $("dishActivityBody").innerHTML =
-            '<tr><td colspan="5" class="empty">Aucune activité vaisselle sur la période.</td></tr>';
+            '<tr><td colspan="4" class="empty">Aucune activité vaisselle sur la période.</td></tr>';
           return;
         }
 
@@ -1471,7 +1462,6 @@
             <td class="num">${esc(Number(item.retraits || 0).toLocaleString("fr-CH"))}</td>
             <td class="num">${esc(Number(item.retours_propres || 0).toLocaleString("fr-CH"))}</td>
             <td class="num">${esc(Number(item.retours_sales || 0).toLocaleString("fr-CH"))}</td>
-            <td class="num"><strong>${esc(Number(item.solde_chez_stands_sur_periode || 0).toLocaleString("fr-CH"))}</strong></td>
           </tr>
         `).join("");
       }
