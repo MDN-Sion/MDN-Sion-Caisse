@@ -1708,9 +1708,245 @@
       return [...groups.values()];
     }
 
-    function activityRows(items,emptyText){
-      if(!Array.isArray(items)||!items.length) return `<div class="ticket-note">${esc(emptyText)}</div>`;
-      return items.map(item=>`<div class="ticket-movement-detail"><div><strong>${esc(item.titre||item.nom||item.numero||"Opération")}</strong>${item.sous_titre?`<small>${esc(item.sous_titre)}</small>`:""}${item.detail?`<small>${esc(item.detail)}</small>`:""}</div>${item.montant!==undefined&&item.montant!==null?`<strong>${esc(money(Number(item.montant||0)))}</strong>`:""}</div>`).join("");
+    function ticketActivityDate(value){
+      if(!value) return "";
+      const d=new Date(value);
+      if(Number.isNaN(d.getTime())) return "";
+      return d.toLocaleString("fr-CH",{
+        day:"2-digit",
+        month:"2-digit",
+        year:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit"
+      });
+    }
+
+    function ticketPaymentLabel(code){
+      const c=String(code||"").trim().toLowerCase();
+      if(c==="especes") return "Espèces";
+      if(["carte","carte_bancaire","cb"].includes(c)) return "Carte bancaire";
+      if(c==="twint") return "TWINT";
+      if(c==="retour_gobelet") return "Compensation par retour";
+      return code ? String(code) : "Moyen de paiement";
+    }
+
+    function ticketPaymentLines(paiements){
+      if(!Array.isArray(paiements)||!paiements.length) return "";
+      return paiements.map(p=>{
+        const code=p?.code||p?.moyen||p?.libelle||"";
+        const montant=Number(p?.montant||0);
+        return `<small>${esc(ticketPaymentLabel(code))} : <strong>${esc(money(montant))}</strong></small>`;
+      }).join("");
+    }
+
+    function ticketSimpleEmpty(text){
+      return `<div class="ticket-note">${esc(text)}</div>`;
+    }
+
+    function renderSales(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const article=item.article||item.nom||"Article";
+        const qty=Number(item.quantite||0);
+        const montant=Number(item.montant||0);
+        const prixUnitaire=qty>0 ? montant/qty : 0;
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(article)}</strong>
+              <small>Quantité vendue : <strong>${esc(String(qty))}</strong></small>
+              ${qty>0?`<small>Prix moyen / unité : ${esc(money(prixUnitaire))}</small>`:""}
+              <small>Total article : <strong>${esc(money(montant))}</strong></small>
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
+    }
+
+    function renderRefunds(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const numero=item.numero||item.numero_remboursement||"Remboursement";
+        const type=String(item.type||item.type_remboursement||"").replaceAll("_"," ");
+        const motif=item.motif||"";
+        const commentaire=item.commentaire||"";
+        const date=ticketActivityDate(item.created_at);
+        const montant=Number(item.montant??item.montant_total??0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(numero)}</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              ${type?`<small>Type : ${esc(type)}</small>`:""}
+              ${motif?`<small>Motif : ${esc(motif)}</small>`:""}
+              ${commentaire?`<small>Commentaire : ${esc(commentaire)}</small>`:""}
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
+    }
+
+    function renderDonations(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const numero=item.numero||item.numero_don||"Don";
+        const date=ticketActivityDate(item.created_at);
+        const montant=Number(item.montant||0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(numero)}</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              ${item.beneficiaire?`<small>Bénéficiaire : ${esc(item.beneficiaire)}</small>`:""}
+              ${item.origine?`<small>Origine : ${esc(item.origine)}</small>`:""}
+              ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
+    }
+
+    function renderDishSummary(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const article=item.article||item.nom||"Article de vaisselle";
+        const retrait=Number(item.quantite_retiree||0);
+        const propre=Number(item.quantite_retour_propre||0);
+        const sale=Number(item.quantite_retour_sale||0);
+        const solde=retrait-propre-sale;
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(article)}</strong>
+              <small>Sorti / retiré : <strong>${esc(String(retrait))}</strong></small>
+              <small>Retourné propre : <strong>${esc(String(propre))}</strong></small>
+              <small>Retourné sale : <strong>${esc(String(sale))}</strong></small>
+              <small>Solde des mouvements : <strong>${esc(String(solde))}</strong></small>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function dishOperationLabel(type){
+      const t=String(type||"").trim().toLowerCase();
+      if(t==="retrait") return "Retrait vaisselle";
+      if(t==="retour_propre") return "Retour propre";
+      if(t==="retour_sale") return "Retour sale";
+      if(t==="solde_initial") return "Solde initial";
+      return type ? String(type).replaceAll("_"," ") : "Opération vaisselle";
+    }
+
+    function renderDishLines(lines){
+      if(!Array.isArray(lines)||!lines.length) return "";
+      return lines.map(l=>{
+        const qty=Number(l?.quantite_unites||0);
+        const caisses=Number(l?.nombre_caisses_completes||0);
+        const hors=Number(l?.quantite_hors_caisses||0);
+        const partielles=Number(l?.quantite_en_caisses_partielles||0);
+        const ref=l?.article||l?.nom||l?.vaisselle_nom||l?.vaisselle_id||"Article";
+        const details=[];
+        details.push(`${qty} unité${qty===1?"":"s"}`);
+        if(caisses) details.push(`${caisses} caisse${caisses===1?"":"s"} complète${caisses===1?"":"s"}`);
+        if(partielles) details.push(`${partielles} unité${partielles===1?"":"s"} en caisse partielle`);
+        if(hors) details.push(`${hors} hors caisse`);
+        return `<small>• ${esc(ref)} : ${esc(details.join(" · "))}</small>`;
+      }).join("");
+    }
+
+    function renderDishOperations(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const numero=item.numero_operation||"Opération vaisselle";
+        const stand=[item.numero_stand,item.stand||item.raison_sociale].filter(Boolean).join(" — ");
+        const date=ticketActivityDate(item.created_at);
+        const facture=Number(item.total_facture||0);
+        const credit=Number(item.total_credit_compte||0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(dishOperationLabel(item.type_operation))} — ${esc(numero)}</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              ${stand?`<small>Stand : <strong>${esc(stand)}</strong></small>`:""}
+              ${item.type_partenaire?`<small>Type : ${esc(item.type_partenaire)}</small>`:""}
+              ${renderDishLines(item.lignes_vaisselle)}
+              ${Array.isArray(item.contenants)&&item.contenants.length?`<small>Conditionnements : ${esc(String(item.contenants.length))} ligne${item.contenants.length===1?"":"s"}</small>`:""}
+              ${facture!==0?`<small>Facturé au compte : <strong>${esc(money(facture))}</strong></small>`:""}
+              ${credit!==0?`<small>Crédit porté au compte : <strong>${esc(money(credit))}</strong></small>`:""}
+              ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderStandPayments(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const numero=item.numero_paiement||"Règlement";
+        const stand=[item.numero_stand,item.stand||item.raison_sociale].filter(Boolean).join(" — ");
+        const date=ticketActivityDate(item.created_at);
+        const montant=Number(item.montant_total||0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(numero)}</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              ${stand?`<small>Stand : <strong>${esc(stand)}</strong></small>`:""}
+              ${ticketPaymentLines(item.paiements)}
+              ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
+              <small>Total réglé : <strong>${esc(money(montant))}</strong></small>
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
+    }
+
+    function renderStandRefunds(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const stand=[item.numero_stand,item.stand||item.raison_sociale].filter(Boolean).join(" — ");
+        const date=ticketActivityDate(item.created_at);
+        const montant=Number(item.montant||0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>Remboursement de crédit stand</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              ${stand?`<small>Stand : <strong>${esc(stand)}</strong></small>`:""}
+              ${item.moyen_paiement?`<small>Moyen : ${esc(ticketPaymentLabel(item.moyen_paiement))}</small>`:""}
+              ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
+              <small>Montant remboursé : <strong>${esc(money(montant))}</strong></small>
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
+    }
+
+    function gobeletOperationLabel(type){
+      const t=String(type||"").trim().toLowerCase();
+      if(["achat","vente","retrait"].includes(t)) return "Achat / sortie de gobelets";
+      if(t==="retour") return "Retour de gobelets";
+      if(["don","don_retour"].includes(t)) return "Retour de gobelets donné";
+      return type ? String(type).replaceAll("_"," ") : "Opération Gobelets";
+    }
+
+    function renderGobelets(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return ticketSimpleEmpty(emptyText);
+      return items.map(item=>{
+        const date=ticketActivityDate(item.created_at);
+        const qty=Number(item.quantite||0);
+        const montant=Number(item.montant||0);
+        return `
+          <div class="ticket-movement-detail">
+            <div>
+              <strong>${esc(gobeletOperationLabel(item.type_operation))}</strong>
+              ${date?`<small>${esc(date)}</small>`:""}
+              <small>Quantité : <strong>${esc(String(qty))} gobelet${qty===1?"":"s"}</strong></small>
+              ${ticketPaymentLines(item.paiements)}
+              <small>Valeur de l'opération : <strong>${esc(money(montant))}</strong></small>
+            </div>
+            <strong>${esc(money(montant))}</strong>
+          </div>`;
+      }).join("");
     }
 
     function renderTicketActivity(a){
@@ -1720,8 +1956,9 @@
       return `
         <div class="ticket-section ticket-part-separator">
           <h5>PARTIE 2 — Activité complète jusqu’au Ticket X</h5>
-          <div class="ticket-note">Cette partie recense l’activité métier, y compris les opérations Carte bancaire et TWINT qui ne modifient pas le tiroir physique.</div>
+          <div class="ticket-note">Cette partie détaille l’activité métier jusqu’à l’heure du Ticket X, y compris les flux Carte bancaire et TWINT qui ne modifient pas le tiroir physique.</div>
         </div>
+
         <div class="ticket-section">
           <h5>Synthèse des moyens de paiement</h5>
           <div class="ticket-row"><span>Espèces</span><strong>${esc(money(Number(pay.especes||0)))}</strong></div>
@@ -1729,16 +1966,53 @@
           <div class="ticket-row"><span>TWINT</span><strong>${esc(money(Number(pay.twint||0)))}</strong></div>
           <div class="ticket-row total"><span>Total des flux de paiement recensés</span><strong>${esc(money(Number(pay.total||0)))}</strong></div>
         </div>
-        <div class="ticket-section"><h5>Ventes MDN</h5>${activityRows(a.ventes_mdn,"Aucune vente MDN sur la période.")}</div>
-        <div class="ticket-section"><h5>Ventes Fondation</h5>${activityRows(a.ventes_fondation,"Aucune vente Fondation sur la période.")}</div>
-        <div class="ticket-section"><h5>Remboursements de ventes</h5>${activityRows(a.remboursements_ventes,"Aucun remboursement de vente sur la période.")}</div>
-        <div class="ticket-section"><h5>Dons</h5>${activityRows(a.dons,"Aucun don sur la période.")}</div>
-        <div class="ticket-section"><h5>Vaisselle & consignes — synthèse par article</h5>${activityRows(vaisselle.par_article,"Aucun mouvement de vaisselle sur la période.")}</div>
-        <div class="ticket-section"><h5>Vaisselle & consignes — détail par stand</h5>${activityRows(vaisselle.par_operation,"Aucune opération de vaisselle sur la période.")}</div>
-        <div class="ticket-section"><h5>Règlements des stands</h5>${activityRows(a.reglements_stands,"Aucun règlement de stand sur la période.")}</div>
-        <div class="ticket-section"><h5>Remboursements de crédits stands</h5>${activityRows(a.remboursements_stands,"Aucun remboursement de crédit stand sur la période.")}</div>
-        <div class="ticket-section"><h5>Opérations Gobelets caisse</h5>${activityRows(a.gobelets,"Aucune opération Gobelets caisse sur la période.")}</div>`;
+
+        <div class="ticket-section">
+          <h5>Ventes MDN — détail par article</h5>
+          ${renderSales(a.ventes_mdn,"Aucune vente MDN sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Ventes Fondation — détail par article</h5>
+          ${renderSales(a.ventes_fondation,"Aucune vente Fondation sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Remboursements de ventes</h5>
+          ${renderRefunds(a.remboursements_ventes,"Aucun remboursement de vente sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Dons</h5>
+          ${renderDonations(a.dons,"Aucun don sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Vaisselle & consignes — synthèse par article</h5>
+          ${renderDishSummary(vaisselle.par_article,"Aucun mouvement de vaisselle stand enregistré sur cette période. Les opérations Gobelets caisse sont détaillées séparément ci-dessous.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Vaisselle & consignes — détail par stand</h5>
+          ${renderDishOperations(vaisselle.par_operation,"Aucune opération de vaisselle stand enregistrée sur cette période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Règlements des stands</h5>
+          ${renderStandPayments(a.reglements_stands,"Aucun règlement de stand sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Remboursements de crédits stands</h5>
+          ${renderStandRefunds(a.remboursements_stands,"Aucun remboursement de crédit stand sur la période.")}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Opérations Gobelets caisse</h5>
+          ${renderGobelets(a.gobelets,"Aucune opération Gobelets caisse sur la période.")}
+        </div>`;
     }
+
 
     async function openTicketX(index){
       const c=counts[index];
