@@ -676,6 +676,63 @@
 				font-size: 11px;
 			}
 		}
+		/* ============================================================
+		   ENTÊTE ADMINISTRATION — modification ciblée uniquement
+		   ============================================================ */
+		.entete-administration {
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-items: center;
+			gap: 16px;
+		}
+
+		.entete-gauche {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+		}
+
+		.entete-centre {
+			min-width: 0;
+			text-align: center;
+		}
+
+		.entete-centre h1 {
+			margin: 0;
+			font-size: clamp(21px, 2.2vw, 29px);
+			line-height: 1.1;
+		}
+
+		.entete-centre p {
+			margin: 4px 0 0;
+			color: rgba(255, 255, 255, 0.88);
+			font-size: 12px;
+		}
+
+		.entete-droite {
+			justify-self: end;
+			justify-content: flex-end;
+		}
+
+		@media (max-width: 700px) {
+			.entete-administration {
+				grid-template-columns: auto minmax(0, 1fr) auto;
+				gap: 8px;
+			}
+
+			.entete-centre h1 {
+				font-size: 18px;
+			}
+
+			.entete-centre p {
+				display: none;
+			}
+
+			.identite-entete {
+				display: none;
+			}
+		}
+
 	</style>
 </head>
 <body>
@@ -687,21 +744,17 @@
 	</div>
 
 	<header class="entete">
-		<div class="entete-contenu">
-			<div class="marque">
-				<div class="marque-embleme" aria-hidden="true">
-					<img src="logo-mdn.png" alt="">
-				</div>
-
-				<div>
-					<p class="marque-titre">MDN Sion</p>
-					<p class="marque-sous-titre">Marché de Noël de Sion</p>
-				</div>
+		<div class="entete-contenu entete-administration">
+			<div class="entete-gauche">
+				<button id="boutonAccueil" class="bouton-entete" type="button">← Accueil</button>
 			</div>
 
-			<div class="zone-utilisateur-entete">
-				<button id="boutonAccueil" class="bouton-entete" type="button">← Accueil</button>
+			<div class="entete-centre">
+				<h1>⚙️ Administration</h1>
+				<p id="sousTitreEntete">Administration</p>
+			</div>
 
+			<div class="zone-utilisateur-entete entete-droite">
 				<div class="identite-entete">
 					<div id="nomUtilisateurEntete" class="nom-entete">—</div>
 					<div id="roleUtilisateurEntete" class="role-entete">—</div>
@@ -720,7 +773,6 @@
 		<div id="zoneErreur" class="erreur" hidden></div>
 
 		<section class="intro">
-			<h2>Administration</h2>
 			<p>Gérez les utilisateurs, les éditions, les référentiels et les paramètres du Marché de Noël de Sion.</p>
 		</section>
 
