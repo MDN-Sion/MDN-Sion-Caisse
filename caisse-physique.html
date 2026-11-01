@@ -1192,6 +1192,21 @@
 				grid-template-columns: 1fr;
 			}
 		}
+
+        .ticket-movement-detail {
+          display:grid;
+          grid-template-columns:minmax(0,1fr) auto;
+          gap:16px;
+          align-items:center;
+          padding:10px 0;
+          border-bottom:1px solid #e1e5ea;
+        }
+        .ticket-movement-detail:last-child { border-bottom:0; }
+        .ticket-movement-detail > div { min-width:0; }
+        .ticket-movement-detail strong { display:block; }
+        .ticket-movement-detail small { display:block; color:#667085; margin-top:2px; line-height:1.25; }
+        .ticket-row small { color:#667085; font-weight:600; }
+
 		@media print {
 			body.ticket-printing * {
 				visibility: hidden !important;
@@ -1666,6 +1681,33 @@
       return fallback;
     }
 
+    function ticketMovementsForCount(c){
+      const startRaw=ticketField(c,["periode_debut"],null);
+      const endRaw=ticketField(c,["periode_fin","created_at"],c?.created_at);
+      const start=startRaw?new Date(startRaw).getTime():Number.NEGATIVE_INFINITY;
+      const end=endRaw?new Date(endRaw).getTime():new Date(c.created_at).getTime();
+
+      return movements
+        .filter(m=>{
+          const ts=new Date(m.created_at).getTime();
+          return Number.isFinite(ts) && ts>=start && ts<=end;
+        })
+        .slice()
+        .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    }
+
+    function ticketMovementGroups(list){
+      const groups=new Map();
+      list.forEach(m=>{
+        const type=m.type_mouvement||"autre";
+        if(!groups.has(type)) groups.set(type,{type,label:movementLabel(type),count:0,total:0});
+        const g=groups.get(type);
+        g.count+=1;
+        g.total+=Number(m.montant||0);
+      });
+      return [...groups.values()];
+    }
+
     function openTicketX(index){
       const c=counts[index];
       if(!c || c.type_comptage!=="x") return;
@@ -1678,6 +1720,37 @@
       const comment=ticketField(c,["commentaire"],"");
       const operator=ticketField(c,["utilisateur_nom","nom_utilisateur","utilisateur"],"");
       const numero=ticketField(c,["numero_comptage","numero_ticket","numero"],"");
+      const periodMovements=ticketMovementsForCount(c);
+      const groups=ticketMovementGroups(periodMovements);
+      const lines=Array.isArray(c.lignes)?c.lignes:[];
+
+      const groupHtml=groups.length?groups.map(g=>{
+        const amount=Number(g.total||0);
+        return `<div class="ticket-row">
+          <span>${esc(g.label)} <small>(${g.count})</small></span>
+          <strong class="${amount>0?"ticket-diff ok":amount<0?"ticket-diff bad":""}">${amount>0?"+ ":amount<0?"− ":""}${esc(money(Math.abs(amount)))}</strong>
+        </div>`;
+      }).join(""):'<div class="ticket-note">Aucun mouvement d’espèces sur la période de ce Ticket X.</div>';
+
+      const movementsHtml=periodMovements.length?periodMovements.map(m=>{
+        const amount=Number(m.montant||0);
+        const detail=m.motif||m.commentaire||m.reference_type||"";
+        return `<div class="ticket-movement-detail">
+          <div>
+            <strong>${esc(movementLabel(m.type_mouvement))}</strong>
+            <small>${esc(time(m.created_at))}${m.numero_mouvement?` · ${esc(m.numero_mouvement)}`:""}</small>
+            ${detail?`<small>${esc(detail)}</small>`:""}
+          </div>
+          <strong class="ticket-diff ${amount>=0?"ok":"bad"}">${amount>=0?"+ ":"− "}${esc(money(Math.abs(amount)))}</strong>
+        </div>`;
+      }).join(""):'<div class="ticket-note">Aucun mouvement détaillé sur la période.</div>';
+
+      const countLinesHtml=lines.length?lines
+        .filter(l=>Number(l.quantite||0)>0)
+        .map(l=>`<div class="ticket-row">
+          <span>${esc(money(l.valeur))} × ${esc(String(l.quantite))}</span>
+          <strong>${esc(money(Number(l.total_ligne ?? (Number(l.valeur||0)*Number(l.quantite||0)))))}</strong>
+        </div>`).join(""):'<div class="ticket-note">Aucune coupure comptée.</div>';
 
       ticketDetailContent.innerHTML=`
         <div class="ticket-sheet-head">
@@ -1691,37 +1764,37 @@
         <div class="ticket-section">
           <h5>Résumé</h5>
           <div class="ticket-summary">
-            <div class="ticket-summary-card">
-              <span>Attendu</span>
-              <strong>${esc(money(expected))}</strong>
-            </div>
-            <div class="ticket-summary-card">
-              <span>Compté</span>
-              <strong>${esc(money(actual))}</strong>
-            </div>
-            <div class="ticket-summary-card balance ${diff===0?"":"bad"}">
-              <span>Écart</span>
-              <strong>${diff>0?"+ ":""}${esc(money(diff))}</strong>
-            </div>
+            <div class="ticket-summary-card"><span>Attendu</span><strong>${esc(money(expected))}</strong></div>
+            <div class="ticket-summary-card"><span>Compté</span><strong>${esc(money(actual))}</strong></div>
+            <div class="ticket-summary-card balance ${diff===0?"":"bad"}"><span>Écart</span><strong>${diff>0?"+ ":""}${esc(money(diff))}</strong></div>
           </div>
-          <div class="ticket-summary-text">
-            ${diff===0
-              ?`Caisse conforme : le montant compté correspond exactement au montant attendu.`
-              :`Écart constaté de ${diff>0?"+ ":""}${esc(money(diff))} entre le montant compté et le montant attendu.`}
-          </div>
+          <div class="ticket-summary-text">${diff===0
+            ?`Caisse conforme : le montant compté correspond exactement au montant attendu.`
+            :`Écart constaté de ${diff>0?"+ ":""}${esc(money(diff))} entre le montant compté et le montant attendu.`}</div>
         </div>
 
         <div class="ticket-section">
           <h5>Situation du tiroir au moment du Ticket X</h5>
           <div class="ticket-row"><span>Argent de départ</span><strong>${esc(money(snap.fond))}</strong></div>
-          <div class="ticket-row"><span>Entrées espèces</span><strong>${esc(money(snap.entries))}</strong></div>
-          <div class="ticket-row"><span>Sorties espèces</span><strong>${esc(money(snap.exits))}</strong></div>
+          <div class="ticket-row"><span>Entrées espèces cumulées</span><strong>${esc(money(snap.entries))}</strong></div>
+          <div class="ticket-row"><span>Sorties espèces cumulées</span><strong>${esc(money(snap.exits))}</strong></div>
           <div class="ticket-row total"><span>Montant attendu</span><strong>${esc(money(expected))}</strong></div>
         </div>
 
         <div class="ticket-section">
-          <h5>Comptage physique</h5>
-          <div class="ticket-row"><span>Montant compté</span><strong>${esc(money(actual))}</strong></div>
+          <h5>Résumé des mouvements de la période</h5>
+          ${groupHtml}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Détail des mouvements de la période</h5>
+          ${movementsHtml}
+        </div>
+
+        <div class="ticket-section">
+          <h5>Comptage physique — billets et pièces</h5>
+          ${countLinesHtml}
+          <div class="ticket-row total"><span>Montant compté</span><strong>${esc(money(actual))}</strong></div>
           <div class="ticket-row total"><span>Différence</span><strong class="ticket-diff ${diff===0?"ok":"bad"}">${diff>0?"+ ":""}${esc(money(diff))}</strong></div>
           ${reason?`<div class="ticket-row"><span>Motif de la différence</span><strong>${esc(reason)}</strong></div>`:""}
           ${comment?`<div class="ticket-note"><strong>Commentaire</strong><br>${esc(comment)}</div>`:""}
@@ -1729,7 +1802,7 @@
 
         <div class="ticket-section">
           <h5>Information</h5>
-          <div class="ticket-note">Le Ticket X est un état intermédiaire. Il ne clôture pas la caisse et ne remet aucun compteur à zéro.</div>
+          <div class="ticket-note"><strong>Ticket X — état intermédiaire.</strong><br>Ce document fige l’état de la caisse à la date et à l’heure indiquées. Il ne clôture pas la caisse et ne remet aucun compteur à zéro.</div>
         </div>
       `;
 
