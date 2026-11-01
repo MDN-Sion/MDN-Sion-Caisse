@@ -1708,7 +1708,39 @@
       return [...groups.values()];
     }
 
-    function openTicketX(index){
+    function activityRows(items,emptyText){
+      if(!Array.isArray(items)||!items.length) return `<div class="ticket-note">${esc(emptyText)}</div>`;
+      return items.map(item=>`<div class="ticket-movement-detail"><div><strong>${esc(item.titre||item.nom||item.numero||"Opération")}</strong>${item.sous_titre?`<small>${esc(item.sous_titre)}</small>`:""}${item.detail?`<small>${esc(item.detail)}</small>`:""}</div>${item.montant!==undefined&&item.montant!==null?`<strong>${esc(money(Number(item.montant||0)))}</strong>`:""}</div>`).join("");
+    }
+
+    function renderTicketActivity(a){
+      if(!a) return `<div class="ticket-section"><h5>PARTIE 2 — Activité complète</h5><div class="ticket-note">Le détail d’activité nécessite SQL121. La partie caisse physique ci-dessus reste disponible.</div></div>`;
+      const pay=a.paiements||{};
+      const vaisselle=a.vaisselle||{};
+      return `
+        <div class="ticket-section ticket-part-separator">
+          <h5>PARTIE 2 — Activité complète jusqu’au Ticket X</h5>
+          <div class="ticket-note">Cette partie recense l’activité métier, y compris les opérations Carte bancaire et TWINT qui ne modifient pas le tiroir physique.</div>
+        </div>
+        <div class="ticket-section">
+          <h5>Synthèse des moyens de paiement</h5>
+          <div class="ticket-row"><span>Espèces</span><strong>${esc(money(Number(pay.especes||0)))}</strong></div>
+          <div class="ticket-row"><span>Carte bancaire</span><strong>${esc(money(Number(pay.carte||0)))}</strong></div>
+          <div class="ticket-row"><span>TWINT</span><strong>${esc(money(Number(pay.twint||0)))}</strong></div>
+          <div class="ticket-row total"><span>Total des flux de paiement recensés</span><strong>${esc(money(Number(pay.total||0)))}</strong></div>
+        </div>
+        <div class="ticket-section"><h5>Ventes MDN</h5>${activityRows(a.ventes_mdn,"Aucune vente MDN sur la période.")}</div>
+        <div class="ticket-section"><h5>Ventes Fondation</h5>${activityRows(a.ventes_fondation,"Aucune vente Fondation sur la période.")}</div>
+        <div class="ticket-section"><h5>Remboursements de ventes</h5>${activityRows(a.remboursements_ventes,"Aucun remboursement de vente sur la période.")}</div>
+        <div class="ticket-section"><h5>Dons</h5>${activityRows(a.dons,"Aucun don sur la période.")}</div>
+        <div class="ticket-section"><h5>Vaisselle & consignes — synthèse par article</h5>${activityRows(vaisselle.par_article,"Aucun mouvement de vaisselle sur la période.")}</div>
+        <div class="ticket-section"><h5>Vaisselle & consignes — détail par stand</h5>${activityRows(vaisselle.par_operation,"Aucune opération de vaisselle sur la période.")}</div>
+        <div class="ticket-section"><h5>Règlements des stands</h5>${activityRows(a.reglements_stands,"Aucun règlement de stand sur la période.")}</div>
+        <div class="ticket-section"><h5>Remboursements de crédits stands</h5>${activityRows(a.remboursements_stands,"Aucun remboursement de crédit stand sur la période.")}</div>
+        <div class="ticket-section"><h5>Opérations Gobelets caisse</h5>${activityRows(a.gobelets,"Aucune opération Gobelets caisse sur la période.")}</div>`;
+    }
+
+    async function openTicketX(index){
       const c=counts[index];
       if(!c || c.type_comptage!=="x") return;
 
@@ -1723,11 +1755,23 @@
       const periodMovements=ticketMovementsForCount(c);
       const groups=ticketMovementGroups(periodMovements);
       const lines=Array.isArray(c.lignes)?c.lignes:[];
+      let activity=null;
+      if(demo){
+        try{
+          activity=await rpc("detail_activite_ticket_x_demo",{
+            p_edition_id:edition.id,
+            p_debut:session?.ouverte_at||null,
+            p_fin:c.created_at
+          });
+        }catch(e){
+          console.error("Activité Ticket X :",e);
+        }
+      }
 
       const groupHtml=groups.length?groups.map(g=>{
         const amount=Number(g.total||0);
         return `<div class="ticket-row">
-          <span>${esc(g.label)} <small>(${g.count})</small></span>
+          <span>${esc(g.label)} <small>— ${g.count} ${g.count===1?"mouvement":"mouvements"}</small></span>
           <strong class="${amount>0?"ticket-diff ok":amount<0?"ticket-diff bad":""}">${amount>0?"+ ":amount<0?"− ":""}${esc(money(Math.abs(amount)))}</strong>
         </div>`;
       }).join(""):'<div class="ticket-note">Aucun mouvement d’espèces sur la période de ce Ticket X.</div>';
@@ -1754,11 +1798,17 @@
 
       ticketDetailContent.innerHTML=`
         <div class="ticket-sheet-head">
+          <img src="logo-mdn.png" alt="Marché de Noël de Sion" style="width:92px;height:auto;display:block;margin:0 auto 10px;object-fit:contain;">
           <h4>État de la caisse — Ticket X</h4>
           <p><strong>${esc(session?.numero_session||"Caisse")}</strong></p>
           <p>${esc(dateTime(c.created_at))}${numero?` · ${esc(numero)}`:""}</p>
           ${operator?`<p>Utilisateur : ${esc(operator)}</p>`:""}
           ${demo?'<p><strong>MODE DÉMO / FORMATION</strong></p>':""}
+        </div>
+
+        <div class="ticket-section ticket-part-separator">
+          <h5>PARTIE 1 — Caisse physique</h5>
+          <div class="ticket-note">Uniquement les mouvements ayant réellement fait entrer ou sortir des espèces du tiroir.</div>
         </div>
 
         <div class="ticket-section">
@@ -1790,6 +1840,8 @@
           <h5>Détail des mouvements de la période</h5>
           ${movementsHtml}
         </div>
+
+        ${renderTicketActivity(activity)}
 
         <div class="ticket-section">
           <h5>Comptage physique — billets et pièces</h5>
