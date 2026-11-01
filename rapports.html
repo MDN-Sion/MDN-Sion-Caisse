@@ -784,12 +784,16 @@
       }
 
       /*
-       * PAGE 3
-       * Stocks vaisselle reste seul sur sa page.
+       * STOCKS VAISSELLE
+       * Le tableau suit directement "Ventes par article" si la place
+       * restante sur la page est suffisante pour l'afficher en entier.
+       * Sinon, le navigateur déplace automatiquement tout le bloc
+       * Stocks vaisselle sur la page suivante.
+       *
+       * Le tableau ne doit jamais être coupé entre deux pages.
        */
       .print-stocks-page {
-        break-before: page;
-        page-break-before: always;
+        margin-top: 10px;
         break-inside: avoid;
         page-break-inside: avoid;
       }
