@@ -2269,6 +2269,20 @@
       }
     }
 
+    function previousRetainedFloat(){
+      if(
+        session &&
+        String(session.statut||"").toLowerCase()==="cloturee" &&
+        session.fond_a_conserver!==null &&
+        session.fond_a_conserver!==undefined &&
+        session.fond_a_conserver!==""
+      ){
+        const value=Number(session.fond_a_conserver);
+        return Number.isFinite(value) && value>=0 ? value : null;
+      }
+      return null;
+    }
+
     function openSimple(mode){
       simpleMode=mode;
       simpleAmount.value="";
@@ -2280,6 +2294,11 @@
         simpleTitle.textContent="Ouverture de la caisse";
         amountLabel.textContent="Argent de départ";
         reasonField.style.display="none";
+
+        const retained=previousRetainedFloat();
+        if(retained!==null){
+          simpleAmount.value=String(retained);
+        }
       }
 
       if(mode==="add"){
@@ -2298,7 +2317,12 @@
 
       simpleModal.classList.add("show");
       simpleModal.setAttribute("aria-hidden","false");
-      setTimeout(()=>simpleAmount.focus(),50);
+      setTimeout(()=>{
+        simpleAmount.focus();
+        if(mode==="open" && previousRetainedFloat()!==null){
+          simpleAmount.select();
+        }
+      },50);
     }
 
     function closeSimple(){simpleModal.classList.remove("show");simpleModal.setAttribute("aria-hidden","true");}
