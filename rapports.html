@@ -450,6 +450,38 @@
       font-weight: 850;
     }
 
+    .dish-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 16px 18px 0;
+    }
+
+    .dish-metric {
+      min-width: 0;
+      padding: 12px 13px;
+      border: 1px solid #e7e7e7;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .dish-metric .label {
+      color: #666;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .dish-metric .value {
+      margin-top: 5px;
+      color: #850000;
+      font-size: 19px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .dish-metric.return-clean .value { color: #107c10; }
+    .dish-metric.return-dirty .value { color: #b55a00; }
+
     .empty {
       padding: 16px 4px;
       color: #888;
@@ -548,6 +580,11 @@
         margin-bottom: 12px;
       }
 
+      .dish-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 13px 14px 0;
+      }
+
       .panel-head {
         min-height: 56px;
         padding: 12px 14px;
@@ -594,6 +631,10 @@
       }
 
       .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .dish-metrics {
         grid-template-columns: 1fr;
       }
 
@@ -784,6 +825,35 @@
       }
 
       /*
+       * ACTIVITÉ VAISSELLE
+       * Le bloc reste groupé à l'impression.
+       */
+      .print-dish-activity-page {
+        margin-bottom: 8px !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .dish-metrics {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
+        padding: 8px 10px 0;
+      }
+
+      .dish-metric {
+        padding: 7px 8px;
+      }
+
+      .dish-metric .label {
+        font-size: 8px;
+      }
+
+      .dish-metric .value {
+        margin-top: 3px;
+        font-size: 14px;
+      }
+
+      /*
        * STOCKS VAISSELLE
        * Le tableau suit directement "Ventes par article" si la place
        * restante sur la page est suffisante pour l'afficher en entier.
@@ -852,6 +922,28 @@
       .print-articles-page th:nth-child(5),
       .print-articles-page td:nth-child(5) {
         width: 20%;
+      }
+
+      /*
+       * Activité vaisselle : 5 colonnes.
+       */
+      .print-dish-activity-page th:nth-child(1),
+      .print-dish-activity-page td:nth-child(1) {
+        width: 28%;
+      }
+
+      .print-dish-activity-page th:nth-child(2),
+      .print-dish-activity-page td:nth-child(2),
+      .print-dish-activity-page th:nth-child(3),
+      .print-dish-activity-page td:nth-child(3),
+      .print-dish-activity-page th:nth-child(4),
+      .print-dish-activity-page td:nth-child(4) {
+        width: 16%;
+      }
+
+      .print-dish-activity-page th:nth-child(5),
+      .print-dish-activity-page td:nth-child(5) {
+        width: 24%;
       }
 
       /*
@@ -1063,6 +1155,47 @@
               </tr>
             </thead>
             <tbody id="articlesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel print-dish-activity-page" style="margin-bottom:16px">
+        <div class="panel-head">
+          <h2>🍽 Activité vaisselle</h2>
+          <span class="badge" id="dishOperationsBadge">0 opération</span>
+        </div>
+
+        <div class="dish-metrics">
+          <div class="dish-metric">
+            <div class="label">Retraits</div>
+            <div class="value" id="dishWithdrawals">0</div>
+          </div>
+          <div class="dish-metric return-clean">
+            <div class="label">Retours propres</div>
+            <div class="value" id="dishCleanReturns">0</div>
+          </div>
+          <div class="dish-metric return-dirty">
+            <div class="label">Retours sales</div>
+            <div class="value" id="dishDirtyReturns">0</div>
+          </div>
+          <div class="dish-metric">
+            <div class="label">Solde chez les stands</div>
+            <div class="value" id="dishStandBalance">0</div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:14px">
+          <table>
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th class="num">Retraits</th>
+                <th class="num">Retours propres</th>
+                <th class="num">Retours sales</th>
+                <th class="num">Solde chez stands</th>
+              </tr>
+            </thead>
+            <tbody id="dishActivityBody"></tbody>
           </table>
         </div>
       </section>
@@ -1299,6 +1432,50 @@
         `).join("");
       }
 
+      function renderDishActivity() {
+        const activity = report?.activite_vaisselle || {};
+        const items = Array.isArray(activity.par_article) ? activity.par_article : [];
+
+        const operationCount = Number(activity.nombre_operations || 0);
+        $("dishOperationsBadge").textContent = plural(
+          operationCount,
+          "opération",
+          "opérations"
+        );
+
+        $("dishWithdrawals").textContent = Number(
+          activity.quantite_retraits || 0
+        ).toLocaleString("fr-CH");
+
+        $("dishCleanReturns").textContent = Number(
+          activity.quantite_retours_propres || 0
+        ).toLocaleString("fr-CH");
+
+        $("dishDirtyReturns").textContent = Number(
+          activity.quantite_retours_sales || 0
+        ).toLocaleString("fr-CH");
+
+        $("dishStandBalance").textContent = Number(
+          activity.solde_chez_stands_sur_periode || 0
+        ).toLocaleString("fr-CH");
+
+        if (!items.length) {
+          $("dishActivityBody").innerHTML =
+            '<tr><td colspan="5" class="empty">Aucune activité vaisselle sur la période.</td></tr>';
+          return;
+        }
+
+        $("dishActivityBody").innerHTML = items.map(item => `
+          <tr>
+            <td><strong>${esc(item.article || "Article")}</strong></td>
+            <td class="num">${esc(Number(item.retraits || 0).toLocaleString("fr-CH"))}</td>
+            <td class="num">${esc(Number(item.retours_propres || 0).toLocaleString("fr-CH"))}</td>
+            <td class="num">${esc(Number(item.retours_sales || 0).toLocaleString("fr-CH"))}</td>
+            <td class="num"><strong>${esc(Number(item.solde_chez_stands_sur_periode || 0).toLocaleString("fr-CH"))}</strong></td>
+          </tr>
+        `).join("");
+      }
+
       function renderStocks() {
         const stock = report?.stocks_vaisselle || {};
         const items = Array.isArray(stock.articles) ? stock.articles : [];
@@ -1389,6 +1566,7 @@
 
         renderCash();
         renderArticles();
+        renderDishActivity();
         renderStocks();
         renderPeriod();
 
