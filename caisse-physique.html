@@ -1756,6 +1756,7 @@
       const groups=ticketMovementGroups(periodMovements);
       const lines=Array.isArray(c.lignes)?c.lignes:[];
       let activity=null;
+      let activityError="";
       if(demo){
         try{
           activity=await rpc("detail_activite_ticket_x_demo",{
@@ -1765,6 +1766,7 @@
           });
         }catch(e){
           console.error("Activité Ticket X :",e);
+          activityError=e?.message||e?.details||String(e||"Erreur inconnue");
         }
       }
 
@@ -1841,7 +1843,7 @@
           ${movementsHtml}
         </div>
 
-        ${renderTicketActivity(activity)}
+        ${activityError ? `<div class="ticket-section ticket-part-separator"><h5>PARTIE 2 — Activité complète</h5><div class="ticket-note"><strong>Erreur SQL122 :</strong><br>${esc(activityError)}</div></div>` : renderTicketActivity(activity)}
 
         <div class="ticket-section">
           <h5>Comptage physique — billets et pièces</h5>
