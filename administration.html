@@ -785,12 +785,11 @@
 		</section>
 
 		<section class="grille" aria-label="Modules d’administration">
-			<article class="module">
-				<span class="etat-bientot">À venir</span>
+			<article class="module actif">
 				<div class="icone">👥</div>
 				<h3>Utilisateurs & rôles</h3>
 				<p>Gérer les comptes internes, leurs rôles et leur état actif ou inactif.</p>
-				<button class="action-module" type="button" disabled>Ouvrir</button>
+				<button id="ouvrirUtilisateurs" class="action-module" type="button">Ouvrir</button>
 			</article>
 
 			<article class="module">
@@ -857,6 +856,7 @@
 			const boutonAccueil = document.getElementById("boutonAccueil");
 			const boutonDeconnexion = document.getElementById("boutonDeconnexion");
 			const ouvrirArticles = document.getElementById("ouvrirArticles");
+			const ouvrirUtilisateurs = document.getElementById("ouvrirUtilisateurs");
 
 			let modeDemoActif = false;
 
@@ -877,6 +877,12 @@
 				window.location.href = modeDemoActif
 					? "administration-articles.html?mode=demo"
 					: "administration-articles.html";
+			});
+
+			ouvrirUtilisateurs.addEventListener("click", function () {
+				window.location.href = modeDemoActif
+					? "administration-utilisateurs.html?mode=demo"
+					: "administration-utilisateurs.html";
 			});
 
 			boutonDeconnexion.addEventListener("click", async function () {
