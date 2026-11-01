@@ -1705,7 +1705,9 @@
         remplirCategories(article ? article.categorieId : null);
 
         titreModaleArticle.textContent =
-          article ? "Modifier l’article" : "Nouvel article";
+          article
+            ? (peutModifierReferentiels ? "Modifier l’article" : "Consulter l’article")
+            : "Nouvel article";
 
         champNom.value = article ? article.nom : "";
         champBeneficiaire.value = article ? article.beneficiaire : "mdn";
