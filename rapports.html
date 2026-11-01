@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <title>Suivi & Rapports - MDN Sion</title>
+  <style>
+    :root {
+      --rouge: #9c0d36;
+      --rouge-fonce: #70001f;
+      --bleu: #00126b;
+      --vert: #107c10;
+      --orange: #c25a00;
+      --or: #b88400;
+      --fond: #f3f5f8;
+      --carte: #ffffff;
+      --texte: #202635;
+      --muted: #697386;
+      --bordure: #dfe4eb;
+      --ombre: 0 8px 24px rgba(26, 36, 55, .08);
+      --rayon: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--fond);
+      color: var(--texte);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
+      color: #fff;
+      text-align: center;
+    }
+    .loading.hide { display: none; }
+    .loading img { width: 92px; max-width: 24vw; }
+    .spin {
+      width: 34px;
+      height: 34px;
+      margin: 18px auto 12px;
+      border: 4px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .app { min-height: 100vh; }
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      min-height: 82px;
+      padding: 12px 18px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--rouge-fonce), var(--rouge));
+      box-shadow: 0 3px 16px rgba(60,0,20,.2);
+    }
+    .top.demo { background: linear-gradient(135deg, #6d4c00, #b88400); }
+    .title { min-width: 0; text-align: center; }
+    .title h1 { margin: 0; font-size: clamp(1.15rem, 2.6vw, 1.7rem); }
+    .title p { margin: 4px 0 0; font-size: .88rem; opacity: .9; }
+    .headbtn {
+      border: 1px solid rgba(255,255,255,.45);
+      background: rgba(255,255,255,.13);
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-weight: 700;
+    }
+    .headbtn:hover { background: rgba(255,255,255,.22); }
+
+    .demo-banner {
+      display: none;
+      padding: 9px 14px;
+      text-align: center;
+      background: #fff3c4;
+      color: #684900;
+      border-bottom: 1px solid #e6c65e;
+      font-weight: 800;
+      font-size: .9rem;
+    }
+    .demo-banner.show { display: block; }
+
+    .main {
+      width: min(1500px, calc(100% - 28px));
+      margin: 18px auto 36px;
+    }
+
+    .toolbar, .panel {
+      background: var(--carte);
+      border: 1px solid var(--bordure);
+      border-radius: var(--rayon);
+      box-shadow: var(--ombre);
+    }
+    .toolbar {
+      padding: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .field { display: grid; gap: 6px; min-width: 175px; }
+    .field label { color: var(--muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+    .field input {
+      min-height: 42px;
+      border: 1px solid #ccd3dd;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--texte);
+    }
+    .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .btn {
+      min-height: 42px;
+      border-radius: 10px;
+      padding: 9px 14px;
+      border: 1px solid #ccd3dd;
+      background: #fff;
+      color: #26324a;
+      font-weight: 800;
+    }
+    .btn.primary { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+    .btn.print { background: #edf0f4; }
+
+    .edition-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin: 0 2px 12px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .78rem;
+      font-weight: 900;
+      background: #eef1f5;
+      color: #39445a;
+    }
+    .badge.ok { background: #e8f6e8; color: #0d6a0d; }
+    .badge.warn { background: #fff1df; color: #9b4b00; }
+    .badge.demo { background: #fff3c4; color: #684900; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .metric {
+      background: #fff;
+      border: 1px solid var(--bordure);
+      border-radius: 14px;
+      padding: 15px;
+      box-shadow: var(--ombre);
+      min-width: 0;
+    }
+    .metric .label { color: var(--muted); font-size: .78rem; font-weight: 800; margin-bottom: 7px; }
+    .metric .value { font-size: clamp(1.25rem, 2.4vw, 1.8rem); font-weight: 900; color: var(--bleu); overflow-wrap: anywhere; }
+    .metric .sub { margin-top: 5px; color: var(--muted); font-size: .75rem; }
+    .metric.positive .value { color: var(--vert); }
+    .metric.negative .value { color: #b42318; }
+    .metric.warning .value { color: var(--orange); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .panel { overflow: hidden; }
+    .panel-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--bordure);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-head h2 { margin: 0; font-size: 1rem; }
+    .panel-body { padding: 15px 16px; }
+
+    .payment-list { display: grid; gap: 10px; }
+    .payment-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #edf0f4;
+    }
+    .payment-row:last-child { border-bottom: 0; }
+    .payment-row strong { color: var(--bleu); }
+
+    .cash-card { display: grid; gap: 10px; }
+    .cash-line { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid #edf0f4; }
+    .cash-line:last-child { border-bottom: 0; }
+    .cash-line span { color: var(--muted); }
+    .cash-line strong { text-align: right; }
+
+    .table-wrap { overflow: auto; max-width: 100%; }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td { padding: 10px 11px; border-bottom: 1px solid #e9edf2; text-align: left; vertical-align: middle; }
+    th { position: sticky; top: 0; background: #f7f8fa; color: #566176; font-size: .76rem; text-transform: uppercase; letter-spacing: .025em; z-index: 1; }
+    td { font-size: .88rem; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    tbody tr:hover { background: #fafbfc; }
+    .stock-alert { color: #b42318; font-weight: 900; }
+    .stock-ok { color: var(--vert); font-weight: 800; }
+
+    .empty { padding: 24px 12px; text-align: center; color: var(--muted); }
+    .error-box {
+      display: none;
+      margin-bottom: 16px;
+      padding: 13px 15px;
+      border: 1px solid #f0b8b8;
+      border-radius: 12px;
+      background: #fff0f0;
+      color: #8c1d18;
+      font-weight: 700;
+    }
+    .error-box.show { display: block; }
+
+    .footer-note { margin-top: 16px; text-align: center; color: var(--muted); font-size: .76rem; }
+
+    @media (max-width: 1150px) {
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .top { grid-template-columns: auto 1fr auto; padding: 10px; gap: 8px; min-height: 72px; }
+      .headbtn { padding: 9px 10px; font-size: .78rem; }
+      .title h1 { font-size: 1rem; }
+      .title p { font-size: .72rem; }
+      .main { width: min(100% - 16px, 1500px); margin-top: 10px; }
+      .toolbar { align-items: stretch; }
+      .field { min-width: 0; flex: 1 1 calc(50% - 6px); }
+      .toolbar-actions { width: 100%; margin-left: 0; }
+      .toolbar-actions .btn { flex: 1; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .metric { padding: 12px; }
+      .grid-2 { grid-template-columns: 1fr; gap: 12px; }
+      .edition-line { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 430px) {
+      .headbtn { padding: 8px; }
+      .headbtn .optional { display: none; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric .value { font-size: 1.2rem; }
+      .panel-head, .panel-body { padding-left: 12px; padding-right: 12px; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .loading, .no-print, .demo-banner { display: none !important; }
+      .top { position: static; background: #fff !important; color: #111; box-shadow: none; border-bottom: 2px solid #111; grid-template-columns: 1fr; }
+      .top .headbtn { display: none; }
+      .main { width: 100%; margin: 10px 0; }
+      .metric, .panel, .toolbar { box-shadow: none; break-inside: avoid; }
+      .grid-2 { break-inside: avoid; }
+      .table-wrap { overflow: visible; }
+      table { min-width: 0; }
+      th { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">
+    <div>
+      <img src="logo-mdn.png" alt="MDN" />
+      <div class="spin"></div>
+      <strong>Chargement du suivi et des rapports…</strong>
+    </div>
+  </div>
+
+  <div class="app" id="app">
+    <header class="top" id="top">
+      <button class="headbtn no-print" id="back">← <span class="optional">Accueil</span></button>
+      <div class="title">
+        <h1 id="pageTitle">📊 Suivi & Rapports</h1>
+        <p id="identity">Chargement…</p>
+      </div>
+      <button class="headbtn no-print" id="logout">Déconnexion</button>
+    </header>
+
+    <div class="demo-banner" id="demoBanner">🎓 MODE DÉMO / FORMATION — aucune donnée réelle n’est utilisée</div>
+
+    <main class="main">
+      <div class="error-box" id="errorBox"></div>
+
+      <section class="toolbar no-print">
+        <div class="field">
+          <label for="dateStart">Du</label>
+          <input id="dateStart" type="date" />
+        </div>
+        <div class="field">
+          <label for="dateEnd">Au</label>
+          <input id="dateEnd" type="date" />
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn" id="resetBtn">Toute l’édition</button>
+          <button class="btn primary" id="applyBtn">Actualiser</button>
+          <button class="btn print" id="printBtn">🖨 Imprimer</button>
+        </div>
+      </section>
+
+      <div class="edition-line">
+        <div id="editionText">Édition en cours de chargement…</div>
+        <div id="periodBadge" class="badge">Toute l’édition</div>
+      </div>
+
+      <section class="metrics">
+        <article class="metric positive">
+          <div class="label">Ventes nettes</div>
+          <div class="value" id="salesNet">CHF 0.00</div>
+          <div class="sub" id="salesCount">0 vente</div>
+        </article>
+        <article class="metric">
+          <div class="label">Ventes MDN</div>
+          <div class="value" id="salesMdn">CHF 0.00</div>
+          <div class="sub">Brut avant remboursements</div>
+        </article>
+        <article class="metric">
+          <div class="label">Ventes Fondation</div>
+          <div class="value" id="salesFoundation">CHF 0.00</div>
+          <div class="sub">Brut avant remboursements</div>
+        </article>
+        <article class="metric">
+          <div class="label">Panier moyen</div>
+          <div class="value" id="averageBasket">CHF 0.00</div>
+          <div class="sub">Sur les ventes enregistrées</div>
+        </article>
+        <article class="metric warning">
+          <div class="label">Dons</div>
+          <div class="value" id="donations">CHF 0.00</div>
+          <div class="sub" id="donationsCount">0 don</div>
+        </article>
+        <article class="metric negative">
+          <div class="label">Remboursements ventes</div>
+          <div class="value" id="refunds">CHF 0.00</div>
+          <div class="sub" id="refundsCount">0 remboursement</div>
+        </article>
+      </section>
+
+      <div class="grid-2">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>💳 Paiements des ventes</h2>
+            <span class="badge" id="paymentsTotal">CHF 0.00</span>
+          </div>
+          <div class="panel-body">
+            <div class="payment-list" id="paymentsList"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>💰 Caisse physique</h2>
+            <span class="badge" id="cashStatus">Aucune session</span>
+          </div>
+          <div class="panel-body">
+            <div class="cash-card" id="cashDetails"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="grid-2">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>🎁 Dons par moyen de paiement</h2>
+          </div>
+          <div class="panel-body">
+            <div class="payment-list" id="donationPayments"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>↩ Remboursements par moyen</h2>
+          </div>
+          <div class="panel-body">
+            <div class="payment-list" id="refundPayments"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-bottom:16px">
+        <div class="panel-head">
+          <h2>🛒 Ventes par article</h2>
+          <span class="badge" id="articleCount">0 article</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Bénéficiaire</th>
+                <th class="num">Quantité</th>
+                <th class="num">Montant</th>
+                <th class="num">Prix exceptionnels</th>
+              </tr>
+            </thead>
+            <tbody id="articlesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>🍽 Stocks vaisselle</h2>
+          <span class="badge" id="stockAlertBadge">0 alerte</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Conditionnement</th>
+                <th class="num">Stock tente</th>
+                <th class="num">Réserve</th>
+                <th class="num">Propre total</th>
+                <th class="num">Chez stands</th>
+                <th class="num">Retours sales</th>
+                <th>État</th>
+              </tr>
+            </thead>
+            <tbody id="stocksBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="footer-note" id="generatedAt"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+
+      const loading = $("loading");
+      const topbar = $("top");
+      const demoBanner = $("demoBanner");
+      const pageTitle = $("pageTitle");
+      const identity = $("identity");
+      const errorBox = $("errorBox");
+      const dateStart = $("dateStart");
+      const dateEnd = $("dateEnd");
+
+      let client = null;
+      let auth = null;
+      let role = "";
+      let demo = false;
+      let report = null;
+
+      function esc(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function money(value) {
+        const number = Number(value || 0);
+        return "CHF " + number.toLocaleString("fr-CH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
+      function dateTime(value) {
+        if (!value) return "—";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "—";
+        return date.toLocaleString("fr-CH", {
+          dateStyle: "short",
+          timeStyle: "short"
+        });
+      }
+
+      function plural(number, singular, pluralForm) {
+        return Number(number || 0) + " " + (Number(number || 0) > 1 ? pluralForm : singular);
+      }
+
+      function showError(message) {
+        errorBox.textContent = message || "Une erreur est survenue.";
+        errorBox.classList.add("show");
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.classList.remove("show");
+      }
+
+      async function rpc(name, params = {}) {
+        const { data, error } = await client.rpc(name, params);
+        if (error) throw error;
+        return data;
+      }
+
+      function startIso(value) {
+        if (!value) return null;
+        return value + "T00:00:00";
+      }
+
+      function endExclusiveIso(value) {
+        if (!value) return null;
+        const date = new Date(value + "T00:00:00");
+        date.setDate(date.getDate() + 1);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}T00:00:00`;
+      }
+
+      function renderPaymentList(target, items, emptyText) {
+        const list = Array.isArray(items) ? items : [];
+        if (!list.length) {
+          target.innerHTML = `<div class="empty">${esc(emptyText)}</div>`;
+          return;
+        }
+        target.innerHTML = list.map(item => `
+          <div class="payment-row">
+            <span>${esc(item.nom || item.code || "Autre")}</span>
+            <strong>${esc(money(item.montant))}</strong>
+          </div>
+        `).join("");
+      }
+
+      function renderCash() {
+        const caisse = report?.caisse_physique || {};
+        const session = caisse.session || {};
+        const controle = caisse.dernier_controle || null;
+        const statut = String(session.statut || "aucune_session").toLowerCase();
+        const label = statut === "ouverte" ? "Ouverte" : statut === "cloturee" || statut === "clôturée" ? "Clôturée" : "Aucune session";
+
+        $("cashStatus").textContent = label;
+        $("cashStatus").className = "badge " + (statut === "ouverte" ? "ok" : "");
+
+        const lines = [
+          ["Session", session.numero_session || "—"],
+          ["Ouverture", dateTime(session.ouverte_at)],
+          ["Fermeture", dateTime(session.fermee_at || session.cloturee_at)],
+          ["Fond d'ouverture", money(session.montant_ouverture || 0)],
+          ["Mouvements", Number(session.nombre_mouvements || 0)]
+        ];
+
+        if (session.montant_theorique !== undefined && session.montant_theorique !== null) {
+          lines.push(["Montant théorique", money(session.montant_theorique)]);
+        }
+
+        if (controle) {
+          lines.push(["Dernier contrôle", dateTime(controle.created_at)]);
+          lines.push(["Montant compté", money(controle.montant_compte || 0)]);
+          lines.push(["Écart", money(controle.ecart || 0)]);
+        }
+
+        $("cashDetails").innerHTML = lines.map(([labelText, value]) => `
+          <div class="cash-line">
+            <span>${esc(labelText)}</span>
+            <strong>${esc(value)}</strong>
+          </div>
+        `).join("");
+      }
+
+      function renderArticles() {
+        const items = Array.isArray(report?.ventes?.par_article) ? report.ventes.par_article : [];
+        $("articleCount").textContent = plural(items.length, "article", "articles");
+
+        if (!items.length) {
+          $("articlesBody").innerHTML = '<tr><td colspan="5" class="empty">Aucune vente sur la période.</td></tr>';
+          return;
+        }
+
+        $("articlesBody").innerHTML = items.map(item => `
+          <tr>
+            <td><strong>${esc(item.article || "Article")}</strong></td>
+            <td>${esc(item.beneficiaire || "—")}</td>
+            <td class="num">${esc(Number(item.quantite || 0).toLocaleString("fr-CH"))}</td>
+            <td class="num"><strong>${esc(money(item.montant))}</strong></td>
+            <td class="num">${esc(Number(item.nombre_lignes_prix_exceptionnel || 0).toLocaleString("fr-CH"))}</td>
+          </tr>
+        `).join("");
+      }
+
+      function renderStocks() {
+        const stock = report?.stocks_vaisselle || {};
+        const items = Array.isArray(stock.articles) ? stock.articles : [];
+        const alerts = Number(stock.nombre_alertes || 0);
+
+        $("stockAlertBadge").textContent = plural(alerts, "alerte", "alertes");
+        $("stockAlertBadge").className = "badge " + (alerts > 0 ? "warn" : "ok");
+
+        if (!items.length) {
+          $("stocksBody").innerHTML = '<tr><td colspan="8" class="empty">Aucun état de stock disponible.</td></tr>';
+          return;
+        }
+
+        $("stocksBody").innerHTML = items.map(item => {
+          const alert = item.alerte_stock_tente === true;
+          return `
+            <tr>
+              <td><strong>${esc(item.article || "Article")}</strong></td>
+              <td>${esc(item.type_conditionnement || "—")}</td>
+              <td class="num">${esc(Number(item.stock_mdn_tente || 0).toLocaleString("fr-CH"))}</td>
+              <td class="num">${esc(Number(item.reserve_mdn || 0).toLocaleString("fr-CH"))}</td>
+              <td class="num">${esc(Number(item.stock_propre_total || 0).toLocaleString("fr-CH"))}</td>
+              <td class="num">${esc(Number(item.chez_stands || 0).toLocaleString("fr-CH"))}</td>
+              <td class="num">${esc(Number(item.retours_sales_cumules || 0).toLocaleString("fr-CH"))}</td>
+              <td class="${alert ? "stock-alert" : "stock-ok"}">${alert ? "⚠ Stock bas" : "✓ OK"}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function renderPeriod() {
+        if (!dateStart.value && !dateEnd.value) {
+          $("periodBadge").textContent = "Toute l’édition";
+          return;
+        }
+        const from = dateStart.value ? new Date(dateStart.value + "T00:00:00").toLocaleDateString("fr-CH") : "début";
+        const to = dateEnd.value ? new Date(dateEnd.value + "T00:00:00").toLocaleDateString("fr-CH") : "aujourd’hui";
+        $("periodBadge").textContent = `${from} → ${to}`;
+      }
+
+      function render() {
+        const edition = report?.edition || {};
+        const synthese = report?.synthese || {};
+        const ventes = report?.ventes || {};
+        const paiements = report?.paiements_ventes || {};
+        const dons = report?.dons || {};
+        const remboursements = report?.remboursements_ventes || {};
+
+        $("editionText").textContent = edition.nom
+          ? `${edition.nom} · ${edition.statut || "édition"}`
+          : "Édition non renseignée";
+
+        $("salesNet").textContent = money(ventes.net || synthese.ventes_net || 0);
+        $("salesCount").textContent = plural(ventes.nombre || synthese.nombre_ventes || 0, "vente", "ventes");
+        $("salesMdn").textContent = money(ventes.mdn || synthese.ventes_mdn || 0);
+        $("salesFoundation").textContent = money(ventes.fondation || synthese.ventes_fondation || 0);
+        $("averageBasket").textContent = money(ventes.panier_moyen || synthese.panier_moyen || 0);
+        $("donations").textContent = money(dons.total || synthese.dons || 0);
+        $("donationsCount").textContent = plural(dons.nombre || synthese.nombre_dons || 0, "don", "dons");
+        $("refunds").textContent = money(remboursements.total || synthese.remboursements_ventes || 0);
+        $("refundsCount").textContent = plural(remboursements.nombre || 0, "remboursement", "remboursements");
+
+        $("paymentsTotal").textContent = money(paiements.total || 0);
+        renderPaymentList($("paymentsList"), paiements.detail, "Aucun paiement de vente sur la période.");
+        renderPaymentList($("donationPayments"), dons.par_moyen_paiement, "Aucun don sur la période.");
+        renderPaymentList($("refundPayments"), remboursements.par_moyen_paiement, "Aucun remboursement de vente sur la période.");
+
+        renderCash();
+        renderArticles();
+        renderStocks();
+        renderPeriod();
+
+        $("generatedAt").textContent = report?.meta?.genere_at
+          ? `Rapport actualisé le ${dateTime(report.meta.genere_at)}.`
+          : "";
+      }
+
+      async function loadReport() {
+        clearError();
+        $("applyBtn").disabled = true;
+
+        try {
+          if (dateStart.value && dateEnd.value && dateStart.value > dateEnd.value) {
+            throw new Error("La date de début doit être antérieure ou égale à la date de fin.");
+          }
+
+          report = await rpc("suivi_rapports", {
+            p_edition_id: null,
+            p_is_demo: demo,
+            p_date_debut: startIso(dateStart.value),
+            p_date_fin: endExclusiveIso(dateEnd.value)
+          });
+
+          if (!report || report.ok !== true) {
+            throw new Error("Le moteur Suivi & Rapports n’a pas renvoyé de résultat valide.");
+          }
+
+          render();
+        } catch (error) {
+          console.error("Chargement Suivi & Rapports :", error);
+          showError(error?.message || "Impossible de charger le suivi et les rapports.");
+        } finally {
+          $("applyBtn").disabled = false;
+        }
+      }
+
+      function bind() {
+        $("back").onclick = () => { location.href = "accueil.html"; };
+        $("logout").onclick = async () => { await window.MDN_AUTH.deconnexion(); };
+        $("applyBtn").onclick = loadReport;
+        $("resetBtn").onclick = async () => {
+          dateStart.value = "";
+          dateEnd.value = "";
+          await loadReport();
+        };
+        $("printBtn").onclick = () => window.print();
+      }
+
+      async function init() {
+        try {
+          if (!window.MDN_AUTH) {
+            throw new Error("Module d’authentification indisponible.");
+          }
+
+          auth = await window.MDN_AUTH.protegerPage([
+            "utilisateur",
+            "responsable",
+            "administrateur"
+          ]);
+
+          if (!auth) return;
+
+          client = window.MDN_SUPABASE;
+          if (!client) {
+            throw new Error("Client Supabase indisponible.");
+          }
+
+          role = String(auth.profil?.role || auth.role || "")
+            .trim()
+            .toLocaleLowerCase("fr");
+
+          const etatSessionDemo = await rpc("etat_session_demo");
+          demo = etatSessionDemo?.mode_demo === true;
+
+          if (!demo && !["responsable", "administrateur"].includes(role)) {
+            throw new Error("Accès réservé aux responsables et administrateurs.");
+          }
+
+          const prenom = String(auth.profil?.prenom || "Utilisateur").trim();
+          const roleLabel = window.MDN_AUTH.libelleRole
+            ? window.MDN_AUTH.libelleRole(auth.profil?.role)
+            : String(auth.libelleRole || auth.profil?.role || "");
+
+          identity.textContent = `${prenom} · ${roleLabel}`;
+
+          if (demo) {
+            topbar.classList.add("demo");
+            demoBanner.classList.add("show");
+            pageTitle.textContent = "🎓 Suivi & Rapports · MODE DÉMO";
+            document.title = "Suivi & Rapports Démo - MDN Sion";
+          } else {
+            topbar.classList.remove("demo");
+            demoBanner.classList.remove("show");
+            pageTitle.textContent = "📊 Suivi & Rapports";
+            document.title = "Suivi & Rapports - MDN Sion";
+          }
+
+          bind();
+          await loadReport();
+          window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion: true });
+        } catch (error) {
+          console.error("Initialisation Suivi & Rapports :", error);
+          showError(error?.message || "Impossible d’ouvrir Suivi & Rapports.");
+        } finally {
+          loading.classList.add("hide");
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
