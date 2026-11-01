@@ -1733,7 +1733,7 @@
     function ticketPaymentLines(paiements){
       if(!Array.isArray(paiements)||!paiements.length) return "";
       return paiements.map(p=>{
-        const code=p?.code||p?.moyen||p?.libelle||"";
+        const code=p?.code||p?.moyen_paiement_code||p?.moyen||p?.libelle||p?.nom||"";
         const montant=Number(p?.montant||0);
         return `<small>${esc(ticketPaymentLabel(code))} : <strong>${esc(money(montant))}</strong></small>`;
       }).join("");
@@ -1912,7 +1912,7 @@
               <strong>Remboursement de crédit stand</strong>
               ${date?`<small>${esc(date)}</small>`:""}
               ${stand?`<small>Stand : <strong>${esc(stand)}</strong></small>`:""}
-              ${item.moyen_paiement?`<small>Moyen : ${esc(ticketPaymentLabel(item.moyen_paiement))}</small>`:""}
+              ${(item.moyen_paiement_code||item.moyen_paiement||item.moyen_paiement_libelle)?`<small>Moyen : <strong>${esc(ticketPaymentLabel(item.moyen_paiement_code||item.moyen_paiement||item.moyen_paiement_libelle))}</strong></small>`:""}
               ${item.commentaire?`<small>Commentaire : ${esc(item.commentaire)}</small>`:""}
               <small>Montant remboursé : <strong>${esc(money(montant))}</strong></small>
             </div>
@@ -1925,7 +1925,7 @@
       const t=String(type||"").trim().toLowerCase();
       if(["achat","vente","retrait"].includes(t)) return "Achat / sortie de gobelets";
       if(t==="retour") return "Retour de gobelets";
-      if(["don","don_retour"].includes(t)) return "Retour de gobelets donné";
+      if(["don","don_retour","don_consigne"].includes(t)) return "Don de consigne / retour donné";
       return type ? String(type).replaceAll("_"," ") : "Opération Gobelets";
     }
 
@@ -1935,16 +1935,30 @@
         const date=ticketActivityDate(item.created_at);
         const qty=Number(item.quantite||0);
         const montant=Number(item.montant||0);
+        const paiements=Array.isArray(item.paiements)?item.paiements:[];
+        const type=String(item.type_operation||"").trim().toLowerCase();
+        const compensation=paiements.reduce((s,p)=>{
+          const c=String(p?.code||p?.moyen_paiement_code||p?.moyen||p?.libelle||"").trim().toLowerCase();
+          return s+(c==="retour_gobelet"?Number(p?.montant||0):0);
+        },0);
+        const especes=paiements.reduce((s,p)=>{
+          const c=String(p?.code||p?.moyen_paiement_code||p?.moyen||p?.libelle||"").trim().toLowerCase();
+          return s+(c==="especes"?Number(p?.montant||0):0);
+        },0);
+        const isRetour=type==="retour";
         return `
           <div class="ticket-movement-detail">
             <div>
               <strong>${esc(gobeletOperationLabel(item.type_operation))}</strong>
               ${date?`<small>${esc(date)}</small>`:""}
               <small>Quantité : <strong>${esc(String(qty))} gobelet${qty===1?"":"s"}</strong></small>
-              ${ticketPaymentLines(item.paiements)}
-              <small>Valeur de l'opération : <strong>${esc(money(montant))}</strong></small>
+              ${isRetour?`<small>Valeur du retour : <strong>${esc(money(Math.abs(montant)))}</strong></small>`:""}
+              ${isRetour&&compensation>0?`<small>Compensation par nouvel achat : <strong>${esc(money(compensation))}</strong></small>`:""}
+              ${isRetour&&especes>0?`<small>Remboursement réellement versé en espèces : <strong>${esc(money(especes))}</strong></small>`:""}
+              ${!isRetour?ticketPaymentLines(paiements):""}
+              ${!isRetour?`<small>Valeur de l'opération : <strong>${esc(money(montant))}</strong></small>`:""}
             </div>
-            <strong>${esc(money(montant))}</strong>
+            <strong>${esc(isRetour?money(Math.abs(montant)):money(montant))}</strong>
           </div>`;
       }).join("");
     }
