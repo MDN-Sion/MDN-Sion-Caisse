@@ -1379,7 +1379,7 @@
   <div class="modal" id="ticketDetailModal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-head">
-        <h3>Détail du Ticket X</h3>
+        <h3 id="ticketDetailTitle">Détail du ticket</h3>
         <button class="close no-print" id="ticketDetailClose">×</button>
       </div>
       <div class="modal-body">
@@ -1387,7 +1387,7 @@
       </div>
       <div class="ticket-detail-actions no-print">
         <button class="ticket-detail-close-btn" id="ticketDetailCancel">Fermer</button>
-        <button class="ticket-print-btn" id="ticketDetailPrint">Imprimer le Ticket X</button>
+        <button class="ticket-print-btn" id="ticketDetailPrint">Imprimer le ticket</button>
       </div>
     </div>
   </div>
@@ -1408,12 +1408,12 @@
     const openBtn=$("openBtn"), addBtn=$("addBtn"), removeBtn=$("removeBtn"), countBtn=$("countBtn"), xBtn=$("xBtn"), zBtn=$("zBtn"), journal=$("journal"), tickets=$("tickets");
     const simpleModal=$("simpleModal"), simpleTitle=$("simpleTitle"), amountLabel=$("amountLabel"), simpleAmount=$("simpleAmount"), reasonField=$("reasonField"), simpleReason=$("simpleReason"), simpleComment=$("simpleComment");
     const countModal=$("countModal"), countTitle=$("countTitle"), countGrid=$("countGrid"), countExpected=$("countExpected"), countActual=$("countActual"), countDiff=$("countDiff"), countReasonField=$("countReasonField"), countReason=$("countReason"), countCommentField=$("countCommentField"), countComment=$("countComment"), keepFloatField=$("keepFloatField"), keepFloat=$("keepFloat");
-    const ticketDetailModal=$("ticketDetailModal"), ticketDetailContent=$("ticketDetailContent");
+    const ticketDetailModal=$("ticketDetailModal"), ticketDetailContent=$("ticketDetailContent"), ticketDetailTitle=$("ticketDetailTitle");
     const ticketDetailClose=$("ticketDetailClose"), ticketDetailCancel=$("ticketDetailCancel"), ticketDetailPrint=$("ticketDetailPrint");
     const toast=$("toast"), toastText=$("toastText");
 
     let client=null, auth=null, edition=null, session=null, movements=[], counts=[], denominations=[];
-    let demo=false, role="", canManage=false, simpleMode="", countMode="verification";
+    let demo=false, role="", canManage=false, simpleMode="", countMode="verification", currentTicketType="x";
 
     function syncVisibleViewport(){
       const height=window.visualViewport?.height || window.innerHeight;
@@ -1609,12 +1609,14 @@
     }
 
     function render(){
-      const isOpen=Boolean(session?.session_caisse_id);
+      const isOpen=Boolean(session?.session_caisse_id) && String(session?.statut||"").toLowerCase()==="ouverte";
       statusBadge.textContent=isOpen?"Ouverte":"Fermée";
       statusBadge.className="badge "+(isOpen?"open":"closed");
       sessionMeta.textContent=isOpen
         ?`${session.numero_session} · ouverte le ${dateTime(session.ouverte_at)}`
-        :`Édition ${edition?.annee||""} · aucune session ouverte`;
+        :session?.session_caisse_id
+          ?`${session.numero_session} · clôturée le ${dateTime(session.cloturee_at)}`
+          :`Édition ${edition?.annee||""} · aucune session enregistrée`;
 
       const fond=Number(session?.fond_initial||0);
       const entries=movements.filter(m=>Number(m.montant)>0 && m.type_mouvement!=="fond_initial").reduce((s,m)=>s+Number(m.montant),0);
@@ -1636,8 +1638,8 @@
 
       tickets.innerHTML=counts.length?counts.map((c,index)=>{
         const label=c.type_comptage==="x"?"Ticket X":c.type_comptage==="z"?"Ticket Z":"Vérification";
-        const openable=c.type_comptage==="x";
-        return `<div class="ticket ${openable?"ticket-openable":""}" ${openable?`data-ticket-index="${index}" role="button" tabindex="0" title="Ouvrir le détail du Ticket X"`:""}>
+        const openable=["x","z"].includes(c.type_comptage);
+        return `<div class="ticket ${openable?"ticket-openable":""}" ${openable?`data-ticket-index="${index}" role="button" tabindex="0" title="Ouvrir le détail du ${esc(label)}"`:""}>
           <div>
             <strong>${esc(label)}</strong>
             <small>${esc(dateTime(c.created_at))} · compté ${esc(money(c.montant_compte))}</small>
@@ -1648,7 +1650,7 @@
       }).join(""):'<div class="empty">Aucun contrôle enregistré pour cette session.</div>';
 
       tickets.querySelectorAll(".ticket-openable").forEach(el=>{
-        const open=()=>openTicketX(Number(el.dataset.ticketIndex));
+        const open=()=>openTicketDetail(Number(el.dataset.ticketIndex));
         el.addEventListener("click",open);
         el.addEventListener("keydown",e=>{
           if(e.key==="Enter" || e.key===" "){
@@ -1965,14 +1967,15 @@
       }).join("");
     }
 
-    function renderTicketActivity(a){
+    function renderTicketActivity(a,ticketType="x"){
+      const ticketLabel=ticketType==="z"?"Ticket Z":"Ticket X";
       if(!a) return `<div class="ticket-section"><h5>PARTIE 2 — Activité complète</h5><div class="ticket-note">Le détail d’activité nécessite SQL122. La partie caisse physique ci-dessus reste disponible.</div></div>`;
       const pay=a.paiements||{};
       const vaisselle=a.vaisselle||{};
       return `
         <div class="ticket-section ticket-part-separator">
-          <h5>PARTIE 2 — Activité complète jusqu’au Ticket X</h5>
-          <div class="ticket-note">Cette partie détaille l’activité métier jusqu’à l’heure du Ticket X, y compris les flux Carte bancaire et TWINT qui ne modifient pas le tiroir physique.</div>
+          <h5>PARTIE 2 — Activité complète jusqu’au ${ticketLabel}</h5>
+          <div class="ticket-note">Cette partie détaille l’activité métier depuis l’ouverture de la session jusqu’à l’heure du ${ticketLabel}, y compris les flux Carte bancaire et TWINT qui ne modifient pas le tiroir physique.</div>
         </div>
 
         <div class="ticket-section">
@@ -2030,9 +2033,12 @@
     }
 
 
-    async function openTicketX(index){
+    async function openTicketDetail(index){
       const c=counts[index];
-      if(!c || c.type_comptage!=="x") return;
+      if(!c || !["x","z"].includes(c.type_comptage)) return;
+      const isZ=c.type_comptage==="z";
+      const ticketLabel=isZ?"Ticket Z":"Ticket X";
+      currentTicketType=c.type_comptage;
 
       const snap=ticketSnapshotAt(c.created_at);
       const expected=Number(ticketField(c,["montant_attendu","montant_theorique"],snap.expected));
@@ -2055,7 +2061,7 @@
             p_fin:c.created_at
           });
         }catch(e){
-          console.error("Activité Ticket X :",e);
+          console.error(`Activité ${ticketLabel} :`,e);
           activityError=e?.message||e?.details||String(e||"Erreur inconnue");
         }
       }
@@ -2066,7 +2072,7 @@
           <span>${esc(g.label)} <small>— ${g.count} ${g.count===1?"mouvement":"mouvements"}</small></span>
           <strong class="${amount>0?"ticket-diff ok":amount<0?"ticket-diff bad":""}">${amount>0?"+ ":amount<0?"− ":""}${esc(money(Math.abs(amount)))}</strong>
         </div>`;
-      }).join(""):'<div class="ticket-note">Aucun mouvement d’espèces sur la période de ce Ticket X.</div>';
+      }).join(""):'<div class="ticket-note">Aucun mouvement d’espèces sur la période de ce ticket.</div>';
 
       const movementsHtml=periodMovements.length?periodMovements.map(m=>{
         const amount=Number(m.montant||0);
@@ -2091,7 +2097,7 @@
       ticketDetailContent.innerHTML=`
         <div class="ticket-sheet-head">
           <img src="logo-mdn.png" alt="Marché de Noël de Sion" style="width:92px;height:auto;display:block;margin:0 auto 10px;object-fit:contain;">
-          <h4>État de la caisse — Ticket X</h4>
+          <h4>${isZ?"Clôture de la caisse — Ticket Z":"État de la caisse — Ticket X"}</h4>
           <p><strong>${esc(session?.numero_session||"Caisse")}</strong></p>
           <p>${esc(dateTime(c.created_at))}${numero?` · ${esc(numero)}`:""}</p>
           ${operator?`<p>Utilisateur : ${esc(operator)}</p>`:""}
@@ -2133,7 +2139,18 @@
           ${movementsHtml}
         </div>
 
-        ${activityError ? `<div class="ticket-section ticket-part-separator"><h5>PARTIE 2 — Activité complète</h5><div class="ticket-note"><strong>Erreur SQL122 :</strong><br>${esc(activityError)}</div></div>` : renderTicketActivity(activity)}
+        ${isZ?`
+        <div class="ticket-section">
+          <h5>Clôture définitive de la session</h5>
+          <div class="ticket-row"><span>Montant théorique à la clôture</span><strong>${esc(money(Number(session?.montant_theorique_cloture ?? expected)))}</strong></div>
+          <div class="ticket-row"><span>Montant physiquement compté</span><strong>${esc(money(actual))}</strong></div>
+          <div class="ticket-row"><span>Écart de caisse</span><strong class="ticket-diff ${diff===0?"ok":"bad"}">${diff>0?"+ ":""}${esc(money(diff))}</strong></div>
+          <div class="ticket-row"><span>Fond conservé pour la prochaine ouverture</span><strong>${esc(money(Number(session?.fond_a_conserver||0)))}</strong></div>
+          <div class="ticket-row total"><span>Montant à déposer</span><strong>${esc(money(Number(session?.montant_a_deposer ?? Math.max(actual-Number(session?.fond_a_conserver||0),0))))}</strong></div>
+          ${session?.cloturee_at?`<div class="ticket-note">Session clôturée définitivement le <strong>${esc(dateTime(session.cloturee_at))}</strong>.</div>`:""}
+        </div>`:""}
+
+        ${activityError ? `<div class="ticket-section ticket-part-separator"><h5>PARTIE 2 — Activité complète</h5><div class="ticket-note"><strong>Erreur SQL122 :</strong><br>${esc(activityError)}</div></div>` : renderTicketActivity(activity,c.type_comptage)}
 
         <div class="ticket-section">
           <h5>Comptage physique — billets et pièces</h5>
@@ -2146,10 +2163,14 @@
 
         <div class="ticket-section">
           <h5>Information</h5>
-          <div class="ticket-note"><strong>Ticket X — état intermédiaire.</strong><br>Ce document fige l’état de la caisse à la date et à l’heure indiquées. Il ne clôture pas la caisse et ne remet aucun compteur à zéro.</div>
+          <div class="ticket-note">${isZ
+            ?`<strong>Ticket Z — clôture définitive.</strong><br>Ce document fige définitivement la session de caisse à la date et à l’heure indiquées. Les opérations suivantes devront appartenir à une nouvelle session de caisse.`
+            :`<strong>Ticket X — état intermédiaire.</strong><br>Ce document fige l’état de la caisse à la date et à l’heure indiquées. Il ne clôture pas la caisse et ne remet aucun compteur à zéro.`}</div>
         </div>
       `;
 
+      ticketDetailTitle.textContent=`Détail du ${ticketLabel}`;
+      ticketDetailPrint.textContent=`Imprimer le ${ticketLabel}`;
       ticketDetailModal.classList.add("show");
       ticketDetailModal.setAttribute("aria-hidden","false");
     }
@@ -2159,7 +2180,7 @@
       ticketDetailModal.setAttribute("aria-hidden","true");
     }
 
-    function printTicketX(){
+    function printTicket(){
       document.body.classList.add("ticket-printing");
       const cleanup=()=>document.body.classList.remove("ticket-printing");
       window.addEventListener("afterprint",cleanup,{once:true});
@@ -2419,7 +2440,7 @@
       $("refreshBtn").onclick=refresh;$("toastClose").onclick=()=>toast.classList.remove("show");
       ticketDetailClose.onclick=closeTicketDetail;
       ticketDetailCancel.onclick=closeTicketDetail;
-      ticketDetailPrint.onclick=printTicketX;
+      ticketDetailPrint.onclick=printTicket;
       ticketDetailModal.addEventListener("click",e=>{if(e.target===ticketDetailModal) closeTicketDetail();});
       openBtn.onclick=()=>openSimple("open");
 		addBtn.onclick=()=>openSimple("add");
