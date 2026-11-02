@@ -15,6 +15,29 @@
     content="Application de gestion du Marché de Noël de Sion"
   >
 
+  <!--
+    FAVICON NAVIGATEURS / SAFARI / IPAD
+    Le paramètre ?v=20261102 force aussi Safari à relire le fichier
+    au lieu de conserver un ancien favicon en cache.
+  -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="logo-mdn.png?v=20261102"
+  >
+
+  <link
+    rel="shortcut icon"
+    type="image/png"
+    href="logo-mdn.png?v=20261102"
+  >
+
+  <!-- ICÔNE AJOUT À L'ÉCRAN D'ACCUEIL APPLE -->
+  <link
+    rel="apple-touch-icon"
+    href="logo-mdn.png?v=20261102"
+  >
+
   <title>MDN Sion</title>
 
   <style>
@@ -76,24 +99,34 @@
     }
 
     .embleme {
-      width: 88px;
-      height: 88px;
+      width: 104px;
+      height: 104px;
 
       display: flex;
       align-items: center;
       justify-content: center;
 
       margin-bottom: 24px;
+      padding: 8px;
 
       border: 2px solid rgba(255, 255, 255, 0.75);
       border-radius: 24px;
 
       background: rgba(255, 255, 255, 0.10);
 
-      font-size: 42px;
-
       box-shadow:
         0 14px 35px rgba(0, 0, 0, 0.18);
+
+      overflow: hidden;
+    }
+
+    .embleme img {
+      display: block;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: contain;
     }
 
     h1 {
@@ -166,7 +199,10 @@
   <main class="chargement" aria-live="polite">
 
     <div class="embleme" aria-hidden="true">
-      ❄
+      <img
+        src="logo-mdn.png"
+        alt=""
+      >
     </div>
 
     <h1>MDN Sion</h1>
@@ -215,7 +251,7 @@
 
 
   <!-- ======================================================
-       TEST TECHNIQUE DU SOCLE
+       INITIALISATION MDN SION
        ====================================================== -->
 
   <script>
@@ -245,7 +281,70 @@
       }
 
 
+      function contientRetourAuthentification() {
+
+        const recherche =
+          new URLSearchParams(window.location.search);
+
+        const fragment =
+          new URLSearchParams(
+            window.location.hash.replace(/^#/, "")
+          );
+
+        return Boolean(
+          recherche.get("code") ||
+          recherche.get("token_hash") ||
+          recherche.get("type") ||
+          recherche.get("error") ||
+          fragment.get("access_token") ||
+          fragment.get("refresh_token") ||
+          fragment.get("type") ||
+          fragment.get("error")
+        );
+      }
+
+
+      function redirigerRetourAuthentification() {
+
+        const destination =
+          new URL(
+            "mot-de-passe.html",
+            window.location.href
+          );
+
+        destination.search =
+          window.location.search;
+
+        destination.hash =
+          window.location.hash;
+
+        window.location.replace(
+          destination.href
+        );
+      }
+
+
       try {
+
+        /*
+         * Filet de sécurité :
+         *
+         * si Supabase renvoie encore exceptionnellement un lien
+         * d'invitation ou de récupération vers index.html,
+         * on transmet intégralement les paramètres à
+         * mot-de-passe.html.
+         */
+
+        if (contientRetourAuthentification()) {
+
+          texteChargement.textContent =
+            "Ouverture sécurisée de la page de mot de passe…";
+
+          redirigerRetourAuthentification();
+
+          return;
+        }
+
 
         if (!window.MDN_SUPABASE) {
           throw new Error(
@@ -268,24 +367,22 @@
         if (data.session) {
 
           texteChargement.textContent =
-            "Connexion à Supabase réussie. Session utilisateur détectée.";
+            "Connexion sécurisée réussie. Ouverture de MDN Sion…";
 
-        } else {
+          window.location.replace(
+            "accueil.html"
+          );
 
-          texteChargement.textContent =
-            "Connexion à Supabase réussie. Aucune session utilisateur active.";
+          return;
 
         }
 
 
-        spinner.style.display = "none";
+        texteChargement.textContent =
+          "Ouverture de la page de connexion…";
 
-
-        console.info(
-          "[MDN Sion] Test Supabase réussi.",
-          {
-            sessionActive: Boolean(data.session)
-          }
+        window.location.replace(
+          "connexion.html"
         );
 
 
