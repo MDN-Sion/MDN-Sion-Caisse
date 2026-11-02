@@ -131,6 +131,21 @@
 			border-radius: 12px;
 			background: #fff;
 		}
+
+		.bouton-ajouter {
+			min-height: 46px;
+			padding: 0 16px;
+			border: 0;
+			border-radius: 12px;
+			background: #8b0000;
+			color: #fff;
+			font-weight: 800;
+			white-space: nowrap;
+		}
+
+		.bouton-ajouter:hover {
+			background: #6f0000;
+		}
 		.stats {
 			display: grid;
 			grid-template-columns: repeat(4, 1fr);
@@ -201,6 +216,11 @@
 		.bouton-icone {
 			width: 46px;
 			height: 46px;
+			padding: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
 			border: 1px solid #d4d4d4;
 			border-radius: 12px;
 			background: #fff;
@@ -262,6 +282,11 @@
 		.fermer {
 			width: 42px;
 			height: 42px;
+			padding: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
 			border: 0;
 			border-radius: 11px;
 			background: #f2f2f2;
@@ -426,6 +451,7 @@
 					<option value="actifs">Actifs</option>
 					<option value="inactifs">Inactifs</option>
 				</select>
+				<button id="boutonAjouter" class="bouton-ajouter" type="button" hidden>+ Ajouter un utilisateur</button>
 			</div>
 			<div class="stats">
 				<div class="stat"><strong id="statTotal">0</strong><span>Comptes</span></div>
@@ -496,6 +522,7 @@
 			const recherche = document.getElementById("recherche");
 			const filtreRole = document.getElementById("filtreRole");
 			const filtreEtat = document.getElementById("filtreEtat");
+			const boutonAjouter = document.getElementById("boutonAjouter");
 			const fondModale = document.getElementById("fondModale");
 			const formulaire = document.getElementById("formulaire");
 			const titreModale = document.getElementById("titreModale");
@@ -510,6 +537,7 @@
 			let clientSupabase = null;
 			let donnees = null;
 			let utilisateurSelectionne = null;
+			let creationEnCours = false;
 			let modeDemoActif = false;
 			let peutModifier = false;
 
@@ -569,33 +597,73 @@
 			}
 
 			function ouvrirFiche(id) {
+				creationEnCours = false;
 				utilisateurSelectionne = (donnees?.utilisateurs || []).find(u => u.id === id);
 				if (!utilisateurSelectionne) return;
+
 				const modifiable = utilisateurSelectionne.modifiable === true && !utilisateurSelectionne.compte_protege;
+
 				prenom.value = utilisateurSelectionne.prenom || "";
 				nom.value = utilisateurSelectionne.nom || "";
 				email.value = utilisateurSelectionne.email || "";
 				role.value = utilisateurSelectionne.role || "utilisateur";
 				actif.value = utilisateurSelectionne.actif ? "true" : "false";
+
 				prenom.disabled = !modifiable;
 				nom.disabled = !modifiable;
+				email.disabled = true;
 				role.disabled = !modifiable;
 				actif.disabled = !modifiable;
 				enregistrer.hidden = !modifiable;
+				enregistrer.textContent = "Enregistrer";
+
 				noteDemo.hidden = !modeDemoActif && !utilisateurSelectionne.compte_protege;
 				noteDemo.textContent = utilisateurSelectionne.compte_protege
 					? "Compte système Mode Démo protégé : aucune modification n’est autorisée."
 					: "MODE DÉMO — cette fiche est en consultation uniquement.";
+
 				titreModale.textContent = modifiable ? "Modifier l’utilisateur" : "Consulter l’utilisateur";
 				messageFormulaire.hidden = true;
 				fondModale.hidden = false;
 				document.body.style.overflow = "hidden";
 			}
 
+			function ouvrirCreation() {
+				if (modeDemoActif || !peutModifier) return;
+
+				creationEnCours = true;
+				utilisateurSelectionne = null;
+
+				formulaire.reset();
+				prenom.value = "";
+				nom.value = "";
+				email.value = "";
+				role.value = "utilisateur";
+				actif.value = "true";
+
+				prenom.disabled = false;
+				nom.disabled = false;
+				email.disabled = false;
+				role.disabled = false;
+				actif.disabled = false;
+
+				noteDemo.hidden = true;
+				messageFormulaire.hidden = true;
+				titreModale.textContent = "Ajouter un utilisateur";
+				enregistrer.hidden = false;
+				enregistrer.textContent = "Créer le compte";
+
+				fondModale.hidden = false;
+				document.body.style.overflow = "hidden";
+				prenom.focus();
+			}
+
 			function fermerFiche() {
 				fondModale.hidden = true;
 				document.body.style.overflow = "";
 				utilisateurSelectionne = null;
+				creationEnCours = false;
+				email.disabled = true;
 			}
 
 			async function charger() {
@@ -606,16 +674,54 @@
 				peutModifier = data?.peut_modifier === true;
 				document.body.classList.toggle("mode-demo", modeDemoActif);
 				bandeauDemo.hidden = !modeDemoActif;
+				boutonAjouter.hidden = modeDemoActif || !peutModifier;
 				afficherStats();
 				afficherListe();
 			}
 
 			formulaire.addEventListener("submit", async e => {
 				e.preventDefault();
+
+				if (creationEnCours) {
+					if (modeDemoActif || !peutModifier) return;
+
+					enregistrer.disabled = true;
+					enregistrer.textContent = "Création…";
+					messageFormulaire.hidden = true;
+
+					try {
+						const { data, error } = await clientSupabase.functions.invoke("creer-utilisateur", {
+							body: {
+								prenom: prenom.value.trim(),
+								nom: nom.value.trim(),
+								email: email.value.trim(),
+								role: role.value,
+								actif: actif.value === "true"
+							}
+						});
+
+						if (error) throw error;
+						if (!data?.ok) throw new Error(data?.message || "Impossible de créer l’utilisateur.");
+
+						fermerFiche();
+						await charger();
+					} catch (err) {
+						messageFormulaire.textContent = err?.message || "Impossible de créer l’utilisateur.";
+						messageFormulaire.hidden = false;
+					} finally {
+						enregistrer.disabled = false;
+						enregistrer.textContent = creationEnCours ? "Créer le compte" : "Enregistrer";
+					}
+
+					return;
+				}
+
 				if (!utilisateurSelectionne || !peutModifier || !utilisateurSelectionne.modifiable) return;
+
 				enregistrer.disabled = true;
 				enregistrer.textContent = "Enregistrement…";
 				messageFormulaire.hidden = true;
+
 				try {
 					const { error } = await clientSupabase.rpc("enregistrer_utilisateur_administration", {
 						p_utilisateur_id: utilisateurSelectionne.id,
@@ -624,6 +730,7 @@
 						p_role: role.value,
 						p_actif: actif.value === "true"
 					});
+
 					if (error) throw error;
 					fermerFiche();
 					await charger();
@@ -636,6 +743,7 @@
 				}
 			});
 
+			boutonAjouter.addEventListener("click", ouvrirCreation);
 			recherche.addEventListener("input", afficherListe);
 			filtreRole.addEventListener("change", afficherListe);
 			filtreEtat.addEventListener("change", afficherListe);
