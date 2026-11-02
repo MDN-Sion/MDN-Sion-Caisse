@@ -10,6 +10,25 @@
 
   <meta name="theme-color" content="#8B0000">
 
+  <!-- FAVICON NAVIGATEURS / SAFARI / IPAD -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="logo-mdn.png?v=20261102"
+  >
+
+  <link
+    rel="shortcut icon"
+    type="image/png"
+    href="logo-mdn.png?v=20261102"
+  >
+
+  <!-- ICÔNE AJOUT À L'ÉCRAN D'ACCUEIL APPLE -->
+  <link
+    rel="apple-touch-icon"
+    href="logo-mdn.png?v=20261102"
+  >
+
   <meta
     name="description"
     content="Modification du mot de passe - Marché de Noël de Sion"
@@ -133,6 +152,16 @@
       box-shadow:
         0 10px 25px rgba(123, 0, 0, 0.22);
     }
+
+    .embleme img {
+      display: block;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: contain;
+    }
+
 
     h1 {
       margin: 0;
@@ -814,7 +843,10 @@
           class="embleme"
           aria-hidden="true"
         >
-          ❄
+          <img
+            src="logo-mdn.png"
+            alt=""
+          >
         </div>
 
         <h1 id="titrePage">
@@ -1151,7 +1183,7 @@
             "auth session missing"
           )
         ) {
-          return "Le lien de récupération n'est plus valide. Demandez un nouveau lien de réinitialisation.";
+          return "Le lien n’est plus valide ou a expiré. Demandez un nouveau lien depuis la page de connexion.";
         }
 
 
@@ -1163,7 +1195,7 @@
             "missing"
           )
         ) {
-          return "Aucune session de récupération valide n'a été trouvée.";
+          return "Aucune session sécurisée valide n’a été trouvée.";
         }
 
 
@@ -1197,39 +1229,72 @@
 
         try {
 
-          /*
-           * IMPORTANT :
-           * Lors d'une récupération de mot de passe, Supabase peut
-           * transmettre la session dans le fragment d'URL (#...)
-           * ou via un code PKCE (?code=...).
-           *
-           * On laisse d'abord le client Supabase traiter l'URL avant
-           * de conclure qu'aucune session de récupération n'existe.
-           */
+          if (!client) {
+            throw new Error(
+              "Le client Supabase MDN n'est pas disponible."
+            );
+          }
 
-          const url =
-            new URL(window.location.href);
+
+          const parametres =
+            new URLSearchParams(
+              window.location.search
+            );
+
 
           const code =
-            url.searchParams.get("code");
+            parametres.get("code");
+
+
+          /*
+           * Certains retours Auth Supabase utilisent un code.
+           * On l'échange contre une session avant d'afficher
+           * le formulaire.
+           */
 
           if (code) {
 
             const {
-              error: erreurEchangeCode
+              error: erreurEchange
             } =
-              await client.auth.exchangeCodeForSession(
-                code
+              await client.auth
+                .exchangeCodeForSession(
+                  code
+                );
+
+
+            if (erreurEchange) {
+              throw erreurEchange;
+            }
+
+
+            /*
+             * Le code est à usage unique.
+             * On nettoie l'URL après l'échange pour éviter
+             * qu'un rechargement tente de l'utiliser à nouveau.
+             */
+
+            const urlNettoyee =
+              new URL(
+                window.location.href
               );
 
-            if (erreurEchangeCode) {
-              throw erreurEchangeCode;
-            }
+            urlNettoyee.searchParams.delete(
+              "code"
+            );
+
+            window.history.replaceState(
+              {},
+              document.title,
+              urlNettoyee.pathname +
+              urlNettoyee.search +
+              urlNettoyee.hash
+            );
 
           }
 
 
-          let {
+          const {
             data,
             error
           } =
@@ -1249,100 +1314,10 @@
             );
 
 
-          /*
-           * Le traitement du lien de récupération peut terminer
-           * juste après le chargement initial de la page.
-           * Si nécessaire, on attend brièvement l'événement Auth
-           * avant d'afficher une erreur.
-           */
-
-          if (!sessionDisponible) {
-
-            await new Promise(function (resolve) {
-
-              let termine = false;
-
-              const terminer =
-                function () {
-
-                  if (termine) {
-                    return;
-                  }
-
-                  termine = true;
-
-                  clearTimeout(delai);
-
-                  if (
-                    abonnement &&
-                    abonnement.data &&
-                    abonnement.data.subscription
-                  ) {
-                    abonnement.data.subscription.unsubscribe();
-                  }
-
-                  resolve();
-                };
-
-
-              const abonnement =
-                client.auth.onAuthStateChange(
-                  function (
-                    evenement,
-                    session
-                  ) {
-
-                    if (
-                      session &&
-                      session.user
-                    ) {
-
-                      sessionDisponible = true;
-                      terminer();
-
-                    }
-
-                  }
-                );
-
-
-              const delai =
-                setTimeout(
-                  terminer,
-                  1200
-                );
-
-            });
-
-
-            if (!sessionDisponible) {
-
-              const resultatSession =
-                await client.auth.getSession();
-
-              if (resultatSession.error) {
-                throw resultatSession.error;
-              }
-
-              data =
-                resultatSession.data;
-
-              sessionDisponible =
-                Boolean(
-                  data &&
-                  data.session &&
-                  data.session.user
-                );
-
-            }
-
-          }
-
-
           if (!sessionDisponible) {
 
             afficherMessage(
-              "Aucune session de récupération valide. Demandez un nouveau lien de réinitialisation.",
+              "Aucune session sécurisée valide. Demandez un nouveau lien depuis la page de connexion.",
               "erreur"
             );
 
@@ -1361,33 +1336,78 @@
             boutonEnregistrer.disabled = true;
 
             return;
-
           }
+
+
+          const utilisateur =
+            data.session.user;
+
+
+          const dateDerniereConnexion =
+            utilisateur?.last_sign_in_at
+              ? new Date(
+                  utilisateur.last_sign_in_at
+                ).getTime()
+              : 0;
+
+
+          const dateCreation =
+            utilisateur?.created_at
+              ? new Date(
+                  utilisateur.created_at
+                ).getTime()
+              : 0;
 
 
           /*
-           * Une fois la session récupérée, on retire de l'adresse
-           * les paramètres sensibles du lien sans recharger la page.
+           * Pour une invitation nouvel utilisateur,
+           * la création du compte et la première session
+           * sont très proches. Le texte reste volontairement
+           * compatible avec la récupération de mot de passe.
            */
 
-          if (
-            window.location.search ||
-            window.location.hash
-          ) {
+          const premiereActivation =
+            dateCreation > 0 &&
+            dateDerniereConnexion > 0 &&
+            Math.abs(
+              dateDerniereConnexion -
+              dateCreation
+            ) < 10 * 60 * 1000;
 
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname
+
+          if (premiereActivation) {
+
+            document.getElementById(
+              "titrePage"
+            ).textContent =
+              "Créer votre mot de passe";
+
+
+            const sousTitre =
+              document.querySelector(
+                ".sous-titre"
+              );
+
+
+            if (sousTitre) {
+              sousTitre.textContent =
+                "Bienvenue sur MDN Sion. Choisissez le mot de passe de votre nouveau compte.";
+            }
+
+
+            afficherMessage(
+              "Invitation validée. Vous pouvez maintenant créer votre mot de passe.",
+              "info"
+            );
+
+          } else {
+
+            afficherMessage(
+              "Session sécurisée détectée. Vous pouvez choisir votre nouveau mot de passe.",
+              "info"
             );
 
           }
-
-
-          afficherMessage(
-            "Session sécurisée détectée. Vous pouvez choisir votre nouveau mot de passe.",
-            "info"
-          );
 
 
         } catch (erreur) {
@@ -1451,7 +1471,7 @@
           if (!sessionDisponible) {
 
             afficherMessage(
-              "Aucune session de récupération valide. Demandez un nouveau lien de réinitialisation."
+              "Aucune session sécurisée valide. Demandez un nouveau lien depuis la page de connexion."
             );
 
             return;
