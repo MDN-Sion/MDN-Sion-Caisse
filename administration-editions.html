@@ -433,6 +433,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script>
@@ -645,15 +646,25 @@
             });
 
             parId("boutonDeconnexion").addEventListener("click", async () => {
-                await window.MDN_AUTH.deconnexion();
+                if (window.MDN_AUTH && typeof window.MDN_AUTH.deconnexion === "function") {
+                    await window.MDN_AUTH.deconnexion();
+                }
             });
 
-            window.MDN_AUTH.surveillerSession({
-                redirigerApresDeconnexion: true
-            });
+            if (window.MDN_AUTH && typeof window.MDN_AUTH.surveillerSession === "function") {
+                window.MDN_AUTH.surveillerSession({
+                    redirigerApresDeconnexion: true
+                });
+            }
 
             async function initialiser() {
                 try {
+                    if (!window.MDN_AUTH || typeof window.MDN_AUTH.protegerPage !== "function") {
+                        throw new Error(
+                            "Initialisation impossible : vérifie le chargement de js/config.js, js/supabase.js et js/auth.js."
+                        );
+                    }
+
                     const auth = await window.MDN_AUTH.protegerPage();
 
                     if (!auth) {
