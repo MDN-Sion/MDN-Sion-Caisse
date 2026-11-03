@@ -386,9 +386,10 @@
                 <button id="boutonAjouter" class="bouton" type="button" hidden>+ Nouvelle édition</button>
             </div>
             <div class="notice">
-                La création d'une édition ne change pas l'année active. La reprise des stocks et des référentiels,
-                ainsi que le contrôle de clôture, seront disponibles dans une étape ultérieure.
-                <strong>L'activation est volontairement désactivée sur cette première version.</strong>
+                <strong>Gestion temporairement en consultation uniquement.</strong>
+                La création, la modification et l'activation des éditions sont suspendues
+                jusqu'à la mise en place des inventaires, de la reprise des référentiels
+                et des contrôles de clôture. L'édition 2026 reste active et inchangée.
             </div>
             <div id="listeEditions"></div>
         </section>
@@ -442,6 +443,9 @@
 
             let clientSupabase = null;
             let modeDemoActif = false;
+            // Verrou temporaire : aucune écriture sur les éditions en V4.
+            // La protection est également appliquée côté Supabase par SQL129.
+            const modificationsAutorisees = false;
             let peutModifier = false;
             let editions = [];
             let editionEnCours = null;
@@ -516,7 +520,7 @@
                 }
 
                 modeDemoActif = data.mode_demo === true;
-                peutModifier = data.peut_modifier === true;
+                peutModifier = modificationsAutorisees && data.peut_modifier === true;
                 editions = Array.isArray(data.editions) ? data.editions : [];
 
                 document.body.classList.toggle("mode-demo", modeDemoActif);
@@ -540,8 +544,9 @@
                 parId("annee").value = edition?.annee ?? prochaineAnnee;
                 parId("annee").readOnly = Boolean(edition);
                 parId("nom").value = edition?.nom ?? `Marché de Noël de Sion ${prochaineAnnee}`;
-                parId("dateDebut").value = edition?.date_debut ?? "";
-                parId("dateFin").value = edition?.date_fin ?? "";
+                // Toujours laisser vide un champ dont la date n'est pas renseignée.
+                parId("dateDebut").value = edition?.date_debut || "";
+                parId("dateFin").value = edition?.date_fin || "";
                 parId("statut").value = edition?.statut ?? "preparation";
 
                 // Une édition clôturée ne peut pas être rouverte.
