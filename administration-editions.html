@@ -393,6 +393,17 @@
             </div>
             <div id="listeEditions"></div>
         </section>
+        <section class="panneau" aria-labelledby="titrePreparations">
+            <div class="barre">
+                <h2 id="titrePreparations">Suivi des préparations annuelles</h2>
+                <button id="actualiserPreparations" class="bouton secondaire" type="button">Actualiser</button>
+            </div>
+            <div class="notice">
+                Consultation uniquement : aucune création de préparation, aucun inventaire
+                et aucune activation ne peuvent être déclenchés depuis cette page.
+            </div>
+            <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
+        </section>
         <section class="panneau">
             <h2>Préparation de la prochaine édition</h2>
             <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
@@ -448,6 +459,7 @@
             const modificationsAutorisees = false;
             let peutModifier = false;
             let editions = [];
+            let preparations = [];
             let editionEnCours = null;
 
             const parId = (id) => {
@@ -528,6 +540,106 @@
                 parId("boutonAjouter").hidden = !peutModifier;
                 afficher();
             }
+
+            function afficherPreparations() {
+                const liste = parId("listePreparations");
+
+                if (preparations.length === 0) {
+                    liste.innerHTML = `<p>Aucune préparation annuelle enregistrée.
+                        L'édition active reste inchangée.</p>`;
+                    return;
+                }
+
+                liste.innerHTML = preparations.map(preparation => {
+                    const sections = [
+                        ["MDN", preparation.inventaire_mdn_valide_at],
+                        ["Fondation", preparation.inventaire_fondation_valide_at],
+                        ["Vaisselle", preparation.inventaire_vaisselle_valide_at],
+                        ["Contenants", preparation.inventaire_contenants_valide_at]
+                    ];
+
+                    return `
+                        <article class="ligne">
+                            <div class="details">
+                                <strong>Préparation ${echapper(preparation.annee_cible)}</strong>
+                                <small>Depuis ${echapper(preparation.annee_source)} ·
+                                    Statut : ${echapper(preparation.statut)}</small>
+                                <small>${sections.map(([nom, date]) =>
+                                    `${echapper(nom)} : ${date ? "validé" : "non validé"}`
+                                ).join(" · ")}</small>
+                                <div id="avancement-${echapper(preparation.id)}"
+                                     class="notice">Chargement de l'avancement…</div>
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+            }
+
+            async function chargerPreparations() {
+                const liste = parId("listePreparations");
+                liste.textContent = "Chargement des préparations…";
+
+                const { data, error } = await clientSupabase.rpc(
+                    "charger_preparations_editions_administration"
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data?.ok) {
+                    throw new Error("Réponse invalide pour les préparations.");
+                }
+
+                preparations = Array.isArray(data.preparations)
+                    ? data.preparations
+                    : [];
+
+                afficherPreparations();
+
+                for (const preparation of preparations) {
+                    const cible = parId(`avancement-${preparation.id}`);
+
+                    if (!cible) {
+                        continue;
+                    }
+
+                    const resultat = await clientSupabase.rpc(
+                        "controle_avancement_preparation_edition_administration",
+                        {
+                            p_preparation_id: preparation.id
+                        }
+                    );
+
+                    if (resultat.error || !resultat.data?.ok) {
+                        cible.textContent = "Avancement indisponible : " +
+                            (resultat.error?.message || "réponse invalide");
+                        continue;
+                    }
+
+                    const controle = resultat.data;
+                    const sections = [
+                        ["MDN", controle.mdn],
+                        ["Fondation", controle.fondation],
+                        ["Vaisselle", controle.vaisselle],
+                        ["Contenants", controle.contenants]
+                    ];
+
+                    cible.textContent = sections.map(([nom, etat]) => {
+                        return `${nom} : ${etat?.valides ?? 0}/${etat?.total ?? 0} lignes validées`;
+                    }).join(" · ") +
+                        " · Activation : verrouillée";
+                }
+            }
+
+            parId("actualiserPreparations").addEventListener("click", async () => {
+                try {
+                    await chargerPreparations();
+                    message("Suivi des préparations actualisé.");
+                } catch (erreur) {
+                    message(erreur.message || "Actualisation impossible.", true);
+                }
+            });
 
             function ouvrir(edition = null) {
                 if (!peutModifier) {
@@ -708,6 +820,7 @@
                         : "Administration";
 
                     await charger();
+                    await chargerPreparations();
                 } catch (erreur) {
                     message(erreur.message || "Impossible de charger les éditions.", true);
                 } finally {
