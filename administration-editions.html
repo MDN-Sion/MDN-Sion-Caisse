@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#8B0000">
+    <link rel="icon" type="image/png" href="logo-mdn.png?v=20261103">
+    <link rel="apple-touch-icon" href="logo-mdn.png?v=20261103">
+    <title>Éditions · MDN Sion</title>
+    <style>
+        * {
+            box-sizing:border-box;
+        }
+
+        html,body {
+            width:100%;
+            height:100%;
+            margin:0;
+            padding:0;
+            overflow:hidden;
+        }
+
+        body {
+            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+            background:linear-gradient(145deg,#7b0000 0%,#a00000 48%,#650000 100%);
+            color:#222;
+        }
+
+        body.mode-demo {
+            background:linear-gradient(145deg,#b88d00 0%,#cfa514 48%,#816600 100%);
+        }
+
+        button,input,select {
+            font:inherit;
+        }
+
+        button {
+            cursor:pointer;
+        }
+
+        [hidden] {
+            display:none !important;
+        }
+
+        .entete {
+            flex:0 0 auto;
+            height:76px;
+            display:grid;
+            grid-template-columns:1fr auto 1fr;
+            align-items:center;
+            padding:8px 22px;
+            background:#5c000073;
+            border-bottom:1px solid #ffffff29;
+            color:white;
+        }
+
+        .entete-gauche {
+            justify-self:start;
+        }
+
+        .entete-centre {
+            text-align:center;
+        }
+
+        .entete-centre h1 {
+            margin:0;
+            font-size:27px;
+            line-height:1.1;
+        }
+
+        .entete-centre p {
+            margin:5px 0 0;
+            font-size:14px;
+        }
+
+        .entete-droite {
+            justify-self:end;
+            display:flex;
+            align-items:center;
+            gap:14px;
+        }
+
+        .identite-entete {
+            text-align:right;
+            line-height:1.1;
+        }
+
+        .identite-entete strong,.identite-entete span {
+            display:block;
+        }
+
+        .identite-entete span {
+            margin-top:4px;
+            font-size:13px;
+        }
+
+        .bouton-entete {
+            min-height:48px;
+            padding:0 18px;
+            border:1px solid #ffffff66;
+            border-radius:14px;
+            background:#ffffff14;
+            color:white;
+            font-weight:800;
+        }
+
+        .contenu {
+            width:min(1180px,calc(100% - 36px));
+            min-height:0;
+            flex:1 1 auto;
+            margin:0 auto;
+            padding:16px 0 24px;
+            overflow-y:auto;
+            overflow-x:hidden;
+            overscroll-behavior:contain;
+            -webkit-overflow-scrolling:touch;
+        }
+
+        .intro {
+            color:#fff;
+            margin:0 0 16px;
+            line-height:1.5;
+        }
+
+        .panneau {
+            background:#fff;
+            border-radius:17px;
+            padding:20px;
+            margin-bottom:16px;
+            box-shadow:0 7px 25px #0002;
+        }
+
+        .panneau h2 {
+            margin:0 0 14px;
+            font-size:21px;
+        }
+
+        .ligne {
+            display:flex;
+            gap:12px;
+            align-items:center;
+            justify-content:space-between;
+            padding:15px 0;
+            border-bottom:1px solid #eee;
+        }
+
+        .ligne:last-child {
+            border-bottom:0;
+        }
+
+        .details {
+            min-width:0;
+        }
+
+        .details strong {
+            display:block;
+            font-size:18px;
+        }
+
+        .details small {
+            display:block;
+            color:#626262;
+            margin-top:6px;
+            line-height:1.5;
+        }
+
+        .actions {
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+        }
+
+        .bouton {
+            border:1px solid #8b0000;
+            background:#8b0000;
+            color:white;
+            border-radius:10px;
+            padding:11px 14px;
+            font-weight:700;
+            min-height:43px;
+        }
+
+        .bouton.secondaire {
+            color:#8b0000;
+            background:white;
+        }
+
+        .bouton:disabled {
+            opacity:.45;
+            cursor:not-allowed;
+        }
+
+        .etiquette {
+            display:inline-block;
+            font-size:12px;
+            border-radius:100px;
+            background:#eee;
+            padding:5px 9px;
+            font-weight:700;
+            margin-top:8px;
+        }
+
+        .etiquette.active {
+            background:#dff3e0;
+            color:#176b28;
+        }
+
+        .etiquette.cloturee {
+            background:#f1e7e7;
+            color:#6b2525;
+        }
+
+        .notice {
+            background:#fff6df;
+            border:1px solid #f0d59d;
+            border-radius:12px;
+            padding:13px;
+            margin:0 0 15px;
+            line-height:1.5;
+        }
+
+        .bandeau-demo {
+            background:#fff3ca;
+            border:1px solid #e7c66c;
+            padding:12px;
+            border-radius:12px;
+            margin-bottom:15px;
+            font-weight:700;
+        }
+
+        .erreur {
+            background:#ffe7e7;
+            border:1px solid #d65d5d;
+            padding:12px;
+            border-radius:12px;
+            margin-bottom:15px;
+        }
+
+        .succes {
+            background:#e4f5e6;
+            border:1px solid #83b98b;
+            padding:12px;
+            border-radius:12px;
+            margin-bottom:15px;
+        }
+
+        .barre {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            margin-bottom:10px;
+        }
+
+        .fond-dialogue {
+            position:fixed;
+            inset:0;
+            background:#0009;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:1000;
+            padding:15px;
+        }
+
+        .dialogue {
+            width:min(520px,100%);
+            max-height:calc(100dvh - 30px);
+            overflow:auto;
+            background:white;
+            border-radius:18px;
+            padding:24px;
+            box-shadow:0 20px 80px #0005;
+        }
+
+        .dialogue h2 {
+            margin:0 0 15px;
+        }
+
+        .champ {
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            margin:0 0 13px;
+            font-weight:700;
+        }
+
+        .champ input,.champ select {
+            width:100%;
+            padding:12px;
+            border:1px solid #bbb;
+            border-radius:10px;
+            background:white;
+            color:#222;
+        }
+
+        .dialogue-actions {
+            display:flex;
+            justify-content:flex-end;
+            gap:9px;
+            margin-top:18px;
+            flex-wrap:wrap;
+        }
+
+        .chargement {
+            position:fixed;
+            inset:0;
+            z-index:2000;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#8b0000;
+            color:white;
+            font-weight:700;
+        }
+
+        body {
+            display:flex;
+            flex-direction:column;
+            height:100vh;
+            height:100dvh;
+        }
+
+        @media(max-width:700px) {
+            .ligne {
+                align-items:flex-start;
+                flex-direction:column;
+            }
+
+            .actions {
+                justify-content:flex-start;
+            }
+
+            .panneau {
+                padding:15px;
+            }
+
+            .entete {
+                padding:8px;
+            }
+
+            .entete-centre h1 {
+                font-size:19px;
+            }
+
+            .bouton-entete {
+                padding:7px 9px;
+                min-height:40px;
+            }
+
+            .identite-entete {
+                display:none;
+            }
+
+        }
+    </style>
+</head>
+<body>
+    <div id="chargement" class="chargement">Chargement des éditions…</div>
+
+    <header class="entete">
+        <div class="entete-gauche">
+            <button id="boutonRetour" class="bouton-entete" type="button">← Administration</button>
+        </div>
+        <div class="entete-centre">
+            <h1>📅 Éditions</h1>
+            <p id="sousTitre">Administration</p>
+        </div>
+        <div class="entete-droite">
+            <div class="identite-entete">
+                <strong id="nomUtilisateurEntete">Mode</strong>
+                <span id="roleUtilisateurEntete">Utilisateur</span>
+            </div>
+            <button id="boutonDeconnexion" class="bouton-entete" type="button">Déconnexion</button>
+        </div>
+    </header>
+
+    <main class="contenu">
+        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — consultation uniquement.</div>
+        <div id="zoneErreur" class="erreur" role="alert" hidden></div>
+        <div id="zoneSucces" class="succes" role="status" hidden></div>
+        <section class="panneau">
+            <div class="barre">
+                <h2>Gestion des éditions</h2>
+                <button id="boutonAjouter" class="bouton" type="button" hidden>+ Nouvelle édition</button>
+            </div>
+            <div class="notice">
+                La création d'une édition ne change pas l'année active. La reprise des stocks et des référentiels,
+                ainsi que le contrôle de clôture, seront disponibles dans une étape ultérieure.
+                <strong>L'activation est volontairement désactivée sur cette première version.</strong>
+            </div>
+            <div id="listeEditions"></div>
+        </section>
+        <section class="panneau">
+            <h2>Préparation de la prochaine édition</h2>
+            <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
+            <p><strong>Fondation :</strong> catalogue conservé, quantités initiales saisies manuellement.</p>
+            <p><strong>Vaisselle et conditionnements :</strong> références, tarifs et règles conservés ; quantités saisies manuellement.</p>
+            <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
+        </section>
+    </main>
+
+    <div id="fondDialogue" class="fond-dialogue" hidden>
+        <section class="dialogue" role="dialog" aria-modal="true" aria-labelledby="titreDialogue">
+            <h2 id="titreDialogue">Nouvelle édition</h2>
+            <form id="formulaireEdition">
+                <label class="champ">Année
+                    <input id="annee" type="number" min="2020" max="2100" required>
+                </label>
+                <label class="champ">Nom de l'édition
+                    <input id="nom" type="text" maxlength="160" required>
+                </label>
+                <label class="champ">Date de début
+                    <input id="dateDebut" type="date">
+                </label>
+                <label class="champ">Date de fin
+                    <input id="dateFin" type="date">
+                </label>
+                <label class="champ">Statut
+                    <select id="statut">
+                        <option value="preparation">Préparation</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="cloturee">Clôturée</option>
+                    </select>
+                </label>
+                <div class="dialogue-actions">
+                    <button id="annuler" class="bouton secondaire" type="button">Annuler</button>
+                    <button id="enregistrer" class="bouton" type="submit">Enregistrer</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        (() => {
+            "use strict";
+
+            let clientSupabase = null;
+            let modeDemoActif = false;
+            let peutModifier = false;
+            let editions = [];
+            let editionEnCours = null;
+
+            const parId = (id) => {
+                return document.getElementById(id);
+            };
+            const echapper = valeur => String(valeur ?? "").replace(/[&<>"']/g, caractere => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[caractere]);
+
+            function message(texte, erreur = false) {
+                const zone = parId(erreur ? "zoneErreur" : "zoneSucces");
+                const autre = parId(erreur ? "zoneSucces" : "zoneErreur");
+                autre.hidden = true;
+                zone.textContent = texte;
+                zone.hidden = false;
+            }
+
+            function statutLisible(statut) {
+                return {
+                    preparation: "Préparation",
+                    en_cours: "En cours",
+                    cloturee: "Clôturée"
+                }[statut] || statut;
+            }
+
+            function afficher() {
+                const liste = parId("listeEditions");
+
+                if (editions.length === 0) {
+                    liste.textContent = "Aucune édition enregistrée.";
+                    return;
+                }
+
+                liste.innerHTML = editions.map(edition => {
+                    const dates = [
+                        edition.date_debut ? "Du " + edition.date_debut : "Début non renseigné",
+                        edition.date_fin ? "au " + edition.date_fin : "fin non renseignée"
+                    ].join(" ");
+
+                    return `
+                        <article class="ligne">
+                            <div class="details">
+                                <strong>${echapper(edition.nom)}</strong>
+                                <small>Année ${echapper(edition.annee)} · ${echapper(dates)}</small>
+                                <span class="etiquette ${edition.est_active ? "active" : edition.statut === "cloturee" ? "cloturee" : ""}">
+                                    ${edition.est_active ? "Édition active · " : ""}${echapper(statutLisible(edition.statut))}
+                                </span>
+                            </div>
+                            <div class="actions">
+                                ${peutModifier ? `<button class="bouton secondaire" data-action="modifier" data-id="${echapper(edition.id)}" type="button">Modifier</button>` : ""}
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+            }
+
+            async function charger() {
+                const { data, error } = await clientSupabase.rpc("charger_editions_administration");
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data?.ok) {
+                    throw new Error("Réponse invalide lors du chargement des éditions.");
+                }
+
+                modeDemoActif = data.mode_demo === true;
+                peutModifier = data.peut_modifier === true;
+                editions = Array.isArray(data.editions) ? data.editions : [];
+
+                document.body.classList.toggle("mode-demo", modeDemoActif);
+                parId("bandeauDemo").hidden = !modeDemoActif;
+                parId("boutonAjouter").hidden = !peutModifier;
+                afficher();
+            }
+
+            function ouvrir(edition = null) {
+                if (!peutModifier) {
+                    return;
+                }
+
+                editionEnCours = edition;
+                parId("titreDialogue").textContent = edition ? "Modifier l'édition" : "Nouvelle édition";
+
+                const prochaineAnnee = editions.length
+                    ? Math.max(...editions.map(element => Number(element.annee))) + 1
+                    : new Date().getFullYear();
+
+                parId("annee").value = edition?.annee ?? prochaineAnnee;
+                parId("annee").readOnly = Boolean(edition);
+                parId("nom").value = edition?.nom ?? `Marché de Noël de Sion ${prochaineAnnee}`;
+                parId("dateDebut").value = edition?.date_debut ?? "";
+                parId("dateFin").value = edition?.date_fin ?? "";
+                parId("statut").value = edition?.statut ?? "preparation";
+
+                // Une édition clôturée ne peut pas être rouverte.
+                // Une édition active ne peut pas être clôturée.
+                parId("statut").querySelector('option[value="cloturee"]').disabled =
+                    edition?.est_active === true;
+                parId("statut").querySelector('option[value="preparation"]').disabled =
+                    edition?.statut === "cloturee";
+                parId("statut").querySelector('option[value="en_cours"]').disabled =
+                    edition?.statut === "cloturee";
+
+                parId("fondDialogue").hidden = false;
+                parId("nom").focus();
+            }
+
+            function fermer() {
+                parId("fondDialogue").hidden = true;
+                editionEnCours = null;
+            }
+
+            parId("boutonAjouter").addEventListener("click", () => ouvrir());
+            parId("annuler").addEventListener("click", fermer);
+            parId("fondDialogue").addEventListener("click", evenement => {
+                if (evenement.target === parId("fondDialogue")) {
+                    fermer();
+                }
+            });
+
+            parId("listeEditions").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest('button[data-action="modifier"]');
+
+                if (!bouton) {
+                    return;
+                }
+
+                const edition = editions.find(element => element.id === bouton.dataset.id);
+
+                if (edition) {
+                    ouvrir(edition);
+                }
+            });
+
+            parId("annee").addEventListener("input", () => {
+                if (!editionEnCours) {
+                    parId("nom").value = `Marché de Noël de Sion ${parId("annee").value}`;
+                }
+            });
+
+            parId("formulaireEdition").addEventListener("submit", async evenement => {
+                evenement.preventDefault();
+
+                if (!peutModifier) {
+                    return;
+                }
+
+                const debut = parId("dateDebut").value || null;
+                const fin = parId("dateFin").value || null;
+
+                if (debut && fin && fin < debut) {
+                    message("La date de fin doit être postérieure ou égale à la date de début.", true);
+                    return;
+                }
+
+                const bouton = parId("enregistrer");
+                bouton.disabled = true;
+
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "enregistrer_edition_administration",
+                        {
+                            p_edition_id: editionEnCours?.id ?? null,
+                            p_annee: Number(parId("annee").value),
+                            p_nom: parId("nom").value.trim(),
+                            p_date_debut: debut,
+                            p_date_fin: fin,
+                            p_statut: parId("statut").value
+                        }
+                    );
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    if (!data?.ok) {
+                        throw new Error("L'enregistrement n'a pas été confirmé.");
+                    }
+
+                    fermer();
+                    await charger();
+                    message("Édition enregistrée avec succès.");
+                } catch (erreur) {
+                    message(erreur.message || "Échec de l'enregistrement.", true);
+                } finally {
+                    bouton.disabled = false;
+                }
+            });
+
+            parId("boutonRetour").addEventListener("click", () => {
+                window.location.href = modeDemoActif
+                    ? "administration.html?mode=demo"
+                    : "administration.html";
+            });
+
+            parId("boutonDeconnexion").addEventListener("click", async () => {
+                await window.MDN_AUTH.deconnexion();
+            });
+
+            window.MDN_AUTH.surveillerSession({
+                redirigerApresDeconnexion: true
+            });
+
+            async function initialiser() {
+                try {
+                    const auth = await window.MDN_AUTH.protegerPage();
+
+                    if (!auth) {
+                        return;
+                    }
+
+                    clientSupabase = window.MDN_SUPABASE;
+
+                    if (!clientSupabase) {
+                        throw new Error("Connexion Supabase indisponible.");
+                    }
+
+                    const { data: acces, error } = await clientSupabase.rpc(
+                        "etat_acces_administration"
+                    );
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    if (!acces?.acces_administration) {
+                        window.location.replace("accueil.html");
+                        return;
+                    }
+
+                    modeDemoActif = acces.mode_demo === true;
+                    document.body.classList.toggle("mode-demo", modeDemoActif);
+                    parId("nomUtilisateurEntete").textContent = modeDemoActif
+                        ? "Mode"
+                        : auth.profil?.prenom || "Administrateur";
+                    parId("roleUtilisateurEntete").textContent = modeDemoActif
+                        ? "Utilisateur"
+                        : "Administrateur";
+                    parId("sousTitre").textContent = modeDemoActif
+                        ? "MODE DÉMO · Consultation"
+                        : "Administration";
+
+                    await charger();
+                } catch (erreur) {
+                    message(erreur.message || "Impossible de charger les éditions.", true);
+                } finally {
+                    parId("chargement").hidden = true;
+                }
+            }
+
+            initialiser();
+        })();
+    </script>
+</body>
+</html>
