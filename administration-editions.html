@@ -374,6 +374,21 @@
         .v8-tete { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
         .v8-etat { border-radius:100px; padding:5px 9px; background:#f4e7d9; color:#80501d; font-size:12px; font-weight:700; }
         .v8-etat.ok { background:#e0f2e3; color:#1a6b2b; }
+        /* V8.2 : photo et stock théorique sur une même ligne pour les articles MDN. */
+        .v8-mdn-apercu {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+            gap:12px;
+            align-items:stretch;
+        }
+        .v8-mdn-apercu .v8-photo {
+            min-height:110px;
+            height:100%;
+        }
+        .v8-mdn-apercu .v8-theorique {
+            min-height:110px;
+            justify-content:center;
+        }
         .v8-theorique { background:#f7f5f2; padding:13px; border-radius:11px; display:flex; flex-direction:column; gap:5px; }
         .v8-theorique strong { font-size:23px; }
         .v8-theorique small, .v8-totaux small { color:#666; }
@@ -617,8 +632,10 @@
                     cible.innerHTML = `<p class="v8-intro">Vérifie les quantités réellement disponibles en fin d'édition. Le stock théorique est proposé à titre indicatif.</p>
                         <div class="v8-grille">${d.mdn.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
                             <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ${a.valide ? "ok" : ""}">${a.valide ? "Vérifié" : "À vérifier"}</span></div>
-                            <div class="v8-photo"><span>Photo de l’article si disponible (reprise réelle ultérieure)</span></div>
-                            <div class="v8-theorique"><small>Stock théorique fictif</small><strong>${a.theorique} unités</strong></div>
+                            <div class="v8-mdn-apercu">
+                                <div class="v8-photo"><span>Photo de l’article si disponible (reprise réelle ultérieure)</span></div>
+                                <div class="v8-theorique"><small>Stock théorique fictif</small><strong>${a.theorique} unités</strong></div>
+                            </div>
                             ${champV8("Quantité réellement comptée", a.quantite, "quantite", "number", 'min="0" step="1"')}
                             ${champV8("Commentaire (facultatif)", a.commentaire, "commentaire", "text", 'maxlength="500"')}
                             <label class="v8-case"><input type="checkbox" data-v8-champ="valide" ${a.valide ? "checked" : ""}> Je confirme avoir vérifié cette quantité.</label>
