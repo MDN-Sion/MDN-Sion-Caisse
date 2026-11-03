@@ -303,6 +303,16 @@
             flex-wrap:wrap;
         }
 
+        .onglets-inventaire { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+        .onglets-inventaire .bouton[aria-pressed="true"] { background:#8b0000; color:white; }
+        .table-inventaire { width:100%; border-collapse:collapse; }
+        .table-inventaire th,.table-inventaire td { padding:10px; border-bottom:1px solid #e6e6e6; text-align:left; vertical-align:middle; }
+        .table-inventaire input,.table-inventaire select { width:100%; min-width:80px; padding:9px; border:1px solid #bbb; border-radius:8px; }
+        .table-inventaire input[type="checkbox"] { min-width:0; width:auto; }
+        .table-inventaire .bouton { white-space:nowrap; }
+        .table-defilement { width:100%; overflow-x:auto; }
+        .inventaire-actions { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+        @media(max-width:680px) { .table-inventaire { min-width:680px; } }
         .chargement {
             position:fixed;
             inset:0;
@@ -399,10 +409,19 @@
                 <button id="actualiserPreparations" class="bouton secondaire" type="button">Actualiser</button>
             </div>
             <div class="notice">
-                Consultation uniquement : aucune création de préparation, aucun inventaire
-                et aucune activation ne peuvent être déclenchés depuis cette page.
+                La création et l’activation des éditions restent verrouillées. Les inventaires
+                des préparations existantes sont consultables et modifiables uniquement par un administrateur réel.
             </div>
             <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
+        </section>
+        <section class="panneau" id="panneauInventaires" hidden>
+            <div class="barre">
+                <h2 id="titreInventaire">Inventaires annuels</h2>
+                <button class="bouton secondaire" id="fermerInventaires" type="button">Fermer</button>
+            </div>
+            <div class="notice" id="noticeInventaires">Les validations globales et l’activation restent verrouillées.</div>
+            <div class="onglets-inventaire" id="ongletsInventaire"></div>
+            <div id="contenuInventaire" aria-live="polite"></div>
         </section>
         <section class="panneau">
             <h2>Préparation de la prochaine édition</h2>
@@ -460,6 +479,10 @@
             let peutModifier = false;
             let editions = [];
             let preparations = [];
+            let preparationOuverte = null;
+            let sectionOuverte = "mdn";
+            let inventaireEnCours = null;
+            let chargementInventaire = false;
             let editionEnCours = null;
 
             const parId = (id) => {
@@ -544,6 +567,12 @@
             function afficherPreparations() {
                 const liste = parId("listePreparations");
 
+                if (modeDemoActif) {
+                    liste.innerHTML = `<p>Mode démo : suivi des préparations indisponible.
+                        Aucune opération sur les inventaires réels n’est effectuée.</p>`;
+                    return;
+                }
+
                 if (preparations.length === 0) {
                     liste.innerHTML = `<p>Aucune préparation annuelle enregistrée.
                         L'édition active reste inchangée.</p>`;
@@ -569,6 +598,12 @@
                                 ).join(" · ")}</small>
                                 <div id="avancement-${echapper(preparation.id)}"
                                      class="notice">Chargement de l'avancement…</div>
+                                <div class="inventaire-actions">
+                                    <button class="bouton secondaire" type="button"
+                                            data-action="inventaires" data-id="${echapper(preparation.id)}">
+                                        Ouvrir les inventaires
+                                    </button>
+                                </div>
                             </div>
                         </article>
                     `;
@@ -577,6 +612,11 @@
 
             async function chargerPreparations() {
                 const liste = parId("listePreparations");
+                if (modeDemoActif) {
+                    preparations = [];
+                    afficherPreparations();
+                    return;
+                }
                 liste.textContent = "Chargement des préparations…";
 
                 const { data, error } = await clientSupabase.rpc(
@@ -635,9 +675,302 @@
             parId("actualiserPreparations").addEventListener("click", async () => {
                 try {
                     await chargerPreparations();
-                    message("Suivi des préparations actualisé.");
+                    message(modeDemoActif
+                        ? "Mode démo : aucun inventaire réel interrogé."
+                        : "Suivi des préparations actualisé.");
                 } catch (erreur) {
                     message(erreur.message || "Actualisation impossible.", true);
+                }
+            });
+
+            const sectionsInventaire = [
+                ["mdn", "Articles MDN"],
+                ["fondation", "Articles Fondation"],
+                ["vaisselle", "Vaisselle"],
+                ["contenants", "Contenants"]
+            ];
+
+            function entierOuNull(texte) {
+                if (texte === "" || texte === null || texte === undefined) {
+                    return null;
+                }
+                const nombre = Number(texte);
+                if (!Number.isSafeInteger(nombre) || nombre < 0) {
+                    throw new Error("La quantité doit être un entier positif ou nul.");
+                }
+                return nombre;
+            }
+
+            function optionListe(liste, selection, vide = false) {
+                const options = vide ? '<option value="">Aucune</option>' : '';
+                return options + liste.map(item => `
+                    <option value="${echapper(item.id)}"
+                        ${item.id === selection ? "selected" : ""}>
+                        ${echapper(item.nom)}
+                    </option>
+                `).join("");
+            }
+
+            async function ouvrirInventaires(preparationId) {
+                if (modeDemoActif) {
+                    message("Les inventaires réels ne sont pas accessibles en mode démo.", true);
+                    return;
+                }
+                const preparation = preparations.find(p => p.id === preparationId);
+                if (!preparation) {
+                    message("Préparation introuvable.", true);
+                    return;
+                }
+                preparationOuverte = preparation;
+                sectionOuverte = "mdn";
+                parId("panneauInventaires").hidden = false;
+                parId("titreInventaire").textContent = `Inventaires de préparation ${preparation.annee_cible}`;
+                parId("ongletsInventaire").innerHTML = sectionsInventaire.map(([cle, titre]) => `
+                    <button type="button" class="bouton secondaire" data-section="${cle}"
+                        aria-pressed="${cle === sectionOuverte}">${titre}</button>
+                `).join("");
+                await chargerInventaire();
+                parId("panneauInventaires").scrollIntoView({ behavior:"smooth", block:"start" });
+            }
+
+            async function chargerInventaire() {
+                if (!preparationOuverte || chargementInventaire) {
+                    return;
+                }
+                chargementInventaire = true;
+                const cible = parId("contenuInventaire");
+                cible.textContent = "Chargement de l’inventaire…";
+                try {
+                    const nomRpc = sectionOuverte === "vaisselle"
+                        ? "charger_inventaire_vaisselle_preparation_administration"
+                        : sectionOuverte === "contenants"
+                            ? "charger_inventaire_contenants_preparation_administration"
+                            : "charger_inventaire_articles_preparation_administration";
+                    const { data, error } = await clientSupabase.rpc(nomRpc, {
+                        p_preparation_id: preparationOuverte.id
+                    });
+                    if (error) {
+                        throw error;
+                    }
+                    if (!data?.ok) {
+                        throw new Error("Réponse invalide de l’inventaire.");
+                    }
+                    inventaireEnCours = data;
+                    afficherInventaire();
+                } catch (erreur) {
+                    cible.textContent = `Inventaire indisponible : ${erreur.message}`;
+                } finally {
+                    chargementInventaire = false;
+                }
+            }
+
+            function afficherInventaire() {
+                const cible = parId("contenuInventaire");
+                const preparation = preparationOuverte;
+                const donnees = inventaireEnCours;
+                const editable = !modeDemoActif && preparation?.statut === "brouillon";
+                const lignes = (donnees.lignes || []).filter(ligne =>
+                    sectionOuverte === "mdn" || sectionOuverte === "fondation"
+                        ? ligne.beneficiaire === sectionOuverte
+                        : true
+                );
+                const validation = lignes.filter(ligne => Boolean(ligne.valide_at)).length;
+                parId("noticeInventaires").textContent = editable
+                    ? "Saisie autorisée pour ce brouillon. Chaque ligne doit être enregistrée individuellement. La validation globale et l’activation restent verrouillées."
+                    : "Consultation uniquement : cette préparation n’est pas modifiable ou le mode démo est actif.";
+                parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(bouton => {
+                    bouton.setAttribute("aria-pressed", String(bouton.dataset.section === sectionOuverte));
+                });
+                let entete = "";
+                let corps = "";
+                if (sectionOuverte === "mdn" || sectionOuverte === "fondation") {
+                    entete = "<th>Article</th><th>Théorique</th><th>Compté</th><th>Commentaire</th><th>Validé</th><th>Action</th>";
+                    corps = lignes.map(ligne => `
+                        <tr data-ligne="${echapper(ligne.article_id)}">
+                            <td>${echapper(ligne.nom)}</td>
+                            <td>${ligne.quantite_theorique ?? "—"}</td>
+                            <td><input data-champ="quantite" type="number" min="0" step="1" ${editable ? "" : "disabled"}
+                                value="${ligne.quantite_comptee ?? ""}"></td>
+                            <td><input data-champ="commentaire" maxlength="500" ${editable ? "" : "disabled"}
+                                value="${echapper(ligne.commentaire ?? "")}"></td>
+                            <td><input data-champ="valider" type="checkbox" ${ligne.valide_at ? "checked" : ""} ${editable ? "" : "disabled"}></td>
+                            <td><button type="button" class="bouton secondaire" data-enregistrer="article" ${editable ? "" : "disabled"}>Enregistrer</button></td>
+                        </tr>
+                    `).join("");
+                } else if (sectionOuverte === "vaisselle") {
+                    entete = "<th>Vaisselle</th><th>Zone</th><th>Compté</th><th>Commentaire</th><th>Validé</th><th>Action</th>";
+                    corps = lignes.map(ligne => `
+                        <tr data-ligne="${echapper(ligne.id)}">
+                            <td>${echapper(ligne.nom)}</td><td>${echapper(ligne.zone)}</td>
+                            <td><input data-champ="quantite" type="number" min="0" step="1" ${editable ? "" : "disabled"}
+                                value="${ligne.quantite_comptee ?? ""}"></td>
+                            <td><input data-champ="commentaire" maxlength="500" ${editable ? "" : "disabled"}
+                                value="${echapper(ligne.commentaire ?? "")}"></td>
+                            <td><input data-champ="valider" type="checkbox" ${ligne.valide_at ? "checked" : ""} ${editable ? "" : "disabled"}></td>
+                            <td><button type="button" class="bouton secondaire" data-enregistrer="vaisselle" ${editable ? "" : "disabled"}>Enregistrer</button></td>
+                        </tr>
+                    `).join("");
+                } else {
+                    entete = "<th>Type</th><th>État</th><th>Contenu</th><th>Vaisselle</th><th>Contenants</th><th>Unités</th><th>Commentaire</th><th>Validé</th><th>Action</th>";
+                    corps = lignes.map(ligne => `
+                        <tr data-ligne="${echapper(ligne.id)}">
+                            <td><select data-champ="type" ${editable ? "" : "disabled"}>${optionListe(donnees.types_contenants || [], ligne.type_contenant_id)}</select></td>
+                            <td><select data-champ="etat" ${editable ? "" : "disabled"}>
+                                ${["propre", "sale"].map(v => `<option value="${v}" ${ligne.etat === v ? "selected" : ""}>${v}</option>`).join("")}
+                            </select></td>
+                            <td><select data-champ="contenu" ${editable ? "" : "disabled"}>
+                                ${["vide", "complet", "partiel"].map(v => `<option value="${v}" ${ligne.contenu === v ? "selected" : ""}>${v}</option>`).join("")}
+                            </select></td>
+                            <td><select data-champ="vaisselle" ${editable ? "" : "disabled"}>${optionListe(donnees.referentiel_vaisselle || [], ligne.vaisselle_id, true)}</select></td>
+                            <td><input data-champ="quantite" type="number" min="0" step="1" ${editable ? "" : "disabled"} value="${ligne.quantite_contenants ?? ""}"></td>
+                            <td><input data-champ="unites" type="number" min="0" step="1" ${editable ? "" : "disabled"} value="${ligne.quantite_unites_contenues ?? 0}"></td>
+                            <td><input data-champ="commentaire" maxlength="500" ${editable ? "" : "disabled"} value="${echapper(ligne.commentaire ?? "")}"></td>
+                            <td><input data-champ="valider" type="checkbox" ${ligne.valide_at ? "checked" : ""} ${editable ? "" : "disabled"}></td>
+                            <td><button type="button" class="bouton secondaire" data-enregistrer="contenant" ${editable ? "" : "disabled"}>Enregistrer</button></td>
+                        </tr>
+                    `).join("");
+                }
+                cible.innerHTML = `
+                    <p><strong>${validation}/${lignes.length}</strong> lignes validées.</p>
+                    <div class="inventaire-actions">
+                        ${editable && sectionOuverte === "vaisselle" ? '<button class="bouton secondaire" type="button" id="initialiserVaisselle">Initialiser les lignes de vaisselle</button>' : ""}
+                        ${editable && (sectionOuverte === "mdn" || sectionOuverte === "fondation") ? '<button class="bouton secondaire" type="button" id="alimenterArticles">Alimenter les articles</button>' : ""}
+                        ${editable && sectionOuverte === "contenants" ? '<button class="bouton secondaire" type="button" id="ajouterContenant">Ajouter un contenant</button>' : ""}
+                        <button class="bouton secondaire" type="button" id="rechargerInventaire">Actualiser cet inventaire</button>
+                    </div>
+                    <div class="table-defilement"><table class="table-inventaire"><thead><tr>${entete}</tr></thead>
+                        <tbody>${corps || '<tr><td colspan="9">Aucune ligne pour cet inventaire.</td></tr>'}</tbody>
+                    </table></div>
+                `;
+            }
+
+            parId("listePreparations").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest('button[data-action="inventaires"]');
+                if (bouton) {
+                    ouvrirInventaires(bouton.dataset.id).catch(erreur => message(erreur.message, true));
+                }
+            });
+
+            parId("fermerInventaires").addEventListener("click", () => {
+                preparationOuverte = null;
+                inventaireEnCours = null;
+                parId("panneauInventaires").hidden = true;
+            });
+
+            parId("ongletsInventaire").addEventListener("click", async evenement => {
+                const bouton = evenement.target.closest("button[data-section]");
+                if (!bouton || chargementInventaire) {
+                    return;
+                }
+                sectionOuverte = bouton.dataset.section;
+                await chargerInventaire();
+            });
+
+            parId("contenuInventaire").addEventListener("click", async evenement => {
+                const bouton = evenement.target.closest("button");
+                if (!bouton || !preparationOuverte || modeDemoActif || chargementInventaire) {
+                    return;
+                }
+                const preparationId = preparationOuverte.id;
+                try {
+                    if (bouton.id === "rechargerInventaire") {
+                        await chargerInventaire();
+                        return;
+                    }
+                    if (bouton.id === "alimenterArticles" || bouton.id === "initialiserVaisselle") {
+                        const nom = bouton.id === "alimenterArticles"
+                            ? "alimenter_articles_preparation_edition_administration"
+                            : "initialiser_inventaire_vaisselle_preparation_administration";
+                        if (!window.confirm("Initialiser les lignes de cet inventaire dans le dossier de préparation ? Aucun stock opérationnel ne sera modifié.")) {
+                            return;
+                        }
+                        bouton.disabled = true;
+                        const { data, error } = await clientSupabase.rpc(nom, { p_preparation_id: preparationId });
+                        if (error || !data?.ok) {
+                            throw error || new Error("Initialisation refusée.");
+                        }
+                        await chargerInventaire();
+                        message("Lignes d’inventaire initialisées.");
+                        return;
+                    }
+                    if (bouton.id === "ajouterContenant") {
+                        const types = inventaireEnCours.types_contenants || [];
+                        if (!types.length) {
+                            throw new Error("Aucun type de contenant disponible.");
+                        }
+                        const ligne = {
+                            id: "nouveau",
+                            type_contenant_id: types[0].id,
+                            etat: "propre", contenu: "vide", vaisselle_id: null,
+                            quantite_contenants: null, quantite_unites_contenues: 0,
+                            commentaire: "", valide_at: null
+                        };
+                        inventaireEnCours.lignes.push(ligne);
+                        afficherInventaire();
+                        return;
+                    }
+                    if (!bouton.dataset.enregistrer) {
+                        return;
+                    }
+                    if (preparationOuverte.statut !== "brouillon") {
+                        throw new Error("Cette préparation n’est plus modifiable.");
+                    }
+                    const ligneHtml = bouton.closest("tr[data-ligne]");
+                    const id = ligneHtml.dataset.ligne;
+                    const champ = nom => ligneHtml.querySelector(`[data-champ="${nom}"]`);
+                    const quantite = entierOuNull(champ("quantite").value);
+                    const commentaire = champ("commentaire").value.trim() || null;
+                    const valider = champ("valider").checked;
+                    if (valider && quantite === null) {
+                        throw new Error("Saisis une quantité avant de valider la ligne.");
+                    }
+                    let nomRpc;
+                    let argumentsRpc;
+                    if (bouton.dataset.enregistrer === "article") {
+                        nomRpc = "enregistrer_inventaire_article_preparation_administration";
+                        argumentsRpc = {
+                            p_preparation_id: preparationId,
+                            p_article_id: id,
+                            p_quantite_comptee: quantite,
+                            p_valider: valider,
+                            p_commentaire: commentaire
+                        };
+                    } else if (bouton.dataset.enregistrer === "vaisselle") {
+                        const ligne = inventaireEnCours.lignes.find(l => l.id === id);
+                        nomRpc = "enregistrer_inventaire_vaisselle_preparation_administration";
+                        argumentsRpc = {
+                            p_preparation_id: preparationId,
+                            p_vaisselle_id: ligne.vaisselle_id,
+                            p_zone: ligne.zone,
+                            p_quantite_comptee: quantite,
+                            p_valider: valider,
+                            p_commentaire: commentaire
+                        };
+                    } else {
+                        nomRpc = "enregistrer_inventaire_contenant_preparation_administration";
+                        argumentsRpc = {
+                            p_preparation_id: preparationId,
+                            p_ligne_id: id === "nouveau" ? null : id,
+                            p_type_contenant_id: champ("type").value,
+                            p_etat: champ("etat").value,
+                            p_contenu: champ("contenu").value,
+                            p_vaisselle_id: champ("vaisselle").value || null,
+                            p_quantite_contenants: quantite,
+                            p_quantite_unites_contenues: entierOuNull(champ("unites").value) ?? 0,
+                            p_valider: valider,
+                            p_commentaire: commentaire
+                        };
+                    }
+                    bouton.disabled = true;
+                    const { data, error } = await clientSupabase.rpc(nomRpc, argumentsRpc);
+                    if (error || !data?.ok) {
+                        throw error || new Error("Enregistrement refusé.");
+                    }
+                    await chargerInventaire();
+                    message("Ligne d’inventaire enregistrée.");
+                } catch (erreur) {
+                    message(erreur.message || "Opération impossible.", true);
+                    bouton.disabled = false;
                 }
             });
 
