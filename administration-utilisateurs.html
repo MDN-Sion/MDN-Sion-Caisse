@@ -4,8 +4,8 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<meta name="theme-color" content="#8B0000">
-	<link rel="icon" type="image/png" href="logo-mdn.png">
-	<link rel="apple-touch-icon" href="logo-mdn.png">
+	<link rel="icon" type="image/png" href="logo-mdn.png?v=20261102">
+	<link rel="apple-touch-icon" href="logo-mdn.png?v=20261102">
 	<title>Utilisateurs & rôles · MDN Sion</title>
 	<style>
 		* {
@@ -131,6 +131,21 @@
 			border-radius: 12px;
 			background: #fff;
 		}
+
+		.bouton-ajouter {
+			min-height: 46px;
+			padding: 0 16px;
+			border: 0;
+			border-radius: 12px;
+			background: #8b0000;
+			color: #fff;
+			font-weight: 800;
+			white-space: nowrap;
+		}
+
+		.bouton-ajouter:hover {
+			background: #6f0000;
+		}
 		.stats {
 			display: grid;
 			grid-template-columns: repeat(4, 1fr);
@@ -159,7 +174,7 @@
 		}
 		.utilisateur {
 			display: grid;
-			grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr) 150px 120px 104px;
+			grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr) 150px 120px auto;
 			align-items: center;
 			gap: 12px;
 			padding: 13px 14px;
@@ -207,22 +222,23 @@
 		.bouton-icone {
 			width: 46px;
 			height: 46px;
+			padding: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
 			border: 1px solid #d4d4d4;
 			border-radius: 12px;
 			background: #fff;
 			font-size: 20px;
 		}
-		.bouton-icone.danger {
-			border-color: #e5b7b7;
+		.bouton-supprimer {
+			border-color: #efb8b8;
 			background: #fff5f5;
 			color: #b00020;
 		}
-		.bouton-icone.danger:hover {
-			background: #fde8e8;
-		}
-		.bouton-icone:disabled {
-			cursor: not-allowed;
-			opacity: .55;
+		.bouton-supprimer:hover {
+			background: #ffe5e5;
 		}
 		.erreur {
 			margin-bottom: 12px;
@@ -280,6 +296,11 @@
 		.fermer {
 			width: 42px;
 			height: 42px;
+			padding: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
 			border: 0;
 			border-radius: 11px;
 			background: #f2f2f2;
@@ -444,6 +465,7 @@
 					<option value="actifs">Actifs</option>
 					<option value="inactifs">Inactifs</option>
 				</select>
+				<button id="boutonAjouter" class="bouton-ajouter" type="button" hidden>+ Ajouter un utilisateur</button>
 			</div>
 			<div class="stats">
 				<div class="stat"><strong id="statTotal">0</strong><span>Comptes</span></div>
@@ -499,7 +521,9 @@
 		</section>
 	</div>
 
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase.js"></script>
 	<script src="js/auth.js"></script>
 	<script>
 		(function () {
@@ -512,6 +536,7 @@
 			const recherche = document.getElementById("recherche");
 			const filtreRole = document.getElementById("filtreRole");
 			const filtreEtat = document.getElementById("filtreEtat");
+			const boutonAjouter = document.getElementById("boutonAjouter");
 			const fondModale = document.getElementById("fondModale");
 			const formulaire = document.getElementById("formulaire");
 			const titreModale = document.getElementById("titreModale");
@@ -526,6 +551,7 @@
 			let clientSupabase = null;
 			let donnees = null;
 			let utilisateurSelectionne = null;
+			let creationEnCours = false;
 			let modeDemoActif = false;
 			let peutModifier = false;
 			let utilisateurConnecteId = null;
@@ -569,30 +595,21 @@
 					return;
 				}
 
-				listeUtilisateurs.innerHTML = liste.map(u => {
-					const suppressionProposee =
-						peutModifier &&
-						!modeDemoActif &&
-						!u.is_demo &&
-						!u.compte_protege &&
-						u.id !== utilisateurConnecteId;
-
-					return `
-						<article class="utilisateur">
-							<div>
-								<div class="nom">${echapper(u.prenom)} ${echapper(u.nom)} ${u.is_demo ? '<span class="badge demo">Compte Démo protégé</span>' : ''}</div>
-								<div class="email">${echapper(u.email)}</div>
-							</div>
-							<div class="col-email"><span class="badge">${echapper(roleLibelle(u.role))}</span></div>
-							<div class="col-role">${u.compte_auth_lie ? '🔗 Compte lié' : '⚠️ Sans Auth'}</div>
-							<div class="col-etat"><span class="badge ${u.actif ? 'actif' : 'inactif'}">${u.actif ? '● Actif' : '● Inactif'}</span></div>
-							<div class="actions-utilisateur">
-								<button class="bouton-icone" type="button" data-action="fiche" data-id="${echapper(u.id)}" title="${u.modifiable ? 'Modifier' : 'Consulter'}">${u.modifiable ? '✏️' : '👁️'}</button>
-								${suppressionProposee ? `<button class="bouton-icone danger" type="button" data-action="supprimer" data-id="${echapper(u.id)}" title="Supprimer définitivement">🗑️</button>` : ''}
-							</div>
-						</article>
-					`;
-				}).join("");
+				listeUtilisateurs.innerHTML = liste.map(u => `
+					<article class="utilisateur">
+						<div>
+							<div class="nom">${echapper(u.prenom)} ${echapper(u.nom)} ${u.is_demo ? '<span class="badge demo">Compte Démo protégé</span>' : ''}</div>
+							<div class="email">${echapper(u.email)}</div>
+						</div>
+						<div class="col-email"><span class="badge">${echapper(roleLibelle(u.role))}</span></div>
+						<div class="col-role">${u.compte_auth_lie ? '🔗 Compte lié' : '⚠️ Sans Auth'}</div>
+						<div class="col-etat"><span class="badge ${u.actif ? 'actif' : 'inactif'}">${u.actif ? '● Actif' : '● Inactif'}</span></div>
+						<div class="actions-utilisateur">
+							<button class="bouton-icone" type="button" data-action="fiche" data-id="${echapper(u.id)}" title="${u.modifiable ? 'Modifier' : 'Consulter'}">${u.modifiable ? '✏️' : '👁️'}</button>
+							${(!modeDemoActif && peutModifier && !u.is_demo && !u.compte_protege && u.id !== utilisateurConnecteId) ? `<button class="bouton-icone bouton-supprimer" type="button" data-action="supprimer" data-id="${echapper(u.id)}" title="Supprimer définitivement">🗑️</button>` : ''}
+						</div>
+					</article>
+				`).join("");
 
 				listeUtilisateurs.querySelectorAll('[data-action="fiche"]').forEach(b => {
 					b.addEventListener("click", () => ouvrirFiche(b.dataset.id));
@@ -604,32 +621,21 @@
 			}
 
 			async function supprimerUtilisateur(id, bouton) {
-				if (modeDemoActif || !peutModifier) return;
-
 				const utilisateur = (donnees?.utilisateurs || []).find(u => u.id === id);
 
-				if (!utilisateur) {
-					afficherErreur("Cet utilisateur n’existe plus dans la liste.");
-					return;
-				}
-
+				if (!utilisateur || modeDemoActif || !peutModifier) return;
 				if (utilisateur.is_demo || utilisateur.compte_protege) {
 					afficherErreur("Le compte système Mode Démo est protégé et ne peut pas être supprimé.");
 					return;
 				}
-
 				if (utilisateur.id === utilisateurConnecteId) {
 					afficherErreur("Vous ne pouvez pas supprimer votre propre compte administrateur.");
 					return;
 				}
 
-				const nomComplet = `${utilisateur.prenom || ""} ${utilisateur.nom || ""}`.trim();
-
 				const confirmation = window.confirm(
-					`SUPPRESSION DÉFINITIVE\n\n` +
-					`Utilisateur : ${nomComplet}\n` +
-					`E-mail : ${utilisateur.email || ""}\n\n` +
-					`Le profil MDN Sion et le compte Supabase Auth seront supprimés.\n\n` +
+					`Supprimer définitivement le compte de ${utilisateur.prenom || ""} ${utilisateur.nom || ""} ?\n\n` +
+					`Cette action supprimera le profil MDN Sion et le compte Supabase Auth.\n\n` +
 					`Si cet utilisateur possède déjà un historique d’opérations, la suppression sera automatiquement refusée.\n\n` +
 					`Confirmer la suppression définitive ?`
 				);
@@ -678,33 +684,73 @@
 			}
 
 			function ouvrirFiche(id) {
+				creationEnCours = false;
 				utilisateurSelectionne = (donnees?.utilisateurs || []).find(u => u.id === id);
 				if (!utilisateurSelectionne) return;
+
 				const modifiable = utilisateurSelectionne.modifiable === true && !utilisateurSelectionne.compte_protege;
+
 				prenom.value = utilisateurSelectionne.prenom || "";
 				nom.value = utilisateurSelectionne.nom || "";
 				email.value = utilisateurSelectionne.email || "";
 				role.value = utilisateurSelectionne.role || "utilisateur";
 				actif.value = utilisateurSelectionne.actif ? "true" : "false";
+
 				prenom.disabled = !modifiable;
 				nom.disabled = !modifiable;
+				email.disabled = true;
 				role.disabled = !modifiable;
 				actif.disabled = !modifiable;
 				enregistrer.hidden = !modifiable;
+				enregistrer.textContent = "Enregistrer";
+
 				noteDemo.hidden = !modeDemoActif && !utilisateurSelectionne.compte_protege;
 				noteDemo.textContent = utilisateurSelectionne.compte_protege
 					? "Compte système Mode Démo protégé : aucune modification n’est autorisée."
 					: "MODE DÉMO — cette fiche est en consultation uniquement.";
+
 				titreModale.textContent = modifiable ? "Modifier l’utilisateur" : "Consulter l’utilisateur";
 				messageFormulaire.hidden = true;
 				fondModale.hidden = false;
 				document.body.style.overflow = "hidden";
 			}
 
+			function ouvrirCreation() {
+				if (modeDemoActif || !peutModifier) return;
+
+				creationEnCours = true;
+				utilisateurSelectionne = null;
+
+				formulaire.reset();
+				prenom.value = "";
+				nom.value = "";
+				email.value = "";
+				role.value = "utilisateur";
+				actif.value = "true";
+
+				prenom.disabled = false;
+				nom.disabled = false;
+				email.disabled = false;
+				role.disabled = false;
+				actif.disabled = false;
+
+				noteDemo.hidden = true;
+				messageFormulaire.hidden = true;
+				titreModale.textContent = "Ajouter un utilisateur";
+				enregistrer.hidden = false;
+				enregistrer.textContent = "Créer le compte";
+
+				fondModale.hidden = false;
+				document.body.style.overflow = "hidden";
+				prenom.focus();
+			}
+
 			function fermerFiche() {
 				fondModale.hidden = true;
 				document.body.style.overflow = "";
 				utilisateurSelectionne = null;
+				creationEnCours = false;
+				email.disabled = true;
 			}
 
 			async function charger() {
@@ -715,16 +761,61 @@
 				peutModifier = data?.peut_modifier === true;
 				document.body.classList.toggle("mode-demo", modeDemoActif);
 				bandeauDemo.hidden = !modeDemoActif;
+				boutonAjouter.hidden = modeDemoActif || !peutModifier;
 				afficherStats();
 				afficherListe();
 			}
 
 			formulaire.addEventListener("submit", async e => {
 				e.preventDefault();
+
+				if (creationEnCours) {
+					if (modeDemoActif || !peutModifier) return;
+
+					enregistrer.disabled = true;
+					enregistrer.textContent = "Création…";
+					messageFormulaire.hidden = true;
+
+					try {
+						const adresseRetourInvitation =
+							new URL(
+								"mot-de-passe.html",
+								window.location.href
+							).href;
+
+						const { data, error } = await clientSupabase.functions.invoke("creer-utilisateur", {
+							body: {
+								prenom: prenom.value.trim(),
+								nom: nom.value.trim(),
+								email: email.value.trim(),
+								role: role.value,
+								actif: actif.value === "true",
+								redirectTo: adresseRetourInvitation
+							}
+						});
+
+						if (error) throw error;
+						if (!data?.ok) throw new Error(data?.message || "Impossible de créer l’utilisateur.");
+
+						fermerFiche();
+						await charger();
+					} catch (err) {
+						messageFormulaire.textContent = err?.message || "Impossible de créer l’utilisateur.";
+						messageFormulaire.hidden = false;
+					} finally {
+						enregistrer.disabled = false;
+						enregistrer.textContent = creationEnCours ? "Créer le compte" : "Enregistrer";
+					}
+
+					return;
+				}
+
 				if (!utilisateurSelectionne || !peutModifier || !utilisateurSelectionne.modifiable) return;
+
 				enregistrer.disabled = true;
 				enregistrer.textContent = "Enregistrement…";
 				messageFormulaire.hidden = true;
+
 				try {
 					const { error } = await clientSupabase.rpc("enregistrer_utilisateur_administration", {
 						p_utilisateur_id: utilisateurSelectionne.id,
@@ -733,6 +824,7 @@
 						p_role: role.value,
 						p_actif: actif.value === "true"
 					});
+
 					if (error) throw error;
 					fermerFiche();
 					await charger();
@@ -745,6 +837,7 @@
 				}
 			});
 
+			boutonAjouter.addEventListener("click", ouvrirCreation);
 			recherche.addEventListener("input", afficherListe);
 			filtreRole.addEventListener("change", afficherListe);
 			filtreEtat.addEventListener("change", afficherListe);
