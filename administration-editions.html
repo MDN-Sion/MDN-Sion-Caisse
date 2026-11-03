@@ -387,7 +387,7 @@
     </header>
 
     <main class="contenu">
-        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — consultation uniquement.</div>
+        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
         <div id="zoneErreur" class="erreur" role="alert" hidden></div>
         <div id="zoneSucces" class="succes" role="status" hidden></div>
         <section class="panneau">
@@ -409,10 +409,15 @@
                 <button id="actualiserPreparations" class="bouton secondaire" type="button">Actualiser</button>
             </div>
             <div class="notice">
-                La création et l’activation des éditions restent verrouillées. Les inventaires
-                des préparations existantes sont consultables et modifiables uniquement par un administrateur réel.
+                En mode réel, les inventaires des préparations existantes sont réservés aux administrateurs.
+                En mode démo, une préparation fictive 2027 permet de tester les quatre inventaires sans écrire dans Supabase.
+                La création et l’activation des éditions restent verrouillées.
             </div>
             <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
+            <div id="actionsSimulation" class="inventaire-actions" hidden>
+                <button id="reinitialiserSimulation" class="bouton secondaire" type="button">Réinitialiser la simulation</button>
+                <small>Exemples fictifs uniquement · Données perdues au rechargement</small>
+            </div>
         </section>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
@@ -484,6 +489,67 @@
             let inventaireEnCours = null;
             let chargementInventaire = false;
             let editionEnCours = null;
+            // La simulation ne quitte jamais la mémoire de cette page.
+            // Aucune table, RPC d'inventaire ou donnée réelle n'est utilisée en démo.
+            const demoId = "simulation-locale-2027";
+            let simulation = null;
+            let compteurContenantsDemo = 0;
+
+            function nouvelleSimulation() {
+                compteurContenantsDemo = 0;
+                return {
+                    preparation: {
+                        id: demoId,
+                        annee_source: 2026,
+                        annee_cible: 2027,
+                        statut: "brouillon",
+                        inventaire_mdn_valide_at: null,
+                        inventaire_fondation_valide_at: null,
+                        inventaire_vaisselle_valide_at: null,
+                        inventaire_contenants_valide_at: null
+                    },
+                    articles: [
+                        { article_id: "demo-mdn-1", id: "demo-mdn-1", nom: "Mug Mages (exemple)", beneficiaire: "mdn", quantite_theorique: 12, quantite_comptee: null, valide_at: null, commentaire: "" },
+                        { article_id: "demo-mdn-2", id: "demo-mdn-2", nom: "Tote bag (exemple)", beneficiaire: "mdn", quantite_theorique: 8, quantite_comptee: null, valide_at: null, commentaire: "" },
+                        { article_id: "demo-fondation-1", id: "demo-fondation-1", nom: "Crèche Cadre (exemple)", beneficiaire: "fondation", quantite_theorique: null, quantite_comptee: null, valide_at: null, commentaire: "" },
+                        { article_id: "demo-fondation-2", id: "demo-fondation-2", nom: "Crèche Capsules (exemple)", beneficiaire: "fondation", quantite_theorique: null, quantite_comptee: null, valide_at: null, commentaire: "" }
+                    ],
+                    vaisselle: [
+                        { id: "demo-v-1", vaisselle_id: "demo-gobelet", nom: "Gobelets (exemple)", zone: "reserve_mdn", quantite_comptee: null, valide_at: null, commentaire: "" },
+                        { id: "demo-v-2", vaisselle_id: "demo-gobelet", nom: "Gobelets (exemple)", zone: "operationnel_propre", quantite_comptee: null, valide_at: null, commentaire: "" },
+                        { id: "demo-v-3", vaisselle_id: "demo-assiette", nom: "Assiettes plates (exemple)", zone: "reserve_mdn", quantite_comptee: null, valide_at: null, commentaire: "" }
+                    ],
+                    contenants: [],
+                    types_contenants: [{ id: "demo-caisse", nom: "Caisse (exemple)" }, { id: "demo-sachet", nom: "Sachet (exemple)" }],
+                    referentiel_vaisselle: [{ id: "demo-gobelet", nom: "Gobelets" }, { id: "demo-assiette", nom: "Assiettes plates" }]
+                };
+            }
+
+            function lignesDemoSection(cle) {
+                return cle === "mdn" || cle === "fondation"
+                    ? simulation.articles.filter(ligne => ligne.beneficiaire === cle)
+                    : simulation[cle];
+            }
+
+            function reponseDemoInventaire() {
+                return {
+                    ok: true,
+                    lignes: sectionOuverte === "mdn" || sectionOuverte === "fondation"
+                        ? simulation.articles
+                        : simulation[sectionOuverte],
+                    types_contenants: simulation.types_contenants,
+                    referentiel_vaisselle: simulation.referentiel_vaisselle
+                };
+            }
+
+            function mettreAJourAvancementDemo() {
+                const cible = parId(`avancement-${demoId}`);
+                if (!cible || !simulation) return;
+                cible.textContent = sectionsInventaire.map(([cle, titre]) => {
+                    const lignes = lignesDemoSection(cle);
+                    return `${titre} : ${lignes.filter(l => l.valide_at).length}/${lignes.length} lignes validées`;
+                }).join(" · ") + " · Activation : verrouillée";
+            }
 
             const parId = (id) => {
                 return document.getElementById(id);
@@ -567,11 +633,6 @@
             function afficherPreparations() {
                 const liste = parId("listePreparations");
 
-                if (modeDemoActif) {
-                    liste.innerHTML = `<p>Mode démo : suivi des préparations indisponible.
-                        Aucune opération sur les inventaires réels n’est effectuée.</p>`;
-                    return;
-                }
 
                 if (preparations.length === 0) {
                     liste.innerHTML = `<p>Aucune préparation annuelle enregistrée.
@@ -613,8 +674,10 @@
             async function chargerPreparations() {
                 const liste = parId("listePreparations");
                 if (modeDemoActif) {
-                    preparations = [];
+                    if (!simulation) simulation = nouvelleSimulation();
+                    preparations = [simulation.preparation];
                     afficherPreparations();
+                    mettreAJourAvancementDemo();
                     return;
                 }
                 liste.textContent = "Chargement des préparations…";
@@ -672,11 +735,24 @@
                 }
             }
 
+            parId("reinitialiserSimulation").addEventListener("click", async () => {
+                if (!modeDemoActif) return;
+                if (!window.confirm("Réinitialiser toutes les saisies fictives de cette page ?")) return;
+                simulation = nouvelleSimulation();
+                preparations = [simulation.preparation];
+                preparationOuverte = null;
+                inventaireEnCours = null;
+                parId("panneauInventaires").hidden = true;
+                afficherPreparations();
+                mettreAJourAvancementDemo();
+                message("Simulation réinitialisée. Aucune donnée réelle modifiée.");
+            });
+
             parId("actualiserPreparations").addEventListener("click", async () => {
                 try {
                     await chargerPreparations();
                     message(modeDemoActif
-                        ? "Mode démo : aucun inventaire réel interrogé."
+                        ? "Simulation locale actualisée. Aucun accès aux inventaires réels."
                         : "Suivi des préparations actualisé.");
                 } catch (erreur) {
                     message(erreur.message || "Actualisation impossible.", true);
@@ -712,10 +788,6 @@
             }
 
             async function ouvrirInventaires(preparationId) {
-                if (modeDemoActif) {
-                    message("Les inventaires réels ne sont pas accessibles en mode démo.", true);
-                    return;
-                }
                 const preparation = preparations.find(p => p.id === preparationId);
                 if (!preparation) {
                     message("Préparation introuvable.", true);
@@ -741,6 +813,11 @@
                 const cible = parId("contenuInventaire");
                 cible.textContent = "Chargement de l’inventaire…";
                 try {
+                    if (modeDemoActif) {
+                        inventaireEnCours = reponseDemoInventaire();
+                        afficherInventaire();
+                        return;
+                    }
                     const nomRpc = sectionOuverte === "vaisselle"
                         ? "charger_inventaire_vaisselle_preparation_administration"
                         : sectionOuverte === "contenants"
@@ -768,16 +845,18 @@
                 const cible = parId("contenuInventaire");
                 const preparation = preparationOuverte;
                 const donnees = inventaireEnCours;
-                const editable = !modeDemoActif && preparation?.statut === "brouillon";
+                const editable = preparation?.statut === "brouillon";
                 const lignes = (donnees.lignes || []).filter(ligne =>
                     sectionOuverte === "mdn" || sectionOuverte === "fondation"
                         ? ligne.beneficiaire === sectionOuverte
                         : true
                 );
                 const validation = lignes.filter(ligne => Boolean(ligne.valide_at)).length;
-                parId("noticeInventaires").textContent = editable
-                    ? "Saisie autorisée pour ce brouillon. Chaque ligne doit être enregistrée individuellement. La validation globale et l’activation restent verrouillées."
-                    : "Consultation uniquement : cette préparation n’est pas modifiable ou le mode démo est actif.";
+                parId("noticeInventaires").textContent = modeDemoActif
+                    ? "SIMULATION LOCALE : saisies fictives enregistrées uniquement en mémoire, perdues à la fermeture ou au rechargement. Aucune écriture Supabase."
+                    : editable
+                        ? "Saisie autorisée pour ce brouillon. Chaque ligne doit être enregistrée individuellement. La validation globale et l’activation restent verrouillées."
+                        : "Consultation uniquement : cette préparation n’est pas modifiable.";
                 parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(bouton => {
                     bouton.setAttribute("aria-pressed", String(bouton.dataset.section === sectionOuverte));
                 });
@@ -868,13 +947,18 @@
 
             parId("contenuInventaire").addEventListener("click", async evenement => {
                 const bouton = evenement.target.closest("button");
-                if (!bouton || !preparationOuverte || modeDemoActif || chargementInventaire) {
+                if (!bouton || !preparationOuverte || chargementInventaire) {
                     return;
                 }
                 const preparationId = preparationOuverte.id;
                 try {
                     if (bouton.id === "rechargerInventaire") {
                         await chargerInventaire();
+                        return;
+                    }
+                    if (modeDemoActif && (bouton.id === "alimenterArticles" || bouton.id === "initialiserVaisselle")) {
+                        await chargerInventaire();
+                        message("Lignes d'exemple déjà disponibles dans la simulation.");
                         return;
                     }
                     if (bouton.id === "alimenterArticles" || bouton.id === "initialiserVaisselle") {
@@ -960,6 +1044,48 @@
                             p_valider: valider,
                             p_commentaire: commentaire
                         };
+                    }
+                    if (modeDemoActif) {
+                        if (quantite !== null && (!Number.isSafeInteger(quantite) || quantite < 0)) {
+                            throw new Error("La quantité doit être un entier positif ou nul.");
+                        }
+                        const cle = sectionOuverte === "mdn" || sectionOuverte === "fondation"
+                            ? "articles" : sectionOuverte;
+                        const lignes = simulation[cle];
+                        let ligne = lignes.find(l =>
+                            (cle === "articles" ? l.article_id : l.id) === id
+                        );
+                        if (!ligne) throw new Error("Ligne de simulation introuvable.");
+                        if (cle === "contenants") {
+                            const unites = argumentsRpc.p_quantite_unites_contenues;
+                            if (!Number.isSafeInteger(unites) || unites < 0) {
+                                throw new Error("Le nombre d'unités doit être positif ou nul.");
+                            }
+                            if (argumentsRpc.p_contenu === "vide" && unites !== 0) {
+                                throw new Error("Un contenant vide ne peut pas contenir d'unités.");
+                            }
+                            if (argumentsRpc.p_contenu !== "vide" && !argumentsRpc.p_vaisselle_id) {
+                                throw new Error("Sélectionne la vaisselle contenue.");
+                            }
+                            Object.assign(ligne, {
+                                type_contenant_id: argumentsRpc.p_type_contenant_id,
+                                etat: argumentsRpc.p_etat,
+                                contenu: argumentsRpc.p_contenu,
+                                vaisselle_id: argumentsRpc.p_vaisselle_id,
+                                quantite_contenants: quantite,
+                                quantite_unites_contenues: unites
+                            });
+                            if (ligne.id === "nouveau") {
+                                ligne.id = `demo-contenant-${++compteurContenantsDemo}`;
+                            }
+                        }
+                        ligne.quantite_comptee = quantite;
+                        ligne.commentaire = commentaire || "";
+                        ligne.valide_at = valider ? new Date().toISOString() : null;
+                        await chargerInventaire();
+                        mettreAJourAvancementDemo();
+                        message("Ligne enregistrée dans la simulation locale uniquement.");
+                        return;
                     }
                     bouton.disabled = true;
                     const { data, error } = await clientSupabase.rpc(nomRpc, argumentsRpc);
@@ -1149,10 +1275,11 @@
                         ? "Utilisateur"
                         : "Administrateur";
                     parId("sousTitre").textContent = modeDemoActif
-                        ? "MODE DÉMO · Consultation"
+                        ? "MODE DÉMO · Simulation"
                         : "Administration";
 
                     await charger();
+                    parId("actionsSimulation").hidden = !modeDemoActif;
                     await chargerPreparations();
                 } catch (erreur) {
                     message(erreur.message || "Impossible de charger les éditions.", true);
