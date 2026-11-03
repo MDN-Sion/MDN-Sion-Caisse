@@ -364,6 +364,35 @@
             }
 
         }
+
+        /* V8 : fiches adaptatives, sans tableaux horizontaux en simulation. */
+        .v8-intro { line-height:1.55; margin:0 0 18px; color:#404040; }
+        .v8-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr)); gap:15px; }
+        .v8-fiche { background:#fff; border:1px solid #dedede; border-radius:15px; padding:18px; display:flex; flex-direction:column; gap:13px; min-width:0; }
+        .v8-fiche h3 { margin:0; font-size:19px; }
+        .v8-fiche h4 { margin:5px 0 0; }
+        .v8-tete { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .v8-etat { border-radius:100px; padding:5px 9px; background:#f4e7d9; color:#80501d; font-size:12px; font-weight:700; }
+        .v8-etat.ok { background:#e0f2e3; color:#1a6b2b; }
+        .v8-theorique { background:#f7f5f2; padding:13px; border-radius:11px; display:flex; flex-direction:column; gap:5px; }
+        .v8-theorique strong { font-size:23px; }
+        .v8-theorique small, .v8-totaux small { color:#666; }
+        .v8-champ { display:flex; flex-direction:column; gap:7px; font-weight:650; min-width:0; }
+        .v8-champ input, .v8-champ select { width:100%; min-height:45px; padding:10px 11px; border:1px solid #bfbfbf; border-radius:10px; background:#fff; font:inherit; color:#222; }
+        .v8-case { display:flex; align-items:flex-start; gap:9px; line-height:1.4; }
+        .v8-case input { width:19px; height:19px; flex:none; accent-color:#8b0000; }
+        .v8-deux { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .v8-photo { min-height:75px; background:#f6f6f6; border:1px dashed #ccc; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#777; text-align:center; font-size:13px; padding:12px; }
+        .v8-contenant, .v8-reserve { margin-top:16px; }
+        .v8-note { color:#555; font-size:14px; line-height:1.5; margin:0; }
+        .v8-partielles { display:grid; gap:10px; }
+        .v8-partielle { display:flex; gap:10px; align-items:end; }
+        .v8-partielle .v8-champ { flex:1; }
+        .v8-totaux { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .v8-totaux > div { background:#fff6df; border:1px solid #f0d59d; border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:7px; }
+        .v8-totaux strong { font-size:25px; }
+        @media(max-width:580px) { .v8-deux,.v8-totaux { grid-template-columns:1fr; } .v8-partielle { align-items:stretch; flex-direction:column; } }
+
     </style>
 </head>
 <body>
@@ -410,7 +439,7 @@
             </div>
             <div class="notice">
                 En mode réel, les inventaires des préparations existantes sont réservés aux administrateurs.
-                En mode démo, une préparation fictive 2027 permet de tester les quatre inventaires sans écrire dans Supabase.
+                En mode démo, une préparation fictive 2027 permet de tester les fiches simplifiées, les réglages de vaisselle et les caisses de gobelets, sans écrire dans Supabase.
                 La création et l’activation des éditions restent verrouillées.
             </div>
             <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
@@ -431,8 +460,8 @@
         <section class="panneau">
             <h2>Préparation de la prochaine édition</h2>
             <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
-            <p><strong>Fondation :</strong> catalogue conservé, quantités initiales saisies manuellement.</p>
-            <p><strong>Vaisselle et conditionnements :</strong> références, tarifs et règles conservés ; quantités saisies manuellement.</p>
+            <p><strong>Fondation :</strong> fiches articles, photos et paramètres de caisse conservés, sans comptage.</p>
+            <p><strong>Vaisselle :</strong> paramètres et tarifs repris et modifiables pour la prochaine édition. <strong>Réserve MDN :</strong> caisses de gobelets pleines, partielles et vides.</p>
             <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
         </section>
     </main>
@@ -494,9 +523,11 @@
             const demoId = "simulation-locale-2027";
             let simulation = null;
             let compteurContenantsDemo = 0;
+            let simulationV8 = null;
 
             function nouvelleSimulation() {
                 compteurContenantsDemo = 0;
+                simulationV8 = creerSimulationV8();
                 return {
                     preparation: {
                         id: demoId,
@@ -525,6 +556,191 @@
                 };
             }
 
+            // V8 : simulation locale, distincte des RPC existantes.
+            // Les paramètres affichés ci-dessous sont fictifs, jamais lus comme tarifs réels.
+            function creerSimulationV8() {
+                return {
+                    mdn: [
+                        { id: "mdn-mug", nom: "Mug Mages", theorique: 12, quantite: "", commentaire: "", valide: false, prix: "15.00", gestionStock: true },
+                        { id: "mdn-sac", nom: "Tote bag", theorique: 8, quantite: "", commentaire: "", valide: false, prix: "12.00", gestionStock: true }
+                    ],
+                    fondation: [
+                        { id: "fond-cadre", nom: "Crèche Cadre", prix: "35.00", actif: true, gestionStock: true, photo: "" },
+                        { id: "fond-caps", nom: "Crèche Capsules", prix: "22.00", actif: true, gestionStock: true, photo: "" }
+                    ],
+                    vaisselle: [
+                        { id: "gobelets", nom: "Gobelets", type: "caisse", capacite: "480", consigne: "1.00", lavage: "0.20", seuil: "100", actif: true },
+                        { id: "assiettes", nom: "Assiettes plates", type: "caisse", capacite: "100", consigne: "2.00", lavage: "0.50", seuil: "50", actif: true },
+                        { id: "fourchettes", nom: "Fourchettes", type: "sachet", capacite: "100", consigne: "1.00", lavage: "0.20", seuil: "50", actif: true }
+                    ],
+                    contenant: { consigneCaisse: "7.00", lavageCaisse: "5.00" },
+                    reserve: { pleines: "3", partielles: ["125"], vides: "2", valide: false }
+                };
+            }
+
+            function entierV8(valeur, nom) {
+                const n = Number(valeur);
+                if (valeur === "" || !Number.isSafeInteger(n) || n < 0) {
+                    throw new Error(`${nom} : indique un entier positif ou nul.`);
+                }
+                return n;
+            }
+
+            function montantV8(valeur, nom) {
+                const n = Number(String(valeur).replace(",", "."));
+                if (valeur === "" || !Number.isFinite(n) || n < 0) {
+                    throw new Error(`${nom} : indique un montant positif ou nul.`);
+                }
+                return n;
+            }
+
+            function totalReserveV8() {
+                if (!simulationV8) return 0;
+                const r = simulationV8.reserve;
+                const cap = Number(simulationV8.vaisselle[0].capacite) || 0;
+                return (Number(r.pleines) || 0) * cap + r.partielles.reduce((s, n) => s + (Number(n) || 0), 0);
+            }
+
+            function champV8(label, valeur, champ, type = "text", extra = "") {
+                return `<label class="v8-champ"><span>${echapper(label)}</span><input data-v8-champ="${echapper(champ)}" type="${type}" ${extra} value="${echapper(valeur ?? "")}"></label>`;
+            }
+
+            function afficherSimulationV8() {
+                const cible = parId("contenuInventaire");
+                const d = simulationV8;
+                if (!d) return;
+                parId("noticeInventaires").textContent = "SIMULATION V8 : valeurs et tarifs fictifs. Aucun enregistrement Supabase. Les modifications disparaissent au rechargement.";
+                parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(b => {
+                    b.setAttribute("aria-pressed", String(b.dataset.section === sectionOuverte));
+                });
+                if (sectionOuverte === "mdn") {
+                    cible.innerHTML = `<p class="v8-intro">Vérifie les quantités réellement disponibles en fin d'édition. Le stock théorique est proposé à titre indicatif.</p>
+                        <div class="v8-grille">${d.mdn.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
+                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ${a.valide ? "ok" : ""}">${a.valide ? "Vérifié" : "À vérifier"}</span></div>
+                            <div class="v8-theorique"><small>Stock théorique fictif</small><strong>${a.theorique} unités</strong></div>
+                            ${champV8("Quantité réellement comptée", a.quantite, "quantite", "number", 'min="0" step="1"')}
+                            ${champV8("Commentaire (facultatif)", a.commentaire, "commentaire", "text", 'maxlength="500"')}
+                            <label class="v8-case"><input type="checkbox" data-v8-champ="valide" ${a.valide ? "checked" : ""}> Je confirme avoir vérifié cette quantité.</label>
+                            <button class="bouton" type="button" data-v8-action="mdn" data-v8-id="${a.id}">Enregistrer cette fiche</button>
+                        </article>`).join("")}</div>`;
+                } else if (sectionOuverte === "fondation") {
+                    cible.innerHTML = `<p class="v8-intro">Seules les fiches articles et leurs paramètres de caisse sont repris. <strong>Aucune quantité n'est demandée.</strong> Les photos existantes seront conservées dans la version réelle.</p>
+                        <div class="v8-grille">${d.fondation.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
+                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ok">Catalogue</span></div>
+                            <div class="v8-photo"><span>Photo de l'article si disponible</span></div>
+                            ${champV8("Prix de vente (CHF)", a.prix, "prix", "text", 'inputmode="decimal"')}
+                            <label class="v8-case"><input type="checkbox" data-v8-champ="actif" ${a.actif ? "checked" : ""}> Article actif en caisse</label>
+                            <label class="v8-case"><input type="checkbox" data-v8-champ="gestionStock" ${a.gestionStock ? "checked" : ""}> Gestion du stock activée (paramètre repris)</label>
+                            <button class="bouton" type="button" data-v8-action="fondation" data-v8-id="${a.id}">Enregistrer les paramètres</button>
+                        </article>`).join("")}</div>`;
+                } else if (sectionOuverte === "vaisselle") {
+                    cible.innerHTML = `<p class="v8-intro">Reprends et ajuste les réglages de l'édition précédente. Aucun inventaire de stock opérationnel n'est demandé : les livraisons seront enregistrées lorsqu'elles auront lieu.</p>
+                        <div class="v8-grille">${d.vaisselle.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
+                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat">Paramètres</span></div>
+                            <label class="v8-champ"><span>Conditionnement</span><select data-v8-champ="type"><option value="caisse" ${a.type === "caisse" ? "selected" : ""}>Caisse</option><option value="sachet" ${a.type === "sachet" ? "selected" : ""}>Sachet</option></select></label>
+                            ${champV8("Unités par conditionnement", a.capacite, "capacite", "number", 'min="1" step="1"')}
+                            <div class="v8-deux">${champV8("Consigne unitaire (CHF)", a.consigne, "consigne", "text", 'inputmode="decimal"')}
+                            ${champV8("Lavage unitaire (CHF)", a.lavage, "lavage", "text", 'inputmode="decimal"')}</div>
+                            ${champV8("Seuil d'alerte stock", a.seuil, "seuil", "number", 'min="0" step="1"')}
+                            <label class="v8-case"><input type="checkbox" data-v8-champ="actif" ${a.actif ? "checked" : ""}> Référence active</label>
+                            <button class="bouton" type="button" data-v8-action="vaisselle" data-v8-id="${a.id}">Enregistrer les réglages</button>
+                        </article>`).join("")}</div>
+                        <article class="v8-fiche v8-contenant" data-v8-id="contenants-config"><h3>Paramètres des caisses</h3>
+                        <p>Ces montants concernent le contenant, en plus des tarifs unitaires de vaisselle.</p>
+                        <div class="v8-deux">${champV8("Consigne caisse (CHF)", d.contenant.consigneCaisse, "consigneCaisse", "text", 'inputmode="decimal"')}
+                        ${champV8("Lavage caisse (CHF)", d.contenant.lavageCaisse, "lavageCaisse", "text", 'inputmode="decimal"')}</div>
+                        <button class="bouton" type="button" data-v8-action="contenant-config" data-v8-id="contenants-config">Enregistrer les réglages des caisses</button></article>
+                        <p class="v8-note">Les règles de retour selon le type de stand seront également reprises sans modifier l'historique 2026. Leur édition réelle nécessitera l'adaptation SQL prévue.</p>`;
+                } else {
+                    const r = d.reserve;
+                    const cap = Number(d.vaisselle[0].capacite) || 0;
+                    cible.innerHTML = `<p class="v8-intro">La réserve MDN contient uniquement des caisses de <strong>gobelets</strong> : pleines, partielles ou vides. Aucun autre article de vaisselle n'est inventorié ici.</p>
+                        <article class="v8-fiche v8-reserve" data-v8-id="reserve">
+                            <div class="v8-tete"><h3>Caisses de gobelets en réserve</h3><span class="v8-etat ${r.valide ? "ok" : ""}">${r.valide ? "Inventaire vérifié" : "À vérifier"}</span></div>
+                            <p class="v8-note">Capacité paramétrée : <strong>${cap} gobelets par caisse pleine</strong>.</p>
+                            <div class="v8-deux">${champV8("Nombre de caisses pleines", r.pleines, "pleines", "number", 'min="0" step="1"')}
+                            ${champV8("Nombre de caisses vides", r.vides, "vides", "number", 'min="0" step="1"')}</div>
+                            <h4>Caisses partielles</h4><p class="v8-note">Saisis le nombre exact de gobelets dans chaque caisse partielle.</p>
+                            <div class="v8-partielles">${r.partielles.map((q, i) => `<div class="v8-partielle"><label class="v8-champ"><span>Caisse partielle n° ${i + 1}</span><input type="number" min="1" step="1" max="${Math.max(1,cap-1)}" data-v8-partielle="${i}" value="${echapper(q)}"></label>
+                            <button class="bouton secondaire" type="button" data-v8-action="supprimer-partielle" data-v8-index="${i}" aria-label="Supprimer cette caisse partielle">Supprimer</button></div>`).join("")}</div>
+                            <button class="bouton secondaire" type="button" data-v8-action="ajouter-partielle">+ Ajouter une caisse partielle</button>
+                            <div class="v8-totaux"><div><small>Total gobelets en réserve</small><strong id="v8-total-gobelets">${totalReserveV8().toLocaleString("fr-FR")}</strong></div>
+                            <div><small>Nombre total de caisses</small><strong id="v8-total-caisses">${(Number(r.pleines)||0)+r.partielles.length+(Number(r.vides)||0)}</strong></div></div>
+                            <label class="v8-case"><input type="checkbox" data-v8-champ="valide" ${r.valide ? "checked" : ""}> Je confirme avoir vérifié les caisses en réserve.</label>
+                            <button class="bouton" type="button" data-v8-action="reserve">Enregistrer l'inventaire de la réserve</button>
+                        </article>`;
+                }
+            }
+
+            function synchroniserReserveV8() {
+                const carte = parId("contenuInventaire").querySelector('[data-v8-id="reserve"]');
+                if (!carte) return;
+                const r = simulationV8.reserve;
+                const lire = nom => carte.querySelector(`[data-v8-champ="${nom}"]`);
+                r.pleines = lire("pleines").value;
+                r.vides = lire("vides").value;
+                r.valide = lire("valide").checked;
+                r.partielles = [...carte.querySelectorAll("[data-v8-partielle]")].map(i => i.value);
+            }
+
+            function traiterActionSimulationV8(bouton) {
+                const action = bouton.dataset.v8Action;
+                if (!action) return;
+                const d = simulationV8;
+                try {
+                    if (action === "ajouter-partielle" || action === "supprimer-partielle") {
+                        synchroniserReserveV8();
+                        d.reserve.valide = false;
+                        if (action === "ajouter-partielle") d.reserve.partielles.push("");
+                        else d.reserve.partielles.splice(Number(bouton.dataset.v8Index), 1);
+                        afficherSimulationV8();
+                        return;
+                    }
+                    const carte = bouton.closest("[data-v8-id]");
+                    if (!carte) return;
+                    const champ = nom => carte.querySelector(`[data-v8-champ="${nom}"]`);
+                    if (action === "mdn") {
+                        const a = d.mdn.find(x => x.id === bouton.dataset.v8Id);
+                        const q = entierV8(champ("quantite").value, "Quantité comptée");
+                        a.quantite = String(q);
+                        a.commentaire = champ("commentaire").value.trim();
+                        a.valide = champ("valide").checked;
+                    } else if (action === "fondation") {
+                        const a = d.fondation.find(x => x.id === bouton.dataset.v8Id);
+                        a.prix = montantV8(champ("prix").value, "Prix").toFixed(2);
+                        a.actif = champ("actif").checked;
+                        a.gestionStock = champ("gestionStock").checked;
+                    } else if (action === "vaisselle") {
+                        const a = d.vaisselle.find(x => x.id === bouton.dataset.v8Id);
+                        a.type = champ("type").value;
+                        a.capacite = String(entierV8(champ("capacite").value, "Capacité"));
+                        if (Number(a.capacite) < 1) throw new Error("La capacité doit être supérieure à zéro.");
+                        a.consigne = montantV8(champ("consigne").value, "Consigne").toFixed(2);
+                        a.lavage = montantV8(champ("lavage").value, "Lavage").toFixed(2);
+                        a.seuil = String(entierV8(champ("seuil").value, "Seuil"));
+                        a.actif = champ("actif").checked;
+                    } else if (action === "contenant-config") {
+                        d.contenant.consigneCaisse = montantV8(champ("consigneCaisse").value, "Consigne caisse").toFixed(2);
+                        d.contenant.lavageCaisse = montantV8(champ("lavageCaisse").value, "Lavage caisse").toFixed(2);
+                    } else if (action === "reserve") {
+                        synchroniserReserveV8();
+                        const r = d.reserve;
+                        entierV8(r.pleines, "Caisses pleines");
+                        entierV8(r.vides, "Caisses vides");
+                        const cap = entierV8(d.vaisselle[0].capacite, "Capacité gobelets");
+                        for (const q of r.partielles) {
+                            const n = entierV8(q, "Caisse partielle");
+                            if (n <= 0 || n >= cap) throw new Error(`Une caisse partielle doit contenir entre 1 et ${cap-1} gobelets.`);
+                        }
+                    }
+                    afficherSimulationV8();
+                    mettreAJourAvancementDemo();
+                    message("Enregistré dans la simulation locale uniquement. Aucune modification Supabase.");
+                } catch (erreur) {
+                    message(erreur.message || "Saisie invalide.", true);
+                }
+            }
+
             function lignesDemoSection(cle) {
                 return cle === "mdn" || cle === "fondation"
                     ? simulation.articles.filter(ligne => ligne.beneficiaire === cle)
@@ -545,6 +761,11 @@
             function mettreAJourAvancementDemo() {
                 const cible = parId(`avancement-${demoId}`);
                 if (!cible || !simulation) return;
+                if (simulationV8) {
+                    const comptes = simulationV8.mdn.filter(a => a.valide).length;
+                    cible.textContent = `Articles MDN : ${comptes}/${simulationV8.mdn.length} vérifiés · Fondation : catalogue repris · Vaisselle : paramètres modifiables · Réserve : ${totalReserveV8()} gobelets · Activation : verrouillée`;
+                    return;
+                }
                 cible.textContent = sectionsInventaire.map(([cle, titre]) => {
                     const lignes = lignesDemoSection(cle);
                     return `${titre} : ${lignes.filter(l => l.valide_at).length}/${lignes.length} lignes validées`;
@@ -762,8 +983,8 @@
             const sectionsInventaire = [
                 ["mdn", "Articles MDN"],
                 ["fondation", "Articles Fondation"],
-                ["vaisselle", "Vaisselle"],
-                ["contenants", "Contenants"]
+                ["vaisselle", "Paramètres vaisselle"],
+                ["contenants", "Réserve MDN — Gobelets"]
             ];
 
             function entierOuNull(texte) {
@@ -796,7 +1017,7 @@
                 preparationOuverte = preparation;
                 sectionOuverte = "mdn";
                 parId("panneauInventaires").hidden = false;
-                parId("titreInventaire").textContent = `Inventaires de préparation ${preparation.annee_cible}`;
+                parId("titreInventaire").textContent = `Préparation de l’édition ${preparation.annee_cible}`;
                 parId("ongletsInventaire").innerHTML = sectionsInventaire.map(([cle, titre]) => `
                     <button type="button" class="bouton secondaire" data-section="${cle}"
                         aria-pressed="${cle === sectionOuverte}">${titre}</button>
@@ -843,9 +1064,13 @@
 
             function afficherInventaire() {
                 const cible = parId("contenuInventaire");
+                if (modeDemoActif) {
+                    afficherSimulationV8();
+                    return;
+                }
                 const preparation = preparationOuverte;
                 const donnees = inventaireEnCours;
-                const editable = preparation?.statut === "brouillon";
+                const editable = false; // V8 : anciennes RPC de saisie non adaptées aux nouvelles règles métier.
                 const lignes = (donnees.lignes || []).filter(ligne =>
                     sectionOuverte === "mdn" || sectionOuverte === "fondation"
                         ? ligne.beneficiaire === sectionOuverte
@@ -855,7 +1080,7 @@
                 parId("noticeInventaires").textContent = modeDemoActif
                     ? "SIMULATION LOCALE : saisies fictives enregistrées uniquement en mémoire, perdues à la fermeture ou au rechargement. Aucune écriture Supabase."
                     : editable
-                        ? "Saisie autorisée pour ce brouillon. Chaque ligne doit être enregistrée individuellement. La validation globale et l’activation restent verrouillées."
+                        ? "Consultation uniquement en mode réel : les fonctions de saisie seront adaptées aux nouvelles règles V8 avant toute utilisation."
                         : "Consultation uniquement : cette préparation n’est pas modifiable.";
                 parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(bouton => {
                     bouton.setAttribute("aria-pressed", String(bouton.dataset.section === sectionOuverte));
@@ -945,9 +1170,27 @@
                 await chargerInventaire();
             });
 
+            parId("contenuInventaire").addEventListener("input", evenement => {
+                if (!modeDemoActif || sectionOuverte !== "contenants") return;
+                const carte = evenement.target.closest('[data-v8-id="reserve"]');
+                if (!carte) return;
+                const lire = nom => carte.querySelector(`[data-v8-champ="${nom}"]`);
+                const pleines = Number(lire("pleines").value) || 0;
+                const vides = Number(lire("vides").value) || 0;
+                const partielles = [...carte.querySelectorAll("[data-v8-partielle]")];
+                const capacite = Number(simulationV8.vaisselle[0].capacite) || 0;
+                const total = pleines * capacite + partielles.reduce((s, e) => s + (Number(e.value) || 0), 0);
+                parId("v8-total-gobelets").textContent = total.toLocaleString("fr-FR");
+                parId("v8-total-caisses").textContent = String(pleines + vides + partielles.length);
+            });
+
             parId("contenuInventaire").addEventListener("click", async evenement => {
                 const bouton = evenement.target.closest("button");
                 if (!bouton || !preparationOuverte || chargementInventaire) {
+                    return;
+                }
+                if (modeDemoActif) {
+                    traiterActionSimulationV8(bouton);
                     return;
                 }
                 const preparationId = preparationOuverte.id;
