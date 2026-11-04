@@ -435,7 +435,7 @@
     </header>
 
     <main class="contenu">
-        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO - simulation des inventaires, sans modification des données réelles.</div>
+        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
         <div id="zoneErreur" class="erreur" role="alert" hidden></div>
         <div id="zoneSucces" class="succes" role="status" hidden></div>
         <section class="panneau">
@@ -1760,6 +1760,13 @@
                     await charger();
                     parId("actionsSimulation").hidden = !modeDemoActif;
                     await chargerPreparations();
+
+                    // V9.1 : rendre l’aperçu visible dès le chargement initial en mode réel.
+                    // La simulation reste indépendante et ne sollicite jamais cette RPC.
+                    parId("panneauApercuReprise").hidden = modeDemoActif;
+                    if (!modeDemoActif) {
+                        await chargerApercuRepriseReel();
+                    }
                 } catch (erreur) {
                     message(erreur.message || "Impossible de charger les éditions.", true);
                 } finally {
