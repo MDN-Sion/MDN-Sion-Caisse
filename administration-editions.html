@@ -781,8 +781,7 @@
                         champs += champsNombre(item,"seuil_stock","Seuil d'alerte");
                         champs += caseACocher("Disponible à la vente", "actif_en_caisse", item.actif_en_caisse);
                         champs += caseACocher("Suivre les quantités en stock", "gestion_stock", item.gestion_stock);
-                        if (ongletBrouillonV97 === "mdn") champs += champsNombre(item,"quantite_comptee","Quantité physiquement comptée");
-                        champs += `<label class="v97-large">Commentaire<input data-v97-champ="commentaire_2027" maxlength="500" value="${echapper(item.commentaire_2027 || "")}"></label>`;
+                        if (ongletBrouillonV97 === "mdn") champs += champsNombre(item,"quantite_comptee","Quantité comptée");
                     } else if (ongletBrouillonV97 === "vaisselle") {
                         champs += `<label>Conditionnement<select data-v97-champ="type_conditionnement"><option value="caisse" ${item.type_conditionnement === "caisse" ? "selected" : ""}>Caisse</option><option value="sachet" ${item.type_conditionnement === "sachet" ? "selected" : ""}>Sachet</option></select></label>`;
                         champs += champsNombre(item,"quantite_standard",item.type_conditionnement === "sachet" ? "Capacité par sachet" : "Capacité par caisse");
