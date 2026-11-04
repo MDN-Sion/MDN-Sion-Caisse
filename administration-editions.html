@@ -746,12 +746,22 @@
                         fondation: copier(apercuRepriseReel.articles).filter(a => a.beneficiaire === "fondation").map(a => ({...a, commentaire_2027: "", verifie_2027: false})),
                         vaisselle: copier(apercuRepriseReel.parametres_vaisselle).map(a => ({...a, verifie_2027: false})),
                         contenants: copier(apercuRepriseReel.parametres_contenants).map(a => ({...a, verifie_2027: false})),
-                        reserve: [{nom:"Gobelets — réserve MDN", caisses_pleines:0, caisses_partielles:0, gobelets_dans_caisses_partielles:0, caisses_vides:0, capacite_caisse: Number((apercuRepriseReel.parametres_vaisselle || []).find(v => /gobelet/i.test(v.nom || ""))?.quantite_standard) || 480, verifie_2027:false}]
+                        reserve: [{nom:"Gobelets — réserve MDN", caisses_pleines:0, caisses_partielles:0, gobelets_dans_caisses_partielles:0, quantites_caisses_partielles:[], caisses_vides:0, capacite_caisse: Number((apercuRepriseReel.parametres_vaisselle || []).find(v => /gobelet/i.test(v.nom || ""))?.quantite_standard) || 480, verifie_2027:false}]
                     };
                 }
                 parId("panneauBrouillonV97").hidden = false;
                 afficherBrouillonV97();
                 parId("panneauBrouillonV97").scrollIntoView({behavior:"smooth",block:"start"});
+            }
+
+            // V9.8 : détail individuel des caisses partielles, uniquement en mémoire locale.
+            function champsCaissesPartiellesV98(item) {
+                const quantites = Array.isArray(item.quantites_caisses_partielles) ? item.quantites_caisses_partielles : [];
+                const nombre = Math.max(0, Math.min(100, Number(item.caisses_partielles) || 0));
+                if (!nombre) return `<p>Aucune caisse partielle.</p>`;
+                return `<p><strong>Gobelets par caisse partielle</strong> (1 à ${item.capacite_caisse - 1} par caisse)</p><div class="v97-champs">` +
+                    Array.from({length:nombre}, (_, i) => `<label>Caisse partielle n° ${i + 1}<input type="number" min="1" max="${item.capacite_caisse - 1}" step="1" data-v98-caisse="${i}" value="${echapper(quantites[i] ?? "")}"></label>`).join("") +
+                    `</div>`;
             }
 
             function afficherBrouillonV97() {
@@ -769,13 +779,13 @@
                     if (ongletBrouillonV97 === "mdn" || ongletBrouillonV97 === "fondation") {
                         champs += champsNombre(item,"prix","Prix de vente (CHF)","0.01");
                         champs += champsNombre(item,"seuil_stock","Seuil d'alerte");
-                        champs += caseACocher("Actif en caisse", "actif_en_caisse", item.actif_en_caisse);
-                        champs += caseACocher("Gestion du stock", "gestion_stock", item.gestion_stock);
+                        champs += caseACocher("Disponible à la vente", "actif_en_caisse", item.actif_en_caisse);
+                        champs += caseACocher("Suivre les quantités en stock", "gestion_stock", item.gestion_stock);
                         if (ongletBrouillonV97 === "mdn") champs += champsNombre(item,"quantite_comptee","Quantité physiquement comptée");
                         champs += `<label class="v97-large">Commentaire<input data-v97-champ="commentaire_2027" maxlength="500" value="${echapper(item.commentaire_2027 || "")}"></label>`;
                     } else if (ongletBrouillonV97 === "vaisselle") {
                         champs += `<label>Conditionnement<select data-v97-champ="type_conditionnement"><option value="caisse" ${item.type_conditionnement === "caisse" ? "selected" : ""}>Caisse</option><option value="sachet" ${item.type_conditionnement === "sachet" ? "selected" : ""}>Sachet</option></select></label>`;
-                        champs += champsNombre(item,"quantite_standard","Unités par conditionnement");
+                        champs += champsNombre(item,"quantite_standard",item.type_conditionnement === "sachet" ? "Capacité par sachet" : "Capacité par caisse");
                         champs += champsNombre(item,"consigne_unitaire","Consigne (CHF/unité)","0.01");
                         champs += champsNombre(item,"lavage_unitaire","Lavage (CHF/unité)","0.01");
                         champs += champsNombre(item,"seuil_stock","Seuil d'alerte");
@@ -785,8 +795,11 @@
                         champs += champsNombre(item,"lavage","Lavage caisse (CHF)","0.01");
                         champs += caseACocher("Contenant actif", "actif", item.actif);
                     } else {
-                        for (const [cle,nom] of [["caisses_pleines","Caisses pleines"],["caisses_partielles","Caisses partielles"],["gobelets_dans_caisses_partielles","Gobelets dans les caisses partielles"],["caisses_vides","Caisses vides"]]) champs += champsNombre(item,cle,nom);
-                        champs += `<p class="v97-large">Capacité : ${item.capacite_caisse} gobelets par caisse pleine. Total simulé : <strong>${item.caisses_pleines * item.capacite_caisse + item.gobelets_dans_caisses_partielles} gobelets</strong> dans ${item.caisses_pleines + item.caisses_partielles + item.caisses_vides} caisses.</p>`;
+                        champs += champsNombre(item,"caisses_pleines","Caisses pleines");
+                        champs += champsNombre(item,"caisses_partielles","Caisses partielles");
+                        champs += `<div class="v97-large" data-v98-detail-partielles>${champsCaissesPartiellesV98(item)}</div>`;
+                        champs += champsNombre(item,"caisses_vides","Caisses vides");
+                        champs += `<p class="v97-large" data-v98-total>Capacité : ${item.capacite_caisse} gobelets par caisse pleine. Total simulé : <strong>${item.caisses_pleines * item.capacite_caisse + item.gobelets_dans_caisses_partielles} gobelets</strong> dans ${item.caisses_pleines + item.caisses_partielles + item.caisses_vides} caisses.</p>`;
                     }
                     champs += caseACocher("Fiche vérifiée dans ce brouillon", "verifie_2027", item.verifie_2027);
                     return `<article class="v97-fiche" data-v97-index="${index}"><h4>${echapper(item.nom || "Caisse")}</h4><div class="v97-champs">${champs}</div><button type="button" class="bouton" data-v97-enregistrer="${index}">Enregistrer dans le brouillon local</button></article>`;
@@ -802,6 +815,25 @@
                 ongletBrouillonV97 = bouton.dataset.v97Onglet;
                 afficherBrouillonV97();
             });
+            parId("contenuBrouillonV97").addEventListener("change", evenement => {
+                const entree = evenement.target;
+                if (!brouillonV97 || ongletBrouillonV97 !== "reserve") return;
+                if (entree.dataset.v97Champ !== "caisses_partielles") return;
+                const fiche = entree.closest("[data-v97-index]");
+                if (!fiche) return;
+                const item = brouillonV97.reserve[Number(fiche.dataset.v97Index)];
+                const nombre = Number(entree.value);
+                if (!Number.isInteger(nombre) || nombre < 0 || nombre > 100) {
+                    message("Indique un nombre de caisses partielles compris entre 0 et 100.", true);
+                    return;
+                }
+                // Ne pas réafficher toute la fiche : les autres saisies restent intactes.
+                const precedentes = Array.from(fiche.querySelectorAll("[data-v98-caisse]"), champ => champ.value);
+                item.caisses_partielles = nombre;
+                item.quantites_caisses_partielles = Array.from({length:nombre}, (_, i) => precedentes[i] ?? item.quantites_caisses_partielles?.[i] ?? "");
+                fiche.querySelector("[data-v98-detail-partielles]").innerHTML = champsCaissesPartiellesV98(item);
+            });
+
             parId("contenuBrouillonV97").addEventListener("click", evenement => {
                 const bouton = evenement.target.closest("[data-v97-enregistrer]");
                 if (!bouton || !brouillonV97) return;
@@ -825,10 +857,19 @@
                     } else modifie[cle] = element.value;
                 }
                 if (ongletBrouillonV97 === "reserve") {
-                    if ((modifie.caisses_partielles === 0 && modifie.gobelets_dans_caisses_partielles !== 0) ||
-                        (modifie.caisses_partielles > 0 && modifie.gobelets_dans_caisses_partielles > modifie.caisses_partielles * (modifie.capacite_caisse - 1))) {
-                        message("Le nombre de gobelets des caisses partielles est incohérent.", true); return;
+                    const champsPartiels = Array.from(fiche.querySelectorAll("[data-v98-caisse]"));
+                    if (champsPartiels.length !== modifie.caisses_partielles) {
+                        message("Le nombre de caisses partielles ne correspond pas au détail. Vérifie la saisie.", true);
+                        return;
                     }
+                    const quantites = champsPartiels.map(champ => Number(champ.value));
+                    if (champsPartiels.some((champ, i) => champ.value.trim() === "" ||
+                        !Number.isInteger(quantites[i]) || quantites[i] < 1 || quantites[i] >= modifie.capacite_caisse)) {
+                        message("Chaque caisse partielle doit contenir entre 1 et " + (modifie.capacite_caisse - 1) + " gobelets.", true);
+                        return;
+                    }
+                    modifie.quantites_caisses_partielles = quantites;
+                    modifie.gobelets_dans_caisses_partielles = quantites.reduce((total, quantite) => total + quantite, 0);
                 }
                 brouillonV97[ongletBrouillonV97][index] = modifie;
                 afficherBrouillonV97();
