@@ -587,15 +587,15 @@
                         { id: "mdn-sac", nom: "Tote bag", theorique: 8, quantite: "", commentaire: "", valide: false, photo: "", prix: "12.00", gestionStock: true }
                     ],
                     fondation: [
-                        { id: "fond-cadre", nom: "Crèche Cadre", prix: "35.00", actif: true, gestionStock: true, photo: "" },
-                        { id: "fond-caps", nom: "Crèche Capsules", prix: "22.00", actif: true, gestionStock: true, photo: "" }
+                        { id: "fond-cadre", nom: "Crèche Cadre", prix: "35.00", actif: true, gestionStock: true, photo: "", verifie: false },
+                        { id: "fond-caps", nom: "Crèche Capsules", prix: "22.00", actif: true, gestionStock: true, photo: "", verifie: false }
                     ],
                     vaisselle: [
-                        { id: "gobelets", nom: "Gobelets", type: "caisse", capacite: "480", consigne: "1.00", lavage: "0.20", seuil: "100", actif: true },
-                        { id: "assiettes", nom: "Assiettes plates", type: "caisse", capacite: "100", consigne: "2.00", lavage: "0.50", seuil: "50", actif: true },
-                        { id: "fourchettes", nom: "Fourchettes", type: "sachet", capacite: "100", consigne: "1.00", lavage: "0.20", seuil: "50", actif: true }
+                        { id: "gobelets", nom: "Gobelets", type: "caisse", capacite: "480", consigne: "1.00", lavage: "0.20", seuil: "100", actif: true, verifie: false },
+                        { id: "assiettes", nom: "Assiettes plates", type: "caisse", capacite: "100", consigne: "2.00", lavage: "0.50", seuil: "50", actif: true, verifie: false },
+                        { id: "fourchettes", nom: "Fourchettes", type: "sachet", capacite: "100", consigne: "1.00", lavage: "0.20", seuil: "50", actif: true, verifie: false }
                     ],
-                    contenant: { consigneCaisse: "7.00", lavageCaisse: "5.00" },
+                    contenant: { consigneCaisse: "7.00", lavageCaisse: "5.00", verifie: false },
                     reserve: { pleines: "3", partielles: ["125"], vides: "2", valide: false }
                 };
             }
@@ -724,7 +724,7 @@
                 const cible = parId("contenuInventaire");
                 const d = simulationV8;
                 if (!d) return;
-                parId("noticeInventaires").textContent = "SIMULATION V8 : valeurs et tarifs fictifs. Aucun enregistrement Supabase. Les modifications disparaissent au rechargement.";
+                parId("noticeInventaires").textContent = "SIMULATION V8.5 : valeurs et tarifs fictifs. Aucun enregistrement Supabase. Les modifications disparaissent au rechargement.";
                 parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(b => {
                     b.setAttribute("aria-pressed", String(b.dataset.section === sectionOuverte));
                 });
@@ -744,7 +744,7 @@
                 } else if (sectionOuverte === "fondation") {
                     cible.innerHTML = `<p class="v8-intro">Seules les fiches articles et leurs paramètres de caisse sont repris. <strong>Aucune quantité n'est demandée.</strong> Les photos existantes seront conservées dans la version réelle.</p>
                         <div class="v8-grille">${d.fondation.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
-                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ok">Catalogue</span></div>
+                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ${a.verifie ? "ok" : ""}">${a.verifie ? "Configuration vérifiée" : "À vérifier"}</span></div>
                             <div class="v8-photo"><span>Photo de l'article si disponible</span></div>
                             ${champV8("Prix de vente (CHF)", a.prix, "prix", "text", 'inputmode="decimal"')}
                             <label class="v8-case"><input type="checkbox" data-v8-champ="actif" ${a.actif ? "checked" : ""}> Article actif en caisse</label>
@@ -754,7 +754,7 @@
                 } else if (sectionOuverte === "vaisselle") {
                     cible.innerHTML = `<p class="v8-intro">Reprends et ajuste les réglages de l'édition précédente. Aucun inventaire de stock opérationnel n'est demandé : les livraisons seront enregistrées lorsqu'elles auront lieu.</p>
                         <div class="v8-grille">${d.vaisselle.map(a => `<article class="v8-fiche" data-v8-id="${a.id}">
-                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat">Paramètres</span></div>
+                            <div class="v8-tete"><h3>${echapper(a.nom)}</h3><span class="v8-etat ${a.verifie ? "ok" : ""}">${a.verifie ? "Configuration vérifiée" : "À vérifier"}</span></div>
                             <label class="v8-champ"><span>Conditionnement</span><select data-v8-champ="type"><option value="caisse" ${a.type === "caisse" ? "selected" : ""}>Caisse</option><option value="sachet" ${a.type === "sachet" ? "selected" : ""}>Sachet</option></select></label>
                             ${champV8("Unités par conditionnement", a.capacite, "capacite", "number", 'min="1" step="1"')}
                             <div class="v8-deux">${champV8("Consigne (CHF/unité)", a.consigne, "consigne", "text", 'inputmode="decimal"')}
@@ -763,7 +763,7 @@
                             <label class="v8-case"><input type="checkbox" data-v8-champ="actif" ${a.actif ? "checked" : ""}> Référence active</label>
                             <button class="bouton" type="button" data-v8-action="vaisselle" data-v8-id="${a.id}">Enregistrer les réglages</button>
                         </article>`).join("")}</div>
-                        <article class="v8-fiche v8-contenant" data-v8-id="contenants-config"><h3>Paramètres des caisses</h3>
+                        <article class="v8-fiche v8-contenant" data-v8-id="contenants-config"><div class="v8-tete"><h3>Paramètres des caisses</h3><span class="v8-etat ${d.contenant.verifie ? "ok" : ""}">${d.contenant.verifie ? "Configuration vérifiée" : "À vérifier"}</span></div>
                         <p>Ces montants concernent le contenant, en plus des tarifs unitaires de vaisselle.</p>
                         <div class="v8-deux">${champV8("Consigne caisse (CHF)", d.contenant.consigneCaisse, "consigneCaisse", "text", 'inputmode="decimal"')}
                         ${champV8("Lavage caisse (CHF)", d.contenant.lavageCaisse, "lavageCaisse", "text", 'inputmode="decimal"')}</div>
@@ -829,6 +829,7 @@
                         a.prix = montantV8(champ("prix").value, "Prix").toFixed(2);
                         a.actif = champ("actif").checked;
                         a.gestionStock = champ("gestionStock").checked;
+                        a.verifie = true;
                     } else if (action === "vaisselle") {
                         const a = d.vaisselle.find(x => x.id === bouton.dataset.v8Id);
                         a.type = champ("type").value;
@@ -838,9 +839,12 @@
                         a.lavage = montantV8(champ("lavage").value, "Lavage").toFixed(2);
                         a.seuil = String(entierV8(champ("seuil").value, "Seuil"));
                         a.actif = champ("actif").checked;
+                        a.verifie = true;
+                        if (a.id === "gobelets" && d.reserve.valide) d.reserve.valide = false;
                     } else if (action === "contenant-config") {
                         d.contenant.consigneCaisse = montantV8(champ("consigneCaisse").value, "Consigne caisse").toFixed(2);
                         d.contenant.lavageCaisse = montantV8(champ("lavageCaisse").value, "Lavage caisse").toFixed(2);
+                        d.contenant.verifie = true;
                     } else if (action === "reserve") {
                         synchroniserReserveV8();
                         const r = d.reserve;
@@ -881,8 +885,13 @@
                 const cible = parId(`avancement-${demoId}`);
                 if (!cible || !simulation) return;
                 if (simulationV8) {
-                    const comptes = simulationV8.mdn.filter(a => a.valide).length;
-                    cible.textContent = `Articles MDN : ${comptes}/${simulationV8.mdn.length} vérifiés · Fondation : catalogue repris · Vaisselle : paramètres modifiables · Réserve : ${totalReserveV8()} gobelets · Activation : verrouillée`;
+                    const d = simulationV8;
+                    const comptes = d.mdn.filter(a => a.valide).length;
+                    const fondation = d.fondation.filter(a => a.verifie).length;
+                    const vaisselle = d.vaisselle.filter(a => a.verifie).length;
+                    const contenants = d.contenant.verifie ? "vérifiés" : "à vérifier";
+                    const reserve = d.reserve.valide ? "inventaire vérifié" : "inventaire à vérifier";
+                    cible.textContent = `Articles MDN : ${comptes}/${d.mdn.length} inventaires vérifiés · Fondation : ${fondation}/${d.fondation.length} configurations vérifiées (sans comptage) · Vaisselle : ${vaisselle}/${d.vaisselle.length} paramètres vérifiés · Caisses : paramètres ${contenants} · Réserve : ${totalReserveV8().toLocaleString("fr-FR")} gobelets, ${reserve} · Activation : verrouillée`;
                     return;
                 }
                 cible.textContent = sectionsInventaire.map(([cle, titre]) => {
@@ -981,12 +990,7 @@
                 }
 
                 liste.innerHTML = preparations.map(preparation => {
-                    const sections = modeDemoActif ? [
-                        ["MDN", preparation.inventaire_mdn_valide_at],
-                        ["Fondation", preparation.inventaire_fondation_valide_at],
-                        ["Vaisselle", preparation.inventaire_vaisselle_valide_at],
-                        ["Contenants", preparation.inventaire_contenants_valide_at]
-                    ] : [];
+
 
                     return `
                         <article class="ligne">
@@ -994,9 +998,7 @@
                                 <strong>Préparation ${echapper(preparation.annee_cible)}</strong>
                                 <small>Depuis ${echapper(preparation.annee_source)} ·
                                     Statut : ${echapper(preparation.statut)}</small>
-                                ${modeDemoActif ? `<small>${sections.map(([nom, date]) =>
-                                    `${echapper(nom)} : ${date ? "validé" : "non validé"}`
-                                ).join(" · ")}</small>` : ""}
+
                                 <div id="avancement-${echapper(preparation.id)}"
                                      class="notice">Chargement de l'avancement…</div>
                                 <div class="inventaire-actions">
