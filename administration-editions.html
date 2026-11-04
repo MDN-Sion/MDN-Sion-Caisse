@@ -412,6 +412,19 @@
         .v84-sous-titre { margin:24px 0 12px; }
         .v8-fiche .v8-theorique { min-width:0; }
 
+
+        /* V9.5 : fiches de reprise reelles en lecture seule. */
+        .v95-onglets { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+        .v95-onglets [aria-pressed="true"] { background:#910000; color:white; }
+        .v95-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; }
+        .v95-fiche { border:1px solid #ddd; border-radius:15px; padding:17px; min-width:0; }
+        .v95-fiche h4 { font-size:18px; margin:0 0 12px; }
+        .v95-photo { padding:18px; border:1px dashed #ccc; background:#f8f8f8; border-radius:10px; text-align:center; color:#666; margin-bottom:12px; }
+        .v95-champs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .v95-champ { background:#f7f5f2; border-radius:9px; padding:11px; display:flex; flex-direction:column; gap:5px; overflow-wrap:anywhere; }
+        .v95-champ small { color:#666; }
+        .v95-note { color:#666; font-size:13px; margin:12px 0 0; }
+        @media(max-width:600px) { .v95-champs { grid-template-columns:1fr; } .v95-onglets button { flex:1 1 145px; } }
     </style>
 </head>
 <body>
@@ -607,6 +620,85 @@
 
             // V9 : aperçu de reprise depuis SQL143, réservé au mode réel.
             // Cette RPC est exclusivement en lecture seule ; la simulation ne l'appelle jamais.
+            // V9.5 : fiches issues des donnees reelles, en lecture seule.
+            // Aucun appel aux RPC d'ecriture ni creation d'edition.
+            let ongletFichesSource = "mdn";
+
+            function afficherFichesSourceReelles() {
+                const cible = parId("fichesSourceReelles");
+                if (!cible || !apercuRepriseReel) return;
+                const donnees = apercuRepriseReel;
+                const articles = Array.isArray(donnees.articles) ? donnees.articles : [];
+                const vaisselle = Array.isArray(donnees.parametres_vaisselle) ? donnees.parametres_vaisselle : [];
+                const contenants = Array.isArray(donnees.parametres_contenants) ? donnees.parametres_contenants : [];
+                const argent = valeur => valeur == null ? "—" : Number(valeur).toLocaleString("fr-CH", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + " CHF";
+                const champ = (libelle, valeur) => `<div class="v95-champ"><small>${echapper(libelle)}</small><strong>${echapper(valeur ?? "—")}</strong></div>`;
+                const ficheArticle = article => `<article class="v95-fiche">
+                    <h4>${echapper(article.nom || "Article sans nom")}</h4>
+                    <div class="v95-photo">${article.photo_path ? "Photo référencée dans le catalogue" : "Aucune photo enregistrée"}</div>
+                    <div class="v95-champs">
+                        ${champ("Prix de vente", argent(article.prix))}
+                        ${champ("Actif en caisse", article.actif_en_caisse ? "Oui" : "Non")}
+                        ${champ("Gestion du stock", article.gestion_stock ? "Activée" : "Désactivée")}
+                        ${champ("Seuil d'alerte", String(article.seuil_stock ?? "—"))}
+                    </div>
+                    <p class="v95-note">${article.beneficiaire === "fondation"
+                        ? "Fondation : configuration à reprendre sans comptage de stock."
+                        : "MDN : inventaire physique à réaliser lors de la préparation."}</p>
+                </article>`;
+                const ficheVaisselle = item => `<article class="v95-fiche">
+                    <h4>${echapper(item.nom || "Référence")}</h4>
+                    <div class="v95-champs">
+                        ${champ("Conditionnement", item.type_conditionnement === "sachet" ? "Sachet" : "Caisse")}
+                        ${champ("Unités par conditionnement", String(item.quantite_standard ?? "—"))}
+                        ${champ("Consigne unitaire", argent(item.consigne_unitaire))}
+                        ${champ("Lavage unitaire", argent(item.lavage_unitaire))}
+                        ${champ("Seuil d'alerte", String(item.seuil_stock ?? "—"))}
+                        ${champ("Référence active", item.actif ? "Oui" : "Non")}
+                    </div>
+                </article>`;
+                const ficheContenant = item => `<article class="v95-fiche">
+                    <h4>${echapper(item.nom || "Contenant")}</h4>
+                    <div class="v95-champs">
+                        ${champ("Consigne contenant", argent(item.consigne))}
+                        ${champ("Lavage contenant", argent(item.lavage))}
+                        ${champ("Actif", item.actif ? "Oui" : "Non")}
+                    </div>
+                    <p class="v95-note">Les règles détaillées de retour seront reprises séparément.</p>
+                </article>`;
+                const choix = [
+                    ["mdn", "Articles MDN"],
+                    ["fondation", "Articles Fondation"],
+                    ["vaisselle", "Paramètres vaisselle"],
+                    ["contenants", "Contenants"]
+                ];
+                let fiches = [];
+                if (ongletFichesSource === "mdn" || ongletFichesSource === "fondation") {
+                    fiches = articles.filter(a => a.beneficiaire === ongletFichesSource).map(ficheArticle);
+                } else if (ongletFichesSource === "vaisselle") {
+                    fiches = vaisselle.map(ficheVaisselle);
+                } else {
+                    fiches = contenants.map(ficheContenant);
+                }
+                cible.innerHTML = `
+                    <div class="v95-onglets" role="group" aria-label="Catégorie des fiches sources">
+                        ${choix.map(([id, libelle]) => `<button type="button" class="bouton secondaire"
+                            data-fiche-source="${id}" aria-pressed="${ongletFichesSource === id}">${libelle}</button>`).join("")}
+                    </div>
+                    <div class="v95-grille">${fiches.join("") || "<p>Aucune fiche dans cette catégorie.</p>"}</div>
+                `;
+            }
+
+            parId("contenuApercuReprise").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest("[data-fiche-source]");
+                if (!bouton) return;
+                ongletFichesSource = bouton.dataset.ficheSource;
+                afficherFichesSourceReelles();
+            });
+
             let apercuRepriseReel = null;
 
             function afficherApercuRepriseReel() {
@@ -664,12 +756,17 @@
                         <div class="v8-theorique"><small>Règles de retour</small><strong>${regles.length}</strong></div>
                         <div class="v8-theorique"><small>Stands proposés</small><strong>${stands.length}</strong></div>
                     </div>
+                    <h3 class="v84-sous-titre">Fiches de reprise — données réelles 2026</h3>
+                    <p class="v8-note">Prévisualisation en lecture seule des fiches qui serviront à préparer 2027.
+                    Les tarifs et réglages affichés proviennent de l'édition active. Aucune saisie n'est enregistrée.</p>
+                    <div id="fichesSourceReelles"></div>
                     ${tableau("Catalogue MDN — source réelle", mdn)}
                     ${tableau("Catalogue Fondation — source réelle", fondation)}
                     <p class="v8-note">Ces valeurs sont celles de l’édition source : elles ne sont pas encore
                     enregistrées dans une préparation 2027. Les photos sont signalées, sans affichage
                     ni modification. Les stocks, soldes et accès ne sont pas repris.</p>
                 `;
+                afficherFichesSourceReelles();
             }
 
             async function chargerApercuRepriseReel() {
