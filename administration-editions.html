@@ -419,6 +419,16 @@
         .v95-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; }
         .v95-fiche { border:1px solid #ddd; border-radius:15px; padding:17px; min-width:0; }
         .v95-fiche h4 { font-size:18px; margin:0 0 12px; }
+        .v97-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:15px; margin-top:16px; }
+        .v97-fiche { border:1px solid #dedede; border-radius:14px; padding:18px; background:#fff; }
+        .v97-fiche h4 { margin:0 0 12px; }
+        .v97-champs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .v97-champs label { display:flex; flex-direction:column; gap:5px; font-weight:600; min-width:0; }
+        .v97-champs input:not([type=checkbox]), .v97-champs select { width:100%; box-sizing:border-box; padding:10px; border:1px solid #bdbdbd; border-radius:8px; font:inherit; }
+        .v97-champs label.v97-large { grid-column:1/-1; }
+        .v97-fiche button { margin-top:14px; }
+        .v97-note { color:#715000; background:#fff5d9; border:1px solid #efd89b; padding:12px; border-radius:9px; }
+        @media(max-width:550px) { .v97-champs { grid-template-columns:1fr; } }
         .v95-photo { padding:18px; border:1px dashed #ccc; background:#f8f8f8; border-radius:10px; text-align:center; color:#666; margin-bottom:12px; }
         .v95-champs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
         .v95-champ { background:#f7f5f2; border-radius:9px; padding:11px; display:flex; flex-direction:column; gap:5px; overflow-wrap:anywhere; }
@@ -483,13 +493,27 @@
         <section class="panneau" id="panneauApercuReprise" hidden aria-labelledby="titreApercuReprise">
             <div class="barre">
                 <h2 id="titreApercuReprise">Aperçu réel de la reprise annuelle</h2>
-                <button id="actualiserApercuReprise" class="bouton secondaire" type="button">Actualiser l’aperçu</button>
+                <div class="inventaire-actions">
+                    <button id="ouvrirBrouillonV97" class="bouton secondaire" type="button">Tester la préparation 2027</button>
+                    <button id="actualiserApercuReprise" class="bouton secondaire" type="button">Actualiser l’aperçu</button>
+                </div>
             </div>
             <div class="notice">
                 Lecture seule des configurations de l’édition active, à partir de SQL143.
                 Aucun stock, solde, QR code ou historique n’est transféré ; aucune édition n’est créée.
             </div>
             <div id="contenuApercuReprise" aria-live="polite">Chargement de l’aperçu…</div>
+        </section>
+        <section class="panneau" id="panneauBrouillonV97" hidden aria-labelledby="titreBrouillonV97">
+            <div class="barre">
+                <h2 id="titreBrouillonV97">Brouillon local — préparation 2027</h2>
+                <button class="bouton secondaire" id="fermerBrouillonV97" type="button">Fermer</button>
+            </div>
+            <p class="v97-note"><strong>Simulation à partir des données réelles 2026.</strong>
+                Les modifications restent exclusivement dans la mémoire de cette page et disparaissent au rechargement.
+                Aucune écriture Supabase, aucune création d'édition et aucune activation ne sont effectuées.</p>
+            <div id="ongletsBrouillonV97" class="v95-onglets"></div>
+            <div id="contenuBrouillonV97"></div>
         </section>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
@@ -697,6 +721,118 @@
                 if (!bouton) return;
                 ongletFichesSource = bouton.dataset.ficheSource;
                 afficherFichesSourceReelles();
+            });
+
+            // V9.7 : brouillon d'essai alimenté par la lecture SQL143, sans aucune écriture.
+            let brouillonV97 = null;
+            let ongletBrouillonV97 = "mdn";
+            const sectionsBrouillonV97 = [
+                ["mdn", "Articles MDN"],
+                ["fondation", "Articles Fondation"],
+                ["vaisselle", "Paramètres vaisselle"],
+                ["contenants", "Contenants"],
+                ["reserve", "Réserve gobelets"]
+            ];
+
+            function ouvrirBrouillonV97() {
+                if (modeDemoActif || !apercuRepriseReel) {
+                    message("L'aperçu réel doit être chargé avant d'ouvrir ce brouillon.", true);
+                    return;
+                }
+                if (!brouillonV97) {
+                    const copier = valeurs => JSON.parse(JSON.stringify(Array.isArray(valeurs) ? valeurs : []));
+                    brouillonV97 = {
+                        mdn: copier(apercuRepriseReel.articles).filter(a => a.beneficiaire === "mdn").map(a => ({...a, quantite_comptee: null, commentaire_2027: "", verifie_2027: false})),
+                        fondation: copier(apercuRepriseReel.articles).filter(a => a.beneficiaire === "fondation").map(a => ({...a, commentaire_2027: "", verifie_2027: false})),
+                        vaisselle: copier(apercuRepriseReel.parametres_vaisselle).map(a => ({...a, verifie_2027: false})),
+                        contenants: copier(apercuRepriseReel.parametres_contenants).map(a => ({...a, verifie_2027: false})),
+                        reserve: [{nom:"Gobelets — réserve MDN", caisses_pleines:0, caisses_partielles:0, gobelets_dans_caisses_partielles:0, caisses_vides:0, capacite_caisse: Number((apercuRepriseReel.parametres_vaisselle || []).find(v => /gobelet/i.test(v.nom || ""))?.quantite_standard) || 480, verifie_2027:false}]
+                    };
+                }
+                parId("panneauBrouillonV97").hidden = false;
+                afficherBrouillonV97();
+                parId("panneauBrouillonV97").scrollIntoView({behavior:"smooth",block:"start"});
+            }
+
+            function afficherBrouillonV97() {
+                if (!brouillonV97) return;
+                parId("ongletsBrouillonV97").innerHTML = sectionsBrouillonV97.map(([id, nom]) =>
+                    `<button type="button" class="bouton secondaire" data-v97-onglet="${id}" aria-pressed="${ongletBrouillonV97 === id}">${nom}</button>`
+                ).join("");
+                const valeurs = brouillonV97[ongletBrouillonV97] || [];
+                const nombreVerifies = valeurs.filter(a => a.verifie_2027).length;
+                const nombre = (nom, valeur, pas="1") => `<label>${nom}<input data-v97-champ="${valeur[0]}" type="number" min="0" step="${pas}" value="${echapper(valeur[1] ?? "")}"></label>`;
+                const caseACocher = (nom, cle, actif) => `<label class="v97-large"><span><input type="checkbox" data-v97-champ="${cle}" ${actif ? "checked" : ""}> ${nom}</span></label>`;
+                const champsNombre = (item, cle, nom, pas="1") => nombre(nom, [cle, item[cle]], pas);
+                const fiches = valeurs.map((item, index) => {
+                    let champs = "";
+                    if (ongletBrouillonV97 === "mdn" || ongletBrouillonV97 === "fondation") {
+                        champs += champsNombre(item,"prix","Prix de vente (CHF)","0.01");
+                        champs += champsNombre(item,"seuil_stock","Seuil d'alerte");
+                        champs += caseACocher("Actif en caisse", "actif_en_caisse", item.actif_en_caisse);
+                        champs += caseACocher("Gestion du stock", "gestion_stock", item.gestion_stock);
+                        if (ongletBrouillonV97 === "mdn") champs += champsNombre(item,"quantite_comptee","Quantité physiquement comptée");
+                        champs += `<label class="v97-large">Commentaire<input data-v97-champ="commentaire_2027" maxlength="500" value="${echapper(item.commentaire_2027 || "")}"></label>`;
+                    } else if (ongletBrouillonV97 === "vaisselle") {
+                        champs += `<label>Conditionnement<select data-v97-champ="type_conditionnement"><option value="caisse" ${item.type_conditionnement === "caisse" ? "selected" : ""}>Caisse</option><option value="sachet" ${item.type_conditionnement === "sachet" ? "selected" : ""}>Sachet</option></select></label>`;
+                        champs += champsNombre(item,"quantite_standard","Unités par conditionnement");
+                        champs += champsNombre(item,"consigne_unitaire","Consigne (CHF/unité)","0.01");
+                        champs += champsNombre(item,"lavage_unitaire","Lavage (CHF/unité)","0.01");
+                        champs += champsNombre(item,"seuil_stock","Seuil d'alerte");
+                        champs += caseACocher("Référence active", "actif", item.actif);
+                    } else if (ongletBrouillonV97 === "contenants") {
+                        champs += champsNombre(item,"consigne","Consigne caisse (CHF)","0.01");
+                        champs += champsNombre(item,"lavage","Lavage caisse (CHF)","0.01");
+                        champs += caseACocher("Contenant actif", "actif", item.actif);
+                    } else {
+                        for (const [cle,nom] of [["caisses_pleines","Caisses pleines"],["caisses_partielles","Caisses partielles"],["gobelets_dans_caisses_partielles","Gobelets dans les caisses partielles"],["caisses_vides","Caisses vides"]]) champs += champsNombre(item,cle,nom);
+                        champs += `<p class="v97-large">Capacité : ${item.capacite_caisse} gobelets par caisse pleine. Total simulé : <strong>${item.caisses_pleines * item.capacite_caisse + item.gobelets_dans_caisses_partielles} gobelets</strong> dans ${item.caisses_pleines + item.caisses_partielles + item.caisses_vides} caisses.</p>`;
+                    }
+                    champs += caseACocher("Fiche vérifiée dans ce brouillon", "verifie_2027", item.verifie_2027);
+                    return `<article class="v97-fiche" data-v97-index="${index}"><h4>${echapper(item.nom || "Caisse")}</h4><div class="v97-champs">${champs}</div><button type="button" class="bouton" data-v97-enregistrer="${index}">Enregistrer dans le brouillon local</button></article>`;
+                }).join("");
+                parId("contenuBrouillonV97").innerHTML = `<p><strong>${nombreVerifies}/${valeurs.length}</strong> fiches vérifiées dans la simulation. Aucune sauvegarde en base.</p><div class="v97-grille">${fiches || "Aucune fiche."}</div>`;
+            }
+
+            parId("ouvrirBrouillonV97").addEventListener("click", ouvrirBrouillonV97);
+            parId("fermerBrouillonV97").addEventListener("click", () => {parId("panneauBrouillonV97").hidden = true;});
+            parId("ongletsBrouillonV97").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest("[data-v97-onglet]");
+                if (!bouton) return;
+                ongletBrouillonV97 = bouton.dataset.v97Onglet;
+                afficherBrouillonV97();
+            });
+            parId("contenuBrouillonV97").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest("[data-v97-enregistrer]");
+                if (!bouton || !brouillonV97) return;
+                const index = Number(bouton.dataset.v97Enregistrer);
+                const fiche = bouton.closest("[data-v97-index]");
+                const original = brouillonV97[ongletBrouillonV97][index];
+                if (!original || !fiche) return;
+                const modifie = {...original};
+                for (const element of fiche.querySelectorAll("[data-v97-champ]")) {
+                    const cle = element.dataset.v97Champ;
+                    if (element.type === "checkbox") modifie[cle] = element.checked;
+                    else if (element.type === "number") {
+                        if (element.value === "" && cle === "quantite_comptee") modifie[cle] = null;
+                        else {
+                            const valeur = Number(element.value);
+                            if (!Number.isFinite(valeur) || valeur < 0 || (element.step !== "0.01" && !Number.isInteger(valeur))) {
+                                message("Valeur numérique invalide : " + cle, true); return;
+                            }
+                            modifie[cle] = valeur;
+                        }
+                    } else modifie[cle] = element.value;
+                }
+                if (ongletBrouillonV97 === "reserve") {
+                    if ((modifie.caisses_partielles === 0 && modifie.gobelets_dans_caisses_partielles !== 0) ||
+                        (modifie.caisses_partielles > 0 && modifie.gobelets_dans_caisses_partielles > modifie.caisses_partielles * (modifie.capacite_caisse - 1))) {
+                        message("Le nombre de gobelets des caisses partielles est incohérent.", true); return;
+                    }
+                }
+                brouillonV97[ongletBrouillonV97][index] = modifie;
+                afficherBrouillonV97();
+                message("Enregistré uniquement dans le brouillon local. Aucune modification Supabase.");
             });
 
             let apercuRepriseReel = null;
