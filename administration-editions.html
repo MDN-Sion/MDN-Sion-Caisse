@@ -620,7 +620,7 @@
 
             // V9 : aperçu de reprise depuis SQL143, réservé au mode réel.
             // Cette RPC est exclusivement en lecture seule ; la simulation ne l'appelle jamais.
-            // V9.5 : fiches issues des donnees reelles, en lecture seule.
+            // V9.6 : fiches reelles sans tableaux en doublon ; issues des donnees reelles, en lecture seule.
             // Aucun appel aux RPC d'ecriture ni creation d'edition.
             let ongletFichesSource = "mdn";
 
@@ -717,34 +717,6 @@
                 const mdn = articles.filter(article => article.beneficiaire === "mdn");
                 const fondation = articles.filter(article => article.beneficiaire === "fondation");
                 const source = donnees.edition_source || {};
-                const montant = valeur => valeur == null ? "—" :
-                    Number(valeur).toLocaleString("fr-CH", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + " CHF";
-                const lignes = liste => liste.map(article => `
-                    <tr>
-                        <td>${echapper(article.nom || "Sans nom")}</td>
-                        <td>${echapper(montant(article.prix))}</td>
-                        <td>${article.actif_en_caisse ? "Oui" : "Non"}</td>
-                        <td>${article.photo_path ? "Référencée" : "Absente"}</td>
-                    </tr>
-                `).join("");
-                const tableau = (titre, liste) => `
-                    <h3 class="v84-sous-titre">${echapper(titre)} (${liste.length})</h3>
-                    <div style="overflow-x:auto">
-                        <table style="width:100%;border-collapse:collapse;text-align:left">
-                            <thead><tr>
-                                <th style="padding:10px">Article</th>
-                                <th style="padding:10px">Prix actuel</th>
-                                <th style="padding:10px">En caisse</th>
-                                <th style="padding:10px">Photo</th>
-                            </tr></thead>
-                            <tbody>${lignes(liste)}</tbody>
-                        </table>
-                    </div>
-                `;
-
                 cible.innerHTML = `
                     <p><strong>Édition source :</strong> ${echapper(source.nom || source.annee || "—")}
                     · <strong>Édition cible proposée :</strong> ${echapper(donnees.annee_cible_proposee || "—")}</p>
@@ -760,11 +732,9 @@
                     <p class="v8-note">Prévisualisation en lecture seule des fiches qui serviront à préparer 2027.
                     Les tarifs et réglages affichés proviennent de l'édition active. Aucune saisie n'est enregistrée.</p>
                     <div id="fichesSourceReelles"></div>
-                    ${tableau("Catalogue MDN — source réelle", mdn)}
-                    ${tableau("Catalogue Fondation — source réelle", fondation)}
-                    <p class="v8-note">Ces valeurs sont celles de l’édition source : elles ne sont pas encore
-                    enregistrées dans une préparation 2027. Les photos sont signalées, sans affichage
-                    ni modification. Les stocks, soldes et accès ne sont pas repris.</p>
+                    <p class="v8-note">Ces fiches présentent les valeurs réelles de 2026 en lecture seule.
+                    La future préparation 2027 sera distincte : aucune modification de prix, de stock, de solde
+                    ou d’accès n’est effectuée depuis cet aperçu.</p>
                 `;
                 afficherFichesSourceReelles();
             }
