@@ -1706,6 +1706,22 @@
                 }
             });
 
+            // V9.2 : diagnostic non intrusif si une promesse d'authentification
+            // ou de lecture Supabase ne se termine jamais.
+            let initialisationTerminee = false;
+            const delaiDiagnostic = window.setTimeout(() => {
+                if (initialisationTerminee) return;
+                const chargement = parId("chargement");
+                if (chargement) chargement.hidden = true;
+                const diagnostic = document.createElement("div");
+                diagnostic.id = "diagnosticInitialisation";
+                diagnostic.setAttribute("role", "alert");
+                diagnostic.style.cssText = "position:relative;z-index:100;background:#fff3cd;color:#573900;padding:16px 22px;border:2px solid #e1ae3e;font-size:15px;";
+                diagnostic.innerHTML = '<strong>Chargement anormalement long.</strong> La vérification de session ou une lecture Supabase ne répond pas. Aucune donnée n’a été modifiée. <button type="button" id="reessayerChargement" style="margin-left:12px;padding:8px 14px;cursor:pointer">Réessayer</button> <small>Ouvre la console (F12) pour rechercher une erreur.</small>';
+                document.body.prepend(diagnostic);
+                document.getElementById("reessayerChargement").addEventListener("click", () => window.location.reload());
+            }, 15000);
+
             if (window.MDN_AUTH && typeof window.MDN_AUTH.surveillerSession === "function") {
                 window.MDN_AUTH.surveillerSession({
                     redirigerApresDeconnexion: true
@@ -1770,7 +1786,11 @@
                 } catch (erreur) {
                     message(erreur.message || "Impossible de charger les éditions.", true);
                 } finally {
+                    initialisationTerminee = true;
+                    window.clearTimeout(delaiDiagnostic);
                     parId("chargement").hidden = true;
+                    const diagnostic = document.getElementById("diagnosticInitialisation");
+                    if (diagnostic) diagnostic.remove();
                 }
             }
 
