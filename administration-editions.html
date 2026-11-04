@@ -467,6 +467,17 @@
                 <small>Exemples fictifs uniquement · Données perdues au rechargement</small>
             </div>
         </section>
+        <section class="panneau" id="panneauApercuReprise" hidden aria-labelledby="titreApercuReprise">
+            <div class="barre">
+                <h2 id="titreApercuReprise">Aperçu réel de la reprise annuelle</h2>
+                <button id="actualiserApercuReprise" class="bouton secondaire" type="button">Actualiser l’aperçu</button>
+            </div>
+            <div class="notice">
+                Lecture seule des configurations de l’édition active, à partir de SQL143.
+                Aucun stock, solde, QR code ou historique n’est transféré ; aucune édition n’est créée.
+            </div>
+            <div id="contenuApercuReprise" aria-live="polite">Chargement de l’aperçu…</div>
+        </section>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
                 <h2 id="titreInventaire">Inventaires annuels</h2>
@@ -546,6 +557,94 @@
             // V8.4 : les configurations réelles sont consultées via SQL146.
             // Aucune écriture SQL145/SQL147 n’est déclenchée par cette version.
             let configurationsReelles = null;
+
+            // V9 : aperçu de reprise depuis SQL143, réservé au mode réel.
+            // Cette RPC est exclusivement en lecture seule ; la simulation ne l'appelle jamais.
+            let apercuRepriseReel = null;
+
+            function afficherApercuRepriseReel() {
+                const cible = parId("contenuApercuReprise");
+                const donnees = apercuRepriseReel;
+                if (!donnees) {
+                    cible.textContent = "Aucun aperçu disponible.";
+                    return;
+                }
+
+                const articles = Array.isArray(donnees.articles) ? donnees.articles : [];
+                const vaisselle = Array.isArray(donnees.parametres_vaisselle) ? donnees.parametres_vaisselle : [];
+                const contenants = Array.isArray(donnees.parametres_contenants) ? donnees.parametres_contenants : [];
+                const regles = Array.isArray(donnees.regles_retour_vaisselle) ? donnees.regles_retour_vaisselle : [];
+                const stands = Array.isArray(donnees.stands_proposes) ? donnees.stands_proposes : [];
+                const mdn = articles.filter(article => article.beneficiaire === "mdn");
+                const fondation = articles.filter(article => article.beneficiaire === "fondation");
+                const source = donnees.edition_source || {};
+                const montant = valeur => valeur == null ? "—" :
+                    Number(valeur).toLocaleString("fr-CH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + " CHF";
+                const lignes = liste => liste.map(article => `
+                    <tr>
+                        <td>${echapper(article.nom || "Sans nom")}</td>
+                        <td>${echapper(montant(article.prix))}</td>
+                        <td>${article.actif_en_caisse ? "Oui" : "Non"}</td>
+                        <td>${article.photo_path ? "Référencée" : "Absente"}</td>
+                    </tr>
+                `).join("");
+                const tableau = (titre, liste) => `
+                    <h3 class="v84-sous-titre">${echapper(titre)} (${liste.length})</h3>
+                    <div style="overflow-x:auto">
+                        <table style="width:100%;border-collapse:collapse;text-align:left">
+                            <thead><tr>
+                                <th style="padding:10px">Article</th>
+                                <th style="padding:10px">Prix actuel</th>
+                                <th style="padding:10px">En caisse</th>
+                                <th style="padding:10px">Photo</th>
+                            </tr></thead>
+                            <tbody>${lignes(liste)}</tbody>
+                        </table>
+                    </div>
+                `;
+
+                cible.innerHTML = `
+                    <p><strong>Édition source :</strong> ${echapper(source.nom || source.annee || "—")}
+                    · <strong>Édition cible proposée :</strong> ${echapper(donnees.annee_cible_proposee || "—")}</p>
+                    <div class="v8-grille">
+                        <div class="v8-theorique"><small>Articles MDN</small><strong>${mdn.length}</strong></div>
+                        <div class="v8-theorique"><small>Articles Fondation (sans inventaire)</small><strong>${fondation.length}</strong></div>
+                        <div class="v8-theorique"><small>Références vaisselle</small><strong>${vaisselle.length}</strong></div>
+                        <div class="v8-theorique"><small>Types de contenants</small><strong>${contenants.length}</strong></div>
+                        <div class="v8-theorique"><small>Règles de retour</small><strong>${regles.length}</strong></div>
+                        <div class="v8-theorique"><small>Stands proposés</small><strong>${stands.length}</strong></div>
+                    </div>
+                    ${tableau("Catalogue MDN — source réelle", mdn)}
+                    ${tableau("Catalogue Fondation — source réelle", fondation)}
+                    <p class="v8-note">Ces valeurs sont celles de l’édition source : elles ne sont pas encore
+                    enregistrées dans une préparation 2027. Les photos sont signalées, sans affichage
+                    ni modification. Les stocks, soldes et accès ne sont pas repris.</p>
+                `;
+            }
+
+            async function chargerApercuRepriseReel() {
+                if (modeDemoActif || !clientSupabase) return;
+                const cible = parId("contenuApercuReprise");
+                cible.textContent = "Chargement des données réelles en lecture seule…";
+                const { data, error } = await clientSupabase.rpc(
+                    "apercu_reprise_annuelle_administration"
+                );
+                if (error) {
+                    cible.textContent = "Aperçu indisponible : " + error.message;
+                    return;
+                }
+                if (data?.resultat !== "APERCU_REPRISE_ANNUELLE" || data?.lecture_seule !== true) {
+                    cible.textContent = "Réponse inattendue de l’aperçu annuel. Aucune modification effectuée.";
+                    return;
+                }
+                apercuRepriseReel = data;
+                afficherApercuRepriseReel();
+            }
+
+            parId("actualiserApercuReprise").addEventListener("click", chargerApercuRepriseReel);
 
             function nouvelleSimulation() {
                 compteurContenantsDemo = 0;
@@ -1098,6 +1197,10 @@
             parId("actualiserPreparations").addEventListener("click", async () => {
                 try {
                     await chargerPreparations();
+                    parId("panneauApercuReprise").hidden = modeDemoActif;
+                    if (!modeDemoActif) {
+                        await chargerApercuRepriseReel();
+                    }
                     message(modeDemoActif
                         ? "Simulation locale actualisée. Aucun accès aux inventaires réels."
                         : "Suivi des préparations actualisé.");
