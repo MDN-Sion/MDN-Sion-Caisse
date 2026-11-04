@@ -881,12 +881,12 @@
                 }
 
                 liste.innerHTML = preparations.map(preparation => {
-                    const sections = [
+                    const sections = modeDemoActif ? [
                         ["MDN", preparation.inventaire_mdn_valide_at],
                         ["Fondation", preparation.inventaire_fondation_valide_at],
                         ["Vaisselle", preparation.inventaire_vaisselle_valide_at],
                         ["Contenants", preparation.inventaire_contenants_valide_at]
-                    ];
+                    ] : [];
 
                     return `
                         <article class="ligne">
@@ -894,9 +894,9 @@
                                 <strong>Préparation ${echapper(preparation.annee_cible)}</strong>
                                 <small>Depuis ${echapper(preparation.annee_source)} ·
                                     Statut : ${echapper(preparation.statut)}</small>
-                                <small>${sections.map(([nom, date]) =>
+                                ${modeDemoActif ? `<small>${sections.map(([nom, date]) =>
                                     `${echapper(nom)} : ${date ? "validé" : "non validé"}`
-                                ).join(" · ")}</small>
+                                ).join(" · ")}</small>` : ""}
                                 <div id="avancement-${echapper(preparation.id)}"
                                      class="notice">Chargement de l'avancement…</div>
                                 <div class="inventaire-actions">
@@ -947,31 +947,35 @@
                         continue;
                     }
 
+                    // SQL148 : consultation uniquement, sans ecriture ni activation.
                     const resultat = await clientSupabase.rpc(
-                        "controle_avancement_preparation_edition_administration",
-                        {
-                            p_preparation_id: preparation.id
-                        }
+                        "controle_configurations_preparation_edition_administration",
+                        { p_preparation_id: preparation.id }
                     );
 
-                    if (resultat.error || !resultat.data?.ok) {
+                    if (resultat.error || resultat.data?.resultat !== "CONTROLE_CONFIGURATIONS_PREPARATION") {
                         cible.textContent = "Avancement indisponible : " +
                             (resultat.error?.message || "réponse invalide");
                         continue;
                     }
 
                     const controle = resultat.data;
-                    const sections = [
-                        ["MDN", controle.mdn],
-                        ["Fondation", controle.fondation],
-                        ["Vaisselle", controle.vaisselle],
-                        ["Contenants", controle.contenants]
-                    ];
+                    const mdn = controle.articles_mdn || {};
+                    const fondation = controle.articles_fondation || {};
+                    const vaisselle = controle.parametres_vaisselle || {};
+                    const contenants = controle.parametres_contenants || {};
+                    const reserve = controle.reserve_gobelets || {};
 
-                    cible.textContent = sections.map(([nom, etat]) => {
-                        return `${nom} : ${etat?.valides ?? 0}/${etat?.total ?? 0} lignes validées`;
-                    }).join(" · ") +
-                        " · Activation : verrouillée";
+                    const lignes = [
+                        `Articles MDN : ${mdn.inventaires_valides ?? 0}/${mdn.attendus ?? 0} inventaires validés, ${mdn.configures ?? 0} configurations`,
+                        `Fondation : ${fondation.configures ?? 0}/${fondation.attendus ?? 0} configurations (sans inventaire)`,
+                        `Vaisselle : ${vaisselle.configures ?? 0}/${vaisselle.attendus ?? 0} paramètres`,
+                        `Contenants : ${contenants.configures ?? 0}/${contenants.attendus ?? 0} paramètres`,
+                        `Réserve gobelets : ${reserve.validee ? "comptage validé" : reserve.presente ? "comptage non validé" : "comptage absent"}`,
+                        `Préparation : ${controle.toutes_sections_completes ? "complète" : "incomplète"}`,
+                        "Activation : verrouillée"
+                    ];
+                    cible.textContent = lignes.join(" · ");
                 }
             }
 
