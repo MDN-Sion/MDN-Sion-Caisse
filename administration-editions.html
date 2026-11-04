@@ -543,7 +543,7 @@
                 panneau.setAttribute("role", "alert");
                 panneau.style.cssText = "position:fixed;inset:90px 16px auto;z-index:2500;max-width:900px;margin:auto;padding:22px;border:2px solid #b45309;border-radius:12px;background:#fff8e7;color:#422006;font:16px Arial,sans-serif;box-shadow:0 6px 30px #0003";
                 var titre = document.createElement("h2");
-                titre.textContent = "V9.3 — Chargement interrompu";
+                titre.textContent = "V9.4 — Chargement interrompu";
                 var detail = document.createElement("p");
                 detail.textContent = "L’application n’a pas terminé son démarrage après 15 secondes. Les données réelles n’ont pas été modifiées par ce diagnostic.";
                 var etat = document.createElement("p");
@@ -575,6 +575,12 @@
     <script>
         (() => {
             "use strict";
+
+            // V9.4 : initialiser le sélecteur DOM avant son premier appel.
+            // Corrige ReferenceError: Cannot access 'parId' before initialization.
+            const parId = (id) => {
+                return document.getElementById(id);
+            };
 
             let clientSupabase = null;
             let modeDemoActif = false;
@@ -1040,9 +1046,6 @@
                 }).join(" · ") + " · Activation : verrouillée";
             }
 
-            const parId = (id) => {
-                return document.getElementById(id);
-            };
             const echapper = valeur => String(valeur ?? "").replace(/[&<>"']/g, caractere => ({
                 "&": "&amp;",
                 "<": "&lt;",
