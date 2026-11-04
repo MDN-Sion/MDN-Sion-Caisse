@@ -407,6 +407,10 @@
         .v8-totaux > div { background:#fff6df; border:1px solid #f0d59d; border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:7px; }
         .v8-totaux strong { font-size:25px; }
         @media(max-width:580px) { .v8-deux,.v8-totaux { grid-template-columns:1fr; } .v8-partielle { align-items:stretch; flex-direction:column; } }
+        /* V8.4 : fiches de configuration réelles en lecture seule. */
+        .v84-valeur { font-size:17px !important; overflow-wrap:anywhere; }
+        .v84-sous-titre { margin:24px 0 12px; }
+        .v8-fiche .v8-theorique { min-width:0; }
 
     </style>
 </head>
@@ -539,6 +543,9 @@
             let simulation = null;
             let compteurContenantsDemo = 0;
             let simulationV8 = null;
+            // V8.4 : les configurations réelles sont consultées via SQL146.
+            // Aucune écriture SQL145/SQL147 n’est déclenchée par cette version.
+            let configurationsReelles = null;
 
             function nouvelleSimulation() {
                 compteurContenantsDemo = 0;
@@ -618,6 +625,99 @@
 
             function champV8(label, valeur, champ, type = "text", extra = "") {
                 return `<label class="v8-champ"><span>${echapper(label)}</span><input data-v8-champ="${echapper(champ)}" type="${type}" ${extra} value="${echapper(valeur ?? "")}"></label>`;
+            }
+
+            // V8.4 : lecture seule des configurations d'une préparation existante.
+            // Les fiches réelles ne réutilisent jamais les valeurs fictives de la démo.
+            function afficherConfigurationsReelles() {
+                const cible = parId("contenuInventaire");
+                const d = configurationsReelles;
+                if (!d) {
+                    cible.textContent = "Aucune configuration chargée.";
+                    return;
+                }
+
+                parId("noticeInventaires").textContent =
+                    "MODE RÉEL — Consultation uniquement. Aucune création, reprise, saisie ou activation n'est autorisée dans cette version.";
+                parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(bouton => {
+                    bouton.setAttribute("aria-pressed", String(bouton.dataset.section === sectionOuverte));
+                });
+
+                const articles = Array.isArray(d.articles) ? d.articles : [];
+                const vaisselle = Array.isArray(d.vaisselle) ? d.vaisselle : [];
+                const contenants = Array.isArray(d.contenants) ? d.contenants : [];
+                const formatMontant = valeur => valeur == null ? "—" :
+                    Number(valeur).toLocaleString("fr-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " CHF";
+                const valeur = (titre, contenu) =>
+                    `<div class="v8-theorique"><small>${echapper(titre)}</small><strong class="v84-valeur">${echapper(contenu ?? "—")}</strong></div>`;
+                const ouiNon = booleen => booleen ? "Oui" : "Non";
+                const vide = texte => `<p class="v8-note">${echapper(texte)}</p>`;
+
+                if (sectionOuverte === "mdn" || sectionOuverte === "fondation") {
+                    const lignes = articles.filter(article => article.beneficiaire === sectionOuverte);
+                    cible.innerHTML = `<p class="v8-intro">${sectionOuverte === "fondation"
+                        ? "Fiches et paramètres de caisse repris, sans inventaire Fondation."
+                        : "Configurations proposées pour la prochaine édition. Le comptage physique MDN reste distinct."}</p>` +
+                        (lignes.length ? `<div class="v8-grille">${lignes.map(article => `
+                            <article class="v8-fiche">
+                                <div class="v8-tete"><h3>${echapper(article.nom)}</h3><span class="v8-etat">Lecture seule</span></div>
+                                <div class="v8-mdn-apercu">
+                                    <div class="v8-photo">${article.photo_path_propose ? "Photo référencée dans la configuration" : "Aucune photo configurée"}</div>
+                                    ${valeur("Prix de vente", formatMontant(article.prix))}
+                                </div>
+                                <div class="v8-deux">
+                                    ${valeur("Actif en caisse", ouiNon(article.actif_en_caisse))}
+                                    ${valeur("Gestion du stock", ouiNon(article.gestion_stock))}
+                                    ${valeur("Seuil d’alerte", article.seuil_stock)}
+                                    ${valeur("Ordre d’affichage", article.ordre_affichage)}
+                                </div>
+                                ${article.commentaire ? `<p class="v8-note">${echapper(article.commentaire)}</p>` : ""}
+                            </article>`).join("")}</div>` : vide("Aucune configuration d'article pour cette section."));
+                } else if (sectionOuverte === "vaisselle") {
+                    cible.innerHTML = `<p class="v8-intro">Paramètres de vaisselle repris pour la prochaine édition. Aucun stock opérationnel n'est créé.</p>` +
+                        (vaisselle.length ? `<div class="v8-grille">${vaisselle.map(article => `
+                            <article class="v8-fiche">
+                                <div class="v8-tete"><h3>${echapper(article.nom)}</h3><span class="v8-etat">Lecture seule</span></div>
+                                <div class="v8-deux">
+                                    ${valeur("Conditionnement", article.type_conditionnement)}
+                                    ${valeur("Unités par conditionnement", article.quantite_standard)}
+                                    ${valeur("Consigne par unité", formatMontant(article.consigne_unitaire))}
+                                    ${valeur("Lavage par unité", formatMontant(article.lavage_unitaire))}
+                                    ${valeur("Seuil d’alerte", article.seuil_stock)}
+                                    ${valeur("Référence active", ouiNon(article.actif))}
+                                </div>
+                            </article>`).join("")}</div>` : vide("Aucun paramètre de vaisselle repris.")) +
+                        `<h3 class="v84-sous-titre">Paramètres des contenants</h3>` +
+                        (contenants.length ? `<div class="v8-grille">${contenants.map((contenant, index) => `
+                            <article class="v8-fiche">
+                                <h3>Contenant n° ${index + 1}</h3>
+                                <div class="v8-deux">
+                                    ${valeur("Consigne", formatMontant(contenant.consigne))}
+                                    ${valeur("Lavage", formatMontant(contenant.lavage))}
+                                    ${valeur("Actif", ouiNon(contenant.actif))}
+                                    ${valeur("Retour propre : consigne", ouiNon(contenant.retour_propre_rembourse_consigne))}
+                                    ${valeur("Retour propre : lavage", ouiNon(contenant.retour_propre_rembourse_lavage))}
+                                    ${valeur("Retour sale : consigne", ouiNon(contenant.retour_sale_rembourse_consigne))}
+                                </div>
+                            </article>`).join("")}</div>` : vide("Aucun paramètre de contenant repris."));
+                } else {
+                    const reserve = d.reserve_gobelets;
+                    cible.innerHTML = `<p class="v8-intro">Réserve MDN : uniquement les caisses de gobelets, sans stock opérationnel initial.</p>` +
+                        (reserve ? `<article class="v8-fiche v8-reserve">
+                            <div class="v8-tete"><h3>Caisses de gobelets</h3><span class="v8-etat ${reserve.valide_at ? "ok" : ""}">${reserve.valide_at ? "Vérifié" : "À vérifier"}</span></div>
+                            <div class="v8-deux">
+                                ${valeur("Caisses pleines", reserve.caisses_pleines)}
+                                ${valeur("Caisses partielles", reserve.caisses_partielles)}
+                                ${valeur("Gobelets en caisses partielles", reserve.gobelets_dans_caisses_partielles)}
+                                ${valeur("Caisses vides", reserve.caisses_vides)}
+                                ${valeur("Capacité par caisse", reserve.capacite_caisse)}
+                            </div>
+                            <div class="v8-totaux">
+                                ${valeur("Total gobelets", reserve.total_gobelets)}
+                                ${valeur("Total caisses", reserve.total_caisses)}
+                            </div>
+                        </article>` : vide("Aucun comptage de la réserve n'a encore été enregistré."));
+                }
             }
 
             function afficherSimulationV8() {
@@ -902,7 +1002,7 @@
                                 <div class="inventaire-actions">
                                     <button class="bouton secondaire" type="button"
                                             data-action="inventaires" data-id="${echapper(preparation.id)}">
-                                        Ouvrir les inventaires
+                                        Ouvrir les fiches
                                     </button>
                                 </div>
                             </div>
@@ -986,6 +1086,7 @@
                 preparations = [simulation.preparation];
                 preparationOuverte = null;
                 inventaireEnCours = null;
+                configurationsReelles = null;
                 parId("panneauInventaires").hidden = true;
                 afficherPreparations();
                 mettreAJourAvancementDemo();
@@ -1038,6 +1139,7 @@
                     return;
                 }
                 preparationOuverte = preparation;
+                configurationsReelles = null;
                 sectionOuverte = "mdn";
                 parId("panneauInventaires").hidden = false;
                 parId("titreInventaire").textContent = `Préparation de l’édition ${preparation.annee_cible}`;
@@ -1062,22 +1164,20 @@
                         afficherInventaire();
                         return;
                     }
-                    const nomRpc = sectionOuverte === "vaisselle"
-                        ? "charger_inventaire_vaisselle_preparation_administration"
-                        : sectionOuverte === "contenants"
-                            ? "charger_inventaire_contenants_preparation_administration"
-                            : "charger_inventaire_articles_preparation_administration";
-                    const { data, error } = await clientSupabase.rpc(nomRpc, {
-                        p_preparation_id: preparationOuverte.id
-                    });
-                    if (error) {
-                        throw error;
+                    // SQL146 : uniquement la lecture des nouvelles tables de configuration.
+                    // Ne plus appeler les anciennes RPC d'inventaire vaisselle/contenants.
+                    if (!configurationsReelles || configurationsReelles.preparation_id !== preparationOuverte.id) {
+                        const { data, error } = await clientSupabase.rpc(
+                            "charger_configurations_preparation_edition_administration",
+                            { p_preparation_id: preparationOuverte.id }
+                        );
+                        if (error) throw error;
+                        if (data?.resultat !== "CONFIGURATIONS_PREPARATION_CHARGEES") {
+                            throw new Error("Réponse invalide des configurations annuelles.");
+                        }
+                        configurationsReelles = data;
                     }
-                    if (!data?.ok) {
-                        throw new Error("Réponse invalide de l’inventaire.");
-                    }
-                    inventaireEnCours = data;
-                    afficherInventaire();
+                    afficherConfigurationsReelles();
                 } catch (erreur) {
                     cible.textContent = `Inventaire indisponible : ${erreur.message}`;
                 } finally {
@@ -1181,6 +1281,7 @@
             parId("fermerInventaires").addEventListener("click", () => {
                 preparationOuverte = null;
                 inventaireEnCours = null;
+                configurationsReelles = null;
                 parId("panneauInventaires").hidden = true;
             });
 
@@ -1216,9 +1317,16 @@
                     traiterActionSimulationV8(bouton);
                     return;
                 }
+                // V8.4 : aucune écriture en mode réel, même si un ancien bouton
+                // est présent dans le DOM. SQL145/SQL147 restent non appelées.
+                if (!modeDemoActif && bouton.id !== "rechargerInventaire") {
+                    message("Mode réel en consultation uniquement. Les enregistrements restent verrouillés.", true);
+                    return;
+                }
                 const preparationId = preparationOuverte.id;
                 try {
                     if (bouton.id === "rechargerInventaire") {
+                        configurationsReelles = null;
                         await chargerInventaire();
                         return;
                     }
