@@ -873,14 +873,6 @@
                 <h2>Gestion des éditions</h2>
                 <button id="boutonAjouter" class="bouton" type="button" hidden>+ Nouvelle édition</button>
             </div>
-            <details class="v912-precisions"><summary>Pourquoi les éditions sont verrouillées</summary>
-            <div class="notice">
-                <strong>Gestion temporairement en consultation uniquement.</strong>
-                La création, la modification et l'activation des éditions sont suspendues
-                jusqu'à la mise en place des inventaires, de la reprise des référentiels
-                et des contrôles de clôture. L'édition 2026 reste active et inchangée.
-            </div>
-            </details>
             <div id="listeEditions"></div>
         </section>
         <section class="panneau" aria-labelledby="titrePreparations">
@@ -888,13 +880,6 @@
                 <h2 id="titrePreparations">Suivi des préparations annuelles</h2>
                 <button id="actualiserPreparations" class="bouton secondaire" type="button">Actualiser</button>
             </div>
-            <details class="v912-precisions"><summary>Règles de fonctionnement des préparations</summary>
-            <div class="notice">
-                En mode réel, les inventaires des préparations existantes sont réservés aux administrateurs.
-                En mode démo, une préparation fictive 2027 permet de tester les fiches simplifiées, les réglages de vaisselle et les caisses de gobelets, sans écrire dans Supabase.
-                La création et l’activation des éditions restent verrouillées.
-            </div>
-            </details>
             <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
             <div id="actionsSimulation" class="inventaire-actions" hidden>
                 <button id="reinitialiserSimulation" class="bouton secondaire" type="button">Réinitialiser la simulation</button>
@@ -902,15 +887,7 @@
             </div>
         </section>
             </div>
-        <details class="v912-precisions v912-regles"><summary>Règles de reprise de la prochaine édition</summary>
-        <section class="panneau">
-            <h2>Préparation de la prochaine édition</h2>
-            <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
-            <p><strong>Fondation :</strong> fiches articles, photos et paramètres de caisse conservés, sans comptage.</p>
-            <p><strong>Vaisselle :</strong> paramètres et tarifs repris et modifiables pour la prochaine édition. <strong>Réserve MDN :</strong> caisses de gobelets pleines, partielles et vides.</p>
-            <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
-        </section>
-        </details>
+
         </div>
         <div id="zoneV912Brouillon" class="zone-editions">
         <section class="panneau" id="panneauBrouillonV97" hidden aria-labelledby="titreBrouillonV97">
@@ -950,6 +927,15 @@
         </section>
         </div>
         <div id="zoneV912Inventaires" class="zone-editions">
+        <details class="v912-precisions v912-regles"><summary>Consulter les règles de reprise annuelle</summary>
+        <section class="panneau">
+            <h2>Préparation de la prochaine édition</h2>
+            <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
+            <p><strong>Fondation :</strong> fiches articles, photos et paramètres de caisse conservés, sans comptage.</p>
+            <p><strong>Vaisselle :</strong> paramètres et tarifs repris et modifiables pour la prochaine édition. <strong>Réserve MDN :</strong> caisses de gobelets pleines, partielles et vides.</p>
+            <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
+        </section>
+        </details>
             <p class="v912-intro-compacte">Pour ouvrir les fiches de préparation, sélectionne <strong>Ouvrir les fiches</strong> dans la vue d'ensemble. Les contrôles de validation et l'activation restent verrouillés.</p>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
