@@ -915,6 +915,42 @@
             </div>
         </section>
     </div>
+    <!-- V9.34 : déverrouillage volontaire, sans écriture. -->
+    <div class="v923-overlay" id="dialogueDeverrouillageV934" hidden>
+        <section class="v923-dialogue" role="dialog" aria-modal="true" aria-labelledby="titreDeverrouillageV934">
+            <h2 id="titreDeverrouillageV934">Déverrouiller les validations réelles</h2>
+            <p class="v923-info">Les quantités actuellement enregistrées sont des données de test.
+            N'utilise cette fonction que lorsque les inventaires et configurations sont réellement définitifs.
+            Le déverrouillage ne valide rien à lui seul.</p>
+            <label for="saisieDeverrouillageV934"><strong>Recopier : DONNEES DEFINITIVES 2027</strong></label>
+            <input class="v923-saisie" id="saisieDeverrouillageV934" autocomplete="off" spellcheck="false" />
+            <p class="v923-erreur" id="erreurDeverrouillageV934" aria-live="polite"></p>
+            <div class="v923-actions">
+                <button type="button" class="bouton secondaire" id="annulerDeverrouillageV934">Annuler</button>
+                <button type="button" class="bouton" id="confirmerDeverrouillageV934">Déverrouiller pour cette session</button>
+            </div>
+        </section>
+    </div>
+    <!-- V9.34 : validation réelle, double confirmation explicite. -->
+    <div class="v923-overlay" id="dialogueValidationV934" hidden>
+        <section class="v923-dialogue" role="dialog" aria-modal="true" aria-labelledby="titreValidationV934">
+            <h2 id="titreValidationV934">Validation officielle</h2>
+            <div id="detailValidationV934"></div>
+            <p class="v923-info">
+                Cette opération enregistre une validation réelle dans Supabase.
+                Elle ne doit être utilisée qu'après contrôle physique définitif.
+                Les données actuelles sont des données de test.
+            </p>
+            <label for="saisieValidationV934"><strong>Confirmation à recopier exactement</strong></label>
+            <p id="codeValidationV934" style="overflow-wrap:anywhere;font-weight:700;"></p>
+            <input class="v923-saisie" id="saisieValidationV934" autocomplete="off" spellcheck="false" />
+            <p class="v923-erreur" id="erreurValidationV934" role="status" aria-live="polite"></p>
+            <div class="v923-actions">
+                <button type="button" class="bouton secondaire" id="annulerValidationV934">Annuler</button>
+                <button type="button" class="bouton" id="confirmerValidationV934">Enregistrer la validation réelle</button>
+            </div>
+        </section>
+    </div>
     <div id="chargement" class="chargement">Chargement des éditions…</div>
 
     <header class="entete">
@@ -1128,10 +1164,10 @@
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
                 <section class="v922-transfert" aria-labelledby="titreApercuValidationsV926">
                     <h3 id="titreApercuValidationsV926">Précontrôle SQL153 · Validations SQL154</h3>
-                    <p>Vérifier les cinq sections puis tester individuellement les confirmations. <strong>Mode simulation :</strong> aucune validation officielle n'est enregistrée, aucune écriture SQL154 n'est effectuée.</p>
+                    <p>Vérifier les cinq sections. Les simulations restent sans écriture. Les validations réelles sont disponibles uniquement après déverrouillage volontaire et confirmation individuelle. <strong>Ne pas valider les données de test.</strong></p>
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier les validations</button>
-                        <button type="button" class="bouton" disabled title="Validation réelle volontairement verrouillée pendant les tests">Valider officiellement (verrouillé)</button>
+                        <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934">Déverrouiller les validations réelles</button>
                     </div>
                     <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Précontrôle non exécuté.</div>
                     <div id="sectionsValidationsV927" aria-live="polite"></div>
@@ -2784,7 +2820,169 @@
                 }
             });
 
-            // V9.28 — SQL153 en lecture seule ; SQL154 jamais appelé depuis cette version.
+            // V9.34 — les validations réelles sont verrouillées par défaut.
+            // SQL154 n'est appelé qu'après deux actions explicites de l'administrateur.
+            let validationsReellesAutoriseesV934 = false;
+            let validationCibleV934 = null;
+            let validationEnCoursV934 = false;
+            let preparationValideeV934 = null;
+
+            function fermerValidationV934() {
+                if (validationEnCoursV934) return;
+                parId("dialogueValidationV934").hidden = true;
+                parId("saisieValidationV934").value = "";
+                parId("erreurValidationV934").textContent = "";
+                validationCibleV934 = null;
+            }
+
+            parId("annulerValidationV934").addEventListener("click", fermerValidationV934);
+            parId("dialogueValidationV934").addEventListener("click", evenement => {
+                if (evenement.target.id === "dialogueValidationV934") fermerValidationV934();
+            });
+
+            function afficherBoutonsReelsV934() {
+                parId("basculerValidationsReellesV934").textContent =
+                    validationsReellesAutoriseesV934
+                        ? "Reverrouiller les validations réelles"
+                        : "Déverrouiller les validations réelles";
+                parId("sectionsValidationsV927")
+                    .querySelectorAll("[data-validation-reelle]")
+                    .forEach(bouton => {
+                        bouton.hidden = !validationsReellesAutoriseesV934;
+                    });
+            }
+
+            function fermerDeverrouillageV934() {
+                parId("dialogueDeverrouillageV934").hidden = true;
+                parId("saisieDeverrouillageV934").value = "";
+                parId("erreurDeverrouillageV934").textContent = "";
+            }
+
+            parId("annulerDeverrouillageV934").addEventListener("click", fermerDeverrouillageV934);
+            parId("dialogueDeverrouillageV934").addEventListener("click", evenement => {
+                if (evenement.target.id === "dialogueDeverrouillageV934") {
+                    fermerDeverrouillageV934();
+                }
+            });
+            parId("confirmerDeverrouillageV934").addEventListener("click", () => {
+                if (parId("saisieDeverrouillageV934").value.trim() !== "DONNEES DEFINITIVES 2027") {
+                    parId("erreurDeverrouillageV934").textContent =
+                        "Confirmation incorrecte. Aucune action effectuée.";
+                    return;
+                }
+                if (!apercuValidationsV928 || !preparationValideeV934 || modeDemoActif) {
+                    fermerDeverrouillageV934();
+                    return;
+                }
+                validationsReellesAutoriseesV934 = true;
+                fermerDeverrouillageV934();
+                afficherBoutonsReelsV934();
+            });
+
+            parId("basculerValidationsReellesV934").addEventListener("click", () => {
+                if (modeDemoActif || !apercuValidationsV928 || !preparationValideeV934) {
+                    message("Exécute d'abord le précontrôle officiel.", true);
+                    return;
+                }
+                if (validationsReellesAutoriseesV934) {
+                    validationsReellesAutoriseesV934 = false;
+                    afficherBoutonsReelsV934();
+                    return;
+                }
+                parId("dialogueDeverrouillageV934").hidden = false;
+                parId("saisieDeverrouillageV934").focus();
+            });
+
+            function ouvrirValidationReelleV934(fiche) {
+                if (!validationsReellesAutoriseesV934 || !preparationValideeV934 ||
+                    !apercuValidationsV928 || validationEnCoursV934 || modeDemoActif) return;
+                validationCibleV934 = fiche;
+                const revision = Number(apercuValidationsV928.revision_brouillon);
+                if (!Number.isInteger(revision) || revision < 1) return;
+                const code = `VALIDER_${fiche.id.toUpperCase()}_REVISION_${revision}`;
+                parId("titreValidationV934").textContent = `Validation réelle — ${fiche.nom}`;
+                parId("detailValidationV934").textContent =
+                    `${fiche.detail} — Préparation ${apercuValidationsV928.annee_cible}, révision ${revision}.`;
+                parId("codeValidationV934").textContent = code;
+                parId("saisieValidationV934").value = "";
+                parId("erreurValidationV934").textContent = "";
+                parId("dialogueValidationV934").hidden = false;
+                parId("saisieValidationV934").focus();
+            }
+
+            parId("confirmerValidationV934").addEventListener("click", async () => {
+                if (!validationCibleV934 || !validationsReellesAutoriseesV934 ||
+                    !preparationValideeV934 || validationEnCoursV934 || modeDemoActif) return;
+
+                const fiche = validationCibleV934;
+                const revision = Number(apercuValidationsV928?.revision_brouillon);
+                const code = `VALIDER_${fiche.id.toUpperCase()}_REVISION_${revision}`;
+                if (parId("saisieValidationV934").value.trim() !== code) {
+                    parId("erreurValidationV934").textContent = "Le code de confirmation ne correspond pas.";
+                    return;
+                }
+
+                validationEnCoursV934 = true;
+                parId("confirmerValidationV934").disabled = true;
+                parId("annulerValidationV934").disabled = true;
+                try {
+                    // Contrôle anti-concurrence : l'état et la révision sont relus
+                    // immédiatement avant l'unique appel d'écriture SQL154.
+                    const {data: controle, error: erreurControle} = await clientSupabase.rpc(
+                        "apercu_validations_officielles_preparation_administration",
+                        {p_preparation_id: preparationValideeV934}
+                    );
+                    if (erreurControle) throw erreurControle;
+                    if (!controle?.structure_prete_pour_examen ||
+                        Number(controle.revision_brouillon) !== revision ||
+                        controle.preparation_id !== preparationValideeV934) {
+                        throw new Error("Préparation ou révision modifiée : recommence le précontrôle.");
+                    }
+                    const {data: etats, error: erreurEtats} = await clientSupabase.rpc(
+                        "charger_statuts_validations_preparation",
+                        {p_preparation_id: preparationValideeV934}
+                    );
+                    if (erreurEtats) throw erreurEtats;
+                    if (etats?.sections?.[fiche.id]?.validee !== false) {
+                        throw new Error("Statut officiel inconnu ou section déjà validée.");
+                    }
+                    const {data: resultat, error: erreurValidation} = await clientSupabase.rpc(
+                        "valider_section_officielle_preparation_administration",
+                        {
+                            p_preparation_id: preparationValideeV934,
+                            p_section: fiche.id,
+                            p_revision_attendue: revision,
+                            p_confirmation: code
+                        }
+                    );
+                    if (erreurValidation) throw erreurValidation;
+                    if (resultat?.resultat !== "SECTION_OFFICIELLEMENT_VALIDEE" ||
+                        resultat.section !== fiche.id ||
+                        resultat.edition_creee !== false ||
+                        resultat.activation_effectuee !== false ||
+                        resultat.stocks_operationnels_modifies !== false) {
+                        throw new Error("La réponse de validation doit être vérifiée dans Supabase.");
+                    }
+                    parId("dialogueValidationV934").hidden = true;
+                    validationCibleV934 = null;
+                    validationsReellesAutoriseesV934 = false;
+                    parId("basculerValidationsReellesV934").textContent =
+                        "Déverrouiller les validations réelles";
+                    message(`Validation officielle enregistrée : ${fiche.nom}.`);
+                    await chargerPreparations();
+                    parId("verifierValidationsV926").click();
+                } catch (erreur) {
+                    parId("erreurValidationV934").textContent =
+                        `Validation non confirmée : ${erreur.message || erreur}`;
+                } finally {
+                    validationEnCoursV934 = false;
+                    parId("confirmerValidationV934").disabled = false;
+                    parId("annulerValidationV934").disabled = false;
+                }
+            });
+
+            // V9.28 — simulations locales sans écriture.
+
             let apercuValidationsV928 = null;
             let simulationEnCoursV928 = null;
 
@@ -2845,6 +3043,10 @@
                 }
                 bouton.disabled = true;
                 apercuValidationsV928 = null;
+                preparationValideeV934 = null;
+                validationsReellesAutoriseesV934 = false;
+                parId("basculerValidationsReellesV934").textContent =
+                    "Déverrouiller les validations réelles";
                 parId("sectionsValidationsV927").replaceChildren();
                 cible.textContent = "Lecture des contrôles SQL153 en cours…";
                 try {
@@ -2877,6 +3079,7 @@
                         avertissementSQL155 = `Statuts officiels SQL155 indisponibles : ${erreurSQL155.message}`;
                     }
                     apercuValidationsV928 = data;
+                    preparationValideeV934 = preparation.id;
                     const sections = data.configurations || {};
                     const inventaires = data.inventaires_mdn || {};
                     const reserve = data.reserve_gobelets || {};
@@ -2998,7 +3201,20 @@
                         retour.textContent = estOfficiellementValidee
                             ? "Section déjà officiellement validée. Simulation désactivée."
                             : "Aucune simulation confirmée. Aucun enregistrement officiel effectué.";
-                        bloc.append(nom, detail, statut, action, retour);
+                        const boutonReel = document.createElement("button");
+                        boutonReel.type = "button";
+                        boutonReel.className = "bouton";
+                        boutonReel.dataset.validationReelle = fiche.id;
+                        boutonReel.textContent = "Valider officiellement";
+                        boutonReel.hidden = true;
+                        boutonReel.disabled = !data.structure_prete_pour_examen
+                            || !statutOfficielDisponible
+                            || estOfficiellementValidee
+                            || fiche.valide
+                            || (estConfiguration && !configurationComplete);
+                        boutonReel.title = "Écriture réelle SQL154 après confirmation explicite";
+                        boutonReel.addEventListener("click", () => ouvrirValidationReelleV934(fiche));
+                        bloc.append(nom, detail, statut, action, boutonReel, retour);
                         conteneurSections.appendChild(bloc);
                     }
 
