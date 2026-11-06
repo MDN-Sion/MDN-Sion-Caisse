@@ -2856,21 +2856,27 @@
                     if (data?.resultat !== "APERCU_VALIDATIONS_OFFICIELLES") {
                         throw new Error("Réponse SQL153 inattendue.");
                     }
-                    // V9.31 : lecture sécurisée des validations réellement enregistrées.
-                    // La RPC SQL155 ne modifie aucune donnée.
-                    const { data: statutsOfficiels, error: erreurStatuts } = await clientSupabase.rpc(
-                        "charger_statuts_validations_officielles_preparation_administration",
-                        { p_preparation_id: preparation.id }
-                    );
-                    if (erreurStatuts) {
-                        throw new Error(`Lecture des statuts SQL155 : ${erreurStatuts.message}`);
-                    }
-                    if (statutsOfficiels?.resultat !== "STATUTS_VALIDATIONS_OFFICIELLES"
-                        || statutsOfficiels.preparation_id !== preparation.id) {
-                        throw new Error("Réponse SQL155 inattendue.");
+                    // V9.32 : SQL153 reste consultable même si SQL155 est indisponible.
+                    // Aucun statut officiel ne doit être déduit d'un échec réseau/API.
+                    let validationsOfficielles = null;
+                    let avertissementSQL155 = "";
+                    try {
+                        const { data: statutsOfficiels, error: erreurStatuts } = await clientSupabase.rpc(
+                            "charger_statuts_validations_officielles_preparation_administration",
+                            { p_preparation_id: preparation.id }
+                        );
+                        if (erreurStatuts) {
+                            throw erreurStatuts;
+                        }
+                        if (statutsOfficiels?.resultat !== "STATUTS_VALIDATIONS_OFFICIELLES"
+                            || statutsOfficiels.preparation_id !== preparation.id) {
+                            throw new Error("Réponse SQL155 inattendue.");
+                        }
+                        validationsOfficielles = statutsOfficiels.sections || {};
+                    } catch (erreurSQL155) {
+                        avertissementSQL155 = `Statuts officiels SQL155 indisponibles : ${erreurSQL155.message}`;
                     }
                     apercuValidationsV928 = data;
-                    const validationsOfficielles = statutsOfficiels.sections || {};
                     const sections = data.configurations || {};
                     const inventaires = data.inventaires_mdn || {};
                     const reserve = data.reserve_gobelets || {};
@@ -2884,6 +2890,7 @@
                         `Structure : ${data.structure_prete_pour_examen ? "prête pour examen" : "anomalies à examiner"}`,
                         `Anomalies : ${(data.anomalies || []).join(", ") || "aucune"}`,
                         `Avertissements : ${(data.avertissements || []).join(", ") || "aucun"}`,
+                        avertissementSQL155 || "Statuts officiels SQL155 disponibles.",
                         "Aucune validation déclenchée. Activation 2027 verrouillée."
                     ];
                     cible.textContent = lignes.join("\n");
@@ -2958,9 +2965,12 @@
                             && configurationsPresentes[fiche.id] === configurationAttendue[fiche.id]
                             && data.structure_prete_pour_examen === true;
 
-                        const validationOfficielle = validationsOfficielles[fiche.id];
+                        const validationOfficielle = validationsOfficielles?.[fiche.id];
+                        const statutOfficielDisponible = validationsOfficielles !== null;
                         const estOfficiellementValidee = validationOfficielle?.validee === true;
-                        if (estOfficiellementValidee) {
+                        if (!statutOfficielDisponible) {
+                            statut.textContent = "État : statut officiel indisponible (SQL155). Consultation et simulation uniquement.";
+                        } else if (estOfficiellementValidee) {
                             statut.textContent = "État : validation officielle enregistrée";
                         } else if (fiche.id === "mdn" || fiche.id === "reserve_gobelets") {
                             statut.textContent = "État : comptage enregistré, validation officielle en attente";
@@ -2972,9 +2982,14 @@
                         const action = document.createElement("button");
                         action.type = "button";
                         action.className = "bouton secondaire";
-                        action.disabled = !data.structure_prete_pour_examen || estOfficiellementValidee || fiche.valide;
+                        action.disabled = !data.structure_prete_pour_examen
+                            || !statutOfficielDisponible
+                            || estOfficiellementValidee
+                            || fiche.valide;
                         action.textContent = "Simuler la validation";
-                        action.title = "Simulation locale : aucune écriture dans Supabase";
+                        action.title = statutOfficielDisponible
+                            ? "Simulation locale : aucune écriture dans Supabase"
+                            : "Simulation suspendue : lecture des statuts officiels indisponible";
                         action.addEventListener("click", () => ouvrirSimulationV928(fiche));
                         const retour = document.createElement("p");
                         retour.id = `simulationStatutV928-${fiche.id}`;
@@ -2982,7 +2997,7 @@
                         retour.style.fontSize = ".92em";
                         retour.textContent = estOfficiellementValidee
                             ? "Section déjà officiellement validée. Simulation désactivée."
-                            : "Aucune simulation confirmée.";
+                            : "Aucune simulation confirmée. Aucun enregistrement officiel effectué.";
                         bloc.append(nom, detail, statut, action, retour);
                         conteneurSections.appendChild(bloc);
                     }
