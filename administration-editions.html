@@ -2856,7 +2856,21 @@
                     if (data?.resultat !== "APERCU_VALIDATIONS_OFFICIELLES") {
                         throw new Error("Réponse SQL153 inattendue.");
                     }
+                    // V9.31 : lecture sécurisée des validations réellement enregistrées.
+                    // La RPC SQL155 ne modifie aucune donnée.
+                    const { data: statutsOfficiels, error: erreurStatuts } = await clientSupabase.rpc(
+                        "charger_statuts_validations_officielles_preparation_administration",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (erreurStatuts) {
+                        throw new Error(`Lecture des statuts SQL155 : ${erreurStatuts.message}`);
+                    }
+                    if (statutsOfficiels?.resultat !== "STATUTS_VALIDATIONS_OFFICIELLES"
+                        || statutsOfficiels.preparation_id !== preparation.id) {
+                        throw new Error("Réponse SQL155 inattendue.");
+                    }
                     apercuValidationsV928 = data;
+                    const validationsOfficielles = statutsOfficiels.sections || {};
                     const sections = data.configurations || {};
                     const inventaires = data.inventaires_mdn || {};
                     const reserve = data.reserve_gobelets || {};
@@ -2944,19 +2958,21 @@
                             && configurationsPresentes[fiche.id] === configurationAttendue[fiche.id]
                             && data.structure_prete_pour_examen === true;
 
-                        if (fiche.id === "mdn" || fiche.id === "reserve_gobelets") {
-                            statut.textContent = fiche.valide
-                                ? "État : comptage officiellement validé"
-                                : "État : comptage enregistré, validation officielle en attente";
+                        const validationOfficielle = validationsOfficielles[fiche.id];
+                        const estOfficiellementValidee = validationOfficielle?.validee === true;
+                        if (estOfficiellementValidee) {
+                            statut.textContent = "État : validation officielle enregistrée";
+                        } else if (fiche.id === "mdn" || fiche.id === "reserve_gobelets") {
+                            statut.textContent = "État : comptage enregistré, validation officielle en attente";
                         } else {
                             statut.textContent = configurationComplete
-                                ? "État : configuration complète — statut de validation officielle non disponible"
+                                ? "État : configuration complète, validation officielle en attente"
                                 : "État : configuration incomplète ou à vérifier";
                         }
                         const action = document.createElement("button");
                         action.type = "button";
                         action.className = "bouton secondaire";
-                        action.disabled = !data.structure_prete_pour_examen || fiche.valide;
+                        action.disabled = !data.structure_prete_pour_examen || estOfficiellementValidee || fiche.valide;
                         action.textContent = "Simuler la validation";
                         action.title = "Simulation locale : aucune écriture dans Supabase";
                         action.addEventListener("click", () => ouvrirSimulationV928(fiche));
@@ -2964,7 +2980,9 @@
                         retour.id = `simulationStatutV928-${fiche.id}`;
                         retour.style.margin = "8px 0 0";
                         retour.style.fontSize = ".92em";
-                        retour.textContent = "Aucune simulation confirmée.";
+                        retour.textContent = estOfficiellementValidee
+                            ? "Section déjà officiellement validée. Simulation désactivée."
+                            : "Aucune simulation confirmée.";
                         bloc.append(nom, detail, statut, action, retour);
                         conteneurSections.appendChild(bloc);
                     }
