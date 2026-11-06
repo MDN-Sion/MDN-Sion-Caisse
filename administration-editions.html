@@ -832,6 +832,21 @@
         .v917-details-brouillon small {
             font-size: 13px;
         }
+
+        /* V9.22 — précontrôle et transfert manuel, isolés des éditions. */
+        .v922-transfert {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border: 1px solid #d6e1e8;
+            border-radius: 16px;
+            background: #f5f8fa;
+        }
+        .v922-transfert h3 { margin: 0 0 8px; }
+        .v922-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .v922-resultat { margin-top: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+        .v922-resultat ul { margin: 8px 0; padding-left: 22px; }
+        .v922-attention { color: #803600; font-weight: 600; }
+        .v922-transfert button:disabled { opacity: .55; cursor: not-allowed; }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1046,6 +1061,15 @@
                 <h2 id="titreSuiviOfficielV921">État des préparations officielles</h2>
                 <p class="v921-explication">Données enregistrées dans la préparation annuelle, indépendantes des fiches vérifiées dans le brouillon.</p>
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
+                <section class="v922-transfert" aria-labelledby="titreTransfertV922">
+                    <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
+                    <p>Première étape : vérifier la sauvegarde sans rien modifier. Le transfert, s'il est autorisé, exige ensuite une confirmation distincte.</p>
+                    <div class="v922-actions">
+                        <button type="button" class="bouton secondaire" id="precontrolerTransfertV922">Prévisualiser le transfert</button>
+                        <button type="button" class="bouton" id="confirmerTransfertV922" disabled>Transférer les fiches éligibles</button>
+                    </div>
+                    <div id="resultatTransfertV922" class="v922-resultat" role="status" aria-live="polite">Aucun précontrôle effectué.</div>
+                </section>
             </section>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
@@ -1185,6 +1209,121 @@
                     `<div class="v921-fiche"><strong>${echapper(nom)}</strong><span>${echapper(etat)}</span></div>`
                 ).join("")}</div><p class="v921-pied">Préparation ${echapper(preparation.annee_cible)} · ${controle.toutes_sections_completes ? "Sections complètes" : "Préparation incomplète"} · Activation verrouillée</p>`;
             }
+
+            // V9.22 — aucun transfert sans précontrôle SQL150 et double confirmation.
+            let apercuTransfertV922 = null;
+            let transfertEnCoursV922 = false;
+
+            function invaliderApercuTransfertV922() {
+                apercuTransfertV922 = null;
+                const bouton = parId("confirmerTransfertV922");
+                if (bouton) bouton.disabled = true;
+            }
+
+            function statutTransfertV922(texte, erreur = false) {
+                const cible = parId("resultatTransfertV922");
+                if (!cible) return;
+                cible.textContent = texte;
+                cible.classList.toggle("v922-attention", erreur);
+            }
+
+            async function precontrolerTransfertV922() {
+                if (transfertEnCoursV922) return;
+                invaliderApercuTransfertV922();
+                if (modeDemoActif || !clientSupabase) {
+                    statutTransfertV922("Le transfert est réservé aux administrateurs en mode réel.", true);
+                    return;
+                }
+                transfertEnCoursV922 = true;
+                parId("precontrolerTransfertV922").disabled = true;
+                try {
+                    await chargerPreparations();
+                    const preparation = preparationExistanteV911();
+                    if (!preparation) throw new Error("Aucune préparation 2027 en brouillon.");
+                    const { data, error } = await clientSupabase.rpc(
+                        "apercu_transfert_brouillon_preparation_administration",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (error) throw error;
+                    if (!data?.ok || data.lecture_seule !== true ||
+                        Number(data.annee_source) !== 2026 || Number(data.annee_cible) !== 2027) {
+                        throw new Error("Précontrôle SQL150 : réponse inattendue.");
+                    }
+                    const sections = data.sections || {};
+                    const mdn = Number(sections.mdn?.verifiees || 0);
+                    const vaisselle = Number(sections.vaisselle?.verifiees || 0);
+                    const autres = ["fondation", "contenants", "reserve"].reduce(
+                        (total, section) => total + Number(sections[section]?.verifiees || 0), 0
+                    );
+                    const anomalies = Array.isArray(data.anomalies) ? data.anomalies : [];
+                    const eligible = data.transfert_possible === true && anomalies.length === 0 &&
+                        autres === 0 && mdn + vaisselle > 0;
+                    const cible = parId("resultatTransfertV922");
+                    cible.classList.toggle("v922-attention", !eligible);
+                    cible.innerHTML = `<strong>Révision ${echapper(data.revision_brouillon)} — ${eligible ? "précontrôle favorable" : "transfert non autorisé"}</strong>` +
+                        `<p>Articles MDN : ${mdn} · Vaisselle : ${vaisselle} · Autres sections vérifiées : ${autres}.</p>` +
+                        `<p>Fiches non vérifiées : ignorées. Aucun inventaire n'est validé automatiquement.</p>` +
+                        (anomalies.length ? `<p>Anomalies : ${echapper(anomalies.join(" ; "))}</p>` : "") +
+                        (autres ? "<p>SQL151 ne traite pas encore les autres sections vérifiées.</p>" : "") +
+                        (eligible ? "<p>Le transfert reste facultatif et ne crée aucune édition.</p>" : "");
+                    if (eligible) {
+                        apercuTransfertV922 = {
+                            preparationId: preparation.id,
+                            revision: Number(data.revision_brouillon),
+                            mdn,
+                            vaisselle
+                        };
+                        parId("confirmerTransfertV922").disabled = false;
+                    }
+                } catch (erreur) {
+                    statutTransfertV922("Précontrôle impossible : " + (erreur.message || erreur), true);
+                } finally {
+                    transfertEnCoursV922 = false;
+                    parId("precontrolerTransfertV922").disabled = false;
+                }
+            }
+
+            async function confirmerTransfertV922() {
+                const apercu = apercuTransfertV922;
+                if (!apercu || transfertEnCoursV922 || modeDemoActif || !clientSupabase) return;
+                const confirmation = `Transférer ${apercu.mdn} fiches MDN et ${apercu.vaisselle} fiches de vaisselle depuis la révision ${apercu.revision} vers la préparation privée 2027 ?\n\nCette action écrit dans la préparation officielle (sans valider les inventaires). Elle ne peut pas être annulée depuis cette page et ne modifie pas l'édition 2026.`;
+                if (!window.confirm(confirmation)) return;
+                const saisie = window.prompt(`Confirmation obligatoire : saisis exactement TRANSFERER_REVISION_${apercu.revision}`);
+                if (saisie !== `TRANSFERER_REVISION_${apercu.revision}`) {
+                    statutTransfertV922("Transfert annulé : confirmation non conforme.", true);
+                    return;
+                }
+                transfertEnCoursV922 = true;
+                invaliderApercuTransfertV922();
+                parId("precontrolerTransfertV922").disabled = true;
+                statutTransfertV922("Transfert en cours…");
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "transferer_fiches_verifiees_brouillon_preparation_administration",
+                        {
+                            p_preparation_id: apercu.preparationId,
+                            p_revision_attendue: apercu.revision,
+                            p_confirmation: saisie
+                        }
+                    );
+                    if (error) throw error;
+                    if (data?.resultat !== "TRANSFERT_PARTIEL_EFFECTUE" ||
+                        data.edition_creee !== false || data.activation_effectuee !== false ||
+                        data.stock_operationnel_modifie !== false || data.edition_source_modifiee !== false) {
+                        throw new Error("La réponse du transfert n'a pas pu être confirmée. Vérifie l'état officiel avant de recommencer.");
+                    }
+                    statutTransfertV922(`Transfert confirmé : ${data.articles_mdn_transferes} fiches MDN et ${data.parametres_vaisselle_transferes} fiches de vaisselle enregistrées dans la préparation 2027. Aucune validation d'inventaire ni activation.`);
+                    await chargerPreparations();
+                } catch (erreur) {
+                    statutTransfertV922("Transfert non confirmé : " + (erreur.message || erreur) + ". Consulte les validations officielles avant toute nouvelle tentative.", true);
+                } finally {
+                    transfertEnCoursV922 = false;
+                    parId("precontrolerTransfertV922").disabled = false;
+                }
+            }
+
+            parId("precontrolerTransfertV922").addEventListener("click", precontrolerTransfertV922);
+            parId("confirmerTransfertV922").addEventListener("click", confirmerTransfertV922);
 
             function afficherVueV912(vue) {
                 const vues = ["accueil", "brouillon", "source", "inventaires"];
@@ -1361,6 +1500,7 @@
                     brouillonV97 = JSON.parse(JSON.stringify(contenu));
                     preparationBrouillonV911 = preparation.id;
                     revisionBrouillonV911 = Number(data.revision);
+                    invaliderApercuTransfertV922();
                     ongletBrouillonV97 = "mdn";
                     afficherBrouillonV97();
                     etatSauvegardeV911(`Brouillon chargé · révision ${revisionBrouillonV911}`);
@@ -1415,6 +1555,7 @@
                         data.stocks_modifies !== false) throw new Error("Confirmation de sauvegarde invalide.");
                     preparationBrouillonV911 = preparation.id;
                     revisionBrouillonV911 = Number(data.revision);
+                    invaliderApercuTransfertV922();
                     etatSauvegardeV911(`Sauvegardé dans Supabase · révision ${revisionBrouillonV911}`);
                     message("Brouillon 2027 sauvegardé. Aucun stock ni édition modifié.");
                     await chargerPreparations();
