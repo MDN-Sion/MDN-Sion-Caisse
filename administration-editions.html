@@ -1123,6 +1123,7 @@
                         <button type="button" class="bouton" disabled title="Validation réelle volontairement verrouillée pendant les tests">Valider officiellement (verrouillé)</button>
                     </div>
                     <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Précontrôle non exécuté.</div>
+                    <div id="sectionsValidationsV927" aria-live="polite"></div>
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
                     <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
@@ -2772,7 +2773,7 @@
                 }
             });
 
-            // V9.26 — test authentifié de SQL153. Aucun appel à SQL154 ici.
+            // V9.27 — test authentifié de SQL153. Aucun appel à SQL154 ici.
             parId("verifierValidationsV926").addEventListener("click", async () => {
                 const cible = parId("resultatValidationsV926");
                 const bouton = parId("verifierValidationsV926");
@@ -2817,6 +2818,66 @@
                     ];
                     cible.textContent = lignes.join("\n");
                     cible.style.whiteSpace = "pre-line";
+                    // V9.27 — présentation des cinq validations, lecture seule.
+                    // SQL154 n'est jamais appelé par cette version.
+                    const conteneurSections = parId("sectionsValidationsV927");
+                    const fiches = [
+                        {
+                            nom: "Articles MDN — inventaire",
+                            detail: `${inventaires.comptes ?? 0}/${inventaires.total ?? 0} quantités comptées ; ${inventaires.valides ?? 0} inventaires validés`,
+                            valide: Number(inventaires.total || 0) > 0 && Number(inventaires.valides || 0) === Number(inventaires.total || 0)
+                        },
+                        {
+                            nom: "Fondation — configurations",
+                            detail: `${sections.fondation ?? 0} fiches de configuration, sans inventaire`,
+                            valide: false
+                        },
+                        {
+                            nom: "Vaisselle — paramètres",
+                            detail: `${sections.vaisselle ?? 0} configurations, sans stock opérationnel`,
+                            valide: false
+                        },
+                        {
+                            nom: "Contenants — paramètres",
+                            detail: `${sections.contenants ?? 0} configuration(s)`,
+                            valide: false
+                        },
+                        {
+                            nom: "Réserve gobelets — comptage",
+                            detail: reserve.presente
+                                ? `${reserve.caisses_pleines ?? 0} caisses pleines, ${reserve.caisses_partielles ?? 0} partielles, ${reserve.caisses_vides ?? 0} vides · ${reserve.gobelets_total ?? 0} gobelets`
+                                : "Comptage absent",
+                            valide: reserve.validee === true
+                        }
+                    ];
+                    conteneurSections.replaceChildren();
+                    const titreSections = document.createElement("h4");
+                    titreSections.textContent = "État des cinq sections — consultation uniquement";
+                    titreSections.style.margin = "18px 0 12px";
+                    conteneurSections.appendChild(titreSections);
+                    for (const fiche of fiches) {
+                        const bloc = document.createElement("div");
+                        bloc.style.cssText = "border:1px solid #d5dee5;border-radius:12px;padding:13px 15px;margin:10px 0;background:#fff;";
+                        const nom = document.createElement("strong");
+                        nom.textContent = fiche.nom;
+                        const detail = document.createElement("p");
+                        detail.style.margin = "7px 0";
+                        detail.textContent = fiche.detail;
+                        const statut = document.createElement("p");
+                        statut.style.margin = "7px 0";
+                        statut.textContent = fiche.valide
+                            ? "État : validation enregistrée"
+                            : "État : validation officielle non confirmée dans cet aperçu";
+                        const action = document.createElement("button");
+                        action.type = "button";
+                        action.className = "bouton secondaire";
+                        action.disabled = true;
+                        action.textContent = "Valider cette section (verrouillé)";
+                        action.title = "Données de test : aucune écriture officielle autorisée depuis la V9.27";
+                        bloc.append(nom, detail, statut, action);
+                        conteneurSections.appendChild(bloc);
+                    }
+
                 } catch (erreur) {
                     cible.textContent = `Précontrôle indisponible : ${erreur.message}. Aucune validation effectuée.`;
                 } finally {
