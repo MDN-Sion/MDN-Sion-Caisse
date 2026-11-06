@@ -419,6 +419,15 @@
         .v95-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; }
         .v95-fiche { border:1px solid #ddd; border-radius:15px; padding:17px; min-width:0; }
         .v95-fiche h4 { font-size:18px; margin:0 0 12px; }
+        .v910-suivi { margin:16px 0; padding:15px; border:1px solid #e0d7d2; border-radius:12px; background:#faf8f6; }
+        .v910-suivi > p { margin:0 0 10px; }
+        .v910-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:9px; }
+        .v910-section { padding:10px; border-radius:9px; border:1px solid #dedede; background:white; }
+        .v910-section strong, .v910-section small { display:block; }
+        .v910-section small { margin-top:4px; color:#666; }
+        .v910-section.terminee { border-color:#55845b; }
+        .v910-progression { width:100%; height:9px; border-radius:9px; background:#e5dedb; overflow:hidden; margin:12px 0 0; }
+        .v910-progression > span { display:block; height:100%; background:#8b0000; transition:width .2s ease; }
         .v97-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:15px; margin-top:16px; }
         .v97-fiche { border:1px solid #dedede; border-radius:14px; padding:18px; background:#fff; }
         .v97-fiche h4 { margin:0 0 12px; }
@@ -512,6 +521,7 @@
             <p class="v97-note"><strong>Simulation à partir des données réelles 2026.</strong>
                 Les modifications restent exclusivement dans la mémoire de cette page et disparaissent au rechargement.
                 Aucune écriture Supabase, aucune création d'édition et aucune activation ne sont effectuées.</p>
+            <div id="suiviBrouillonV910" class="v910-suivi" aria-live="polite"></div>
             <div id="ongletsBrouillonV97" class="v95-onglets"></div>
             <div id="contenuBrouillonV97"></div>
         </section>
@@ -764,8 +774,37 @@
                     `</div>`;
             }
 
+            // V9.10 : tableau de suivi calculé exclusivement depuis le brouillon en mémoire.
+            function afficherSuiviBrouillonV910() {
+                if (!brouillonV97) return;
+                const etats = sectionsBrouillonV97.map(([cle, libelle]) => {
+                    const fiches = brouillonV97[cle] || [];
+                    const verifiees = fiches.filter(fiche => fiche.verifie_2027).length;
+                    return {libelle, total:fiches.length, verifiees};
+                });
+                const total = etats.reduce((s, etat) => s + etat.total, 0);
+                const verifiees = etats.reduce((s, etat) => s + etat.verifiees, 0);
+                const terminees = etats.filter(etat => etat.total > 0 && etat.verifiees === etat.total).length;
+                const pourcentage = total ? Math.round(verifiees / total * 100) : 0;
+                const sections = etats.map(etat => {
+                    const terminee = etat.total > 0 && etat.verifiees === etat.total;
+                    const statut = etat.total === 0 ? "Aucune fiche" : terminee ? "Section vérifiée" : "À compléter";
+                    return `<div class="v910-section ${terminee ? "terminee" : ""}"><strong>${echapper(etat.libelle)}</strong><small>${etat.verifiees}/${etat.total} · ${statut}</small></div>`;
+                }).join("");
+                parId("suiviBrouillonV910").innerHTML = `
+                    <p><strong>Avancement global : ${verifiees}/${total} fiches vérifiées (${pourcentage} %)</strong>
+                    · ${terminees}/${etats.length} sections terminées</p>
+                    <div class="v910-sections">${sections}</div>
+                    <div class="v910-progression" role="progressbar" aria-label="Avancement des vérifications"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pourcentage}">
+                        <span style="width:${pourcentage}%"></span>
+                    </div>
+                    <p style="margin:10px 0 0;font-size:.9em">Suivi indicatif du brouillon local : aucune validation officielle ni sauvegarde en base.</p>`;
+            }
+
             function afficherBrouillonV97() {
                 if (!brouillonV97) return;
+                afficherSuiviBrouillonV910();
                 parId("ongletsBrouillonV97").innerHTML = sectionsBrouillonV97.map(([id, nom]) =>
                     `<button type="button" class="bouton secondaire" data-v97-onglet="${id}" aria-pressed="${ongletBrouillonV97 === id}">${nom}</button>`
                 ).join("");
