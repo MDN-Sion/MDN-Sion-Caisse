@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#8B0000">
     <link rel="icon" type="image/png" href="logo-mdn.png?v=20261103">
     <link rel="apple-touch-icon" href="logo-mdn.png?v=20261103">
-    <title>Éditions · MDN Sion</title>
+    <title>Éditions · MDN Sion · V9.13</title>
     <style>
         * {
             box-sizing:border-box;
@@ -693,6 +693,49 @@
                 top: 56px;
             }
         }
+
+        /* V9.13 — Navigation hors de la zone défilante : aucun chevauchement. */
+        .navigation-editions {
+            position: relative;
+            top: auto;
+            z-index: 1;
+            flex: 0 0 auto;
+            width: min(1380px, calc(100% - 36px));
+            margin: 10px auto 0;
+            padding: 8px;
+            border: 1px solid #e7dfd8;
+            border-radius: 13px;
+            background: #fff;
+            box-shadow: 0 3px 12px #00000018;
+        }
+
+        .contenu {
+            padding-top: 12px;
+            scroll-padding-top: 12px;
+        }
+
+        /* Les notifications défilent normalement, sans passer sous les onglets. */
+        #zoneErreur,
+        #zoneSucces {
+            position: static;
+            top: auto;
+            z-index: auto;
+        }
+
+        /* Les sous-onglets défilent avec les fiches, sans masque flottant. */
+        .v95-onglets {
+            position: static;
+            top: auto;
+            z-index: auto;
+        }
+
+        @media (max-width: 600px) {
+            .navigation-editions {
+                width: calc(100% - 18px);
+                margin-top: 7px;
+                padding: 5px;
+            }
+        }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -715,16 +758,18 @@
         </div>
     </header>
 
-    <main class="contenu">
-        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
-        <div id="zoneErreur" class="erreur" role="alert" hidden></div>
-        <div id="zoneSucces" class="succes" role="status" hidden></div>
         <nav class="navigation-editions" aria-label="Navigation des éditions" role="tablist">
             <button type="button" data-v912-ouvrir="accueil" role="tab" aria-selected="true">Vue d'ensemble</button>
             <button type="button" data-v912-ouvrir="brouillon" role="tab" aria-selected="false">Brouillon 2027</button>
             <button type="button" data-v912-ouvrir="source" role="tab" aria-selected="false">Données 2026</button>
             <button type="button" data-v912-ouvrir="inventaires" role="tab" aria-selected="false">Fiches de préparation</button>
         </nav>
+
+    <main class="contenu">
+        <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
+        <div id="zoneErreur" class="erreur" role="alert" hidden></div>
+        <div id="zoneSucces" class="succes" role="status" hidden></div>
+
         <div id="zoneV912Accueil" class="zone-editions">
             <p class="v912-intro-compacte"><strong>Édition 2026 active.</strong> La préparation 2027 reste un brouillon indépendant : aucune édition n'est créée ou activée.</p>
             <div class="v912-accueil-grille">
