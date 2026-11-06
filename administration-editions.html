@@ -1115,6 +1115,15 @@
                 <h2 id="titreSuiviOfficielV921">État des préparations officielles</h2>
                 <p class="v921-explication">Données enregistrées dans la préparation annuelle, indépendantes des fiches vérifiées dans le brouillon.</p>
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
+                <section class="v922-transfert" aria-labelledby="titreApercuValidationsV926">
+                    <h3 id="titreApercuValidationsV926">Précontrôle SQL153 · Validations SQL154</h3>
+                    <p>Vérifier les cinq sections avant toute validation. Les quantités actuelles sont des données de test : aucune validation réelle ne sera déclenchée depuis cet écran.</p>
+                    <div class="v922-actions">
+                        <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier les validations</button>
+                        <button type="button" class="bouton" disabled title="Validation réelle volontairement verrouillée pendant les tests">Valider officiellement (verrouillé)</button>
+                    </div>
+                    <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Précontrôle non exécuté.</div>
+                </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
                     <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
                     <p>Première étape : vérifier la sauvegarde sans rien modifier. Le transfert, s'il est autorisé, exige ensuite une confirmation distincte.</p>
@@ -2760,6 +2769,58 @@
                 const bouton = evenement.target.closest('button[data-action="inventaires"]');
                 if (bouton) {
                     ouvrirInventaires(bouton.dataset.id).catch(erreur => message(erreur.message, true));
+                }
+            });
+
+            // V9.26 — test authentifié de SQL153. Aucun appel à SQL154 ici.
+            parId("verifierValidationsV926").addEventListener("click", async () => {
+                const cible = parId("resultatValidationsV926");
+                const bouton = parId("verifierValidationsV926");
+                if (modeDemoActif) {
+                    cible.textContent = "Mode démo : aucune validation officielle ni appel réel.";
+                    return;
+                }
+                if (!clientSupabase) {
+                    cible.textContent = "Connexion Supabase indisponible.";
+                    return;
+                }
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027);
+                if (!preparation) {
+                    cible.textContent = "Préparation 2027 introuvable. Actualise les préparations.";
+                    return;
+                }
+                bouton.disabled = true;
+                cible.textContent = "Lecture des contrôles SQL153 en cours…";
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "apercu_validations_officielles_preparation_administration",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (error) throw error;
+                    if (data?.resultat !== "APERCU_VALIDATIONS_OFFICIELLES") {
+                        throw new Error("Réponse SQL153 inattendue.");
+                    }
+                    const sections = data.configurations || {};
+                    const inventaires = data.inventaires_mdn || {};
+                    const reserve = data.reserve_gobelets || {};
+                    const lignes = [
+                        `Préparation ${data.annee_cible} · Révision ${data.revision_brouillon ?? "—"}`,
+                        `MDN : ${inventaires.comptes ?? 0}/${inventaires.total ?? 0} comptés ; ${inventaires.valides ?? 0} validés`,
+                        `Fondation : ${sections.fondation ?? 0} configurations`,
+                        `Vaisselle : ${sections.vaisselle ?? 0} configurations`,
+                        `Contenants : ${sections.contenants ?? 0} configurations`,
+                        `Réserve : ${reserve.presente ? `${reserve.gobelets_total ?? 0} gobelets, ${reserve.validee ? "validée" : "non validée"}` : "absente"}`,
+                        `Structure : ${data.structure_prete_pour_examen ? "prête pour examen" : "anomalies à examiner"}`,
+                        `Anomalies : ${(data.anomalies || []).join(", ") || "aucune"}`,
+                        `Avertissements : ${(data.avertissements || []).join(", ") || "aucun"}`,
+                        "Aucune validation déclenchée. Activation 2027 verrouillée."
+                    ];
+                    cible.textContent = lignes.join("\n");
+                    cible.style.whiteSpace = "pre-line";
+                } catch (erreur) {
+                    cible.textContent = `Précontrôle indisponible : ${erreur.message}. Aucune validation effectuée.`;
+                } finally {
+                    bouton.disabled = false;
                 }
             });
 
