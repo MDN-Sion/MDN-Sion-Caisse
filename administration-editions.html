@@ -858,8 +858,38 @@
             <button type="button" data-v912-ouvrir="accueil" role="tab" aria-selected="true">Vue d'ensemble</button>
             <button type="button" data-v912-ouvrir="brouillon" role="tab" aria-selected="false">Brouillon 2027</button>
             <button type="button" data-v912-ouvrir="source" role="tab" aria-selected="false">Données 2026</button>
-            <button type="button" data-v912-ouvrir="inventaires" role="tab" aria-selected="false">Fiches de préparation</button>
+            <button type="button" data-v912-ouvrir="inventaires" role="tab" aria-selected="false">Validations officielles</button>
         </nav>
+
+    <style>
+        /* V9.19 : différencier l'édition du brouillon des validations officielles. */
+        .v919-raccourci-brouillon {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            background: #f1f5f8;
+            border: 1px solid #d8e2e9;
+            border-radius: 14px;
+            color: #263b50;
+        }
+        .v919-raccourci-brouillon p {
+            margin: 6px 0 0;
+            max-width: 740px;
+            line-height: 1.5;
+        }
+        .v919-raccourci-brouillon .bouton {
+            flex-shrink: 0;
+        }
+        @media (max-width: 680px) {
+            .v919-raccourci-brouillon .bouton {
+                width: 100%;
+            }
+        }
+    </style>
 
     <main class="contenu">
         <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
@@ -936,7 +966,13 @@
             <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
         </section>
         </details>
-            <p class="v912-intro-compacte">Pour ouvrir les fiches de préparation, sélectionne <strong>Ouvrir les fiches</strong> dans la vue d'ensemble. Les contrôles de validation et l'activation restent verrouillés.</p>
+            <div class="v919-raccourci-brouillon">
+                <div>
+                    <strong>Les fiches à préparer sont dans le brouillon 2027.</strong>
+                    <p>Cette rubrique affiche uniquement les configurations officielles en lecture seule. Les fiches vérifiées dans le brouillon ne sont pas encore des validations officielles.</p>
+                </div>
+                <button class="bouton" id="ouvrirBrouillonDepuisValidationsV919" type="button">Accéder au brouillon 2027</button>
+            </div>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
                 <h2 id="titreInventaire">Inventaires annuels</h2>
@@ -1987,8 +2023,12 @@
                                 <div class="inventaire-actions">
                                     <button class="bouton secondaire" type="button"
                                             data-action="inventaires" data-id="${echapper(preparation.id)}">
-                                        Ouvrir les fiches
+                                        Consulter les validations officielles
                                     </button>
+                                    ${!modeDemoActif && Number(preparation.annee_cible) === 2027 ? `
+                                    <button class="bouton" type="button" data-action="brouillon-v919">
+                                        Modifier les fiches du brouillon
+                                    </button>` : ""}
                                 </div>
                             </div>
                         </article>
@@ -2315,11 +2355,18 @@
             }
 
             parId("listePreparations").addEventListener("click", evenement => {
+                const raccourciBrouillon = evenement.target.closest('button[data-action="brouillon-v919"]');
+                if (raccourciBrouillon) {
+                    ouvrirBrouillonV97();
+                    return;
+                }
                 const bouton = evenement.target.closest('button[data-action="inventaires"]');
                 if (bouton) {
                     ouvrirInventaires(bouton.dataset.id).catch(erreur => message(erreur.message, true));
                 }
             });
+
+            parId("ouvrirBrouillonDepuisValidationsV919").addEventListener("click", ouvrirBrouillonV97);
 
             parId("fermerInventaires").addEventListener("click", () => {
                 preparationOuverte = null;
