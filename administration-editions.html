@@ -1311,21 +1311,24 @@
                     );
                     const anomalies = Array.isArray(data.anomalies) ? data.anomalies : [];
                     const eligible = data.transfert_possible === true && anomalies.length === 0 &&
-                        autres === 0 && mdn + vaisselle > 0;
+                        mdn + vaisselle + autres > 0;
                     const cible = parId("resultatTransfertV922");
                     cible.classList.toggle("v922-attention", !eligible);
                     cible.innerHTML = `<strong>Révision ${echapper(data.revision_brouillon)} — ${eligible ? "précontrôle favorable" : "transfert non autorisé"}</strong>` +
                         `<p>Articles MDN : ${mdn} · Vaisselle : ${vaisselle} · Autres sections vérifiées : ${autres}.</p>` +
                         `<p>Fiches non vérifiées : ignorées. Aucun inventaire n'est validé automatiquement.</p>` +
                         (anomalies.length ? `<p>Anomalies : ${echapper(anomalies.join(" ; "))}</p>` : "") +
-                        (autres ? "<p>SQL151 ne traite pas encore les autres sections vérifiées.</p>" : "") +
+                        
                         (eligible ? "<p>Le transfert reste facultatif et ne crée aucune édition.</p>" : "");
                     if (eligible) {
                         apercuTransfertV922 = {
                             preparationId: preparation.id,
                             revision: Number(data.revision_brouillon),
                             mdn,
-                            vaisselle
+                            vaisselle,
+                            fondation: Number(sections.fondation?.verifiees || 0),
+                            contenants: Number(sections.contenants?.verifiees || 0),
+                            reserve: Number(sections.reserve?.verifiees || 0)
                         };
                         parId("confirmerTransfertV922").disabled = false;
                     }
@@ -1404,7 +1407,7 @@
                     }
 
                     parId("titreDialogueTransfertV923").textContent = "Confirmer le transfert";
-                    texte.innerHTML = `<p>Tu vas transférer <strong>${apercu.mdn} fiches MDN</strong> et <strong>${apercu.vaisselle} fiches de vaisselle</strong> du brouillon 2027 (révision ${apercu.revision}) vers la préparation officielle.</p><p class="v923-info">Cette action écrit dans les tables privées de préparation. Elle ne valide aucun inventaire, ne crée aucune édition et ne modifie pas l'édition 2026.</p>`;
+                    texte.innerHTML = `<p>Tu vas transférer les fiches vérifiées : <strong>${apercu.mdn} MDN, ${apercu.fondation} Fondation, ${apercu.vaisselle} vaisselle, ${apercu.contenants} contenants et ${apercu.reserve} réserve gobelets</strong> du brouillon 2027 (révision ${apercu.revision}) vers la préparation officielle.</p><p class="v923-info">Cette action écrit dans les tables privées de préparation. Elle ne valide aucun inventaire, ne crée aucune édition et ne modifie pas l'édition 2026.</p>`;
                     zoneSaisie.hidden = true;
                     erreur.textContent = "";
                     valider.disabled = false;
@@ -1437,12 +1440,12 @@
                         }
                     );
                     if (error) throw error;
-                    if (data?.resultat !== "TRANSFERT_PARTIEL_EFFECTUE" ||
+                    if (data?.resultat !== "TRANSFERT_CINQ_SECTIONS_EFFECTUE" ||
                         data.edition_creee !== false || data.activation_effectuee !== false ||
                         data.stock_operationnel_modifie !== false || data.edition_source_modifiee !== false) {
                         throw new Error("La réponse du transfert n'a pas pu être confirmée. Vérifie l'état officiel avant de recommencer.");
                     }
-                    statutTransfertV922(`Transfert confirmé : ${data.articles_mdn_transferes} fiches MDN et ${data.parametres_vaisselle_transferes} fiches de vaisselle enregistrées dans la préparation 2027. Aucune validation d'inventaire ni activation.`);
+                    statutTransfertV922(`Transfert confirmé : ${data.articles_mdn_transferes} MDN, ${data.articles_fondation_transferes} Fondation, ${data.parametres_vaisselle_transferes} vaisselle, ${data.contenants_transferes} contenants et ${data.reserve_gobelets_transferee} réserve gobelets. ${data.fiches_deja_presentes_conservees} fiches déjà présentes conservées. Aucune validation d'inventaire ni activation.`);
                     await chargerPreparations();
                 } catch (erreur) {
                     const messageErreur = String(erreur.message || erreur);
