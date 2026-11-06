@@ -2913,7 +2913,7 @@
                     ];
                     conteneurSections.replaceChildren();
                     const titreSections = document.createElement("h4");
-                    titreSections.textContent = "État des cinq sections — simulation des confirmations";
+                    titreSections.textContent = "État des cinq sections — simulations sans enregistrement";
                     titreSections.style.margin = "18px 0 12px";
                     conteneurSections.appendChild(titreSections);
                     for (const fiche of fiches) {
@@ -2947,11 +2947,11 @@
                         if (fiche.id === "mdn" || fiche.id === "reserve_gobelets") {
                             statut.textContent = fiche.valide
                                 ? "État : comptage officiellement validé"
-                                : "État : comptage non validé";
+                                : "État : comptage enregistré, validation officielle en attente";
                         } else {
                             statut.textContent = configurationComplete
-                                ? "État : configuration prête à valider (validation officielle non vérifiée)"
-                                : "État : configuration à vérifier";
+                                ? "État : configuration complète — statut de validation officielle non disponible"
+                                : "État : configuration incomplète ou à vérifier";
                         }
                         const action = document.createElement("button");
                         action.type = "button";
