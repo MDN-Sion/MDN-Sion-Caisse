@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#8B0000">
     <link rel="icon" type="image/png" href="logo-mdn.png?v=20261103">
     <link rel="apple-touch-icon" href="logo-mdn.png?v=20261103">
-    <title>Éditions · MDN Sion · V9.13</title>
+    <title>Éditions · MDN Sion · V9.14</title>
     <style>
         * {
             box-sizing:border-box;
@@ -712,6 +712,22 @@
         .contenu {
             padding-top: 12px;
             scroll-padding-top: 12px;
+        }
+
+        /* V9.14 — espace rouge permanent entre navigation et contenu.
+           Le rayon s'applique à la fenêtre de défilement elle-même :
+           même pendant le défilement, les fiches restent découpées
+           avec des coins arrondis, sans se coller à la navigation. */
+        .contenu {
+            margin-top: 14px;
+            border-radius: 18px 18px 0 0;
+        }
+
+        @media (max-width: 600px) {
+            .contenu {
+                margin-top: 10px;
+                border-radius: 13px 13px 0 0;
+            }
         }
 
         /* Les notifications défilent normalement, sans passer sous les onglets. */
