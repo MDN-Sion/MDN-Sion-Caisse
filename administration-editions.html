@@ -436,6 +436,9 @@
         .v97-champs input:not([type=checkbox]), .v97-champs select { width:100%; box-sizing:border-box; padding:10px; border:1px solid #bdbdbd; border-radius:8px; font:inherit; }
         .v97-champs label.v97-large { grid-column:1/-1; }
         .v97-fiche button { margin-top:14px; }
+        .v911-commandes { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:12px 0; }
+        .v911-commandes button { max-width:100%; }
+        #etatBrouillonV911 { font-size:.9em; color:#5b504b; }
         .v97-note { color:#715000; background:#fff5d9; border:1px solid #efd89b; padding:12px; border-radius:9px; }
         @media(max-width:550px) { .v97-champs { grid-template-columns:1fr; } }
         .v95-photo { padding:18px; border:1px dashed #ccc; background:#f8f8f8; border-radius:10px; text-align:center; color:#666; margin-bottom:12px; }
@@ -518,9 +521,14 @@
                 <h2 id="titreBrouillonV97">Brouillon local — préparation 2027</h2>
                 <button class="bouton secondaire" id="fermerBrouillonV97" type="button">Fermer</button>
             </div>
-            <p class="v97-note"><strong>Simulation à partir des données réelles 2026.</strong>
-                Les modifications restent exclusivement dans la mémoire de cette page et disparaissent au rechargement.
-                Aucune écriture Supabase, aucune création d'édition et aucune activation ne sont effectuées.</p>
+            <p class="v97-note"><strong>Préparation de 2027 à partir des données réelles 2026.</strong>
+                Les fiches sont d'abord modifiées localement. La sauvegarde en base est déclenchée uniquement par le bouton dédié.
+                Elle crée au besoin une préparation privée, mais jamais une édition, et ne touche ni aux stocks ni aux historiques 2026.</p>
+            <div class="v911-commandes">
+                <button class="bouton" id="sauvegarderBrouillonV911" type="button">Sauvegarder le brouillon 2027</button>
+                <button class="bouton secondaire" id="reprendreBrouillonV911" type="button">Reprendre le brouillon sauvegardé</button>
+                <span id="etatBrouillonV911" role="status" aria-live="polite">Non sauvegardé en base</span>
+            </div>
             <div id="suiviBrouillonV910" class="v910-suivi" aria-live="polite"></div>
             <div id="ongletsBrouillonV97" class="v95-onglets"></div>
             <div id="contenuBrouillonV97"></div>
@@ -735,6 +743,120 @@
 
             // V9.7 : brouillon d'essai alimenté par la lecture SQL143, sans aucune écriture.
             let brouillonV97 = null;
+            let preparationBrouillonV911 = null;
+            let revisionBrouillonV911 = 0;
+            let sauvegardeBrouillonEnCoursV911 = false;
+
+            function etatSauvegardeV911(texte) {
+                parId("etatBrouillonV911").textContent = texte;
+            }
+
+            function preparationExistanteV911() {
+                return preparations.find(p => Number(p.annee_cible) === 2027 &&
+                    Number(p.annee_source) === 2026 && p.statut === "brouillon") || null;
+            }
+
+            async function reprendreBrouillonV911() {
+                if (modeDemoActif || !clientSupabase || sauvegardeBrouillonEnCoursV911) return;
+                sauvegardeBrouillonEnCoursV911 = true;
+                try {
+                    // La lecture de la liste ne crée aucune préparation.
+                    await chargerPreparations();
+                    const preparation = preparationExistanteV911();
+                    if (!preparation) {
+                        etatSauvegardeV911("Aucun brouillon 2027 sauvegardé.");
+                        message("Aucune préparation 2027 enregistrée. Les fiches locales sont conservées.");
+                        return;
+                    }
+                    const {data, error} = await clientSupabase.rpc(
+                        "charger_brouillon_preparation_edition_administration",
+                        {p_preparation_id: preparation.id}
+                    );
+                    if (error) throw error;
+                    if (!data?.ok || Number(data.annee_cible) !== 2027 || Number(data.annee_source) !== 2026) {
+                        throw new Error("Réponse inattendue lors de la lecture du brouillon.");
+                    }
+                    if (!data.brouillon_present) {
+                        etatSauvegardeV911("Préparation 2027 existante, aucune sauvegarde de fiches.");
+                        message("La préparation existe, mais aucun brouillon de fiches n'a été sauvegardé.");
+                        return;
+                    }
+                    const contenu = data.contenu;
+                    if (!contenu || !sectionsBrouillonV97.every(([cle]) => Array.isArray(contenu[cle])) ||
+                        contenu.reserve.length !== 1) {
+                        throw new Error("Le contenu sauvegardé n'a pas le format attendu.");
+                    }
+                    if (brouillonV97 && !window.confirm("Remplacer les fiches actuellement affichées par la sauvegarde Supabase ? Les modifications locales non sauvegardées seront perdues.")) return;
+                    brouillonV97 = JSON.parse(JSON.stringify(contenu));
+                    preparationBrouillonV911 = preparation.id;
+                    revisionBrouillonV911 = Number(data.revision);
+                    ongletBrouillonV97 = "mdn";
+                    afficherBrouillonV97();
+                    etatSauvegardeV911(`Brouillon chargé · révision ${revisionBrouillonV911}`);
+                    message("Brouillon 2027 rechargé depuis Supabase. Édition 2026 inchangée.");
+                } catch (erreur) {
+                    message("Reprise impossible : " + (erreur.message || erreur), true);
+                } finally {
+                    sauvegardeBrouillonEnCoursV911 = false;
+                }
+            }
+
+            async function sauvegarderBrouillonV911() {
+                if (modeDemoActif || !clientSupabase || sauvegardeBrouillonEnCoursV911 || !brouillonV97) return;
+                if (!window.confirm("Sauvegarder les fiches locales dans une préparation privée 2027 ? Cela ne crée ni n'active l'édition 2027 et ne modifie pas les stocks 2026. Enregistre d'abord chaque fiche modifiée avec son bouton local.")) return;
+                sauvegardeBrouillonEnCoursV911 = true;
+                try {
+                    // On vérifie l'existence avant toute création, et on refuse d'écraser
+                    // une sauvegarde inconnue sans l'avoir préalablement rechargée.
+                    await chargerPreparations();
+                    let preparation = preparationExistanteV911();
+                    if (!preparation) {
+                        const {data, error} = await clientSupabase.rpc(
+                            "creer_preparation_edition_administration", {p_annee_cible: 2027}
+                        );
+                        if (error) throw error;
+                        if (!data?.ok || !data.preparation_id || Number(data.annee_cible) !== 2027 || data.edition_creee !== false) {
+                            throw new Error("Création de préparation : réponse inattendue.");
+                        }
+                        preparation = {id:data.preparation_id, annee_cible:2027, annee_source:2026, statut:"brouillon"};
+                    }
+                    if (preparationBrouillonV911 && preparationBrouillonV911 !== preparation.id) {
+                        throw new Error("Identifiant de préparation différent. Recharge le brouillon.");
+                    }
+                    const {data:lecture, error:erreurLecture} = await clientSupabase.rpc(
+                        "charger_brouillon_preparation_edition_administration",
+                        {p_preparation_id:preparation.id}
+                    );
+                    if (erreurLecture) throw erreurLecture;
+                    if (!lecture?.ok) throw new Error("Lecture de contrôle impossible.");
+                    if (lecture.brouillon_present && (!preparationBrouillonV911 ||
+                        Number(lecture.revision) !== revisionBrouillonV911)) {
+                        throw new Error("Une sauvegarde existe déjà ou a été modifiée. Clique sur « Reprendre le brouillon sauvegardé » avant de sauvegarder.");
+                    }
+                    const contenu = JSON.parse(JSON.stringify(brouillonV97));
+                    const {data, error} = await clientSupabase.rpc(
+                        "enregistrer_brouillon_preparation_edition_administration",
+                        {p_preparation_id:preparation.id, p_contenu:contenu,
+                            p_revision_attendue:revisionBrouillonV911}
+                    );
+                    if (error) throw error;
+                    if (!data?.ok || !data.brouillon_sauvegarde || data.edition_creee !== false ||
+                        data.stocks_modifies !== false) throw new Error("Confirmation de sauvegarde invalide.");
+                    preparationBrouillonV911 = preparation.id;
+                    revisionBrouillonV911 = Number(data.revision);
+                    etatSauvegardeV911(`Sauvegardé dans Supabase · révision ${revisionBrouillonV911}`);
+                    message("Brouillon 2027 sauvegardé. Aucun stock ni édition modifié.");
+                    await chargerPreparations();
+                } catch (erreur) {
+                    message("Sauvegarde impossible : " + (erreur.message || erreur), true);
+                    etatSauvegardeV911("Sauvegarde non confirmée — vérifie le message d'erreur");
+                } finally {
+                    sauvegardeBrouillonEnCoursV911 = false;
+                }
+            }
+
+            parId("sauvegarderBrouillonV911").addEventListener("click", sauvegarderBrouillonV911);
+            parId("reprendreBrouillonV911").addEventListener("click", reprendreBrouillonV911);
             let ongletBrouillonV97 = "mdn";
             const sectionsBrouillonV97 = [
                 ["mdn", "Articles MDN"],
@@ -799,7 +921,7 @@
                         aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pourcentage}">
                         <span style="width:${pourcentage}%"></span>
                     </div>
-                    <p style="margin:10px 0 0;font-size:.9em">Suivi indicatif du brouillon local : aucune validation officielle ni sauvegarde en base.</p>`;
+                    <p style="margin:10px 0 0;font-size:.9em">Suivi indicatif des fiches : aucune validation officielle. La sauvegarde en base est manuelle.</p>`;
             }
 
             function afficherBrouillonV97() {
@@ -842,7 +964,7 @@
                     champs += caseACocher("Fiche vérifiée dans ce brouillon", "verifie_2027", item.verifie_2027);
                     return `<article class="v97-fiche" data-v97-index="${index}"><h4>${echapper(item.nom || "Caisse")}</h4><div class="v97-champs">${champs}</div><button type="button" class="bouton" data-v97-enregistrer="${index}">Enregistrer dans le brouillon local</button></article>`;
                 }).join("");
-                parId("contenuBrouillonV97").innerHTML = `<p><strong>${nombreVerifies}/${valeurs.length}</strong> fiches vérifiées dans la simulation. Aucune sauvegarde en base.</p><div class="v97-grille">${fiches || "Aucune fiche."}</div>`;
+                parId("contenuBrouillonV97").innerHTML = `<p><strong>${nombreVerifies}/${valeurs.length}</strong> fiches vérifiées dans le brouillon. Enregistrement en base uniquement sur demande.</p><div class="v97-grille">${fiches || "Aucune fiche."}</div>`;
             }
 
             parId("ouvrirBrouillonV97").addEventListener("click", ouvrirBrouillonV97);
@@ -869,6 +991,7 @@
                 const precedentes = Array.from(fiche.querySelectorAll("[data-v98-caisse]"), champ => champ.value);
                 item.caisses_partielles = nombre;
                 item.quantites_caisses_partielles = Array.from({length:nombre}, (_, i) => precedentes[i] ?? item.quantites_caisses_partielles?.[i] ?? "");
+                etatSauvegardeV911("Modifications locales non sauvegardées en base");
                 fiche.querySelector("[data-v98-detail-partielles]").innerHTML = champsCaissesPartiellesV98(item);
             });
 
@@ -910,6 +1033,7 @@
                     modifie.gobelets_dans_caisses_partielles = quantites.reduce((total, quantite) => total + quantite, 0);
                 }
                 brouillonV97[ongletBrouillonV97][index] = modifie;
+                etatSauvegardeV911("Modifications locales non sauvegardées en base");
                 afficherBrouillonV97();
                 message("Enregistré uniquement dans le brouillon local. Aucune modification Supabase.");
             });
