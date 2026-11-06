@@ -2862,7 +2862,7 @@
                     let avertissementSQL155 = "";
                     try {
                         const { data: statutsOfficiels, error: erreurStatuts } = await clientSupabase.rpc(
-                            "charger_statuts_validations_officielles_preparation_administration",
+                            "charger_statuts_validations_preparation",
                             { p_preparation_id: preparation.id }
                         );
                         if (erreurStatuts) {
