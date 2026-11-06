@@ -752,6 +752,36 @@
                 padding: 5px;
             }
         }
+        /* V9.16 — état du brouillon privé, séparé des validations officielles. */
+        .v916-brouillon-suivi {
+            margin-top: 12px;
+            padding: 14px 16px;
+            background: #f0f5f4;
+            border: 1px solid #c9ddd5;
+            border-radius: 12px;
+            color: #203c37;
+            overflow-wrap: anywhere;
+        }
+        .v916-brouillon-suivi p {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .v916-brouillon-suivi small {
+            display: block;
+            margin-top: 8px;
+        }
+        .v916-barre {
+            height: 9px;
+            overflow: hidden;
+            background: #d9e3df;
+            border-radius: 99px;
+        }
+        .v916-barre span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: #28775c;
+        }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1909,7 +1939,12 @@
                                     Statut : ${echapper(preparation.statut)}</small>
 
                                 <div id="avancement-${echapper(preparation.id)}"
-                                     class="notice">Chargement de l'avancement…</div>
+                                     class="notice">Chargement des validations officielles…</div>
+                                ${!modeDemoActif && Number(preparation.annee_cible) === 2027 ? `
+                                <div id="suivi-sauvegarde-${echapper(preparation.id)}"
+                                     class="v916-brouillon-suivi" aria-live="polite">
+                                    Vérification du brouillon sauvegardé en cours…
+                                </div>` : ""}
                                 <div class="inventaire-actions">
                                     <button class="bouton secondaire" type="button"
                                             data-action="inventaires" data-id="${echapper(preparation.id)}">
@@ -1986,7 +2021,55 @@
                         `Préparation : ${controle.toutes_sections_completes ? "complète" : "incomplète"}`,
                         "Activation : verrouillée"
                     ];
-                    cible.textContent = lignes.join(" · ");
+                    cible.innerHTML = `<strong>Validations officielles (distinctes du brouillon)</strong><p>${echapper(lignes.join(" · "))}</p>`;
+                }
+
+                // V9.16 : lecture indépendante du brouillon privé SQL149.
+                // Aucun contenu n'est injecté dans les fiches locales et aucune écriture n'est effectuée.
+                if (!modeDemoActif) {
+                    for (const preparation of preparations) {
+                        const suivi = parId(`suivi-sauvegarde-${preparation.id}`);
+                        if (!suivi) continue;
+                        const {data, error} = await clientSupabase.rpc(
+                            "charger_brouillon_preparation_edition_administration",
+                            {p_preparation_id: preparation.id}
+                        );
+                        if (error || !data?.ok) {
+                            suivi.textContent = "Suivi du brouillon indisponible : " +
+                                (error?.message || "réponse de lecture invalide");
+                            continue;
+                        }
+                        if (!data.brouillon_present) {
+                            suivi.innerHTML = "<strong>Brouillon de travail</strong><p>Aucune fiche sauvegardée.</p>";
+                            continue;
+                        }
+                        const contenu = data.contenu;
+                        if (!contenu || !sectionsBrouillonV97.every(([cle]) => Array.isArray(contenu[cle]))) {
+                            suivi.textContent = "Le contenu du brouillon ne peut pas être comptabilisé.";
+                            continue;
+                        }
+                        const etats = sectionsBrouillonV97.map(([cle, libelle]) => {
+                            const fiches = contenu[cle];
+                            return {
+                                libelle,
+                                total: fiches.length,
+                                verifiees: fiches.filter(fiche => fiche?.verifie_2027 === true).length
+                            };
+                        });
+                        const total = etats.reduce((somme, etat) => somme + etat.total, 0);
+                        const verifiees = etats.reduce((somme, etat) => somme + etat.verifiees, 0);
+                        const pourcentage = total ? Math.round(verifiees * 100 / total) : 0;
+                        suivi.innerHTML = `
+                            <strong>Brouillon sauvegardé · révision ${echapper(data.revision)}</strong>
+                            <p>${verifiees}/${total} fiches vérifiées (${pourcentage} %) ·
+                                ${etats.map(etat => `${echapper(etat.libelle)} : ${etat.verifiees}/${etat.total}`).join(" · ")}</p>
+                            <div class="v916-barre" role="progressbar" aria-label="Avancement du brouillon sauvegardé"
+                                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pourcentage}">
+                                <span style="width:${pourcentage}%"></span>
+                            </div>
+                            <small>Vérifications du brouillon uniquement : aucune validation officielle ni activation.</small>
+                        `;
+                    }
                 }
             }
 
