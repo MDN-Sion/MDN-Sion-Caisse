@@ -782,6 +782,56 @@
             border-radius: inherit;
             background: #28775c;
         }
+        /* V9.17 — synthèse compacte : les détails restent disponibles au clic. */
+        .v917-details-officiels {
+            margin-top: 10px;
+            border: 1px solid #e5ddd5;
+            border-radius: 10px;
+            background: #faf8f5;
+        }
+        .v917-details-officiels > summary,
+        .v917-details-brouillon > summary {
+            cursor: pointer;
+            padding: 10px 12px;
+            color: #34475a;
+            font-weight: 650;
+        }
+        .v917-details-officiels > .notice {
+            margin: 0 10px 10px;
+        }
+        .v917-details-officiels > .notice p {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+        .v916-brouillon-suivi {
+            margin-top: 10px;
+            padding: 12px 14px;
+        }
+        .v917-synthese {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px 12px;
+            margin-bottom: 9px;
+        }
+        .v917-synthese strong {
+            font-size: 16px;
+        }
+        .v917-details-brouillon {
+            margin-top: 5px;
+        }
+        .v917-details-brouillon > summary {
+            padding: 6px 0 0;
+            font-size: 14px;
+        }
+        .v917-details-brouillon p {
+            margin: 7px 0 0;
+            font-size: 14px;
+        }
+        .v917-details-brouillon small {
+            font-size: 13px;
+        }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1938,8 +1988,11 @@
                                 <small>Depuis ${echapper(preparation.annee_source)} ·
                                     Statut : ${echapper(preparation.statut)}</small>
 
-                                <div id="avancement-${echapper(preparation.id)}"
-                                     class="notice">Chargement des validations officielles…</div>
+                                <details class="v917-details-officiels">
+                                    <summary>Consulter les validations officielles</summary>
+                                    <div id="avancement-${echapper(preparation.id)}"
+                                         class="notice">Chargement des validations officielles…</div>
+                                </details>
                                 ${!modeDemoActif && Number(preparation.annee_cible) === 2027 ? `
                                 <div id="suivi-sauvegarde-${echapper(preparation.id)}"
                                      class="v916-brouillon-suivi" aria-live="polite">
@@ -2021,7 +2074,7 @@
                         `Préparation : ${controle.toutes_sections_completes ? "complète" : "incomplète"}`,
                         "Activation : verrouillée"
                     ];
-                    cible.innerHTML = `<strong>Validations officielles (distinctes du brouillon)</strong><p>${echapper(lignes.join(" · "))}</p>`;
+                    cible.innerHTML = `<p>${echapper(lignes.join(" · "))}</p>`;
                 }
 
                 // V9.16 : lecture indépendante du brouillon privé SQL149.
@@ -2060,14 +2113,19 @@
                         const verifiees = etats.reduce((somme, etat) => somme + etat.verifiees, 0);
                         const pourcentage = total ? Math.round(verifiees * 100 / total) : 0;
                         suivi.innerHTML = `
-                            <strong>Brouillon sauvegardé · révision ${echapper(data.revision)}</strong>
-                            <p>${verifiees}/${total} fiches vérifiées (${pourcentage} %) ·
-                                ${etats.map(etat => `${echapper(etat.libelle)} : ${etat.verifiees}/${etat.total}`).join(" · ")}</p>
+                            <div class="v917-synthese">
+                                <strong>Brouillon sauvegardé · révision ${echapper(data.revision)}</strong>
+                                <span>${verifiees}/${total} fiches vérifiées (${pourcentage} %)</span>
+                            </div>
                             <div class="v916-barre" role="progressbar" aria-label="Avancement du brouillon sauvegardé"
                                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pourcentage}">
                                 <span style="width:${pourcentage}%"></span>
                             </div>
-                            <small>Vérifications du brouillon uniquement : aucune validation officielle ni activation.</small>
+                            <details class="v917-details-brouillon">
+                                <summary>Voir le détail des 5 sections</summary>
+                                <p>${etats.map(etat => `${echapper(etat.libelle)} : ${etat.verifiees}/${etat.total}`).join(" · ")}</p>
+                                <small>Vérifications du brouillon uniquement : aucune validation officielle ni activation.</small>
+                            </details>
                         `;
                     }
                 }
