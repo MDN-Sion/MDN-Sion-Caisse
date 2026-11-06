@@ -447,9 +447,255 @@
         .v95-champ small { color:#666; }
         .v95-note { color:#666; font-size:13px; margin:12px 0 0; }
         @media(max-width:600px) { .v95-champs { grid-template-columns:1fr; } .v95-onglets button { flex:1 1 145px; } }
+
+        /* V9.12 — navigation compacte, palette rouge / ivoire / bleu ardoise / vert. */
+        :root {
+            --mdn-rouge: #8b0000;
+            --mdn-ivoire: #faf8f4;
+            --mdn-ardoise: #33465b;
+            --mdn-vert: #246b50;
+            --mdn-bordure: #e6e0d9;
+        }
+
+        .contenu {
+            width: min(1380px, calc(100% - 36px));
+            padding-top: 12px;
+            scroll-padding-top: 78px;
+        }
+
+        .navigation-editions {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px;
+            margin-bottom: 12px;
+            border: 1px solid #e7dfd8;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .97);
+            box-shadow: 0 3px 14px #00000016;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .navigation-editions button {
+            flex: 1 0 auto;
+            min-height: 42px;
+            padding: 8px 13px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--mdn-ardoise);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .navigation-editions button[aria-selected="true"] {
+            background: var(--mdn-rouge);
+            color: white;
+        }
+
+        .navigation-editions button:focus-visible,
+        .bouton:focus-visible {
+            outline: 3px solid #3c7ca8;
+            outline-offset: 2px;
+        }
+
+        .zone-editions {
+            display: none;
+        }
+
+        body[data-v912-vue="accueil"] #zoneV912Accueil,
+        body[data-v912-vue="brouillon"] #zoneV912Brouillon,
+        body[data-v912-vue="source"] #zoneV912Source,
+        body[data-v912-vue="inventaires"] #zoneV912Inventaires {
+            display: block;
+        }
+
+        .v912-accueil-grille {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .panneau {
+            padding: 18px;
+            margin-bottom: 12px;
+            border: 1px solid #eee8e1;
+            box-shadow: 0 4px 14px #00000012;
+        }
+
+        .panneau h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .v912-accueil-grille .panneau {
+            margin-bottom: 0;
+        }
+
+        .v912-intro-compacte {
+            margin: 0 0 12px;
+            padding: 11px 14px;
+            border-left: 4px solid var(--mdn-ardoise);
+            border-radius: 8px;
+            background: #edf2f6;
+            color: #27394a;
+            line-height: 1.5;
+        }
+
+        .v912-precisions {
+            margin: 10px 0;
+            border: 1px solid var(--mdn-bordure);
+            border-radius: 10px;
+            background: var(--mdn-ivoire);
+        }
+
+        .v912-precisions summary {
+            cursor: pointer;
+            padding: 11px 13px;
+            color: var(--mdn-ardoise);
+            font-weight: 700;
+        }
+
+        .v912-precisions .notice {
+            margin: 0 10px 10px;
+        }
+
+        .v912-accueil-grille .ligne {
+            padding: 10px 0;
+        }
+
+        .v912-accueil-grille .notice {
+            margin-bottom: 9px;
+        }
+
+        .v912-brouillon-entete {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .v912-brouillon-entete h2 {
+            margin: 0;
+        }
+
+        .v911-commandes {
+            padding: 11px;
+            border-radius: 12px;
+            background: #f1f4f6;
+            border: 1px solid #dce4ea;
+        }
+
+        .v910-suivi {
+            background: #f6f8fa;
+            border-color: #d9e2e9;
+        }
+
+        .v910-section {
+            border-color: #dce3e8;
+        }
+
+        .v910-section.terminee {
+            background: #e9f5ee;
+            border-color: #86b69c;
+        }
+
+        .v910-progression > span {
+            background: var(--mdn-vert);
+        }
+
+        .v95-onglets {
+            position: sticky;
+            top: 62px;
+            z-index: 15;
+            padding: 9px 0;
+            background: #fff;
+            border-bottom: 1px solid var(--mdn-bordure);
+        }
+
+        .v95-onglets [aria-pressed="true"] {
+            background: var(--mdn-ardoise);
+            border-color: var(--mdn-ardoise);
+        }
+
+        .v97-fiche, .v95-fiche {
+            border-color: var(--mdn-bordure);
+            box-shadow: 0 2px 9px #0000000a;
+        }
+
+        .v97-fiche h4, .v95-fiche h4 {
+            color: var(--mdn-ardoise);
+        }
+
+        .v97-champs input:focus, .v97-champs select:focus {
+            outline: 2px solid #6c9ec0;
+            outline-offset: 1px;
+        }
+
+        #zoneErreur, #zoneSucces {
+            position: sticky;
+            top: 67px;
+            z-index: 25;
+        }
+
+        .v912-regles {
+            margin-top: 12px;
+        }
+
+        .v912-regles > summary {
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--mdn-ardoise);
+        }
+
+        @media (max-width: 850px) {
+            .v912-accueil-grille {
+                grid-template-columns: 1fr;
+            }
+
+            .navigation-editions button {
+                flex: 0 0 auto;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .contenu {
+                width: calc(100% - 18px);
+            }
+
+            .panneau {
+                padding: 13px;
+                border-radius: 13px;
+            }
+
+            .navigation-editions {
+                border-radius: 10px;
+                padding: 6px;
+            }
+
+            .navigation-editions button {
+                min-height: 39px;
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            .v911-commandes .bouton {
+                flex: 1 1 180px;
+            }
+
+            .v95-onglets {
+                top: 56px;
+            }
+        }
     </style>
 </head>
-<body>
+<body data-v912-vue="accueil">
     <div id="chargement" class="chargement">Chargement des éditions…</div>
 
     <header class="entete">
@@ -473,17 +719,28 @@
         <div id="bandeauDemo" class="bandeau-demo" hidden>MODE DÉMO — simulation des inventaires, sans modification des données réelles.</div>
         <div id="zoneErreur" class="erreur" role="alert" hidden></div>
         <div id="zoneSucces" class="succes" role="status" hidden></div>
+        <nav class="navigation-editions" aria-label="Navigation des éditions" role="tablist">
+            <button type="button" data-v912-ouvrir="accueil" role="tab" aria-selected="true">Vue d'ensemble</button>
+            <button type="button" data-v912-ouvrir="brouillon" role="tab" aria-selected="false">Brouillon 2027</button>
+            <button type="button" data-v912-ouvrir="source" role="tab" aria-selected="false">Données 2026</button>
+            <button type="button" data-v912-ouvrir="inventaires" role="tab" aria-selected="false">Fiches de préparation</button>
+        </nav>
+        <div id="zoneV912Accueil" class="zone-editions">
+            <p class="v912-intro-compacte"><strong>Édition 2026 active.</strong> La préparation 2027 reste un brouillon indépendant : aucune édition n'est créée ou activée.</p>
+            <div class="v912-accueil-grille">
         <section class="panneau">
             <div class="barre">
                 <h2>Gestion des éditions</h2>
                 <button id="boutonAjouter" class="bouton" type="button" hidden>+ Nouvelle édition</button>
             </div>
+            <details class="v912-precisions"><summary>Pourquoi les éditions sont verrouillées</summary>
             <div class="notice">
                 <strong>Gestion temporairement en consultation uniquement.</strong>
                 La création, la modification et l'activation des éditions sont suspendues
                 jusqu'à la mise en place des inventaires, de la reprise des référentiels
                 et des contrôles de clôture. L'édition 2026 reste active et inchangée.
             </div>
+            </details>
             <div id="listeEditions"></div>
         </section>
         <section class="panneau" aria-labelledby="titrePreparations">
@@ -491,39 +748,39 @@
                 <h2 id="titrePreparations">Suivi des préparations annuelles</h2>
                 <button id="actualiserPreparations" class="bouton secondaire" type="button">Actualiser</button>
             </div>
+            <details class="v912-precisions"><summary>Règles de fonctionnement des préparations</summary>
             <div class="notice">
                 En mode réel, les inventaires des préparations existantes sont réservés aux administrateurs.
                 En mode démo, une préparation fictive 2027 permet de tester les fiches simplifiées, les réglages de vaisselle et les caisses de gobelets, sans écrire dans Supabase.
                 La création et l’activation des éditions restent verrouillées.
             </div>
+            </details>
             <div id="listePreparations" aria-live="polite">Chargement des préparations…</div>
             <div id="actionsSimulation" class="inventaire-actions" hidden>
                 <button id="reinitialiserSimulation" class="bouton secondaire" type="button">Réinitialiser la simulation</button>
                 <small>Exemples fictifs uniquement · Données perdues au rechargement</small>
             </div>
         </section>
-        <section class="panneau" id="panneauApercuReprise" hidden aria-labelledby="titreApercuReprise">
-            <div class="barre">
-                <h2 id="titreApercuReprise">Aperçu réel de la reprise annuelle</h2>
-                <div class="inventaire-actions">
-                    <button id="ouvrirBrouillonV97" class="bouton secondaire" type="button">Tester la préparation 2027</button>
-                    <button id="actualiserApercuReprise" class="bouton secondaire" type="button">Actualiser l’aperçu</button>
-                </div>
             </div>
-            <div class="notice">
-                Lecture seule des configurations de l’édition active, à partir de SQL143.
-                Aucun stock, solde, QR code ou historique n’est transféré ; aucune édition n’est créée.
-            </div>
-            <div id="contenuApercuReprise" aria-live="polite">Chargement de l’aperçu…</div>
+        <details class="v912-precisions v912-regles"><summary>Règles de reprise de la prochaine édition</summary>
+        <section class="panneau">
+            <h2>Préparation de la prochaine édition</h2>
+            <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
+            <p><strong>Fondation :</strong> fiches articles, photos et paramètres de caisse conservés, sans comptage.</p>
+            <p><strong>Vaisselle :</strong> paramètres et tarifs repris et modifiables pour la prochaine édition. <strong>Réserve MDN :</strong> caisses de gobelets pleines, partielles et vides.</p>
+            <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
         </section>
+        </details>
+        </div>
+        <div id="zoneV912Brouillon" class="zone-editions">
         <section class="panneau" id="panneauBrouillonV97" hidden aria-labelledby="titreBrouillonV97">
             <div class="barre">
                 <h2 id="titreBrouillonV97">Brouillon local — préparation 2027</h2>
                 <button class="bouton secondaire" id="fermerBrouillonV97" type="button">Fermer</button>
             </div>
-            <p class="v97-note"><strong>Préparation de 2027 à partir des données réelles 2026.</strong>
+            <details class="v912-precisions"><summary>Informations sur la sécurité du brouillon</summary><p class="v97-note"><strong>Préparation de 2027 à partir des données réelles 2026.</strong>
                 Les fiches sont d'abord modifiées localement. La sauvegarde en base est déclenchée uniquement par le bouton dédié.
-                Elle crée au besoin une préparation privée, mais jamais une édition, et ne touche ni aux stocks ni aux historiques 2026.</p>
+                Elle crée au besoin une préparation privée, mais jamais une édition, et ne touche ni aux stocks ni aux historiques 2026.</p></details>
             <div class="v911-commandes">
                 <button class="bouton" id="sauvegarderBrouillonV911" type="button">Sauvegarder le brouillon 2027</button>
                 <button class="bouton secondaire" id="reprendreBrouillonV911" type="button">Reprendre le brouillon sauvegardé</button>
@@ -533,6 +790,27 @@
             <div id="ongletsBrouillonV97" class="v95-onglets"></div>
             <div id="contenuBrouillonV97"></div>
         </section>
+        </div>
+        <div id="zoneV912Source" class="zone-editions">
+        <section class="panneau" id="panneauApercuReprise" hidden aria-labelledby="titreApercuReprise">
+            <div class="barre">
+                <h2 id="titreApercuReprise">Aperçu réel de la reprise annuelle</h2>
+                <div class="inventaire-actions">
+                    <button id="ouvrirBrouillonV97" class="bouton secondaire" type="button">Tester la préparation 2027</button>
+                    <button id="actualiserApercuReprise" class="bouton secondaire" type="button">Actualiser l’aperçu</button>
+                </div>
+            </div>
+            <details class="v912-precisions"><summary>Informations sur les données sources</summary>
+            <div class="notice">
+                Lecture seule des configurations de l’édition active, à partir de SQL143.
+                Aucun stock, solde, QR code ou historique n’est transféré ; aucune édition n’est créée.
+            </div>
+            </details>
+            <div id="contenuApercuReprise" aria-live="polite">Chargement de l’aperçu…</div>
+        </section>
+        </div>
+        <div id="zoneV912Inventaires" class="zone-editions">
+            <p class="v912-intro-compacte">Pour ouvrir les fiches de préparation, sélectionne <strong>Ouvrir les fiches</strong> dans la vue d'ensemble. Les contrôles de validation et l'activation restent verrouillés.</p>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
                 <h2 id="titreInventaire">Inventaires annuels</h2>
@@ -542,13 +820,7 @@
             <div class="onglets-inventaire" id="ongletsInventaire"></div>
             <div id="contenuInventaire" aria-live="polite"></div>
         </section>
-        <section class="panneau">
-            <h2>Préparation de la prochaine édition</h2>
-            <p><strong>MDN :</strong> stock théorique proposé, puis inventaire et validation.</p>
-            <p><strong>Fondation :</strong> fiches articles, photos et paramètres de caisse conservés, sans comptage.</p>
-            <p><strong>Vaisselle :</strong> paramètres et tarifs repris et modifiables pour la prochaine édition. <strong>Réserve MDN :</strong> caisses de gobelets pleines, partielles et vides.</p>
-            <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
-        </section>
+        </div>
     </main>
 
     <div id="fondDialogue" class="fond-dialogue" hidden>
@@ -636,6 +908,30 @@
             const parId = (id) => {
                 return document.getElementById(id);
             };
+
+            // V9.12 : la navigation change uniquement la visibilité des panneaux.
+            // Aucun appel RPC ni aucune modification des données lors du changement de vue.
+            function afficherVueV912(vue) {
+                const vues = ["accueil", "brouillon", "source", "inventaires"];
+                if (!vues.includes(vue)) return;
+                document.body.dataset.v912Vue = vue;
+                for (const bouton of document.querySelectorAll("[data-v912-ouvrir]")) {
+                    bouton.setAttribute("aria-selected", String(bouton.dataset.v912Ouvrir === vue));
+                }
+                const contenu = document.querySelector(".contenu");
+                if (contenu) contenu.scrollTop = 0;
+            }
+
+            document.querySelector(".navigation-editions").addEventListener("click", evenement => {
+                const bouton = evenement.target.closest("[data-v912-ouvrir]");
+                if (!bouton) return;
+                if (bouton.dataset.v912Ouvrir === "brouillon" &&
+                    document.getElementById("panneauBrouillonV97").hidden) {
+                    ouvrirBrouillonV97();
+                    return;
+                }
+                afficherVueV912(bouton.dataset.v912Ouvrir);
+            });
 
             let clientSupabase = null;
             let modeDemoActif = false;
@@ -882,6 +1178,7 @@
                     };
                 }
                 parId("panneauBrouillonV97").hidden = false;
+                afficherVueV912("brouillon");
                 afficherBrouillonV97();
                 parId("panneauBrouillonV97").scrollIntoView({behavior:"smooth",block:"start"});
             }
@@ -968,7 +1265,10 @@
             }
 
             parId("ouvrirBrouillonV97").addEventListener("click", ouvrirBrouillonV97);
-            parId("fermerBrouillonV97").addEventListener("click", () => {parId("panneauBrouillonV97").hidden = true;});
+            parId("fermerBrouillonV97").addEventListener("click", () => {
+                parId("panneauBrouillonV97").hidden = true;
+                afficherVueV912("accueil");
+            });
             parId("ongletsBrouillonV97").addEventListener("click", evenement => {
                 const bouton = evenement.target.closest("[data-v97-onglet]");
                 if (!bouton) return;
@@ -1697,6 +1997,7 @@
                 configurationsReelles = null;
                 sectionOuverte = "mdn";
                 parId("panneauInventaires").hidden = false;
+                afficherVueV912("inventaires");
                 parId("titreInventaire").textContent = `Préparation de l’édition ${preparation.annee_cible}`;
                 parId("ongletsInventaire").innerHTML = sectionsInventaire.map(([cle, titre]) => `
                     <button type="button" class="bouton secondaire" data-section="${cle}"
@@ -1838,6 +2139,7 @@
                 inventaireEnCours = null;
                 configurationsReelles = null;
                 parId("panneauInventaires").hidden = true;
+                afficherVueV912("accueil");
             });
 
             parId("ongletsInventaire").addEventListener("click", async evenement => {
