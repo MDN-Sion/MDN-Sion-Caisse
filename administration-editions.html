@@ -2926,11 +2926,33 @@
                         detail.textContent = fiche.detail;
                         const statut = document.createElement("p");
                         statut.style.margin = "7px 0";
-                        statut.textContent = fiche.valide
-                            ? "État : validation du comptage enregistrée"
-                            : (fiche.id === "mdn" || fiche.id === "reserve_gobelets")
-                                ? "État : comptage non validé"
-                                : "État : validation de configuration non renseignée par SQL153";
+                        const configurationAttendue = {
+                            fondation: 5,
+                            vaisselle: 9,
+                            contenants: 1
+                        };
+                        const configurationsPresentes = {
+                            fondation: Number(sections.fondation ?? 0),
+                            vaisselle: Number(sections.vaisselle ?? 0),
+                            contenants: Number(sections.contenants ?? 0)
+                        };
+                        const estConfiguration = Object.prototype.hasOwnProperty.call(
+                            configurationAttendue,
+                            fiche.id
+                        );
+                        const configurationComplete = estConfiguration
+                            && configurationsPresentes[fiche.id] === configurationAttendue[fiche.id]
+                            && data.structure_prete_pour_examen === true;
+
+                        if (fiche.id === "mdn" || fiche.id === "reserve_gobelets") {
+                            statut.textContent = fiche.valide
+                                ? "État : comptage officiellement validé"
+                                : "État : comptage non validé";
+                        } else {
+                            statut.textContent = configurationComplete
+                                ? "État : configuration prête à valider (validation officielle non vérifiée)"
+                                : "État : configuration à vérifier";
+                        }
                         const action = document.createElement("button");
                         action.type = "button";
                         action.className = "bouton secondaire";
