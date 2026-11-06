@@ -889,6 +889,37 @@
                 width: 100%;
             }
         }
+        /* V9.20 — onglet officiel compact, sans bandeau redondant. */
+        .v920-actions-validations {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: #f2f5f7;
+            border: 1px solid #dce4e9;
+            border-radius: 12px;
+            color: #30475b;
+        }
+        .v920-actions-validations .bouton {
+            flex-shrink: 0;
+        }
+        .v920-statut-validations {
+            margin: 0 0 12px;
+            padding: 7px 11px;
+            color: #4c5965;
+            background: #f5f7f8;
+            border-left: 3px solid #8595a2;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 680px) {
+            .v920-actions-validations .bouton {
+                width: 100%;
+            }
+        }
     </style>
 
     <main class="contenu">
@@ -966,19 +997,16 @@
             <p>Cette section présente les règles validées. Les reprises automatiques ne sont pas encore exécutées.</p>
         </section>
         </details>
-            <div class="v919-raccourci-brouillon">
-                <div>
-                    <strong>Les fiches à préparer sont dans le brouillon 2027.</strong>
-                    <p>Cette rubrique affiche uniquement les configurations officielles en lecture seule. Les fiches vérifiées dans le brouillon ne sont pas encore des validations officielles.</p>
-                </div>
-                <button class="bouton" id="ouvrirBrouillonDepuisValidationsV919" type="button">Accéder au brouillon 2027</button>
+            <div class="v920-actions-validations">
+                <span><strong>Consultation officielle</strong> · Lecture seule, sans validation ni activation.</span>
+                <button class="bouton secondaire" id="ouvrirBrouillonDepuisValidationsV919" type="button">Modifier le brouillon 2027</button>
             </div>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
                 <h2 id="titreInventaire">Inventaires annuels</h2>
                 <button class="bouton secondaire" id="fermerInventaires" type="button">Fermer</button>
             </div>
-            <div class="notice" id="noticeInventaires">Les validations globales et l’activation restent verrouillées.</div>
+            <p class="v920-statut-validations" id="noticeInventaires">Aucune validation officielle ne peut être effectuée depuis cette page.</p>
             <div class="onglets-inventaire" id="ongletsInventaire"></div>
             <div id="contenuInventaire" aria-live="polite"></div>
         </section>
@@ -1652,7 +1680,7 @@
                 }
 
                 parId("noticeInventaires").textContent =
-                    "MODE RÉEL — Consultation uniquement. Aucune création, reprise, saisie ou activation n'est autorisée dans cette version.";
+                    "Données officielles de préparation · Lecture seule · Activation verrouillée";
                 parId("ongletsInventaire").querySelectorAll("button[data-section]").forEach(bouton => {
                     bouton.setAttribute("aria-pressed", String(bouton.dataset.section === sectionOuverte));
                 });
@@ -1686,7 +1714,7 @@
                                     ${valeur("Ordre d’affichage", article.ordre_affichage)}
                                 </div>
                                 ${article.commentaire ? `<p class="v8-note">${echapper(article.commentaire)}</p>` : ""}
-                            </article>`).join("")}</div>` : vide("Aucune configuration d'article pour cette section."));
+                            </article>`).join("")}</div>` : vide("Aucune configuration officielle enregistrée pour cette section. Les fiches du brouillon restent distinctes."));
                 } else if (sectionOuverte === "vaisselle") {
                     cible.innerHTML = `<p class="v8-intro">Paramètres de vaisselle repris pour la prochaine édition. Aucun stock opérationnel n'est créé.</p>` +
                         (vaisselle.length ? `<div class="v8-grille">${vaisselle.map(article => `
@@ -1700,7 +1728,7 @@
                                     ${valeur("Seuil d’alerte", article.seuil_stock)}
                                     ${valeur("Référence active", ouiNon(article.actif))}
                                 </div>
-                            </article>`).join("")}</div>` : vide("Aucun paramètre de vaisselle repris.")) +
+                            </article>`).join("")}</div>` : vide("Aucun paramètre officiel de vaisselle enregistré.")) +
                         `<h3 class="v84-sous-titre">Paramètres des contenants</h3>` +
                         (contenants.length ? `<div class="v8-grille">${contenants.map((contenant, index) => `
                             <article class="v8-fiche">
@@ -1730,7 +1758,7 @@
                                 ${valeur("Total gobelets", reserve.total_gobelets)}
                                 ${valeur("Total caisses", reserve.total_caisses)}
                             </div>
-                        </article>` : vide("Aucun comptage de la réserve n'a encore été enregistré."));
+                        </article>` : vide("Aucun comptage officiel de la réserve enregistré."));
                 }
             }
 
