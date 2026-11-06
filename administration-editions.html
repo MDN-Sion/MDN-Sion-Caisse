@@ -920,6 +920,47 @@
                 width: 100%;
             }
         }
+        /* V9.21 — état officiel synthétique, distinct du brouillon. */
+        .v921-suivi-officiel {
+            background: #fff;
+            border: 1px solid #e3e6e8;
+            border-radius: 16px;
+            padding: 18px 20px;
+        }
+        .v921-suivi-officiel h2 {
+            margin: 0 0 6px;
+            font-size: 1.2rem;
+        }
+        .v921-explication {
+            margin: 0 0 16px;
+            color: #536474;
+            font-size: .93rem;
+        }
+        .v921-grille {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+            gap: 10px;
+        }
+        .v921-fiche {
+            padding: 13px 14px;
+            border: 1px solid #dce3e8;
+            background: #f5f7f9;
+            border-radius: 12px;
+            min-width: 0;
+        }
+        .v921-fiche strong, .v921-fiche span {
+            display: block;
+        }
+        .v921-fiche span {
+            margin-top: 5px;
+            font-size: .91rem;
+            color: #4e5d6b;
+        }
+        .v921-pied {
+            margin: 13px 0 0;
+            color: #536474;
+            font-size: .9rem;
+        }
     </style>
 
     <main class="contenu">
@@ -1001,6 +1042,11 @@
                 <span><strong>Consultation officielle</strong> · Lecture seule, sans validation ni activation.</span>
                 <button class="bouton secondaire" id="ouvrirBrouillonDepuisValidationsV919" type="button">Modifier le brouillon 2027</button>
             </div>
+            <section class="v921-suivi-officiel" aria-labelledby="titreSuiviOfficielV921">
+                <h2 id="titreSuiviOfficielV921">État des préparations officielles</h2>
+                <p class="v921-explication">Données enregistrées dans la préparation annuelle, indépendantes des fiches vérifiées dans le brouillon.</p>
+                <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
+            </section>
         <section class="panneau" id="panneauInventaires" hidden>
             <div class="barre">
                 <h2 id="titreInventaire">Inventaires annuels</h2>
@@ -1101,6 +1147,45 @@
 
             // V9.12 : la navigation change uniquement la visibilité des panneaux.
             // Aucun appel RPC ni aucune modification des données lors du changement de vue.
+            // V9.21 : lecture du dernier contrôle SQL148 déjà obtenu lors du chargement.
+            // Ne déclenche aucune écriture ni validation officielle.
+            const controlesOfficielsV921 = new Map();
+
+            function afficherSuiviOfficielV921() {
+                const cible = parId("contenuSuiviOfficielV921");
+                if (!cible) return;
+                if (modeDemoActif) {
+                    cible.textContent = "Mode démo : aucune validation officielle. Les vérifications simulées restent indépendantes.";
+                    return;
+                }
+                if (!preparations.length) {
+                    cible.textContent = "Aucune préparation annuelle enregistrée.";
+                    return;
+                }
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027) || preparations[0];
+                const controle = controlesOfficielsV921.get(preparation.id);
+                if (!controle) {
+                    cible.textContent = "Contrôle officiel en attente ou indisponible. Utilise « Actualiser » dans la vue d’ensemble.";
+                    return;
+                }
+                const mdn = controle.articles_mdn || {};
+                const fondation = controle.articles_fondation || {};
+                const vaisselle = controle.parametres_vaisselle || {};
+                const contenants = controle.parametres_contenants || {};
+                const reserve = controle.reserve_gobelets || {};
+                const entier = valeur => Number.isFinite(Number(valeur)) ? Math.max(0, Number(valeur)) : 0;
+                const fiches = [
+                    ["Articles MDN", `${entier(mdn.inventaires_valides)}/${entier(mdn.attendus)} inventaires validés · ${entier(mdn.configures)} configurations`],
+                    ["Articles Fondation", `${entier(fondation.configures)}/${entier(fondation.attendus)} configurations · Sans inventaire`],
+                    ["Paramètres vaisselle", `${entier(vaisselle.configures)}/${entier(vaisselle.attendus)} configurations`],
+                    ["Contenants", `${entier(contenants.configures)}/${entier(contenants.attendus)} configurations`],
+                    ["Réserve gobelets", reserve.validee ? "Comptage validé" : reserve.presente ? "Comptage enregistré, non validé" : "Comptage absent"]
+                ];
+                cible.innerHTML = `<div class="v921-grille">${fiches.map(([nom, etat]) =>
+                    `<div class="v921-fiche"><strong>${echapper(nom)}</strong><span>${echapper(etat)}</span></div>`
+                ).join("")}</div><p class="v921-pied">Préparation ${echapper(preparation.annee_cible)} · ${controle.toutes_sections_completes ? "Sections complètes" : "Préparation incomplète"} · Activation verrouillée</p>`;
+            }
+
             function afficherVueV912(vue) {
                 const vues = ["accueil", "brouillon", "source", "inventaires"];
                 if (!vues.includes(vue)) return;
@@ -2070,6 +2155,7 @@
                     if (!simulation) simulation = nouvelleSimulation();
                     preparations = [simulation.preparation];
                     afficherPreparations();
+                    afficherSuiviOfficielV921();
                     mettreAJourAvancementDemo();
                     return;
                 }
@@ -2092,6 +2178,8 @@
                     : [];
 
                 afficherPreparations();
+                controlesOfficielsV921.clear();
+                afficherSuiviOfficielV921();
 
                 for (const preparation of preparations) {
                     const cible = parId(`avancement-${preparation.id}`);
@@ -2113,6 +2201,8 @@
                     }
 
                     const controle = resultat.data;
+                    controlesOfficielsV921.set(preparation.id, controle);
+                    afficherSuiviOfficielV921();
                     const mdn = controle.articles_mdn || {};
                     const fondation = controle.articles_fondation || {};
                     const vaisselle = controle.parametres_vaisselle || {};
