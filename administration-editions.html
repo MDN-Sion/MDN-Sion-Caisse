@@ -904,6 +904,17 @@
             </div>
         </section>
     </div>
+    <!-- V9.28 — simulation locale des validations : aucune écriture Supabase. -->
+    <div class="v923-overlay" id="dialogueSimulationV928" hidden>
+        <section class="v923-dialogue" role="dialog" aria-modal="true" aria-labelledby="titreSimulationV928" aria-describedby="detailSimulationV928">
+            <h2 id="titreSimulationV928">Simulation de validation</h2>
+            <div id="detailSimulationV928"></div>
+            <div class="v923-actions">
+                <button type="button" class="bouton secondaire" id="fermerSimulationV928">Annuler</button>
+                <button type="button" class="bouton" id="confirmerSimulationV928">Simuler la confirmation</button>
+            </div>
+        </section>
+    </div>
     <div id="chargement" class="chargement">Chargement des éditions…</div>
 
     <header class="entete">
@@ -1117,7 +1128,7 @@
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
                 <section class="v922-transfert" aria-labelledby="titreApercuValidationsV926">
                     <h3 id="titreApercuValidationsV926">Précontrôle SQL153 · Validations SQL154</h3>
-                    <p>Vérifier les cinq sections avant toute validation. Les quantités actuelles sont des données de test : aucune validation réelle ne sera déclenchée depuis cet écran.</p>
+                    <p>Vérifier les cinq sections puis tester individuellement les confirmations. <strong>Mode simulation :</strong> aucune validation officielle n'est enregistrée, aucune écriture SQL154 n'est effectuée.</p>
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier les validations</button>
                         <button type="button" class="bouton" disabled title="Validation réelle volontairement verrouillée pendant les tests">Valider officiellement (verrouillé)</button>
@@ -2773,7 +2784,49 @@
                 }
             });
 
-            // V9.27 — test authentifié de SQL153. Aucun appel à SQL154 ici.
+            // V9.28 — SQL153 en lecture seule ; SQL154 jamais appelé depuis cette version.
+            let apercuValidationsV928 = null;
+            let simulationEnCoursV928 = null;
+
+            function fermerSimulationV928() {
+                parId("dialogueSimulationV928").hidden = true;
+                simulationEnCoursV928 = null;
+            }
+
+            parId("fermerSimulationV928").addEventListener("click", fermerSimulationV928);
+            parId("dialogueSimulationV928").addEventListener("click", evenement => {
+                if (evenement.target.id === "dialogueSimulationV928") {
+                    fermerSimulationV928();
+                }
+            });
+            parId("confirmerSimulationV928").addEventListener("click", () => {
+                if (!simulationEnCoursV928) return;
+                const section = simulationEnCoursV928;
+                fermerSimulationV928();
+                const statut = parId(`simulationStatutV928-${section.id}`);
+                if (statut) {
+                    statut.textContent = "Simulation confirmée localement. Aucune validation officielle enregistrée.";
+                    statut.style.color = "#27634d";
+                }
+            });
+
+            function ouvrirSimulationV928(fiche) {
+                if (!apercuValidationsV928 || modeDemoActif) return;
+                simulationEnCoursV928 = fiche;
+                parId("titreSimulationV928").textContent = `Simulation — ${fiche.nom}`;
+                const zone = parId("detailSimulationV928");
+                zone.replaceChildren();
+                const description = document.createElement("p");
+                description.textContent = fiche.detail;
+                const information = document.createElement("p");
+                information.className = "v923-info";
+                information.textContent = "Cette action simule uniquement la confirmation. Elle n'appelle pas SQL154, ne valide aucune donnée et ne modifie ni la préparation 2027 ni l'édition 2026.";
+                const revision = document.createElement("p");
+                revision.textContent = `Préparation ${apercuValidationsV928.annee_cible} · Révision ${apercuValidationsV928.revision_brouillon ?? "inconnue"}`;
+                zone.append(description, information, revision);
+                parId("dialogueSimulationV928").hidden = false;
+                parId("fermerSimulationV928").focus();
+            }
             parId("verifierValidationsV926").addEventListener("click", async () => {
                 const cible = parId("resultatValidationsV926");
                 const bouton = parId("verifierValidationsV926");
@@ -2791,6 +2844,8 @@
                     return;
                 }
                 bouton.disabled = true;
+                apercuValidationsV928 = null;
+                parId("sectionsValidationsV927").replaceChildren();
                 cible.textContent = "Lecture des contrôles SQL153 en cours…";
                 try {
                     const { data, error } = await clientSupabase.rpc(
@@ -2801,6 +2856,7 @@
                     if (data?.resultat !== "APERCU_VALIDATIONS_OFFICIELLES") {
                         throw new Error("Réponse SQL153 inattendue.");
                     }
+                    apercuValidationsV928 = data;
                     const sections = data.configurations || {};
                     const inventaires = data.inventaires_mdn || {};
                     const reserve = data.reserve_gobelets || {};
@@ -2823,26 +2879,31 @@
                     const conteneurSections = parId("sectionsValidationsV927");
                     const fiches = [
                         {
+                            id: "mdn",
                             nom: "Articles MDN — inventaire",
                             detail: `${inventaires.comptes ?? 0}/${inventaires.total ?? 0} quantités comptées ; ${inventaires.valides ?? 0} inventaires validés`,
                             valide: Number(inventaires.total || 0) > 0 && Number(inventaires.valides || 0) === Number(inventaires.total || 0)
                         },
                         {
+                            id: "fondation",
                             nom: "Fondation — configurations",
                             detail: `${sections.fondation ?? 0} fiches de configuration, sans inventaire`,
                             valide: false
                         },
                         {
+                            id: "vaisselle",
                             nom: "Vaisselle — paramètres",
                             detail: `${sections.vaisselle ?? 0} configurations, sans stock opérationnel`,
                             valide: false
                         },
                         {
+                            id: "contenants",
                             nom: "Contenants — paramètres",
                             detail: `${sections.contenants ?? 0} configuration(s)`,
                             valide: false
                         },
                         {
+                            id: "reserve_gobelets",
                             nom: "Réserve gobelets — comptage",
                             detail: reserve.presente
                                 ? `${reserve.caisses_pleines ?? 0} caisses pleines, ${reserve.caisses_partielles ?? 0} partielles, ${reserve.caisses_vides ?? 0} vides · ${reserve.gobelets_total ?? 0} gobelets`
@@ -2852,7 +2913,7 @@
                     ];
                     conteneurSections.replaceChildren();
                     const titreSections = document.createElement("h4");
-                    titreSections.textContent = "État des cinq sections — consultation uniquement";
+                    titreSections.textContent = "État des cinq sections — simulation des confirmations";
                     titreSections.style.margin = "18px 0 12px";
                     conteneurSections.appendChild(titreSections);
                     for (const fiche of fiches) {
@@ -2866,19 +2927,29 @@
                         const statut = document.createElement("p");
                         statut.style.margin = "7px 0";
                         statut.textContent = fiche.valide
-                            ? "État : validation enregistrée"
-                            : "État : validation officielle non confirmée dans cet aperçu";
+                            ? "État : validation du comptage enregistrée"
+                            : (fiche.id === "mdn" || fiche.id === "reserve_gobelets")
+                                ? "État : comptage non validé"
+                                : "État : validation de configuration non renseignée par SQL153";
                         const action = document.createElement("button");
                         action.type = "button";
                         action.className = "bouton secondaire";
-                        action.disabled = true;
-                        action.textContent = "Valider cette section (verrouillé)";
-                        action.title = "Données de test : aucune écriture officielle autorisée depuis la V9.27";
-                        bloc.append(nom, detail, statut, action);
+                        action.disabled = !data.structure_prete_pour_examen || fiche.valide;
+                        action.textContent = "Simuler la validation";
+                        action.title = "Simulation locale : aucune écriture dans Supabase";
+                        action.addEventListener("click", () => ouvrirSimulationV928(fiche));
+                        const retour = document.createElement("p");
+                        retour.id = `simulationStatutV928-${fiche.id}`;
+                        retour.style.margin = "8px 0 0";
+                        retour.style.fontSize = ".92em";
+                        retour.textContent = "Aucune simulation confirmée.";
+                        bloc.append(nom, detail, statut, action, retour);
                         conteneurSections.appendChild(bloc);
                     }
 
                 } catch (erreur) {
+                    apercuValidationsV928 = null;
+                    parId("sectionsValidationsV927").replaceChildren();
                     cible.textContent = `Précontrôle indisponible : ${erreur.message}. Aucune validation effectuée.`;
                 } finally {
                     bouton.disabled = false;
