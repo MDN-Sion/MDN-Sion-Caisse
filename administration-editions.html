@@ -847,9 +847,63 @@
         .v922-resultat ul { margin: 8px 0; padding-left: 22px; }
         .v922-attention { color: #803600; font-weight: 600; }
         .v922-transfert button:disabled { opacity: .55; cursor: not-allowed; }
+
+        /* V9.23 — dialogues intégrés, sans fenêtre système du navigateur. */
+        .v923-overlay[hidden] { display: none !important; }
+        .v923-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, .62);
+        }
+        .v923-dialogue {
+            width: min(100%, 520px);
+            max-height: min(90dvh, 680px);
+            overflow-y: auto;
+            padding: clamp(20px, 4vw, 30px);
+            background: #fff;
+            color: #172638;
+            border-radius: 20px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+        }
+        .v923-dialogue h2 { margin: 0 0 14px; font-size: 23px; }
+        .v923-dialogue p { margin: 10px 0; line-height: 1.55; }
+        .v923-info {
+            padding: 13px 15px;
+            border-radius: 12px;
+            background: #f4f7f9;
+            border: 1px solid #d9e1e8;
+        }
+        .v923-saisie { display: block; width: 100%; box-sizing: border-box; margin: 12px 0 6px; padding: 13px; border: 1px solid #9caabd; border-radius: 10px; font: inherit; }
+        .v923-saisie:focus { outline: 3px solid rgba(143, 0, 0, .18); border-color: #900000; }
+        .v923-erreur { color: #9b1c1c; font-weight: 600; min-height: 1.5em; }
+        .v923-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .v923-actions .bouton { min-width: 120px; }
+        .v923-dialogue .bouton:disabled { opacity: .45; cursor: not-allowed; }
+        .v923-statut { padding: 12px 14px; border-radius: 12px; background: #edf4f1; border: 1px solid #cadfd5; }
+        .v923-statut.erreur { background: #fff5e8; border-color: #efd0a3; color: #753c00; }
     </style>
 </head>
 <body data-v912-vue="accueil">
+
+    <div class="v923-overlay" id="dialogueTransfertV923" hidden>
+        <section class="v923-dialogue" role="dialog" aria-modal="true" aria-labelledby="titreDialogueTransfertV923" aria-describedby="texteDialogueTransfertV923">
+            <h2 id="titreDialogueTransfertV923">Confirmer le transfert</h2>
+            <div id="texteDialogueTransfertV923"></div>
+            <div id="zoneSaisieTransfertV923" hidden>
+                <label for="saisieTransfertV923"><strong>Code de confirmation</strong></label>
+                <input class="v923-saisie" id="saisieTransfertV923" autocomplete="off" spellcheck="false" />
+                <p class="v923-erreur" id="erreurSaisieTransfertV923" aria-live="polite"></p>
+            </div>
+            <div class="v923-actions">
+                <button type="button" class="bouton secondaire" id="annulerTransfertV923">Annuler</button>
+                <button type="button" class="bouton" id="validerTransfertV923">Continuer</button>
+            </div>
+        </section>
+    </div>
     <div id="chargement" class="chargement">Chargement des éditions…</div>
 
     <header class="entete">
@@ -1283,16 +1337,92 @@
                 }
             }
 
+            // Dialogue accessible en deux étapes ; aucune écriture avant confirmation.
+            function demanderConfirmationTransfertV923(apercu) {
+                return new Promise((resoudre) => {
+                    const overlay = parId("dialogueTransfertV923");
+                    const texte = parId("texteDialogueTransfertV923");
+                    const zoneSaisie = parId("zoneSaisieTransfertV923");
+                    const saisie = parId("saisieTransfertV923");
+                    const erreur = parId("erreurSaisieTransfertV923");
+                    const valider = parId("validerTransfertV923");
+                    const annuler = parId("annulerTransfertV923");
+                    const code = `TRANSFERER_REVISION_${apercu.revision}`;
+                    let etape = 1;
+                    const focusPrecedent = document.activeElement;
+
+                    function fermer(resultat) {
+                        overlay.hidden = true;
+                        valider.removeEventListener("click", continuer);
+                        annuler.removeEventListener("click", abandonner);
+                        saisie.removeEventListener("input", verifierSaisie);
+                        overlay.removeEventListener("keydown", gererClavier);
+                        if (focusPrecedent && typeof focusPrecedent.focus === "function") focusPrecedent.focus();
+                        resoudre(resultat);
+                    }
+
+                    function abandonner() { fermer(null); }
+                    function verifierSaisie() {
+                        valider.disabled = saisie.value.trim() !== code;
+                        erreur.textContent = "";
+                    }
+                    function continuer() {
+                        if (etape === 1) {
+                            etape = 2;
+                            parId("titreDialogueTransfertV923").textContent = "Confirmation de sécurité";
+                            texte.innerHTML = `<p>Pour confirmer le transfert de la révision <strong>${apercu.revision}</strong>, recopie exactement le code suivant :</p><p class="v923-info"><strong>${code}</strong></p>`;
+                            zoneSaisie.hidden = false;
+                            saisie.value = "";
+                            valider.textContent = "Confirmer le transfert";
+                            valider.disabled = true;
+                            saisie.focus();
+                            return;
+                        }
+                        if (saisie.value.trim() !== code) {
+                            erreur.textContent = "Le code ne correspond pas.";
+                            return;
+                        }
+                        fermer(code);
+                    }
+                    function gererClavier(evenement) {
+                        if (evenement.key === "Escape") {
+                            evenement.preventDefault();
+                            abandonner();
+                        }
+                        if (evenement.key === "Tab") {
+                            const elements = [annuler, ...(etape === 2 ? [saisie] : []), valider].filter((element) => !element.disabled);
+                            const premier = elements[0];
+                            const dernier = elements[elements.length - 1];
+                            if (evenement.shiftKey && document.activeElement === premier) {
+                                evenement.preventDefault();
+                                dernier.focus();
+                            } else if (!evenement.shiftKey && document.activeElement === dernier) {
+                                evenement.preventDefault();
+                                premier.focus();
+                            }
+                        }
+                    }
+
+                    parId("titreDialogueTransfertV923").textContent = "Confirmer le transfert";
+                    texte.innerHTML = `<p>Tu vas transférer <strong>${apercu.mdn} fiches MDN</strong> et <strong>${apercu.vaisselle} fiches de vaisselle</strong> du brouillon 2027 (révision ${apercu.revision}) vers la préparation officielle.</p><p class="v923-info">Cette action écrit dans les tables privées de préparation. Elle ne valide aucun inventaire, ne crée aucune édition et ne modifie pas l'édition 2026.</p>`;
+                    zoneSaisie.hidden = true;
+                    erreur.textContent = "";
+                    valider.disabled = false;
+                    valider.textContent = "Continuer";
+                    overlay.hidden = false;
+                    valider.addEventListener("click", continuer);
+                    annuler.addEventListener("click", abandonner);
+                    saisie.addEventListener("input", verifierSaisie);
+                    overlay.addEventListener("keydown", gererClavier);
+                    annuler.focus();
+                });
+            }
+
             async function confirmerTransfertV922() {
                 const apercu = apercuTransfertV922;
                 if (!apercu || transfertEnCoursV922 || modeDemoActif || !clientSupabase) return;
-                const confirmation = `Transférer ${apercu.mdn} fiches MDN et ${apercu.vaisselle} fiches de vaisselle depuis la révision ${apercu.revision} vers la préparation privée 2027 ?\n\nCette action écrit dans la préparation officielle (sans valider les inventaires). Elle ne peut pas être annulée depuis cette page et ne modifie pas l'édition 2026.`;
-                if (!window.confirm(confirmation)) return;
-                const saisie = window.prompt(`Confirmation obligatoire : saisis exactement TRANSFERER_REVISION_${apercu.revision}`);
-                if (saisie !== `TRANSFERER_REVISION_${apercu.revision}`) {
-                    statutTransfertV922("Transfert annulé : confirmation non conforme.", true);
-                    return;
-                }
+                const saisie = await demanderConfirmationTransfertV923(apercu);
+                if (!saisie) return;
                 transfertEnCoursV922 = true;
                 invaliderApercuTransfertV922();
                 parId("precontrolerTransfertV922").disabled = true;
@@ -1315,7 +1445,12 @@
                     statutTransfertV922(`Transfert confirmé : ${data.articles_mdn_transferes} fiches MDN et ${data.parametres_vaisselle_transferes} fiches de vaisselle enregistrées dans la préparation 2027. Aucune validation d'inventaire ni activation.`);
                     await chargerPreparations();
                 } catch (erreur) {
-                    statutTransfertV922("Transfert non confirmé : " + (erreur.message || erreur) + ". Consulte les validations officielles avant toute nouvelle tentative.", true);
+                    const messageErreur = String(erreur.message || erreur);
+                    if (erreur.code === "PGRST202" || messageErreur.includes("schema cache")) {
+                        statutTransfertV922("Transfert non exécuté : Supabase ne reconnaît pas encore la fonction de transfert dans son cache API. Actualise le cache du schéma dans Supabase, puis relance le précontrôle. Aucun nouveau transfert ne doit être tenté avant vérification.", true);
+                    } else {
+                        statutTransfertV922("Transfert non confirmé : " + messageErreur + ". Vérifie les validations officielles avant toute nouvelle tentative.", true);
+                    }
                 } finally {
                     transfertEnCoursV922 = false;
                     parId("precontrolerTransfertV922").disabled = false;
