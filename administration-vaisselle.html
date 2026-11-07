@@ -7,7 +7,7 @@
   <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
   <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
   <title>
-   Référentiel vaisselle · MDN Sion — V14
+   Référentiel vaisselle · MDN Sion — V16
   </title>
   <style>
    
@@ -73,9 +73,17 @@
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
 			color: #fff;
-			background: #8B0000;
+            /* Teinte d'origine #5c000073 reconstituée sur le fond rouge,
+               mais désormais entièrement opaque pendant le défilement. */
+            background: linear-gradient(#5c000073, #5c000073),
+                        linear-gradient(145deg, #7b0000, #a00000 48%, #650000);
 			padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
 		}
+
+        /* Couleur de l'en-tête selon le mode : opaque et fixe. */
+        body.demo .entete {
+            background: #B38B00;
+        }
 
 		.entete-contenu {
 			max-width: 1250px;
