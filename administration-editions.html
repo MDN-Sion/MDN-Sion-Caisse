@@ -1232,10 +1232,10 @@
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
                 <section class="v922-transfert" aria-labelledby="titreApercuValidationsV926">
                     <h3 id="titreApercuValidationsV926">Précontrôle SQL153 · Validations SQL154</h3>
-                    <p>Vérifier les cinq sections. Les simulations restent sans écriture. Les validations réelles sont disponibles uniquement après déverrouillage volontaire et confirmation individuelle. <strong>Ne pas valider les données de test.</strong></p>
+                    <p>Vérifier les cinq sections. Les simulations restent sans écriture. Les inventaires actuels sont fictifs. <strong>Les validations réelles sont temporairement désactivées dans cette version.</strong> Les simulations restent disponibles et sans écriture.</p>
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier les validations</button>
-                        <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934">Déverrouiller les validations réelles</button>
+                        <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
                     </div>
                     <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Précontrôle non exécuté.</div>
                     <div id="sectionsValidationsV927" aria-live="polite"></div>
@@ -2925,6 +2925,8 @@
             // V9.34 — les validations réelles sont verrouillées par défaut.
             // SQL154 n'est appelé qu'après deux actions explicites de l'administrateur.
             let validationsReellesAutoriseesV934 = false;
+            // V9.45 : verrou de sécurité explicite tant que les comptages sont fictifs.
+            const VALIDATIONS_REELLES_BLOQUEES_V945 = true;
             let validationCibleV934 = null;
             let validationEnCoursV934 = false;
             let preparationValideeV934 = null;
@@ -2943,6 +2945,16 @@
             });
 
             function afficherBoutonsReelsV934() {
+                if (VALIDATIONS_REELLES_BLOQUEES_V945) {
+                    validationsReellesAutoriseesV934 = false;
+                    const controle = parId("basculerValidationsReellesV934");
+                    controle.disabled = true;
+                    controle.textContent = "Validations réelles verrouillées (tests)";
+                    parId("sectionsValidationsV927")
+                        .querySelectorAll("[data-validation-reelle]")
+                        .forEach(bouton => { bouton.hidden = true; bouton.disabled = true; });
+                    return;
+                }
                 parId("basculerValidationsReellesV934").textContent =
                     validationsReellesAutoriseesV934
                         ? "Reverrouiller les validations réelles"
@@ -2967,6 +2979,11 @@
                 }
             });
             parId("confirmerDeverrouillageV934").addEventListener("click", () => {
+                if (VALIDATIONS_REELLES_BLOQUEES_V945) {
+                    fermerDeverrouillageV934();
+                    message("Données fictives : validations officielles désactivées.", true);
+                    return;
+                }
                 if (parId("saisieDeverrouillageV934").value.trim() !== "DONNEES DEFINITIVES 2027") {
                     parId("erreurDeverrouillageV934").textContent =
                         "Confirmation incorrecte. Aucune action effectuée.";
@@ -2982,6 +2999,7 @@
             });
 
             parId("basculerValidationsReellesV934").addEventListener("click", () => {
+                if (VALIDATIONS_REELLES_BLOQUEES_V945) return;
                 if (modeDemoActif || !apercuValidationsV928 || !preparationValideeV934) {
                     message("Exécute d'abord le précontrôle officiel.", true);
                     return;
@@ -2996,6 +3014,7 @@
             });
 
             function ouvrirValidationReelleV934(fiche) {
+                if (VALIDATIONS_REELLES_BLOQUEES_V945) return;
                 if (!validationsReellesAutoriseesV934 || !preparationValideeV934 ||
                     !apercuValidationsV928 || validationEnCoursV934 || modeDemoActif) return;
                 validationCibleV934 = fiche;
@@ -3013,6 +3032,7 @@
             }
 
             parId("confirmerValidationV934").addEventListener("click", async () => {
+                if (VALIDATIONS_REELLES_BLOQUEES_V945) return;
                 if (!validationCibleV934 || !validationsReellesAutoriseesV934 ||
                     !preparationValideeV934 || validationEnCoursV934 || modeDemoActif) return;
 
