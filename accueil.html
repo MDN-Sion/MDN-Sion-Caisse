@@ -780,6 +780,68 @@
     }
 
     /* ======================================================
+       ORDINATEUR : LARGEUR ET GRILLE ADAPTATIVES
+       Conserver les réglages tablette existants.
+       ====================================================== */
+
+    @media (min-width: 901px) {
+
+      .barre-haute-contenu,
+      .contenu {
+        width: min(100%, 1640px);
+      }
+
+      .contenu {
+        padding-top: 22px;
+        padding-bottom: 20px;
+        scrollbar-width: none;
+      }
+
+      .contenu::-webkit-scrollbar {
+        display: none;
+      }
+
+      .grille-modules {
+        gap: 16px;
+      }
+
+      .module {
+        min-height: 205px;
+        padding: 19px;
+      }
+
+      .module h2 {
+        margin-top: 13px;
+        font-size: 18px;
+      }
+
+      .module p {
+        margin-bottom: 13px;
+      }
+
+      .zone-reinitialisation-demo {
+        margin-bottom: 18px;
+      }
+
+    }
+
+    @media (min-width: 1200px) {
+
+      .grille-modules {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+    }
+
+    @media (min-width: 901px) and (max-width: 1199px) {
+
+      .grille-modules {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+    }
+
+    /* ======================================================
        TABLETTE
        ====================================================== */
 
@@ -1669,7 +1731,7 @@ const zoneReinitialisationDemo =
 
         moduleRapports.classList.toggle(
           "masque",
-          !peutSuperviser
+          !(peutSuperviser || sessionDemoDediee)
         );
 
 
@@ -1680,7 +1742,7 @@ const zoneReinitialisationDemo =
 
         moduleAdministration.classList.toggle(
           "masque",
-          !estAdministrateur
+          !(estAdministrateur || sessionDemoDediee)
         );
 
 
