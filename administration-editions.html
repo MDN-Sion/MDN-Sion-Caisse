@@ -4287,6 +4287,25 @@
                     }));
                     restaurerBrouillonComptage();
                     actualiserBilanComptage();
+
+                    // V9.67 — Enregistrement manuel explicite du brouillon de comptage.
+                    // L'enregistrement reste local au navigateur et ne modifie jamais Supabase.
+                    const boutonEnregistrerComptage = creerAudit(
+                        "button",
+                        "bouton",
+                        "Enregistrer la saisie",
+                        formulaire
+                    );
+                    boutonEnregistrerComptage.type = "button";
+                    boutonEnregistrerComptage.style.marginRight = "12px";
+                    boutonEnregistrerComptage.addEventListener("click", () => {
+                        if (minuterieSauvegarde !== null) {
+                            window.clearTimeout(minuterieSauvegarde);
+                            minuterieSauvegarde = null;
+                        }
+                        enregistrerBrouillonComptage();
+                    });
+
                     const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
                     exporterSaisie.type = "button";
                     exporterSaisie.addEventListener("click", () => {
