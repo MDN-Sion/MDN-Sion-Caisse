@@ -1206,10 +1206,12 @@
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="apercuCreationV935" aria-pressed="false">Contrôler la création 2027</button>
                         <button type="button" class="bouton secondaire" id="planCreationV936" aria-pressed="false">Afficher le plan détaillé (SQL158)</button>
+                        <button type="button" class="bouton secondaire" id="simulerCreationV939">Simuler la création (sans écriture)</button>
                         <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
                     </div>
                     <div id="resultatCreationV935" class="v922-resultat" role="status" aria-live="polite">Contrôle SQL157 non exécuté.</div>
                     <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan SQL158 non exécuté.</div>
+                    <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non exécutée.</div>
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
                     <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
@@ -3414,6 +3416,83 @@
                     cible.style.whiteSpace = "pre-line";
                 } catch (erreur) {
                     cible.textContent = `Plan SQL158 indisponible : ${erreur.message || erreur}. Aucune modification.`;
+                } finally {
+                    bouton.disabled = false;
+                }
+            });
+
+            // V9.39 — Simulation d'une création annuelle : exclusivement en mémoire.
+            // Seules les RPC de lecture SQL157/SQL158 sont appelées.
+            // Aucune RPC de création, d'activation ou d'écriture de stock.
+            parId("simulerCreationV939").addEventListener("click", async () => {
+                const cible = parId("simulationCreationV939");
+                const bouton = parId("simulerCreationV939");
+                if (modeDemoActif || !clientSupabase) {
+                    cible.textContent = "Simulation indisponible en mode démo ou hors connexion.";
+                    return;
+                }
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027);
+                if (!preparation) {
+                    cible.textContent = "Préparation 2027 introuvable.";
+                    return;
+                }
+                bouton.disabled = true;
+                cible.textContent = "Simulation de création en mémoire…";
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "plan_creation_edition_admin",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (error) throw error;
+                    if (data?.resultat !== "PLAN_CREATION_EDITION" ||
+                        data.nature !== "LECTURE_SEULE" ||
+                        data.preparation_id !== preparation.id ||
+                        data.creation_effectuee !== false ||
+                        data.activation_effectuee !== false ||
+                        data.stocks_modifies !== false) {
+                        throw new Error("Réponse de contrôle non conforme.");
+                    }
+                    const controle = data.controle_sql157 || {};
+                    const mdn = Array.isArray(data.articles_mdn) ? data.articles_mdn : [];
+                    const fondation = Array.isArray(data.articles_fondation) ? data.articles_fondation : [];
+                    const vaisselle = Array.isArray(data.vaisselle) ? data.vaisselle : [];
+                    const contenants = Array.isArray(data.contenants) ? data.contenants : [];
+                    const reserve = data.reserve_gobelets || {};
+                    const blocages = Array.isArray(controle.blocages) ? controle.blocages : [];
+                    const fictifs = mdn.filter(article => article.inventaire_officiel !== true).length;
+                    const simulation = {
+                        annee: Number(data.annee_cible),
+                        statut: "SIMULATION_NON_ENREGISTREE",
+                        revision: data.revision,
+                        articles_mdn: mdn.length,
+                        inventaires_mdn_non_certifies: fictifs,
+                        articles_fondation: fondation.length,
+                        stock_initial_fondation: 0,
+                        references_vaisselle: vaisselle.length,
+                        stock_operationnel_vaisselle: 0,
+                        contenants: contenants.length,
+                        gobelets_reserve_comptes: Number(reserve.gobelets_total_comptes || 0),
+                        gobelets_reserve_certifies: reserve.comptage_officiel === true,
+                        validations_officielles: Number(controle.validations_officielles || 0),
+                        blocages: blocages
+                    };
+                    const lignes = [
+                        `SIMULATION UNIQUEMENT — édition ${simulation.annee} NON créée`,
+                        `Révision source : ${simulation.revision}`,
+                        `Catalogue MDN : ${simulation.articles_mdn} articles, ${simulation.inventaires_mdn_non_certifies} inventaires non certifiés`,
+                        `Fondation : ${simulation.articles_fondation} articles ; stock initial simulé : 0`,
+                        `Vaisselle : ${simulation.references_vaisselle} références ; stock opérationnel simulé : 0`,
+                        `Contenants : ${simulation.contenants} configurations`,
+                        `Réserve gobelets : ${simulation.gobelets_reserve_comptes} unités comptées ; ${simulation.gobelets_reserve_certifies ? "comptage certifié" : "comptage non certifié"}`,
+                        `Validations officielles : ${simulation.validations_officielles}/5`,
+                        `Création réelle : ${blocages.length ? "INTERDITE" : "non effectuée, simulation seulement"}`,
+                        `Blocages : ${blocages.join(", ") || "aucun blocage signalé"}`,
+                        "Aucune donnée enregistrée. Édition 2026 et stocks inchangés."
+                    ];
+                    cible.textContent = lignes.join("\n");
+                    cible.style.whiteSpace = "pre-line";
+                } catch (erreur) {
+                    cible.textContent = `Simulation impossible : ${erreur.message || erreur}. Aucune modification.`;
                 } finally {
                     bouton.disabled = false;
                 }
