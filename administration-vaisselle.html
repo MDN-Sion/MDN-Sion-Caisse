@@ -7,7 +7,7 @@
   <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
   <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
   <title>
-   Référentiel vaisselle · MDN Sion — V5
+   Référentiel vaisselle · MDN Sion — V6
   </title>
   <style>
    
@@ -516,6 +516,53 @@
                 font-size: 12px;
             }
         }
+
+    .liste-confirmation {
+        display: grid;
+        gap: 8px;
+        margin: 16px 0;
+    }
+
+    .ligne-confirmation {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid #d9e1e8;
+        border-radius: 9px;
+        background: #f6f8fa;
+        overflow-wrap: anywhere;
+    }
+
+    .ligne-confirmation strong {
+        color: #8b0000;
+        text-align: right;
+    }
+
+    #dialogueConfirmation {
+        width: min(94vw, 560px);
+        max-height: 88dvh;
+        overflow-y: auto;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 18px 60px #0005;
+        padding: 0;
+    }
+
+    #dialogueConfirmation::backdrop {
+        background: #0009;
+    }
+
+    @media (max-width: 480px) {
+        .ligne-confirmation {
+            grid-template-columns: 1fr;
+            gap: 3px;
+        }
+
+        .ligne-confirmation strong {
+            text-align: left;
+        }
+    }
   </style>
  </head>
  <body>
@@ -559,6 +606,7 @@
       </p>
      </div>
      <div class="actions">
+      <button class="bouton" id="ajouterReference" type="button" hidden>+ Ajouter une référence</button>
       <button class="bouton secondaire" id="actualiser" type="button">
        Actualiser
       </button>
@@ -717,6 +765,18 @@
      </button>
     </div>
    </form>
+  </dialog>
+  <dialog id="dialogueConfirmation" aria-labelledby="titreConfirmation">
+    <div class="dialog-contenu">
+      <h3 id="titreConfirmation">Confirmer les modifications</h3>
+      <p class="petit" id="texteConfirmation"></p>
+      <div id="listeConfirmation" class="liste-confirmation"></div>
+      <p class="avertissement" id="avertissementConfirmation"></p>
+      <div class="dialog-actions">
+        <button class="bouton secondaire" id="annulerConfirmation" type="button">Annuler</button>
+        <button class="bouton" id="validerConfirmation" type="button">Confirmer</button>
+      </div>
+    </div>
   </dialog>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
   </script>
@@ -1029,12 +1089,201 @@
 		            });
 		    }
 
+            function demanderConfirmation(titre, description, lignes, avertissement) {
+                return new Promise((resolve) => {
+                    const dialogue = $("dialogueConfirmation");
+                    const liste = $("listeConfirmation");
+                    const boutonConfirmer = $("validerConfirmation");
+                    const boutonAnnuler = $("annulerConfirmation");
+
+                    $("titreConfirmation").textContent = titre;
+                    $("texteConfirmation").textContent = description;
+                    $("avertissementConfirmation").textContent = avertissement;
+                    liste.replaceChildren();
+
+                    for (const texte of lignes) {
+                        const ligne = document.createElement("div");
+                        ligne.className = "ligne-confirmation";
+                        const separation = texte.indexOf(" : ");
+                        const libelle = document.createElement("span");
+                        const valeur = document.createElement("strong");
+                        libelle.textContent = separation >= 0 ? texte.slice(0, separation) : texte;
+                        valeur.textContent = separation >= 0 ? texte.slice(separation + 3) : "";
+                        ligne.append(libelle, valeur);
+                        liste.appendChild(ligne);
+                    }
+
+                    let termine = false;
+
+                    function terminer(resultat) {
+                        if (termine) {
+                            return;
+                        }
+
+                        termine = true;
+                        dialogue.close();
+                        resolve(resultat);
+                    }
+
+                    boutonConfirmer.onclick = () => terminer(true);
+                    boutonAnnuler.onclick = () => terminer(false);
+                    dialogue.oncancel = (evenement) => {
+                        evenement.preventDefault();
+                        terminer(false);
+                    };
+                    dialogue.showModal();
+                });
+            }
+
+            function ouvrirAjout() {
+                if (etat.demo || !etat.acces || !etat.editionId) {
+                    return;
+                }
+
+                etat.modification = { type: "ajout", item: null };
+                const champs = $("champsDialogue");
+                champs.replaceChildren();
+                $("titreDialogue").textContent = "Ajouter une référence de vaisselle";
+                $("enregistrer").textContent = "Ajouter";
+                $("avertissementDialogue").textContent =
+                    "La référence sera commune à toutes les éditions. Ses paramètres seront créés uniquement pour l'édition sélectionnée.";
+
+                const ordreSuivant = Math.max(0, ...etat.references.map((r) => Number(r.ordre_affichage) || 0)) + 1;
+                ajouterChamp(champs, "nom", "Nom de la référence", "", "text");
+                ajouterChamp(champs, "description", "Description", "", "text");
+                ajouterChamp(champs, "ordre_affichage", "Ordre d'affichage", ordreSuivant, "number");
+                ajouterChamp(champs, "type_conditionnement", "Type de conditionnement", "caisse", "select", [["caisse", "Caisse"], ["sachet", "Sachet"]]);
+                ajouterChamp(champs, "quantite_standard", "Quantité standard", 1, "number");
+                ajouterChamp(champs, "consigne_unitaire", "Consigne unitaire (CHF)", 0, "number");
+                ajouterChamp(champs, "lavage_unitaire", "Lavage unitaire (CHF)", 0, "number");
+                ajouterChamp(champs, "seuil_stock", "Seuil d'alerte", 0, "number");
+                ajouterChamp(champs, "actif", "État", "true", "select", [["true", "Actif"], ["false", "Inactif"]]);
+                $("dialogue").showModal();
+            }
+
+            async function enregistrerAjout(donnees) {
+                const nom = String(donnees.get("nom") || "").trim();
+                const description = String(donnees.get("description") || "").trim();
+                const ordre = Number(donnees.get("ordre_affichage"));
+                const conditionnement = String(donnees.get("type_conditionnement") || "");
+                const quantite = Number(donnees.get("quantite_standard"));
+                const consigne = Number(donnees.get("consigne_unitaire"));
+                const lavage = Number(donnees.get("lavage_unitaire"));
+                const seuil = Number(donnees.get("seuil_stock"));
+                const actif = donnees.get("actif") === "true";
+
+                if (!nom || !Number.isSafeInteger(ordre) || ordre < 1 ||
+                    !["caisse", "sachet"].includes(conditionnement) ||
+                    !Number.isSafeInteger(quantite) || quantite < 1 ||
+                    !Number.isSafeInteger(seuil) || seuil < 0 ||
+                    ![consigne, lavage].every((v) => Number.isFinite(v) && v >= 0)) {
+                    message("Vérifiez le nom, le conditionnement, les quantités et les tarifs.", "erreur");
+                    return;
+                }
+
+                if (etat.references.some((r) => r.nom.trim().toLocaleLowerCase("fr") === nom.toLocaleLowerCase("fr"))) {
+                    message("Une référence portant ce nom existe déjà.", "erreur");
+                    return;
+                }
+
+                const editionId = etat.editionId;
+                const lignes = [
+                    "Référence : " + nom,
+                    "Édition : " + ($("edition").selectedOptions[0]?.textContent || "—"),
+                    "Conditionnement : " + conditionnement,
+                    "Quantité standard : " + quantite,
+                    "Consigne : " + consigne + " CHF",
+                    "Lavage : " + lavage + " CHF",
+                    "Seuil de stock : " + seuil,
+                    "État : " + (actif ? "Actif" : "Inactif")
+                ];
+
+                const confirme = await demanderConfirmation(
+                    "Confirmer l'ajout de la référence",
+                    "Vérifiez les données avant leur création dans Supabase.",
+                    lignes,
+                    "Cette opération écrit dans le référentiel partagé et dans les paramètres de l'édition. Elle ne crée aucun mouvement de stock."
+                );
+
+                if (!confirme) {
+                    return;
+                }
+
+                const bouton = $("enregistrer");
+                bouton.disabled = true;
+                let referenceCreee = null;
+
+                try {
+                    const { data: acces, error: erreurAcces } = await etat.client.rpc("etat_acces_administration");
+
+                    if (erreurAcces || !acces?.acces_administration || acces.mode_demo === true || etat.demo || !etat.acces) {
+                        throw new Error("Accès administrateur réel requis.");
+                    }
+
+                    if (editionId !== etat.editionId) {
+                        throw new Error("L'édition a changé. Rechargez la page avant l'ajout.");
+                    }
+
+                    const { data: nouvelleReference, error: erreurReference } = await etat.client
+                        .from("referentiel_vaisselle_mdn")
+                        .insert({ nom, description, ordre_affichage: ordre, actif })
+                        .select("id")
+                        .single();
+
+                    if (erreurReference) {
+                        throw erreurReference;
+                    }
+
+                    referenceCreee = nouvelleReference.id;
+
+                    const { data: nouveauParametre, error: erreurParametre } = await etat.client
+                        .from("edition_vaisselle")
+                        .insert({
+                            edition_id: editionId,
+                            vaisselle_id: referenceCreee,
+                            type_conditionnement: conditionnement,
+                            quantite_standard: quantite,
+                            consigne_unitaire: consigne,
+                            lavage_unitaire: lavage,
+                            seuil_stock: seuil,
+                            actif
+                        })
+                        .select("id")
+                        .single();
+
+                    if (erreurParametre || !nouveauParametre?.id) {
+                        throw erreurParametre || new Error("La création des paramètres n'a pas été confirmée.");
+                    }
+
+                    $("dialogue").close();
+                    etat.modification = null;
+                    await charger();
+                    message("Référence « " + nom + " » et paramètres créés pour l'édition sélectionnée.", "succes");
+                } catch (erreur) {
+                    console.error("[MDN] Ajout référentiel vaisselle :", erreur);
+                    if (referenceCreee) {
+                        message(
+                            "Création partielle : la référence a été créée, mais ses paramètres n'ont pas été enregistrés. " +
+                            "Ne recommencez pas l'ajout : corrigez d'abord la référence existante. Détail : " +
+                            (erreur.message || "erreur inconnue"),
+                            "erreur"
+                        );
+                    } else {
+                        message("Ajout impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+                    }
+                } finally {
+                    bouton.disabled = false;
+                }
+            }
+
 		    function ouvrirModification(type, item) {
 		        if (etat.demo || !etat.acces) {
 		            return;
 		        }
 
 		        etat.modification = { type, item: { ...item } };
+                $("enregistrer").textContent = "Enregistrer";
+                $("avertissementDialogue").textContent = "Modification d'un référentiel partagé — mode réel uniquement.";
 		        const champs = $("champsDialogue");
 		        champs.replaceChildren();
 		        $("titreDialogue").textContent = type === "reference" ? "Modifier la référence" : "Modifier les paramètres de l'édition";
@@ -1060,6 +1309,11 @@
 		        }
 		        const { type, item } = etat.modification;
 		        const donnees = new FormData($("formulaire"));
+
+                if (type === "ajout") {
+                    await enregistrerAjout(donnees);
+                    return;
+                }
 		        const changements = { actif: donnees.get("actif") === "true" };
 		        if (type === "reference") {
 		            changements.nom = String(donnees.get("nom") || "").trim();
@@ -1092,18 +1346,16 @@
 		            ? "ATTENTION : cette référence est commune à toutes les éditions."
 		            : "ATTENTION : les tarifs et conditionnements de l'édition sélectionnée seront modifiés. Les mouvements passés ne seront pas recalculés.";
 
-		        const confirmation = [
-		            avertissement,
-		            "",
-		            "Modifications prévues :",
-		            ...differences,
-		            "",
-		            "Confirmer l'enregistrement dans les données réelles ?"
-		        ].join("\n");
+                const confirme = await demanderConfirmation(
+                    "Confirmer la modification",
+                    "Les valeurs suivantes seront enregistrées dans l'édition sélectionnée.",
+                    differences,
+                    avertissement
+                );
 
-		        if (!window.confirm(confirmation)) {
-		            return;
-		        }
+                if (!confirme) {
+                    return;
+                }
 		        const bouton = $("enregistrer");
 		        bouton.disabled = true;
 		        try {
@@ -1165,6 +1417,7 @@
 		            etat.acces = true;
 		            etat.demo = acces.mode_demo === true;
 		            document.body.classList.toggle("demo", etat.demo);
+                    $("ajouterReference").hidden = etat.demo;
 		            $("bandeauDemo").hidden = !etat.demo;
 		            $("nomUtilisateur").textContent = etat.demo ? "Mode Démo" : (auth.profil?.prenom || auth.profil?.email || "Administrateur");
 		            $("roleUtilisateur").textContent = etat.demo ? "Utilisateur" : "Administrateur";
@@ -1179,6 +1432,7 @@
 		    $("retour").addEventListener("click", () => { window.location.href = etat.demo ? "administration.html?mode=demo" : "administration.html"; });
 		    $("deconnexion").addEventListener("click", () => window.MDN_AUTH.deconnexion());
 		    $("actualiser").addEventListener("click", charger);
+            $("ajouterReference").addEventListener("click", ouvrirAjout);
 		    $("edition").addEventListener("change", async () => {
 		        if (etat.demo) {
                 return;
