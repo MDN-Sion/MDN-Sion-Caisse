@@ -4180,6 +4180,113 @@
                         lien.remove();
                         setTimeout(() => URL.revokeObjectURL(url), 1000);
                     });
+                    // V9.64 — Réimportation locale du CSV précédemment exporté.
+                    // Aucun appel Supabase : le fichier ne peut pas valider un inventaire.
+                    const zoneReprise = creerAudit("div", "", null, formulaire);
+                    zoneReprise.style.marginTop = "14px";
+                    const etiquetteReprise = creerAudit("label", "", "Reprendre un comptage enregistré (.csv) : ", zoneReprise);
+                    const fichierReprise = document.createElement("input");
+                    fichierReprise.type = "file";
+                    fichierReprise.accept = ".csv,text/csv";
+                    fichierReprise.setAttribute("aria-label", "Choisir un comptage CSV à reprendre");
+                    etiquetteReprise.appendChild(fichierReprise);
+                    const etatReprise = creerAudit("p", "v953-vide", "Le fichier est relu uniquement dans ce navigateur, sans enregistrement dans Supabase.", zoneReprise);
+
+                    function analyserLigneCsv(ligne) {
+                        const champs = [];
+                        let champ = "";
+                        let guillemets = false;
+                        for (let i = 0; i < ligne.length; i++) {
+                            const caractere = ligne[i];
+                            if (caractere === '"') {
+                                if (guillemets && ligne[i + 1] === '"') {
+                                    champ += '"';
+                                    i++;
+                                } else {
+                                    guillemets = !guillemets;
+                                }
+                            } else if (caractere === ";" && !guillemets) {
+                                champs.push(champ);
+                                champ = "";
+                            } else {
+                                champ += caractere;
+                            }
+                        }
+                        if (guillemets) throw new Error("Guillemets non fermés dans le CSV.");
+                        champs.push(champ);
+                        return champs;
+                    }
+
+                    fichierReprise.addEventListener("change", async () => {
+                        const fichier = fichierReprise.files?.[0];
+                        if (!fichier) return;
+                        try {
+                            if (fichier.size > 200000) throw new Error("Le fichier CSV est trop volumineux.");
+                            const contenu = (await fichier.text()).replace(/^\uFEFF/, "");
+                            const lignes = contenu.split(/\r?\n/).filter(ligne => ligne.trim() !== "").map(analyserLigneCsv);
+                            if (lignes.length < 2 || lignes[0].join("|") !== "Type|Article / référence|Quantité réelle|Observations") {
+                                throw new Error("Ce fichier ne correspond pas à l'export de comptage attendu.");
+                            }
+                            const references = new Map();
+                            for (const ligne of lignes.slice(1)) {
+                                if (ligne.length !== 4) throw new Error("Une ligne CSV comporte un nombre incorrect de colonnes.");
+                                const cle = ligne[0] + "|" + ligne[1];
+                                if (references.has(cle)) throw new Error("Référence en double : " + ligne[1]);
+                                references.set(cle, ligne);
+                            }
+                            const lireNombre = (type, nom) => {
+                                const ligne = references.get(type + "|" + nom);
+                                if (!ligne || !/^(0|[1-9][0-9]*)$/.test(ligne[2]) || !Number.isSafeInteger(Number(ligne[2]))) {
+                                    throw new Error("Quantité absente ou invalide : " + nom);
+                                }
+                                return Number(ligne[2]);
+                            };
+                            const valeursArticles = lignesSaisie.map(ligne => ({
+                                ligne,
+                                quantite: lireNombre("MDN", ligne.article),
+                                observation: references.get("MDN|" + ligne.article)?.[3] || ""
+                            }));
+                            const valeursReserve = champsReserve.map(champ => ({
+                                champ,
+                                quantite: lireNombre("Réserve gobelets", champ.libelle)
+                            }));
+                            const nombre = lireNombre("Réserve gobelets", "Caisses partielles");
+                            if (nombre > 100) throw new Error("Le fichier dépasse 100 caisses partielles.");
+                            const valeursPartielles = Array.from({ length: nombre }, (_, index) => {
+                                const quantite = lireNombre("Réserve gobelets", `Caisse partielle n° ${index + 1}`);
+                                if (quantite < 1 || quantite >= capaciteCaisse) {
+                                    throw new Error(`La caisse partielle n° ${index + 1} doit contenir de 1 à ${capaciteCaisse - 1} gobelets.`);
+                                }
+                                return quantite;
+                            });
+                            const total = valeursPartielles.reduce((somme, quantite) => somme + quantite, 0);
+                            if (lireNombre("Réserve gobelets", "Total gobelets dans les caisses partielles") !== total ||
+                                lireNombre("Réserve gobelets", "Capacité d'une caisse") !== capaciteCaisse) {
+                                throw new Error("Le total ou la capacité des caisses ne correspond pas.");
+                            }
+                            if (!window.confirm("Reprendre ce comptage dans les champs de saisie ? Les valeurs actuellement saisies seront remplacées. Aucune donnée ne sera envoyée à Supabase.")) {
+                                etatReprise.textContent = "Import annulé : les saisies sont conservées.";
+                                return;
+                            }
+                            valeursArticles.forEach(({ ligne, quantite, observation }) => {
+                                ligne.quantite.value = String(quantite);
+                                ligne.observation.value = observation;
+                            });
+                            valeursReserve.forEach(({ champ, quantite }) => {
+                                champ.input.value = String(quantite);
+                            });
+                            afficherCaissesIndividuelles();
+                            valeursPartielles.forEach((quantite, index) => {
+                                caissesIndividuelles[index].value = String(quantite);
+                            });
+                            calculerTotalPartielles();
+                            etatReprise.textContent = `Comptage repris : ${valeursArticles.length} articles et ${nombre} caisse(s) partielle(s). Aucune validation effectuée.`;
+                        } catch (erreur) {
+                            etatReprise.textContent = "Import refusé : " + erreur.message;
+                        } finally {
+                            fichierReprise.value = "";
+                        }
+                    });
                     creerAudit("p", "v953-vide", "Attention : le fichier exporté n'est pas une validation officielle. La saisie sera perdue si tu actualises la page.", formulaire);
 
                     dernierAuditCsvV954 = data;
