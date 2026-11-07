@@ -3747,26 +3747,26 @@
                         styleImpression.textContent = `
                             @page {
                                 size: A4 portrait;
-                                margin: 15mm 17mm;
+                                margin: 12mm 15mm;
                             }
                             * { box-sizing: border-box; }
                             body {
                                 margin: 0;
                                 font-family: Arial, Helvetica, sans-serif;
-                                font-size: 10.5pt;
-                                line-height: 1.45;
+                                font-size: 10pt;
+                                line-height: 1.32;
                                 color: #17263a;
                                 background: #ffffff;
                             }
                             .rapport-titre {
-                                margin: 0 0 4mm;
+                                margin: 0 0 3mm;
                                 color: #800000;
                                 font-size: 18pt;
                                 font-weight: 800;
                                 line-height: 1.2;
                             }
                             .rapport-sous-titre {
-                                margin: 0 0 5mm;
+                                margin: 0 0 3mm;
                                 color: #38536a;
                                 font-size: 9.5pt;
                                 font-weight: 700;
@@ -3775,21 +3775,21 @@
                                 border: 1px solid #d8e0e7;
                                 background: #f4f7f9;
                                 border-radius: 5px;
-                                padding: 3mm 4mm;
-                                margin-bottom: 5mm;
+                                padding: 2mm 3mm;
+                                margin-bottom: 3mm;
                             }
                             .rapport-meta p {
-                                margin: 1mm 0;
+                                margin: 0.6mm 0;
                                 overflow-wrap: anywhere;
                             }
                             .rapport-section {
-                                margin: 0 0 4mm;
+                                margin: 0 0 3mm;
                                 break-inside: avoid;
                                 page-break-inside: avoid;
                             }
                             .rapport-section h2 {
-                                margin: 0 0 2mm;
-                                padding: 0 0 1.5mm;
+                                margin: 0 0 1mm;
+                                padding: 0 0 1mm;
                                 border-bottom: 1px solid #c9d5df;
                                 color: #800000;
                                 font-size: 11pt;
@@ -3799,7 +3799,7 @@
                                 display: flex;
                                 justify-content: space-between;
                                 gap: 8mm;
-                                padding: 0.5mm 0;
+                                padding: 0.25mm 0;
                             }
                             .rapport-valeur {
                                 flex: 0 0 auto;
@@ -3811,17 +3811,30 @@
                                 border: 1px solid #e4b3b3;
                                 background: #fff7f7;
                                 border-radius: 5px;
-                                padding: 3mm 4mm;
+                                padding: 2mm 3mm;
                             }
                             .rapport-blocages h2 { border-bottom-color: #e4b3b3; }
-                            .rapport-blocage { margin: 1mm 0; }
+                            .rapport-blocage { margin: 0.6mm 0; }
                             .rapport-avertissement {
-                                margin-top: 4mm;
+                                margin-top: 2mm;
                                 border-top: 1px solid #c9d5df;
-                                padding-top: 3mm;
+                                padding-top: 2mm;
                                 font-size: 9pt;
                                 font-weight: 700;
                                 color: #800000;
+                            }
+                            @media print {
+                                html, body {
+                                    width: auto;
+                                    height: auto;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                .rapport-section,
+                                .rapport-blocages {
+                                    break-inside: avoid;
+                                    page-break-inside: avoid;
+                                }
                             }
                             @media screen {
                                 body {
