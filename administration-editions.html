@@ -877,6 +877,21 @@
         .v941-simulation-entete { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .v941-simulation-entete h4 { margin: 0; font-size: 1.13rem; }
         .v941-etiquette { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 11px; font-weight: 700; font-size: .83rem; background: #e8f3ec; color: #236341; }
+        /* V9.43 — Export local du rapport de simulation, sans écriture Supabase. */
+        .v943-exporter {
+            border: 1px solid #8b0000;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #8b0000;
+            padding: 9px 14px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .v943-exporter:hover,
+        .v943-exporter:focus-visible {
+            background: #fff1f1;
+        }
         .v941-etiquette-attente { background: #fff0e7; color: #8a390f; }
         .v941-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
         .v941-carte { background: #fff; border: 1px solid #d7dfe5; border-radius: 13px; padding: 14px 16px; min-width: 0; }
@@ -3585,6 +3600,58 @@
                     const entete = creer("div", "v941-simulation-entete", null, racine);
                     creer("h4", "", "Simulation complète SQL161 · Révision " + (data.revision ?? "—"), entete);
                     creer("span", "v941-etiquette", "Lecture seule · Aucune écriture", entete);
+
+                    // V9.43 — Export TXT local de la réponse vérifiée SQL161.
+                    // Aucun appel réseau supplémentaire, aucune écriture en base.
+                    const boutonExport = creer("button", "v943-exporter", "Exporter le rapport (.txt)", entete);
+                    boutonExport.type = "button";
+                    boutonExport.addEventListener("click", () => {
+                        const format = valeur => valeur === undefined || valeur === null ? "—" : String(valeur);
+                        const rapport = [
+                            "MDN SION — RAPPORT DE SIMULATION DE CRÉATION 2027",
+                            "SIMULATION EN LECTURE SEULE — AUCUNE ÉCRITURE",
+                            "Préparation : " + format(data.preparation_id),
+                            "Révision : " + format(data.revision),
+                            "Validations officielles : " + format(data.validations_officielles) + "/5",
+                            "",
+                            "CATALOGUES",
+                            "Articles MDN : " + format(config.articles_mdn),
+                            "Articles Fondation : " + format(config.articles_fondation),
+                            "Vaisselle : " + format(config.vaisselle),
+                            "Contenants : " + format(config.contenants),
+                            "Paramètres source : " + format(config.parametres_source),
+                            "",
+                            "INVENTAIRES MDN",
+                            "Fiches validées : " + format(mdn.fiches_validees) + "/" + format(mdn.fiches),
+                            "Quantités simulées : " + format(mdn.unites_comptees_simulees),
+                            "Mouvements positifs théoriques : " + format(mdn.mouvements_positifs_theoriques),
+                            "",
+                            "STOCKS ET RÉSERVE",
+                            "Fondation, stock initial prévu : " + format(data.stock_fondation_initial_prevu),
+                            "Vaisselle opérationnelle, stock initial prévu : " + format(data.stock_vaisselle_operationnel_initial_prevu),
+                            "Réserve de gobelets validée : " + format(reserve.fiches_validees) + "/" + format(reserve.fiches),
+                            "Réserve hors stock opérationnel : Oui",
+                            "",
+                            "CRÉATION",
+                            "Création autorisable : " + (data.creation_autorisable_sur_donnees_reelles === true ? "Précontrôles OK" : "Non"),
+                            "Édition 2027 existante : " + (data.edition_2027_existe === true ? "Oui" : "Non"),
+                            "",
+                            "BLOCAGES",
+                            ...(blocages.length ? blocages.map(code => "- " + code) : ["Aucun blocage signalé"]),
+                            "",
+                            "ATTENTION : les quantités actuelles sont fictives.",
+                            "Aucune création, activation ou écriture de stock effectuée par cette simulation."
+                        ].join("\n");
+                        const fichier = new Blob(["\uFEFF", rapport], { type: "text/plain;charset=utf-8" });
+                        const url = URL.createObjectURL(fichier);
+                        const lien = document.createElement("a");
+                        lien.href = url;
+                        lien.download = "MDN-Sion-Simulation-2027-Revision-" + format(data.revision) + ".txt";
+                        document.body.appendChild(lien);
+                        lien.click();
+                        lien.remove();
+                        URL.revokeObjectURL(url);
+                    });
 
                     const grille = creer("div", "v941-grille", null, racine);
                     const carte = (titre, valeur, legende) => {
