@@ -1146,7 +1146,26 @@
         line-height: 1.4;
     }
 
-</style>
+
+        /* V9.77 — Accès direct aux contrôles déjà présents dans la page. */
+        .v977-actions-suivantes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .v977-actions-suivantes .bouton {
+            width: auto;
+            max-width: 100%;
+            white-space: normal;
+            text-align: center;
+        }
+        #titreApercuValidationsV926,
+        #titreAuditV953 {
+            scroll-margin-top: 205px;
+        }
+
+    </style>
 </head>
 <body data-v912-vue="accueil">
 
@@ -5433,6 +5452,28 @@
                     if (blocages.length) {
                         const liste = creer("ul", "", null, zoneBlocages);
                         blocages.forEach(code => creer("li", "", libellesBlocages[code] || code, liste));
+
+                        // V9.77 — Accès direct aux étapes existantes, sans nouveau RPC.
+                        // Les actions consultent les informations : aucune validation ni écriture.
+                        const actionsSuivantes = creer("div", "v977-actions-suivantes", null, zoneBlocages);
+                        const ouvrirEtape = (libelle, cibleId, boutonId) => {
+                            const action = creer("button", "bouton secondaire", libelle, actionsSuivantes);
+                            action.type = "button";
+                            action.addEventListener("click", () => {
+                                const section = parId(cibleId);
+                                const boutonExistant = parId(boutonId);
+                                if (!section || !boutonExistant) return;
+                                section.scrollIntoView({ behavior: "smooth", block: "start" });
+                                if (!boutonExistant.disabled) boutonExistant.click();
+                            });
+                        };
+                        if (blocages.includes("CINQ_VALIDATIONS_OFFICIELLES_REQUISES")) {
+                            ouvrirEtape("Consulter les validations", "titreApercuValidationsV926", "verifierValidationsV926");
+                        }
+                        if (blocages.includes("INVENTAIRE_MDN_NON_VALIDE") ||
+                            blocages.includes("RESERVE_GOBELETS_NON_VALIDEE")) {
+                            ouvrirEtape("Consulter les inventaires et la réserve", "titreAuditV953", "auditerInventairesV953");
+                        }
                     }
                 } catch (erreur) {
                     cible.textContent = `Simulation SQL161 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée par cette action.`;
