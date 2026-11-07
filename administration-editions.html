@@ -1282,7 +1282,7 @@
                     <p>Comparer les fiches du brouillon avec la préparation officielle avant un éventuel transfert. Une confirmation distincte reste nécessaire.</p>
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="precontrolerTransfertV922">Vérifier les fiches à transférer</button>
-                        <button type="button" class="bouton" id="confirmerTransfertV922" disabled>Confirmer le transfert</button>
+                        <button type="button" class="bouton" id="confirmerTransfertV922" disabled>Transfert réel verrouillé (tests)</button>
                     </div>
                     <div id="resultatTransfertV922" class="v922-resultat" role="status" aria-live="polite">Vérification non effectuée.</div>
                 </section>
@@ -1451,6 +1451,10 @@
                 ).join("")}</div><p class="v921-pied">Préparation ${echapper(preparation.annee_cible)} · ${controle.toutes_sections_completes ? "Sections complètes" : "Préparation incomplète"} · Activation verrouillée</p>`;
             }
 
+            // V9.57 — verrouillage des écritures tant que les inventaires sont fictifs.
+            // À lever uniquement après une décision explicite et des contrôles réels.
+            const transfertReelVerrouilleV957 = true;
+
             // V9.22 — aucun transfert sans précontrôle SQL150 et double confirmation.
             let apercuTransfertV922 = null;
             let transfertEnCoursV922 = false;
@@ -1506,7 +1510,8 @@
                         `<p>Fiches non vérifiées : ignorées. Aucun inventaire n'est validé automatiquement.</p>` +
                         (anomalies.length ? `<p>Anomalies : ${echapper(anomalies.join(" ; "))}</p>` : "") +
                         
-                        (eligible ? "<p>Le transfert reste facultatif et ne crée aucune édition.</p>" : "");
+                        (eligible ? "<p>Le transfert reste facultatif et ne crée aucune édition.</p>" : "") +
+                        (eligible && transfertReelVerrouilleV957 ? "<p class=\"v922-attention\"><strong>Transfert réel verrouillé :</strong> les quantités actuelles sont des données de test. Le précontrôle reste disponible en lecture seule.</p>" : "");
                     if (eligible) {
                         apercuTransfertV922 = {
                             preparationId: preparation.id,
@@ -1517,7 +1522,7 @@
                             contenants: Number(sections.contenants?.verifiees || 0),
                             reserve: Number(sections.reserve?.verifiees || 0)
                         };
-                        parId("confirmerTransfertV922").disabled = false;
+                        parId("confirmerTransfertV922").disabled = transfertReelVerrouilleV957;
                     }
                 } catch (erreur) {
                     statutTransfertV922("Précontrôle impossible : " + (erreur.message || erreur), true);
@@ -1610,7 +1615,7 @@
 
             async function confirmerTransfertV922() {
                 const apercu = apercuTransfertV922;
-                if (!apercu || transfertEnCoursV922 || modeDemoActif || !clientSupabase) return;
+                if (!apercu || transfertEnCoursV922 || modeDemoActif || !clientSupabase || transfertReelVerrouilleV957) return;
                 const saisie = await demanderConfirmationTransfertV923(apercu);
                 if (!saisie) return;
                 transfertEnCoursV922 = true;
