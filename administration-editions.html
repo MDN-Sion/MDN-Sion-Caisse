@@ -1192,6 +1192,12 @@
         .v980-precontrole .v922-actions { margin: 9px 0; }
 
 
+
+        /* V9.82 — Commandes de mise en service : visibilité sans autoriser l'écriture. */
+        .v982-commandes { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d3dee6; }
+        .v982-commandes h5 { margin: 0 0 6px; font-size: 1rem; }
+        .v982-commandes .v922-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .v982-commandes button:disabled { opacity: .58; cursor: not-allowed; }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1543,6 +1549,16 @@
                             <p id="etatCreationV980" role="status" aria-live="polite">Création : non contrôlée.</p>
                             <p id="etatInitialisationV980">Initialisation MDN : aucune édition 2027 créée.</p>
                             <p id="etatActivationV980">Activation : protégée par SQL167, verrouillée pendant les tests.</p>
+                            <div class="v982-commandes" aria-labelledby="titreCommandesV982">
+                                <h5 id="titreCommandesV982">Opérations de mise en service</h5>
+                                <p>Commandes raccordées aux fonctions SQL159, SQL160 et SQL167. Exécution désactivée tant que les comptages sont fictifs.</p>
+                                <div class="v922-actions">
+                                    <button type="button" class="bouton secondaire" id="creerEditionV982" disabled>1. Créer 2027</button>
+                                    <button type="button" class="bouton secondaire" id="initialiserStocksV982" disabled>2. Initialiser les stocks MDN</button>
+                                    <button type="button" class="bouton secondaire" id="activerEditionV982" disabled>3. Activer 2027</button>
+                                </div>
+                                <p id="etatCommandesV982" role="status" aria-live="polite">Opérations réelles verrouillées. Aucune écriture autorisée en phase de test.</p>
+                            </div>
                         </div>
                         <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
                     </section>
@@ -5999,6 +6015,119 @@
                     if (diagnostic) diagnostic.remove();
                 }
             }
+
+
+            // V9.82 — Chaîne d'exécution réelle, implémentée mais non autorisée.
+            // IMPORTANT : ce verrou est indépendant des contrôles SQL serveur.
+            // Les fonctions sont volontairement inaccessibles durant les tests.
+            const OPERATIONS_REELLES_2027_AUTORISEES_V982 = false;
+            let editionCreeeV982 = null;
+            let stocksInitialisesV982 = false;
+            let operationEnCoursV982 = false;
+
+            function preparationCouranteV982() {
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027);
+                if (!preparation || !preparation.id) {
+                    throw new Error("Préparation 2027 introuvable. Actualise la page.");
+                }
+                return preparation;
+            }
+
+            async function verifierAvantOperationV982() {
+                if (!OPERATIONS_REELLES_2027_AUTORISEES_V982 || modeDemoActif || !clientSupabase) {
+                    throw new Error("Opérations réelles désactivées : aucun stock réel ne peut être modifié.");
+                }
+                const preparation = preparationCouranteV982();
+                const { data, error } = await clientSupabase.rpc(
+                    "apercu_chaine_creation_2027_admin",
+                    { p_preparation_id: preparation.id }
+                );
+                if (error) throw error;
+                if (data?.nature !== "LECTURE_SEULE" ||
+                    data?.creation_effectuee !== false ||
+                    data?.stocks_modifies !== false ||
+                    data?.activation_effectuee !== false) {
+                    throw new Error("Précontrôle serveur non conforme.");
+                }
+                return { preparation, data };
+            }
+
+            function confirmationExacteV982(message, confirmation) {
+                const saisie = window.prompt(message + "\n\nSaisis exactement :\n" + confirmation);
+                return saisie === confirmation;
+            }
+
+            async function executerOperationV982(type) {
+                const etat = parId("etatCommandesV982");
+                if (operationEnCoursV982) return;
+                operationEnCoursV982 = true;
+                try {
+                    const { preparation, data } = await verifierAvantOperationV982();
+                    const revision = Number(data.revision);
+                    if (!Number.isInteger(revision) || revision < 1) {
+                        throw new Error("Révision officielle non vérifiable.");
+                    }
+                    if (type === "creation") {
+                        const blocages = Array.isArray(data.blocages) ? data.blocages : ["Contrôle incomplet"];
+                        if (blocages.length !== 0 || Number(data.validations_officielles) !== 5 ||
+                            Number(data.inventaire_mdn?.fiches_validees) !== 16 ||
+                            Number(data.reserve_gobelets?.fiches_validees) !== 1) {
+                            throw new Error("Création refusée : inventaires et validations non certifiés.");
+                        }
+                        const confirmation = `CERTIFIER_STOCKS_DEFINITIFS_ET_CREER_EDITION_2027_REVISION_${revision}`;
+                        if (!confirmationExacteV982("Création réelle de l'édition 2027 (sans activation).", confirmation)) return;
+                        const { data: resultat, error } = await clientSupabase.rpc("creer_edition_depuis_preparation", {
+                            p_preparation_id: preparation.id,
+                            p_revision_attendue: revision,
+                            p_confirmation: confirmation
+                        });
+                        if (error) throw error;
+                        if (resultat?.resultat !== "EDITION_CREEE_SANS_ACTIVATION" || !resultat.edition_id ||
+                            resultat.est_active !== false) throw new Error("Réponse de création inattendue : vérifier la base avant toute autre action.");
+                        editionCreeeV982 = resultat.edition_id;
+                        stocksInitialisesV982 = false;
+                        etat.textContent = "Édition 2027 créée sans activation. Initialisation des stocks encore nécessaire.";
+                    } else if (type === "stocks") {
+                        if (!editionCreeeV982) throw new Error("Aucune création 2027 confirmée dans cette session.");
+                        const confirmation = `CERTIFIER_INVENTAIRE_REEL_MDN_2027_REVISION_${revision}`;
+                        if (!confirmationExacteV982("Initialisation RÉELLE des stocks MDN 2027.", confirmation)) return;
+                        const { data: resultat, error } = await clientSupabase.rpc("initialiser_stocks_mdn_edition", {
+                            p_preparation_id: preparation.id,
+                            p_edition_id: editionCreeeV982,
+                            p_revision_attendue: revision,
+                            p_confirmation: confirmation
+                        });
+                        if (error) throw error;
+                        if (resultat?.resultat !== "STOCKS_MDN_2027_INITIALISES" ||
+                            resultat.edition_id !== editionCreeeV982 || resultat.activation_effectuee !== false) {
+                            throw new Error("Réponse d'initialisation inattendue : vérifier les stocks avant de poursuivre.");
+                        }
+                        stocksInitialisesV982 = true;
+                        etat.textContent = "Stocks MDN initialisés. Activation distincte encore nécessaire.";
+                    } else if (type === "activation") {
+                        if (!editionCreeeV982 || !stocksInitialisesV982) {
+                            throw new Error("Création et initialisation des stocks doivent être confirmées avant l'activation.");
+                        }
+                        if (!confirmationExacteV982("Activation RÉELLE de 2027 et désactivation de l'édition actuellement active.", "ACTIVER_EDITION_2027")) return;
+                        const { data: resultat, error } = await clientSupabase.rpc("activer_edition_administration", {
+                            p_edition_id: editionCreeeV982
+                        });
+                        if (error) throw error;
+                        if (resultat?.ok !== true || resultat.edition?.id !== editionCreeeV982) {
+                            throw new Error("Réponse d'activation inattendue : vérifier les éditions actives.");
+                        }
+                        etat.textContent = "Édition 2027 activée. Vérifier l'état des éditions.";
+                    }
+                } catch (erreur) {
+                    etat.textContent = "Opération non effectuée ou interrompue : " + (erreur.message || erreur);
+                } finally {
+                    operationEnCoursV982 = false;
+                }
+            }
+
+            parId("creerEditionV982").addEventListener("click", () => executerOperationV982("creation"));
+            parId("initialiserStocksV982").addEventListener("click", () => executerOperationV982("stocks"));
+            parId("activerEditionV982").addEventListener("click", () => executerOperationV982("activation"));
 
             initialiser();
         })();
