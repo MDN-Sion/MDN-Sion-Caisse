@@ -1,2303 +1,2036 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#8B0000">
-  <link rel="icon" type="image/png" href="logo-mdn.png">
-  <link rel="apple-touch-icon" href="logo-mdn.png">
-  <meta name="description" content="Administration des articles et tarifs - Marché de Noël de Sion">
-  <title>Articles & Tarifs - MDN Sion</title>
-  <!-- SQL126 : accès Administration Réel/Démo sécurisé -->
-
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+  <meta content="#8B0000" name="theme-color"/>
+  <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
+  <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
+  <title>
+   Référentiel vaisselle · MDN Sion — V16
+  </title>
   <style>
-    * { box-sizing: border-box; }
-
-    html, body {
-      width: 100%;
-      min-height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      min-height: 100dvh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f3f3f3;
-      color: #222;
-    }
-
-    button, input, select {
-      font: inherit;
-    }
-
-    button {
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .chargement-page {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 24px;
-      background: linear-gradient(145deg, #7b0000 0%, #a00000 48%, #650000 100%);
-      color: #fff;
-      text-align: center;
-      transition: opacity .25s ease, visibility .25s ease;
-    }
-
-    .chargement-page.masque {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    .chargement-embleme {
-      width: 72px;
-      height: 72px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(255,255,255,.65);
-      border-radius: 20px;
-      background: rgba(255,255,255,.1);
-      font-size: 36px;
-    }
-
-    .chargement-page strong {
-      font-size: 27px;
-    }
-
-    .chargement-page p {
-      margin: 0;
-      color: rgba(255,255,255,.85);
-    }
-
-    .spinner-page {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: rotation .8s linear infinite;
-    }
-
-    .barre-haute {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
-      background: linear-gradient(145deg, #7b0000, #980000);
-      color: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,.18);
-    }
-
-    .barre-haute-contenu {
-      width: min(100%, 1500px);
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .bouton-retour,
-    .bouton-deconnexion {
-      min-height: 42px;
-      padding: 9px 14px;
-      border: 1px solid rgba(255,255,255,.35);
-      border-radius: 11px;
-      background: rgba(255,255,255,.1);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 700;
-    }
-
-    .bouton-retour:hover,
-    .bouton-deconnexion:hover:not(:disabled) {
-      background: rgba(255,255,255,.18);
-    }
-
-    .titre-page {
-      text-align: center;
-      min-width: 0;
-    }
-
-    .titre-page h1 {
-      margin: 0;
-      font-size: clamp(21px, 2.2vw, 29px);
-      line-height: 1.1;
-    }
-
-    .titre-page p {
-      margin: 5px 0 0;
-      font-size: 13px;
-      color: rgba(255,255,255,.88);
-    }
-
-    .contenu {
-      width: min(calc(100% - 32px), 1500px);
-      margin: 22px auto 32px;
-    }
-
-    .entete-section {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 16px;
-    }
-
-    .entete-section h2 {
-      margin: 0;
-      color: #8b0000;
-      font-size: 25px;
-    }
-
-    .entete-section p {
-      margin: 5px 0 0;
-      color: #666;
-      font-size: 14px;
-    }
-
-    .bouton-principal {
-      flex: 0 0 auto;
-      min-height: 44px;
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 11px;
-      background: #9b0000;
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(139,0,0,.15);
-    }
-
-    .bouton-principal:hover {
-      background: #7f0000;
-    }
-
-    .bouton-principal:disabled {
-      cursor: not-allowed;
-      opacity: .55;
-    }
-
-    .panneau {
-      overflow: hidden;
-      border: 1px solid #ddd;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 8px 24px rgba(0,0,0,.05);
-    }
-
-    .barre-outils {
-      padding: 16px;
-      border-bottom: 1px solid #e4e4e4;
-      background: #fafafa;
-    }
-
-    .ligne-outils {
-      display: grid;
-      grid-template-columns: minmax(220px, 1fr) auto;
-      gap: 14px;
-      align-items: center;
-    }
-
-    .recherche {
-      position: relative;
-      min-width: 0;
-    }
-
-    .recherche span {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
-      color: #777;
-    }
-
-    .recherche input {
-      width: 100%;
-      height: 44px;
-      padding: 0 42px;
-      border: 1px solid #d8d8d8;
-      border-radius: 12px;
-      outline: none;
-      background: #fff;
-      color: #222;
-    }
-
-    .recherche input:focus {
-      border-color: #a90000;
-      box-shadow: 0 0 0 3px rgba(169,0,0,.08);
-    }
-
-    .effacer-recherche {
-      position: absolute;
-      right: 7px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 32px;
-      height: 32px;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: #666;
-      cursor: pointer;
-      display: none;
-    }
-
-    .effacer-recherche.visible {
-      display: block;
-    }
-
-    .filtres {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .filtre {
-      min-height: 42px;
-      padding: 8px 14px;
-      border: 1px solid #d6d6d6;
-      border-radius: 999px;
-      background: #fff;
-      color: #444;
-      font-weight: 750;
-      cursor: pointer;
-    }
-
-    .filtre.actif {
-      border-color: #a90000;
-      background: #a90000;
-      color: #fff;
-    }
-
-    .resume {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px 18px;
-      padding: 12px 16px;
-      border-bottom: 1px solid #e7e7e7;
-      background: #fff;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .resume strong {
-      color: #222;
-    }
-
-    .resume-edition {
-      margin-left: auto;
-      font-weight: 700;
-      color: #666;
-    }
-
-    .liste {
-      padding: 14px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .article {
-      display: grid;
-      grid-template-columns: 64px minmax(180px, 1.5fr) minmax(130px, .8fr) minmax(110px, .65fr) minmax(100px, .55fr) 105px 92px 46px;
-      gap: 12px;
-      align-items: center;
-      min-height: 82px;
-      padding: 10px 12px;
-      border: 1px solid #e1e1e1;
-      border-radius: 14px;
-      background: #fff;
-      transition: box-shadow .15s ease, border-color .15s ease;
-    }
-
-    .article:hover {
-      border-color: #d2b5b5;
-      box-shadow: 0 5px 16px rgba(0,0,0,.055);
-    }
-
-    .photo {
-      width: 58px;
-      height: 58px;
-      border: 1px solid #e1e1e1;
-      border-radius: 11px;
-      background: #f7f7f7;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 23px;
-      color: #999;
-    }
-
-    .photo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .nom-article {
-      min-width: 0;
-    }
-
-    .nom-article strong {
-      display: block;
-      font-size: 16px;
-      line-height: 1.2;
-      overflow-wrap: anywhere;
-    }
-
-    .nom-article small {
-      display: block;
-      margin-top: 5px;
-      color: #777;
-      line-height: 1.25;
-    }
-
-    .cellule {
-      min-width: 0;
-    }
-
-    .cellule .label-mobile {
-      display: none;
-      margin-bottom: 3px;
-      color: #888;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .beneficiaire {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: #f1f1f1;
-      color: #555;
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .prix {
-      color: #950000;
-      font-size: 18px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .etat {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 750;
-      white-space: nowrap;
-    }
-
-    .etat::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #14833b;
-    }
-
-    .etat.inactif {
-      color: #777;
-    }
-
-    .etat.inactif::before {
-      background: #b7b7b7;
-    }
-
-    .stock {
-      font-weight: 700;
-    }
-
-    .bouton-modifier {
-      width: 42px;
-      height: 42px;
-      border: 1px solid #d9c0c0;
-      border-radius: 10px;
-      background: #fff8f8;
-      color: #8b0000;
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .bouton-modifier:hover {
-      background: #f7eaea;
-    }
-
-    .etat-vide,
-    .erreur {
-      margin: 14px;
-      padding: 34px 18px;
-      border-radius: 14px;
-      text-align: center;
-    }
-
-    .etat-vide {
-      background: #fafafa;
-      color: #777;
-    }
-
-    .erreur {
-      border: 1px solid #efcaca;
-      background: #fff4f4;
-      color: #8b0000;
-    }
-
-    .note-version {
-      margin-top: 12px;
-      color: #777;
-      font-size: 13px;
-      text-align: center;
-    }
-
-    @media (max-width: 1150px) {
-      .article {
-        grid-template-columns: 64px minmax(180px, 1.5fr) minmax(110px, .7fr) minmax(95px, .55fr) 95px 46px;
-      }
-
-      .col-categorie,
-      .col-stock {
-        display: none;
-      }
-    }
-
-    @media (max-width: 760px) {
-      .barre-haute-contenu {
-        grid-template-columns: auto 1fr auto;
+   
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			margin: 0;
+			min-height: 100%;
+		}
+
+        /* V10 : le défilement est limité au corps de la page.
+           Cela évite de révéler une bande blanche en tirant sur tablette. */
+        html {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            height: 100%;
+            height: 100dvh;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none;
+        }
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+			background: linear-gradient(145deg, #7b0000, #a00000 48%, #650000);
+			color: #202a36;
+		}
+
+		body.demo {
+			background: linear-gradient(145deg, #967500, #cfa514 48%, #816600);
+		}
+
+		button, input, select, textarea {
+			font: inherit;
+		}
+
+		button {
+			cursor: pointer;
+		}
+
+		button:disabled {
+			cursor: not-allowed;
+			opacity: .55;
+		}
+
+		[hidden] {
+			display: none !important;
+		}
+
+		.entete {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            isolation: isolate;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+			color: #fff;
+            /* Teinte d'origine #5c000073 reconstituée sur le fond rouge,
+               mais désormais entièrement opaque pendant le défilement. */
+            background: linear-gradient(#5c000073, #5c000073),
+                        linear-gradient(145deg, #7b0000, #a00000 48%, #650000);
+			padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
+		}
+
+        /* Couleur de l'en-tête selon le mode : opaque et fixe. */
+        body.demo .entete {
+            background: #B38B00;
+        }
+
+		.entete-contenu {
+			max-width: 1250px;
+			margin: auto;
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.entete-centre {
+			text-align: center;
+		}
+
+		h1 {
+			font-size: clamp(19px, 2.5vw, 28px);
+			margin: 0;
+		}
+
+		.entete-centre p {
+			margin: 4px 0 0;
+			font-size: 13px;
+		}
+
+		.entete-droite {
+			justify-self: end;
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.identite {
+			text-align: right;
+			font-size: 13px;
+		}
+
+		.identite strong, .identite span {
+			display: block;
+		}
+
+		.bouton-entete {
+			border: 1px solid #ffffff70;
+			color: #fff;
+			background: #ffffff16;
+			border-radius: 13px;
+			padding: 12px 16px;
+			font-weight: 700;
+		}
+
+		main {
+			max-width: 1250px;
+			margin: 16px auto 28px;
+			padding: 0 16px;
+		}
+
+		.panneau {
+			background: #fff;
+			border-radius: 18px;
+			padding: clamp(16px, 3vw, 26px);
+			box-shadow: 0 8px 25px #0002;
+		}
+
+		.haut {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+		}
+
+		h2 {
+			margin: 0;
+			font-size: 23px;
+		}
+
+		h3 {
+			font-size: 18px;
+			margin: 0 0 12px;
+		}
+
+		.sous-titre {
+			color: #526174;
+			margin: 7px 0 14px;
+			line-height: 1.45;
+		}
+
+		.bandeau {
+			background: #fff1b7;
+			color: #674b00;
+			border: 1px solid #d7b33e;
+			padding: 10px 14px;
+			border-radius: 12px;
+			margin: 14px 0;
+			font-weight: 700;
+		}
+
+		.actions {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.bouton {
+			border: 1px solid #8b0000;
+			border-radius: 11px;
+			background: #8b0000;
+			color: #fff;
+			padding: 10px 15px;
+			font-weight: 700;
+		}
+
+		.bouton.secondaire {
+			color: #8b0000;
+			background: #fff;
+		}
+
+		.bouton:focus-visible, input:focus-visible, select:focus-visible {
+			outline: 3px solid #d1a64e;
+			outline-offset: 2px;
+		}
+
+		.choix {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+
+		select {
+			border: 1px solid #cbd5df;
+			border-radius: 9px;
+			padding: 10px;
+			background: white;
+			max-width: 100%;
+		}
+
+		.cartes {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 10px;
+			margin: 14px 0;
+		}
+
+		.carte {
+			border: 1px solid #d8e1e8;
+			border-radius: 13px;
+			padding: 13px;
+			background: #f7f9fb;
+		}
+
+		.carte span {
+			display: block;
+			color: #536579;
+			font-size: 13px;
+		}
+
+		.carte strong {
+			font-size: 25px;
+		}
+
+		.bloc {
+			border: 1px solid #d6e0e8;
+			border-radius: 15px;
+			padding: 16px;
+			margin-top: 15px;
+		}
+
+		.table-scroll {
+			overflow-x: auto;
+			width: 100%;
+		}
+
+		table {
+			border-collapse: collapse;
+			width: 100%;
+			min-width: 790px;
+		}
+
+		th, td {
+			text-align: left;
+			border-bottom: 1px solid #e1e7ec;
+			padding: 10px;
+			font-size: 14px;
+			vertical-align: middle;
+		}
+
+		th {
+			background: #f3f6f8;
+			color: #34465b;
+		}
+
+		tr:last-child td {
+			border-bottom: 0;
+		}
+
+		.etat {
+			display: inline-block;
+			border-radius: 99px;
+			padding: 4px 8px;
+			background: #e7f2eb;
+			color: #126137;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.etat.inactif {
+			background: #f1e6e6;
+			color: #8b0000;
+		}
+
+		.petit {
+			color: #607084;
+			font-size: 13px;
+		}
+
+		.erreur {
+			border: 1px solid #e2a4a4;
+			background: #fff1f1;
+			color: #8b0000;
+			padding: 12px;
+			border-radius: 11px;
+			margin: 12px 0;
+		}
+
+		.succes {
+			border: 1px solid #9dcbb0;
+			background: #edf8f0;
+			color: #155b31;
+			padding: 12px;
+			border-radius: 11px;
+			margin: 12px 0;
+		}
+
+		dialog {
+			border: 0;
+			border-radius: 17px;
+			padding: 0;
+			width: min(95vw, 540px);
+			box-shadow: 0 18px 65px #0005;
+		}
+
+		dialog::backdrop {
+			background: #0009;
+		}
+
+		.dialog-contenu {
+			padding: 23px;
+		}
+
+		.champs {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 12px;
+			margin: 16px 0;
+		}
+
+		.champ {
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+			font-size: 13px;
+			font-weight: 650;
+		}
+
+		.champ.large {
+			grid-column: 1 / -1;
+		}
+
+		.champ input, .champ select, .champ textarea {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #cbd5df;
+			border-radius: 9px;
+		}
+
+		.dialog-actions {
+			display: flex;
+			justify-content: flex-end;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+
+		.avertissement {
+			color: #8b0000;
+			font-weight: 650;
+			font-size: 13px;
+		}
+
+		@media(max-width: 750px) {
+			.entete-contenu {
+				grid-template-columns: auto 1fr auto;
+			}
+			.identite {
+				display: none;
+			}
+			.cartes {
+				grid-template-columns: 1fr;
+			}
+			.bouton-entete {
+				padding: 9px;
+				font-size: 12px;
+			}
+			.champs {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		@media(max-width: 420px) {
+			.entete-centre p {
+				display: none;
+			}
+			.entete-contenu {
+				gap: 5px;
+			}
+			h1 {
+				font-size: 17px;
+			}
+			.panneau {
+				padding: 14px;
+			}
+		}
+	
+
+        /* Tableaux adaptatifs : toutes les colonnes visibles sur ordinateur. */
+        .table-scroll {
+            width: 100%;
+            min-width: 0;
+            overflow-x: visible;
+        }
+
+        .table-scroll table {
+            width: 100%;
+            min-width: 0;
+            table-layout: fixed;
+        }
+
+        .table-scroll th,
+        .table-scroll td {
+            padding: 10px 7px;
+            font-size: 13px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            white-space: normal;
+        }
+
+        .table-scroll th {
+            font-size: 12px;
+        }
+
+        /* Références : 5 colonnes. */
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(1) {
+            width: 20%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(2) {
+            width: 30%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(3) {
+            width: 20%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(4) {
+            width: 12%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(5) {
+            width: 18%;
+        }
+
+        /* V8 : classement compact, sans chevauchement avec la colonne État. */
+        .classement-vaisselle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+
+        .classement-numero {
+            flex: 0 0 20px;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+
+        .classement-commandes {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .classement-commandes .classement-fleche {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            min-width: 34px;
+            height: 34px;
+            min-height: 34px;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1050px) {
+            .classement-vaisselle {
+                gap: 5px;
+            }
+
+            .classement-commandes {
+                gap: 4px;
+            }
+
+            .classement-commandes .classement-fleche {
+                width: 30px;
+                min-width: 30px;
+                height: 32px;
+                min-height: 32px;
+            }
+        }
+
+        /* Paramètres : 8 colonnes. */
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(1) {
+            width: 17%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(2) {
+            width: 16%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(3) {
+            width: 14%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(4) {
+            width: 11%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(5) {
+            width: 10%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(6) {
+            width: 12%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(7) {
+            width: 9%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(8) {
+            width: 11%;
+        }
+
+        @media (max-width: 1050px) {
+            .bloc {
+                padding: 12px;
+            }
+
+            .table-scroll th,
+            .table-scroll td {
+                padding: 9px 5px;
+                font-size: 12px;
+            }
+
+            .table-scroll th {
+                font-size: 11px;
+            }
+        }
+
+        /* Très petits écrans : conserver des colonnes lisibles. */
+        @media (max-width: 650px) {
+            .table-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .table-scroll table {
+                min-width: 680px;
+                table-layout: fixed;
+            }
+
+            .bloc:nth-of-type(1) .table-scroll table {
+                min-width: 540px;
+            }
+        }
+
+        /* En-tête : mêmes proportions que les autres pages MDN. */
+        .entete-contenu {
+            grid-template-columns: auto minmax(0, 1fr) auto;
+        }
+
+        #retour,
+        #deconnexion {
+            width: auto;
+            min-width: 0;
+            min-height: 42px;
+            padding: 9px 14px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #retour {
+            justify-self: start;
+        }
+
+        @media (max-width: 680px) {
+            #retour,
+            #deconnexion {
+                padding: 8px;
+                font-size: 12px;
+            }
+        }
+
+    .liste-confirmation {
+        display: grid;
         gap: 8px;
-      }
+        margin: 16px 0;
+    }
 
-      .bouton-retour,
-      .bouton-deconnexion {
-        min-height: 39px;
-        padding: 8px 10px;
-        font-size: 14px;
-      }
+    .ligne-confirmation {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid #d9e1e8;
+        border-radius: 9px;
+        background: #f6f8fa;
+        overflow-wrap: anywhere;
+    }
 
-      .titre-page h1 {
-        font-size: 19px;
-      }
+    .ligne-confirmation strong {
+        color: #8b0000;
+        text-align: right;
+    }
 
-      .titre-page p {
-        font-size: 11px;
-      }
+    #dialogueConfirmation {
+        width: min(94vw, 560px);
+        max-height: 88dvh;
+        overflow-y: auto;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 18px 60px #0005;
+        padding: 0;
+    }
 
-      .contenu {
-        width: min(calc(100% - 20px), 1500px);
-        margin-top: 14px;
-      }
-
-      .entete-section {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .bouton-principal {
-        width: 100%;
-      }
-
-      .ligne-outils {
-        grid-template-columns: 1fr;
-      }
-
-      .filtres {
-        justify-content: flex-start;
-      }
-
-      .resume-edition {
-        width: 100%;
-        margin-left: 0;
-      }
-
-      .article {
-        grid-template-columns: 54px minmax(0, 1fr) 42px;
-        gap: 10px;
-        padding: 11px;
-      }
-
-      .photo {
-        width: 50px;
-        height: 50px;
-      }
-
-      .col-beneficiaire,
-      .col-categorie,
-      .col-prix,
-      .col-stock,
-      .col-etat {
-        display: none;
-      }
-
-      .nom-article strong {
-        font-size: 15px;
-      }
-
-      .nom-article small {
-        display: block;
-      }
+    #dialogueConfirmation::backdrop {
+        background: #0009;
     }
 
     @media (max-width: 480px) {
-      .titre-page p {
-        display: none;
-      }
+        .ligne-confirmation {
+            grid-template-columns: 1fr;
+            gap: 3px;
+        }
 
-      .bouton-retour {
-        font-size: 0;
-        width: 42px;
-        padding: 0;
-      }
-
-      .bouton-retour::before {
-        content: "←";
-        font-size: 20px;
-      }
-
-      .bouton-deconnexion {
-        font-size: 0;
-        width: 42px;
-        padding: 0;
-      }
-
-      .bouton-deconnexion::before {
-        content: "↪";
-        font-size: 19px;
-      }
-
-      .filtres {
-        gap: 6px;
-      }
-
-      .filtre {
-        min-height: 38px;
-        padding: 7px 11px;
-        font-size: 13px;
-      }
+        .ligne-confirmation strong {
+            text-align: left;
+        }
     }
-
-
-    .modale-fond {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(0,0,0,.48);
-    }
-
-    .modale-fond[hidden] { display: none; }
-
-    .modale {
-      width: min(760px, 100%);
-      max-height: min(90dvh, 850px);
-      overflow: auto;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(0,0,0,.28);
-    }
-
-    .modale-entete {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 18px 20px;
-      border-bottom: 1px solid #e4e4e4;
-      background: #fff;
-    }
-
-    .modale-entete h3 {
-      margin: 0;
-      color: #8b0000;
-      font-size: 22px;
-    }
-
-    .fermer-modale {
-      width: 40px;
-      height: 40px;
-      border: 0;
-      border-radius: 10px;
-      background: #f1f1f1;
-      cursor: pointer;
-      font-size: 20px;
-    }
-
-    .formulaire-article { padding: 20px; }
-
-    .grille-formulaire {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .champ { min-width: 0; }
-    .champ-large { grid-column: 1 / -1; }
-
-    .champ label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      font-weight: 800;
-      color: #444;
-    }
-
-    .champ input,
-    .champ select,
-    .champ textarea {
-      width: 100%;
-      height: 54px;
-      min-height: 54px;
-      padding: 10px 12px;
-      border: 1px solid #d6d6d6;
-      border-radius: 10px;
-      background: #fff;
-      color: #222;
-      outline: none;
-    }
-
-    .champ textarea {
-      min-height: 82px;
-      resize: vertical;
-    }
-
-    .champ input:focus,
-    .champ select:focus,
-    .champ textarea:focus {
-      border-color: #a90000;
-      box-shadow: 0 0 0 3px rgba(169,0,0,.08);
-    }
-
-    .ligne-interrupteur {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      height: 54px;
-      min-height: 54px;
-      padding: 0 13px;
-      border: 1px solid #d6d6d6;
-      border-radius: 10px;
-      background: #fff;
-    }
-
-    .ligne-interrupteur input {
-      width: 20px;
-      height: 20px;
-      margin: 0;
-      accent-color: #9b0000;
-    }
-
-    .ligne-interrupteur label {
-      margin: 0;
-      cursor: pointer;
-    }
-
-    .info-edition {
-      padding: 11px 13px;
-      border-radius: 10px;
-      background: #f7f7f7;
-      color: #555;
-      font-size: 13px;
-    }
-
-
-    .zone-photo-article {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 14px;
-      border: 1px solid #d6d6d6;
-      border-radius: 12px;
-      background: #fafafa;
-    }
-
-    .apercu-photo-article {
-      width: 92px;
-      height: 92px;
-      flex: 0 0 92px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border: 1px solid #d9d9d9;
-      border-radius: 12px;
-      background: #fff;
-      font-size: 38px;
-    }
-
-    .apercu-photo-article img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-    }
-
-    .actions-photo {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .bouton-photo {
-      min-height: 40px;
-      padding: 8px 12px;
-      border: 1px solid #d3d3d3;
-      border-radius: 9px;
-      background: #fff;
-      color: #333;
-      font-weight: 750;
-      cursor: pointer;
-    }
-
-    .bouton-photo-danger {
-      color: #9b0000;
-      border-color: #e2bcbc;
-      background: #fff8f8;
-    }
-
-    .aide-photo {
-      width: 100%;
-      margin-top: 2px;
-      color: #777;
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    @media (max-width: 520px) {
-      .zone-photo-article {
-        align-items: flex-start;
-      }
-
-      .apercu-photo-article {
-        width: 78px;
-        height: 78px;
-        flex-basis: 78px;
-      }
-    }
-
-    .message-formulaire {
-      margin-top: 16px;
-      padding: 11px 13px;
-      border-radius: 10px;
-      background: #fff3f3;
-      color: #8b0000;
-      font-weight: 650;
-    }
-
-    .message-formulaire[hidden] { display: none; }
-
-    .actions-formulaire {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid #e5e5e5;
-    }
-
-    .bouton-secondaire {
-      min-height: 44px;
-      padding: 9px 16px;
-      border: 1px solid #d4d4d4;
-      border-radius: 10px;
-      background: #fff;
-      color: #444;
-      font-weight: 750;
-      cursor: pointer;
-    }
-
-    .bouton-enregistrer {
-      min-height: 44px;
-      padding: 9px 18px;
-      border: 0;
-      border-radius: 10px;
-      background: #9b0000;
-      color: #fff;
-      font-weight: 850;
-      cursor: pointer;
-    }
-
-    .bouton-enregistrer:disabled,
-    .bouton-secondaire:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    @media (max-width: 650px) {
-      .modale-fond {
-        align-items: flex-end;
-        padding: 0;
-      }
-
-      .modale {
-        width: 100%;
-        max-height: 94dvh;
-        border-radius: 18px 18px 0 0;
-      }
-
-      .grille-formulaire {
-        grid-template-columns: 1fr;
-      }
-
-      .champ-large { grid-column: auto; }
-
-      .actions-formulaire {
-        position: sticky;
-        bottom: 0;
-        margin: 18px -20px -20px;
-        padding: 14px 20px max(14px, env(safe-area-inset-bottom));
-        background: #fff;
-      }
-    }
-
-
-    /* ============================================================
-       MODE DÉMO — SQL126
-       ============================================================ */
-    body.mode-demo {
-      background: #fffaf0;
-    }
-
-    body.mode-demo .barre-haute {
-      background: linear-gradient(145deg, #8a6500, #b88900);
-    }
-
-    body.mode-demo .chargement-page {
-      background: linear-gradient(145deg, #735400 0%, #a77a00 48%, #5f4600 100%);
-    }
-
-    .bandeau-demo {
-      display: none;
-      width: min(calc(100% - 32px), 1500px);
-      margin: 14px auto 0;
-      padding: 12px 16px;
-      border: 1px solid #d7b34a;
-      border-radius: 12px;
-      background: #fff4c7;
-      color: #624900;
-      font-weight: 800;
-      text-align: center;
-    }
-
-    body.mode-demo .bandeau-demo { display: block; }
-
-    body.mode-demo .bouton-principal { display: none; }
-
-    .bouton-consulter {
-      width: 42px;
-      height: 42px;
-      border: 1px solid #d9c77e;
-      border-radius: 10px;
-      background: #fffaf0;
-      color: #725600;
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .lecture-seule-demo {
-      color: #725600;
-      font-weight: 800;
-    }
-
-    @keyframes rotation {
-      to { transform: rotate(360deg); }
-    }
-
-    /* En-tête fixe et opaque : même rendu que la page Vaisselle V17. */
-    html {
-      height: 100%;
-      overflow: hidden;
-      overscroll-behavior: none;
-    }
-
-    body {
-      height: 100%;
-      height: 100dvh;
-      min-height: 0;
-      overflow-x: hidden;
-      overflow-y: auto;
-      overscroll-behavior-y: none;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .barre-haute {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      isolation: isolate;
-      background: linear-gradient(#5c000073, #5c000073),
-                  linear-gradient(145deg, #7b0000, #a00000 48%, #650000);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    body.mode-demo .barre-haute {
-      background: #B38B00;
-    }
-
-
-    /* Correctifs ciblés : centrage des icônes et fenêtre d'édition compacte. */
-    .bouton-modifier,
-    .fermer-modale {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 1;
-      vertical-align: middle;
-    }
-
-    /* La modale doit passer devant l'en-tête fixe (z-index : 1000). */
-    .modale-fond {
-      z-index: 2000;
-      padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
-      overflow: hidden;
-    }
-
-    .modale {
-      width: min(720px, 100%);
-      max-height: calc(100dvh - 32px);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .modale-entete {
-      position: relative;
-      flex: 0 0 auto;
-      padding: 12px 16px;
-    }
-
-    .modale-entete h3 {
-      font-size: 19px;
-    }
-
-    .fermer-modale {
-      flex: 0 0 36px;
-      width: 36px;
-      height: 36px;
-    }
-
-    .formulaire-article {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      padding: 14px 16px 16px;
-    }
-
-    .grille-formulaire {
-      gap: 10px 14px;
-    }
-
-    .champ label {
-      margin-bottom: 4px;
-    }
-
-    .champ input,
-    .champ select {
-      height: 44px;
-      min-height: 44px;
-      padding: 8px 10px;
-    }
-
-    .champ textarea {
-      height: 66px;
-      min-height: 66px;
-      padding: 8px 10px;
-    }
-
-    .ligne-interrupteur {
-      height: 44px;
-      min-height: 44px;
-    }
-
-    .zone-photo-article {
-      padding: 10px;
-      gap: 12px;
-    }
-
-    .apercu-photo-article {
-      width: 68px;
-      height: 68px;
-      flex-basis: 68px;
-    }
-
-    .actions-formulaire {
-      margin-top: 12px;
-      padding-top: 12px;
-    }
-
-    @media (max-width: 650px) {
-      .modale-fond {
-        align-items: center;
-        padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
-      }
-
-      .modale {
-        width: 100%;
-        max-height: calc(100dvh - 20px);
-        border-radius: 14px;
-      }
-
-      .formulaire-article {
-        padding: 12px;
-      }
-
-      .actions-formulaire {
-        margin: 12px 0 0;
-        padding: 12px 0 0;
-        position: sticky;
-        bottom: 0;
-        background: #fff;
-      }
-    }
-
-  </style>
-</head>
-
-<body>
-
-  <div id="chargementPage" class="chargement-page">
-    <div class="chargement-embleme">⚙️</div>
-    <strong>Articles & Tarifs</strong>
-    <div class="spinner-page" aria-hidden="true"></div>
-    <p>Chargement du catalogue…</p>
-  </div>
-
-  <header class="barre-haute">
-    <div class="barre-haute-contenu">
-      <button id="boutonRetour" class="bouton-retour" type="button">← Administration</button>
-
-      <div class="titre-page">
-        <h1>⚙️ Articles & Tarifs</h1>
-        <p id="identiteUtilisateur">Administration</p>
-      </div>
-
-      <button id="boutonDeconnexion" class="bouton-deconnexion" type="button">Déconnexion</button>
+  
+        /* V9 : matrice compacte des règles, responsive. */
+        .regles-table-scroll {
+            overflow-x: auto;
+            max-width: 100%;
+            border: 1px solid #dbe3ec;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .tableau-regles {
+            width: 100%;
+            min-width: 0;
+            border-collapse: collapse;
+        }
+
+        .tableau-regles th,
+        .tableau-regles td {
+            padding: 11px 12px;
+            border-bottom: 1px solid #dbe3ec;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .tableau-regles thead th {
+            background: #f2f5f8;
+            font-size: 0.88rem;
+        }
+
+        .tableau-regles tbody th {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .regle-etiquette {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .regle-complete {
+            color: #075b35;
+            background: #e3f2e9;
+        }
+
+        .regle-consigne {
+            color: #624700;
+            background: #fff2c8;
+        }
+
+        .regle-refusee,
+        .regle-manquante {
+            color: #922020;
+            background: #fce7e7;
+        }
+
+        /* V10 : la matrice reste sur six colonnes sur grand écran.
+           Sur fenêtre étroite ou tablette, chaque article devient une fiche. */
+        @media (max-width: 1150px) {
+            .regles-table-scroll {
+                overflow-x: hidden;
+                border: 0;
+                border-radius: 0;
+            }
+
+            .tableau-regles,
+            .tableau-regles tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .tableau-regles thead {
+                display: none;
+            }
+
+            .tableau-regles tbody tr {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0;
+                margin: 0 0 12px;
+                border: 1px solid #dbe3ec;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #fff;
+            }
+
+            .tableau-regles tbody th {
+                grid-column: 1 / -1;
+                display: block;
+                padding: 10px 12px;
+                background: #f2f5f8;
+                white-space: normal;
+            }
+
+            .tableau-regles tbody td {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                min-width: 0;
+                padding: 10px 12px;
+                border-right: 1px solid #edf0f4;
+            }
+
+            .tableau-regles tbody td::before {
+                content: attr(data-type-stand);
+                display: block;
+                color: #40526a;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .tableau-regles .regle-etiquette {
+                max-width: 100%;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                line-height: 1.35;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .tableau-regles tbody tr {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .tableau-regles tbody td {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+  
+        /* V12 — Même encadrement arrondi pour les tableaux 1 et 2. */
+        .table-scroll.tableau-arrondi {
+            border: 1px solid #dbe3ec;
+            border-radius: 12px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .table-scroll.tableau-arrondi table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        @media (max-width: 650px) {
+            .table-scroll.tableau-arrondi {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+
+        /* V18 — commandes de modification des règles, uniquement en mode Démo. */
+        .bouton-regle-demo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            margin: 5px 0 0;
+            padding: 5px 10px;
+            border: 1px solid #a48219;
+            border-radius: 8px;
+            background: #fff9e6;
+            color: #664b00;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .bouton-regle-demo:disabled {
+            opacity: .55;
+            cursor: wait;
+        }
+        .tableau-regles td .bouton-regle-demo {
+            display: flex;
+            width: fit-content;
+        }
+
+</style>
+ </head>
+ <body>
+  <header class="entete">
+   <div class="entete-contenu">
+    <button class="bouton-entete" id="retour" type="button">
+     ← Administration
+    </button>
+    <div class="entete-centre">
+     <h1>
+      🍽️ Référentiel vaisselle
+     </h1>
+     <p>
+      Administration
+     </p>
     </div>
+    <div class="entete-droite">
+     <div class="identite">
+      <strong id="nomUtilisateur">
+       —
+      </strong>
+      <span id="roleUtilisateur">
+       Administrateur
+      </span>
+     </div>
+     <button class="bouton-entete" id="deconnexion" type="button">
+      Déconnexion
+     </button>
+    </div>
+   </div>
   </header>
-
-  <div id="bandeauDemo" class="bandeau-demo" role="status">
-    MODE DÉMO — catalogue partagé en consultation uniquement. Aucune modification des articles, tarifs ou photos n’est autorisée.
-  </div>
-
-  <main class="contenu">
-
-    <section class="entete-section">
-      <div>
-        <h2>Catalogue</h2>
-        <p>Gestion des articles et des tarifs de l’édition active.</p>
-      </div>
-
-      <button id="boutonNouvelArticle" class="bouton-principal" type="button">
-        + Nouvel article
+  <main>
+   <section class="panneau">
+    <div class="haut">
+     <div>
+      <h2>
+       Référentiel MDN
+      </h2>
+      <p class="sous-titre">
+       Les références communes et leurs paramètres par édition, sans toucher aux mouvements de stock.
+      </p>
+     </div>
+     <div class="actions">
+      <button class="bouton" id="ajouterReference" type="button" hidden>+ Ajouter une référence</button>
+      <button class="bouton secondaire" id="actualiser" type="button">
+       Actualiser
       </button>
+     </div>
+    </div>
+    <div class="bandeau" hidden="" id="bandeauDemo">
+     MODE DÉMO — Classement modifiable avec les flèches ; règles Démo modifiables. Les références et paramètres sont partagés avec le mode réel.
+    </div>
+    <div aria-live="polite" id="message" role="status">
+     Chargement sécurisé…
+    </div>
+    <div class="choix">
+     <label for="edition">
+      Édition :
+     </label>
+     <select disabled="" id="edition">
+      <option>
+       Chargement…
+      </option>
+     </select>
+     <span class="petit" id="editionInfo">
+     </span>
+    </div>
+    <div class="cartes">
+     <div class="carte">
+      <span>
+       Références MDN
+      </span>
+      <strong id="nombreReferences">
+       —
+      </strong>
+     </div>
+     <div class="carte">
+      <span>
+       Paramètres de l’édition
+      </span>
+      <strong id="nombreParametres">
+       —
+      </strong>
+     </div>
+     <div class="carte">
+      <span>
+       Références actives
+      </span>
+      <strong id="nombreActives">
+       —
+      </strong>
+     </div>
+    </div>
+    <section class="bloc">
+     <h3>
+      1. Références de vaisselle
+     </h3>
+     <p class="petit">
+      Le nom et la description sont communs à toutes les éditions. Une désactivation n'efface pas l'historique.
+     </p>
+     <div class="table-scroll tableau-arrondi">
+      <table>
+       <thead>
+        <tr>
+         <th>
+          Référence
+         </th>
+         <th>
+          Description
+         </th>
+         <th>
+          Ordre
+         </th>
+         <th>
+          État
+         </th>
+         <th>
+          Gestion
+         </th>
+        </tr>
+       </thead>
+       <tbody id="lignesReferences">
+        <tr>
+         <td colspan="5">
+          Chargement…
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
     </section>
-
-    <section class="panneau">
-
-      <div class="barre-outils">
-        <div class="ligne-outils">
-
-          <div class="recherche">
-            <span aria-hidden="true">⌕</span>
-            <input
-              id="rechercheArticle"
-              type="search"
-              placeholder="Rechercher un article…"
-              autocomplete="off"
-            >
-            <button
-              id="effacerRecherche"
-              class="effacer-recherche"
-              type="button"
-              aria-label="Effacer la recherche"
-            >✕</button>
-          </div>
-
-          <div class="filtres" aria-label="Filtres du catalogue">
-            <button class="filtre actif" type="button" data-filtre="tous">Tous</button>
-            <button class="filtre" type="button" data-filtre="mdn">MDN</button>
-            <button class="filtre" type="button" data-filtre="fondation">Fondation</button>
-            <button class="filtre" type="button" data-filtre="actifs">Actifs</button>
-            <button class="filtre" type="button" data-filtre="inactifs">Inactifs</button>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="resume">
-        <span><strong id="nombreAffiche">0</strong> article(s) affiché(s)</span>
-        <span>•</span>
-        <span><strong id="nombreTotal">0</strong> au total</span>
-        <span id="editionActive" class="resume-edition">Édition active</span>
-      </div>
-
-      <div id="zoneListe" class="liste"></div>
-
-      <div id="etatVide" class="etat-vide" hidden>
-        Aucun article ne correspond aux filtres sélectionnés.
-      </div>
-
-      <div id="zoneErreur" class="erreur" hidden></div>
-
+    <section class="bloc">
+     <h3>
+      2. Conditionnements et tarifs de l’édition
+     </h3>
+     <p class="petit">
+      Les valeurs de cette section dépendent de l'édition sélectionnée. Les montants sont en CHF par unité.
+     </p>
+     <div class="table-scroll tableau-arrondi">
+      <table>
+       <thead>
+        <tr>
+         <th>
+          Article
+         </th>
+         <th>
+          Conditionnement
+         </th>
+         <th>
+          Quantité standard
+         </th>
+         <th>
+          Consigne
+         </th>
+         <th>
+          Lavage
+         </th>
+         <th>
+          Seuil stock
+         </th>
+         <th>
+          État
+         </th>
+         <th>
+          Gestion
+         </th>
+        </tr>
+       </thead>
+       <tbody id="lignesParametres">
+        <tr>
+         <td colspan="8">
+          Chargement…
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
     </section>
-
-    <p id="noteVersion" class="note-version">
-      Les administrateurs peuvent ajouter et modifier les articles, tarifs et photos de l’édition active.
-    </p>
-
+    <section class="bloc" id="sectionReglesRemboursement">
+     <h2>3. Règles de remboursement — Réel : consultation / Démo : modification</h2>
+     <p>Retour propre en conditionnement complet : consigne et lavage des pièces remboursés, avec les règles propres au contenant. Retour sale : consigne des pièces uniquement.</p>
+     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. En mode Réel, les règles restent en consultation. En mode Démo, chaque règle peut être modifiée sans toucher aux données réelles.</p>
+     <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
+     <div id="contenuReglesRemboursement"></div>
+    </section>
+    <p class="petit">Aucun inventaire ni mouvement de stock n'est modifié depuis cette page.</p>
+   </section>
   </main>
-
-
-  <div id="fondModaleArticle" class="modale-fond" hidden>
-    <section class="modale" role="dialog" aria-modal="true" aria-labelledby="titreModaleArticle">
-      <div class="modale-entete">
-        <h3 id="titreModaleArticle">Nouvel article</h3>
-        <button id="fermerModaleArticle" class="fermer-modale" type="button" aria-label="Fermer">✕</button>
+  <dialog id="dialogue">
+   <form class="dialog-contenu" id="formulaire">
+    <h3 id="titreDialogue">
+     Modifier
+    </h3>
+    <p class="avertissement" id="avertissementDialogue">
+     Modification d'un référentiel partagé — mode réel uniquement.
+    </p>
+    <div class="champs" id="champsDialogue">
+    </div>
+    <div class="dialog-actions">
+     <button class="bouton secondaire" id="annuler" type="button">
+      Annuler
+     </button>
+     <button class="bouton" id="enregistrer" type="submit">
+      Enregistrer
+     </button>
+    </div>
+   </form>
+  </dialog>
+  <dialog id="dialogueConfirmation" aria-labelledby="titreConfirmation">
+    <div class="dialog-contenu">
+      <h3 id="titreConfirmation">Confirmer les modifications</h3>
+      <p class="petit" id="texteConfirmation"></p>
+      <div id="listeConfirmation" class="liste-confirmation"></div>
+      <p class="avertissement" id="avertissementConfirmation"></p>
+      <div class="dialog-actions">
+        <button class="bouton secondaire" id="annulerConfirmation" type="button">Annuler</button>
+        <button class="bouton" id="validerConfirmation" type="button">Confirmer</button>
       </div>
-
-      <form id="formulaireArticle" class="formulaire-article">
-        <div class="grille-formulaire">
-
-          <div class="champ champ-large">
-            <label for="champNom">Nom de l’article *</label>
-            <input id="champNom" type="text" maxlength="160" required>
-          </div>
-
-          <div class="champ">
-            <label for="champBeneficiaire">Bénéficiaire *</label>
-            <select id="champBeneficiaire" required>
-              <option value="mdn">MDN</option>
-              <option value="fondation">Fondation</option>
-            </select>
-          </div>
-
-          <div class="champ">
-            <label for="champCategorie">Catégorie *</label>
-            <select id="champCategorie" required></select>
-          </div>
-
-          <div class="champ">
-            <label for="champPrix">Tarif CHF *</label>
-            <input id="champPrix" type="number" min="0" step="0.05" inputmode="decimal" required>
-          </div>
-
-          <div class="champ">
-            <label for="champOrdre">Ordre d’affichage</label>
-            <input id="champOrdre" type="number" min="0" step="1" inputmode="numeric">
-          </div>
-
-          <div class="champ">
-            <label for="champSeuil">Seuil d’alerte stock</label>
-            <input id="champSeuil" type="number" min="0" step="1" inputmode="numeric">
-          </div>
-
-          <div class="champ">
-            <label>Gestion du stock</label>
-            <div class="ligne-interrupteur">
-              <input id="champGestionStock" type="checkbox">
-              <label for="champGestionStock">Stock géré pour cet article</label>
-            </div>
-          </div>
-
-          <div class="champ">
-            <label>État</label>
-            <div class="ligne-interrupteur">
-              <input id="champActif" type="checkbox">
-              <label for="champActif">Article actif</label>
-            </div>
-          </div>
-
-
-          <div class="champ champ-large">
-            <label>Photo de l’article</label>
-            <div class="zone-photo-article">
-              <div id="apercuPhotoArticle" class="apercu-photo-article" aria-label="Aperçu de la photo">📄</div>
-
-              <div class="actions-photo">
-                <input id="champPhoto" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-                <button id="choisirPhoto" class="bouton-photo" type="button">Ajouter une photo</button>
-                <button id="supprimerPhoto" class="bouton-photo bouton-photo-danger" type="button" hidden>Supprimer la photo</button>
-                <div class="aide-photo">
-                  PNG, JPG ou WebP. La photo est enregistrée dans le bucket Supabase « articles ».
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="champ champ-large">
-            <label for="champDescription">Description</label>
-            <textarea id="champDescription" maxlength="1000"></textarea>
-          </div>
-
-          <div class="champ champ-large">
-            <div id="infoEditionFormulaire" class="info-edition"></div>
-          </div>
-
-        </div>
-
-        <div id="messageFormulaire" class="message-formulaire" hidden></div>
-
-        <div class="actions-formulaire">
-          <button id="annulerFormulaire" class="bouton-secondaire" type="button">Annuler</button>
-          <button id="enregistrerArticle" class="bouton-enregistrer" type="submit">Enregistrer</button>
-        </div>
-      </form>
-    </section>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
-
-  <script>
-    (function () {
-      "use strict";
-
-      const chargementPage = document.getElementById("chargementPage");
-      const boutonRetour = document.getElementById("boutonRetour");
-      const boutonDeconnexion = document.getElementById("boutonDeconnexion");
-      const boutonNouvelArticle = document.getElementById("boutonNouvelArticle");
-      const identiteUtilisateur = document.getElementById("identiteUtilisateur");
-
-      const rechercheArticle = document.getElementById("rechercheArticle");
-      const effacerRecherche = document.getElementById("effacerRecherche");
-      const boutonsFiltres = Array.from(document.querySelectorAll(".filtre"));
-
-      const nombreAffiche = document.getElementById("nombreAffiche");
-      const nombreTotal = document.getElementById("nombreTotal");
-      const editionActive = document.getElementById("editionActive");
-      const zoneListe = document.getElementById("zoneListe");
-      const etatVide = document.getElementById("etatVide");
-      const zoneErreur = document.getElementById("zoneErreur");
-      const fondModaleArticle = document.getElementById("fondModaleArticle");
-      const titreModaleArticle = document.getElementById("titreModaleArticle");
-      const fermerModaleArticle = document.getElementById("fermerModaleArticle");
-      const formulaireArticle = document.getElementById("formulaireArticle");
-      const champNom = document.getElementById("champNom");
-      const champBeneficiaire = document.getElementById("champBeneficiaire");
-      const champCategorie = document.getElementById("champCategorie");
-      const champPrix = document.getElementById("champPrix");
-      const champOrdre = document.getElementById("champOrdre");
-      const champSeuil = document.getElementById("champSeuil");
-      const champGestionStock = document.getElementById("champGestionStock");
-      const champActif = document.getElementById("champActif");
-      const champDescription = document.getElementById("champDescription");
-      const champPhoto = document.getElementById("champPhoto");
-      const choisirPhoto = document.getElementById("choisirPhoto");
-      const supprimerPhoto = document.getElementById("supprimerPhoto");
-      const apercuPhotoArticle = document.getElementById("apercuPhotoArticle");
-
-      const infoEditionFormulaire = document.getElementById("infoEditionFormulaire");
-      const messageFormulaire = document.getElementById("messageFormulaire");
-      const annulerFormulaire = document.getElementById("annulerFormulaire");
-      const enregistrerArticle = document.getElementById("enregistrerArticle");
-
-
-      let clientSupabase = null;
-      let editionCourante = null;
-      let articles = [];
-      let filtreActif = "tous";
-      let categoriesDisponibles = [];
-      let articleEnModification = null;
-      let fichierPhotoSelectionne = null;
-      let supprimerPhotoDemandee = false;
-      let urlApercuLocale = null;
-      let modeDemoActif = false;
-      let peutModifierReferentiels = false;
-
-
-      function masquerChargement() {
-        chargementPage.classList.add("masque");
-      }
-
-
-      function echapperHTML(valeur) {
-        return String(valeur ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-
-      function normaliser(valeur) {
-        return String(valeur || "")
-          .trim()
-          .toLocaleLowerCase("fr")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
-      }
-
-
-      function formaterCHF(valeur) {
-        const nombre = Number(valeur || 0);
-
-        return "CHF " +
-          nombre.toLocaleString("fr-CH", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-      }
-
-
-      function libelleBeneficiaire(valeur) {
-        return valeur === "fondation" ? "Fondation" : "MDN";
-      }
-
-
-      function urlPhoto(photoPath) {
-        if (!photoPath || !clientSupabase) {
-          return null;
-        }
-
-        const resultat = clientSupabase
-          .storage
-          .from("articles")
-          .getPublicUrl(photoPath);
-
-        return resultat?.data?.publicUrl || null;
-      }
-
-
-      function afficherErreur(message) {
-        zoneErreur.textContent = message;
-        zoneErreur.hidden = false;
-      }
-
-
-      function masquerErreur() {
-        zoneErreur.hidden = true;
-        zoneErreur.textContent = "";
-      }
-
-
-      function articlesFiltres() {
-        const recherche = normaliser(rechercheArticle.value);
-
-        return articles.filter(function (article) {
-
-          if (filtreActif === "mdn" && article.beneficiaire !== "mdn") {
-            return false;
-          }
-
-          if (filtreActif === "fondation" && article.beneficiaire !== "fondation") {
-            return false;
-          }
-
-          if (filtreActif === "actifs" && article.actif !== true) {
-            return false;
-          }
-
-          if (filtreActif === "inactifs" && article.actif === true) {
-            return false;
-          }
-
-          if (!recherche) {
-            return true;
-          }
-
-          const texte = normaliser(
-            [
-              article.nom,
-              article.categorie,
-              article.beneficiaire,
-              article.description
-            ].join(" ")
-          );
-
-          return texte.includes(recherche);
-        });
-      }
-
-
-      function carteArticleHTML(article) {
-        const photoURL = urlPhoto(article.photoPath);
-
-        const photoHTML = photoURL
-          ? `
-              <div class="photo">
-                <img
-                  src="${echapperHTML(photoURL)}"
-                  alt=""
-                  loading="lazy"
-                  onerror="this.parentElement.innerHTML='📦';"
-                >
-              </div>
-            `
-          : `<div class="photo" aria-hidden="true">📦</div>`;
-
-        const detailsMobile = [
-          libelleBeneficiaire(article.beneficiaire),
-          article.categorie || "Sans catégorie",
-          formaterCHF(article.prix),
-          article.actif ? "Actif" : "Inactif"
-        ].join(" · ");
-
-        return `
-          <article class="article" data-article-id="${echapperHTML(article.articleId)}">
-
-            ${photoHTML}
-
-            <div class="nom-article">
-              <strong>${echapperHTML(article.nom)}</strong>
-              <small>${echapperHTML(detailsMobile)}</small>
-            </div>
-
-            <div class="cellule col-beneficiaire">
-              <span class="label-mobile">Bénéficiaire</span>
-              <span class="beneficiaire">
-                ${echapperHTML(libelleBeneficiaire(article.beneficiaire))}
-              </span>
-            </div>
-
-            <div class="cellule col-categorie">
-              <span class="label-mobile">Catégorie</span>
-              ${echapperHTML(article.categorie || "—")}
-            </div>
-
-            <div class="cellule col-prix">
-              <span class="label-mobile">Tarif</span>
-              <span class="prix">${echapperHTML(formaterCHF(article.prix))}</span>
-            </div>
-
-            <div class="cellule col-stock">
-              <span class="label-mobile">Stock</span>
-              <span class="stock">
-                ${article.gestionStock ? "Géré" : "Non géré"}
-              </span>
-            </div>
-
-            <div class="cellule col-etat">
-              <span class="label-mobile">État</span>
-              <span class="etat ${article.actif ? "" : "inactif"}">
-                ${article.actif ? "Actif" : "Inactif"}
-              </span>
-            </div>
-
-            ${peutModifierReferentiels ? `
-            <button
-              class="bouton-modifier"
-              type="button"
-              data-action="modifier"
-              data-article-id="${echapperHTML(article.articleId)}"
-              aria-label="Modifier ${echapperHTML(article.nom)}"
-              title="Modifier"
-            >✎</button>` : `
-            <button
-              class="bouton-consulter"
-              type="button"
-              data-action="consulter"
-              data-article-id="${echapperHTML(article.articleId)}"
-              aria-label="Consulter ${echapperHTML(article.nom)}"
-              title="Consultation uniquement"
-            >👁</button>`}
-
-          </article>
-        `;
-      }
-
-
-      function afficherArticles() {
-        masquerErreur();
-
-        const resultat = articlesFiltres();
-
-        nombreTotal.textContent = String(articles.length);
-        nombreAffiche.textContent = String(resultat.length);
-
-        zoneListe.innerHTML = resultat
-          .map(carteArticleHTML)
-          .join("");
-
-        etatVide.hidden = resultat.length !== 0;
-      }
-
-
-      async function chargerCatalogue() {
-        clientSupabase = window.MDN_SUPABASE;
-
-        if (!clientSupabase) {
-          throw new Error("Connexion Supabase indisponible.");
-        }
-
-        /*
-         * SQL126 corrigé : le catalogue est chargé par une RPC sécurisée.
-         * Cela permet au Mode Démo de lire le catalogue partagé sans ouvrir
-         * les RLS ni autoriser la moindre écriture sur les données Réelles.
-         */
-        const { data: catalogue, error: erreurCatalogue } =
-          await clientSupabase.rpc("charger_catalogue_administration_articles");
-
-        if (erreurCatalogue) {
-          throw erreurCatalogue;
-        }
-
-        if (!catalogue?.ok) {
-          throw new Error(
-            catalogue?.message ||
-            "Impossible de charger le catalogue Articles & Tarifs."
-          );
-        }
-
-        const edition = catalogue.edition || null;
-
-        if (!edition?.id) {
-          throw new Error("Aucune édition active n'est configurée.");
-        }
-
-        editionCourante = edition;
-        editionActive.textContent =
-          edition.nom || ("Édition " + edition.annee);
-
-        const tarifs = Array.isArray(catalogue.tarifs)
-          ? catalogue.tarifs
-          : [];
-
-        const referentiel = Array.isArray(catalogue.articles)
-          ? catalogue.articles
-          : [];
-
-        const categories = Array.isArray(catalogue.categories)
-          ? catalogue.categories
-          : [];
-
-        categoriesDisponibles = categories
-          .filter(function (categorie) {
-            return categorie.actif === true;
-          })
-          .sort(function (a, b) {
-            return Number(a.ordre_affichage || 0) -
-              Number(b.ordre_affichage || 0);
-          });
-
-        const articlesParId = new Map(
-          referentiel.map(function (article) {
-            return [article.id, article];
-          })
-        );
-
-        const categoriesParId = new Map(
-          categories.map(function (categorie) {
-            return [categorie.id, categorie];
-          })
-        );
-
-        articles = tarifs
-          .map(function (tarif) {
-            const article = articlesParId.get(tarif.article_id);
-
-            if (!article) {
-              return null;
-            }
-
-            const categorie = article.categorie_id
-              ? categoriesParId.get(article.categorie_id)
-              : null;
-
-            return {
-              editionArticleId: tarif.id,
-              articleId: article.id,
-              nom: article.nom,
-              description: article.description || "",
-              beneficiaire: article.beneficiaire,
-              categorieId: article.categorie_id,
-              categorie: categorie ? categorie.nom : null,
-              photoPath: article.photo_path || null,
-              photoUrl: article.photo_path
-                ? clientSupabase.storage
-                    .from("articles")
-                    .getPublicUrl(article.photo_path).data.publicUrl
-                : null,
-              prix: Number(tarif.prix || 0),
-              gestionStock: tarif.gestion_stock === true,
-              seuilStock: Number(tarif.seuil_stock || 0),
-              ordreAffichage: Number(tarif.ordre_affichage || 0),
-              actifReferentiel: article.actif === true,
-              actifTarif: tarif.actif === true,
-              actif: article.actif === true && tarif.actif === true
-            };
-          })
-          .filter(Boolean);
-
-        afficherArticles();
-      }
-
-
-      boutonsFiltres.forEach(function (bouton) {
-        bouton.addEventListener("click", function () {
-          filtreActif = bouton.dataset.filtre || "tous";
-
-          boutonsFiltres.forEach(function (autreBouton) {
-            autreBouton.classList.toggle(
-              "actif",
-              autreBouton === bouton
-            );
-          });
-
-          afficherArticles();
-        });
-      });
-
-
-      rechercheArticle.addEventListener("input", function () {
-        effacerRecherche.classList.toggle(
-          "visible",
-          rechercheArticle.value.length > 0
-        );
-
-        afficherArticles();
-      });
-
-
-      effacerRecherche.addEventListener("click", function () {
-        rechercheArticle.value = "";
-        effacerRecherche.classList.remove("visible");
-        rechercheArticle.focus();
-        afficherArticles();
-      });
-
-
-
-      function normaliserNomFichierPhoto(nom) {
-        return String(nom || "article")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .slice(0, 70) || "article";
-      }
-
-
-      function extensionPhoto(fichier) {
-        const type = String(fichier?.type || "").toLowerCase();
-
-        if (type === "image/png") return "png";
-        if (type === "image/webp") return "webp";
-        if (type === "image/jpeg") return "jpg";
-
-        const nom = String(fichier?.name || "");
-        const extension = nom.includes(".") ? nom.split(".").pop().toLowerCase() : "jpg";
-        return ["png", "jpg", "jpeg", "webp"].includes(extension) ? extension.replace("jpeg", "jpg") : "jpg";
-      }
-
-
-      function afficherApercuPhoto(url) {
-        if (url) {
-          apercuPhotoArticle.innerHTML =
-            '<img src="' + echapperHTML(url) + '" alt="Photo de l’article">';
-        } else {
-          apercuPhotoArticle.textContent = "📄";
-        }
-      }
-
-
-      function reinitialiserSelectionPhoto() {
-        if (urlApercuLocale) {
-          URL.revokeObjectURL(urlApercuLocale);
-          urlApercuLocale = null;
-        }
-
-        fichierPhotoSelectionne = null;
-        supprimerPhotoDemandee = false;
-        champPhoto.value = "";
-      }
-
-
-      function actualiserZonePhoto(article) {
-        reinitialiserSelectionPhoto();
-
-        const urlExistante = article?.photoUrl || "";
-
-        afficherApercuPhoto(urlExistante);
-
-        choisirPhoto.textContent = urlExistante ? "Modifier la photo" : "Ajouter une photo";
-        supprimerPhoto.hidden = !urlExistante;
-      }
-
-
-      async function appliquerPhotoArticle(articleId, nomArticle, ancienPhotoPath) {
-        let nouveauPhotoPath = ancienPhotoPath || null;
-
-        if (fichierPhotoSelectionne) {
-          const extension = extensionPhoto(fichierPhotoSelectionne);
-          const nomFichier =
-            articleId + "/" +
-            normaliserNomFichierPhoto(nomArticle) + "-" +
-            Date.now() + "." + extension;
-
-          const { error: erreurUpload } =
-            await clientSupabase.storage
-              .from("articles")
-              .upload(nomFichier, fichierPhotoSelectionne, {
-                cacheControl: "3600",
-                upsert: false,
-                contentType: fichierPhotoSelectionne.type || undefined
-              });
-
-          if (erreurUpload) {
-            throw erreurUpload;
-          }
-
-          const { error: erreurMajPhoto } =
-            await clientSupabase
-              .from("referentiel_articles")
-              .update({
-                photo_path: nomFichier,
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", articleId);
-
-          if (erreurMajPhoto) {
-            await clientSupabase.storage.from("articles").remove([nomFichier]);
-            throw erreurMajPhoto;
-          }
-
-          if (ancienPhotoPath && ancienPhotoPath !== nomFichier) {
-            await clientSupabase.storage
-              .from("articles")
-              .remove([ancienPhotoPath]);
-          }
-
-          nouveauPhotoPath = nomFichier;
-          return nouveauPhotoPath;
-        }
-
-        if (supprimerPhotoDemandee && ancienPhotoPath) {
-          const { error: erreurMajPhoto } =
-            await clientSupabase
-              .from("referentiel_articles")
-              .update({
-                photo_path: null,
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", articleId);
-
-          if (erreurMajPhoto) {
-            throw erreurMajPhoto;
-          }
-
-          await clientSupabase.storage
-            .from("articles")
-            .remove([ancienPhotoPath]);
-
-          nouveauPhotoPath = null;
-        }
-
-        return nouveauPhotoPath;
-      }
-
-      function remplirCategories(categorieSelectionnee) {
-        champCategorie.innerHTML = "";
-
-        categoriesDisponibles.forEach(function (categorie) {
-          const option = document.createElement("option");
-          option.value = categorie.id;
-          option.textContent = categorie.nom;
-          option.selected = categorie.id === categorieSelectionnee;
-          champCategorie.appendChild(option);
-        });
-      }
-
-
-      function afficherMessageFormulaire(message) {
-        messageFormulaire.textContent = message;
-        messageFormulaire.hidden = false;
-      }
-
-
-      function masquerMessageFormulaire() {
-        messageFormulaire.hidden = true;
-        messageFormulaire.textContent = "";
-      }
-
-
-      function ouvrirModaleArticle(article) {
-        masquerMessageFormulaire();
-
-        if (!peutModifierReferentiels && !article) {
-          afficherErreur("En Mode Démo, le catalogue partagé est disponible en consultation uniquement.");
-          return;
-        }
-
-        articleEnModification = article || null;
-
-        remplirCategories(article ? article.categorieId : null);
-
-        titreModaleArticle.textContent =
-          article
-            ? (peutModifierReferentiels ? "Modifier l’article" : "Consulter l’article")
-            : "Nouvel article";
-
-        champNom.value = article ? article.nom : "";
-        champBeneficiaire.value = article ? article.beneficiaire : "mdn";
-        champPrix.value = article ? article.prix.toFixed(2) : "";
-        champOrdre.value = article ? article.ordreAffichage : ((articles.length + 1) * 10);
-        champSeuil.value = article ? article.seuilStock : 0;
-        champGestionStock.checked = article ? article.gestionStock : true;
-        champActif.checked = article ? article.actif : true;
-        champDescription.value = article ? article.description : "";
-
-        actualiserZonePhoto(article);
-
-        infoEditionFormulaire.textContent =
-          "Tarif configuré pour : " +
-          (editionCourante?.nom || "l’édition active") +
-          (peutModifierReferentiels
-            ? ". Les modifications sont enregistrées directement dans Supabase."
-            : ". MODE DÉMO : consultation uniquement, aucune modification n’est enregistrée.");
-
-        const champsEdition = [
-          champNom, champBeneficiaire, champCategorie, champPrix, champOrdre,
-          champSeuil, champGestionStock, champActif, champDescription
-        ];
-
-        champsEdition.forEach(function (champ) {
-          champ.disabled = !peutModifierReferentiels;
-        });
-
-        choisirPhoto.hidden = !peutModifierReferentiels;
-        supprimerPhoto.hidden = !peutModifierReferentiels || !article?.photoPath;
-        enregistrerArticle.hidden = !peutModifierReferentiels;
-        annulerFormulaire.textContent = peutModifierReferentiels ? "Annuler" : "Fermer";
-
-        fondModaleArticle.hidden = false;
-        document.body.style.overflow = "hidden";
-
-        setTimeout(function () {
-          champNom.focus();
-        }, 0);
-      }
-
-
-      function fermerModale() {
-        if (enregistrerArticle.disabled) {
-          return;
-        }
-
-        fondModaleArticle.hidden = true;
-        document.body.style.overflow = "";
-        articleEnModification = null;
-        formulaireArticle.reset();
-        reinitialiserSelectionPhoto();
-        masquerMessageFormulaire();
-      }
-
-
-
-      choisirPhoto.addEventListener("click", function () {
-        champPhoto.click();
-      });
-
-
-      champPhoto.addEventListener("change", function () {
-        const fichier = champPhoto.files?.[0];
-
-        if (!fichier) {
-          return;
-        }
-
-        const typesAutorises = ["image/png", "image/jpeg", "image/webp"];
-
-        if (!typesAutorises.includes(fichier.type)) {
-          champPhoto.value = "";
-          afficherMessageFormulaire("La photo doit être au format PNG, JPG ou WebP.");
-          return;
-        }
-
-        if (fichier.size > 5 * 1024 * 1024) {
-          champPhoto.value = "";
-          afficherMessageFormulaire("La photo ne doit pas dépasser 5 Mo.");
-          return;
-        }
-
-        masquerMessageFormulaire();
-
-        if (urlApercuLocale) {
-          URL.revokeObjectURL(urlApercuLocale);
-        }
-
-        urlApercuLocale = URL.createObjectURL(fichier);
-        fichierPhotoSelectionne = fichier;
-        supprimerPhotoDemandee = false;
-
-        afficherApercuPhoto(urlApercuLocale);
-        choisirPhoto.textContent = articleEnModification?.photoPath ? "Modifier la photo" : "Ajouter une photo";
-        supprimerPhoto.hidden = false;
-      });
-
-
-      supprimerPhoto.addEventListener("click", function () {
-        if (urlApercuLocale) {
-          URL.revokeObjectURL(urlApercuLocale);
-          urlApercuLocale = null;
-        }
-
-        fichierPhotoSelectionne = null;
-        champPhoto.value = "";
-        supprimerPhotoDemandee = Boolean(articleEnModification?.photoPath);
-
-        afficherApercuPhoto(null);
-        choisirPhoto.textContent = "Ajouter une photo";
-        supprimerPhoto.hidden = true;
-      });
-
-
-      zoneListe.addEventListener("click", function (evenement) {
-        const bouton = evenement.target.closest("[data-action='modifier'], [data-action='consulter']");
-
-        if (!bouton) {
-          return;
-        }
-
-        if (bouton.dataset.action === "modifier" && !peutModifierReferentiels) {
-          return;
-        }
-
-        const article = articles.find(function (element) {
-          return element.articleId === bouton.dataset.articleId;
-        });
-
-        if (article) {
-          ouvrirModaleArticle(article);
-        }
-      });
-
-
-      boutonNouvelArticle.addEventListener("click", function () {
-        if (!peutModifierReferentiels) {
-          afficherErreur("En Mode Démo, l’ajout d’articles est désactivé afin de protéger le catalogue partagé.");
-          return;
-        }
-        ouvrirModaleArticle(null);
-      });
-
-
-      fermerModaleArticle.addEventListener("click", fermerModale);
-      annulerFormulaire.addEventListener("click", fermerModale);
-
-      fondModaleArticle.addEventListener("click", function (evenement) {
-        if (evenement.target === fondModaleArticle) {
-          fermerModale();
-        }
-      });
-
-      document.addEventListener("keydown", function (evenement) {
-        if (evenement.key === "Escape" && !fondModaleArticle.hidden) {
-          fermerModale();
-        }
-      });
-
-
-      formulaireArticle.addEventListener("submit", async function (evenement) {
-        evenement.preventDefault();
-        masquerMessageFormulaire();
-
-        if (!peutModifierReferentiels) {
-          afficherMessageFormulaire("Mode Démo : aucune modification du catalogue partagé n’est autorisée.");
-          return;
-        }
-
-        const nom = champNom.value.trim();
-        const beneficiaire = champBeneficiaire.value;
-        const categorieId = champCategorie.value;
-        const prix = Number(champPrix.value);
-        const ordreAffichage = Number(champOrdre.value || 0);
-        const seuilStock = Number(champSeuil.value || 0);
-        const gestionStock = champGestionStock.checked;
-        const actif = champActif.checked;
-        const description = champDescription.value.trim() || null;
-
-        if (!nom) {
-          afficherMessageFormulaire("Le nom de l’article est obligatoire.");
-          return;
-        }
-
-        if (!categorieId) {
-          afficherMessageFormulaire("La catégorie est obligatoire.");
-          return;
-        }
-
-        if (!Number.isFinite(prix) || prix < 0) {
-          afficherMessageFormulaire("Le tarif doit être un montant valide supérieur ou égal à 0.");
-          return;
-        }
-
-        if (!Number.isInteger(ordreAffichage) || ordreAffichage < 0) {
-          afficherMessageFormulaire("L’ordre d’affichage doit être un entier supérieur ou égal à 0.");
-          return;
-        }
-
-        if (!Number.isInteger(seuilStock) || seuilStock < 0) {
-          afficherMessageFormulaire("Le seuil de stock doit être un entier supérieur ou égal à 0.");
-          return;
-        }
-
-        enregistrerArticle.disabled = true;
-        annulerFormulaire.disabled = true;
-        fermerModaleArticle.disabled = true;
-        enregistrerArticle.textContent = "Enregistrement…";
-
-        try {
-          if (articleEnModification) {
-
-            const { error: erreurReferentiel } =
-              await clientSupabase
-                .from("referentiel_articles")
-                .update({
-                  nom: nom,
-                  description: description,
-                  beneficiaire: beneficiaire,
-                  categorie_id: categorieId,
-                  actif: actif,
-                  updated_at: new Date().toISOString()
-                })
-                .eq("id", articleEnModification.articleId);
-
-            if (erreurReferentiel) {
-              throw erreurReferentiel;
-            }
-
-            const { error: erreurTarif } =
-              await clientSupabase
-                .from("edition_articles")
-                .update({
-                  prix: prix,
-                  gestion_stock: gestionStock,
-                  seuil_stock: seuilStock,
-                  actif: actif,
-                  ordre_affichage: ordreAffichage,
-                  updated_at: new Date().toISOString()
-                })
-                .eq("id", articleEnModification.editionArticleId)
-                .eq("edition_id", editionCourante.id);
-
-            if (erreurTarif) {
-              throw erreurTarif;
-            }
-
-            await appliquerPhotoArticle(
-              articleEnModification.articleId,
-              nom,
-              articleEnModification.photoPath
-            );
-
-          } else {
-
-            const { data: nouvelArticle, error: erreurReferentiel } =
-              await clientSupabase
-                .from("referentiel_articles")
-                .insert({
-                  nom: nom,
-                  description: description,
-                  beneficiaire: beneficiaire,
-                  categorie_id: categorieId,
-                  actif: actif
-                })
-                .select("id")
-                .single();
-
-            if (erreurReferentiel) {
-              throw erreurReferentiel;
-            }
-
-            const { error: erreurTarif } =
-              await clientSupabase
-                .from("edition_articles")
-                .insert({
-                  edition_id: editionCourante.id,
-                  article_id: nouvelArticle.id,
-                  prix: prix,
-                  gestion_stock: gestionStock,
-                  seuil_stock: seuilStock,
-                  actif: actif,
-                  ordre_affichage: ordreAffichage
-                });
-
-            if (erreurTarif) {
-              /*
-               * On ne supprime volontairement pas le référentiel
-               * créé si la seconde écriture échoue. Cela évite
-               * toute suppression automatique de données.
-               * L'erreur est affichée et pourra être corrigée.
-               */
-              throw erreurTarif;
-            }
-
-            await appliquerPhotoArticle(
-              nouvelArticle.id,
-              nom,
-              null
-            );
-          }
-
-          fondModaleArticle.hidden = true;
-          document.body.style.overflow = "";
-          articleEnModification = null;
-          reinitialiserSelectionPhoto();
-
-          await chargerCatalogue();
-
-        } catch (erreur) {
-          console.error("[MDN Sion] Enregistrement article impossible :", erreur);
-
-          let message =
-            erreur?.message ||
-            "Impossible d’enregistrer l’article.";
-
-          if (String(message).toLowerCase().includes("duplicate")) {
-            message =
-              "Un article portant déjà ce nom existe pour ce bénéficiaire.";
-          }
-
-          afficherMessageFormulaire(message);
-
-        } finally {
-          enregistrerArticle.disabled = false;
-          annulerFormulaire.disabled = false;
-          fermerModaleArticle.disabled = false;
-          enregistrerArticle.textContent = "Enregistrer";
-        }
-      });
-
-
-      boutonRetour.addEventListener("click", function () {
-        /*
-         * Si administration.html existe dans le projet, c'est
-         * la destination logique de cette page.
-         */
-        window.location.href = "administration.html";
-      });
-
-
-      boutonDeconnexion.addEventListener("click", async function () {
-        boutonDeconnexion.disabled = true;
-        boutonDeconnexion.textContent = "Déconnexion…";
-
-        await window.MDN_AUTH.deconnexion();
-      });
-
-
-      window.MDN_AUTH.surveillerSession({
-        redirigerApresDeconnexion: true
-      });
-
-
-      async function initialiserPage() {
-        try {
-          /*
-           * On vérifie d'abord uniquement que la session MDN est valide.
-           * Le droit Administration est ensuite décidé côté serveur par SQL126.
-           */
-          const auth =
-            await window.MDN_AUTH.protegerPage();
-
-          if (!auth) {
-            return;
-          }
-
-          clientSupabase = window.MDN_SUPABASE;
-
-          if (!clientSupabase) {
-            throw new Error("Connexion Supabase indisponible.");
-          }
-
-          const { data: accesAdministration, error: erreurAccesAdministration } =
-            await clientSupabase.rpc("etat_acces_administration");
-
-          if (erreurAccesAdministration) {
-            throw erreurAccesAdministration;
-          }
-
-          if (!accesAdministration?.acces_administration) {
-            window.location.replace("accueil.html");
-            return;
-          }
-
-          modeDemoActif = accesAdministration.mode_demo === true;
-          peutModifierReferentiels =
-            accesAdministration.peut_modifier_referentiels === true;
-
-          document.body.classList.toggle("mode-demo", modeDemoActif);
-
-          boutonNouvelArticle.hidden = !peutModifierReferentiels;
-
-          const noteVersion = document.getElementById("noteVersion");
-          if (noteVersion) {
-            noteVersion.innerHTML = modeDemoActif
-              ? '<span class="lecture-seule-demo">Mode Démo : catalogue partagé en consultation uniquement. Aucune donnée Réelle n’est modifiée.</span>'
-              : "Les administrateurs peuvent ajouter et modifier les articles, tarifs et photos de l’édition active.";
-          }
-
-          const prenom =
-            String(auth.profil.prenom || "").trim();
-
-          const identite =
-            prenom ||
-            auth.profil.email ||
-            auth.utilisateur.email ||
-            (modeDemoActif ? "Mode Démo" : "Administrateur");
-
-          identiteUtilisateur.textContent =
-            modeDemoActif
-              ? identite + " · MODE DÉMO · Consultation"
-              : identite + " · " + auth.libelleRole;
-
-          await chargerCatalogue();
-
-          masquerChargement();
-
-        } catch (erreur) {
-          console.error(
-            "[MDN Sion] Impossible d'ouvrir Articles & Tarifs :",
-            erreur
-          );
-
-          masquerChargement();
-
-          afficherErreur(
-            erreur?.message ||
-            "Impossible de charger le catalogue."
-          );
-        }
-      }
-
-      initialiserPage();
-
-    })();
+    </div>
+  </dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
   </script>
+  <script src="js/config.js">
+  </script>
+  <script src="js/supabase.js">
+  </script>
+  <script src="js/auth.js">
+  </script>
+  <script>
+   
+		"use strict";
+		(function () {
+		    const $ = (id) => document.getElementById(id);
+		    const etat = { client: null, demo: true, editions: [], references: [], parametres: [], editionId: null, modification: null, acces: false, regles: [], deplacementEnCours: false, regleEnCours: false };
+		    const nombres = (v) => Number(v || 0).toLocaleString("fr-CH", { maximumFractionDigits: 2 });
 
-</body>
+		    function message(texte, type = "") {
+		        $("message").textContent = texte;
+		        $("message").className = type;
+		    }
+
+		    function cellule(ligne, texte) {
+		        const td = document.createElement("td");
+		        td.textContent = texte === null || texte === undefined ? "—" : String(texte);
+		        ligne.appendChild(td);
+		        return td;
+		    }
+
+		    function etatCellule(ligne, actif) {
+		        const td = document.createElement("td");
+		        const span = document.createElement("span");
+		        span.className = "etat" + (actif ? "" : " inactif");
+		        span.textContent = actif ? "Actif" : "Inactif";
+		        td.appendChild(span);
+		        ligne.appendChild(td);
+		    }
+
+		    function boutonModifier(ligne, type, item) {
+		        const td = document.createElement("td");
+		        if (!etat.demo) {
+		            const bouton = document.createElement("button");
+		            bouton.type = "button";
+		            bouton.className = "bouton secondaire";
+		            bouton.textContent = "Modifier";
+		            bouton.addEventListener("click", () => ouvrirModification(type, item));
+		            td.appendChild(bouton);
+		        } else {
+		            td.textContent = "Lecture seule";
+		        }
+		        ligne.appendChild(td);
+		    }
+
+		    function afficher() {
+                trierParametresSelonReferences();
+		        $("nombreReferences").textContent = String(etat.references.length);
+		        $("nombreParametres").textContent = String(etat.parametres.length);
+		        $("nombreActives").textContent = String(etat.references.filter((x) => x.actif).length);
+		        const references = $("lignesReferences");
+		        references.replaceChildren();
+		        for (const r of etat.references) {
+		            const tr = document.createElement("tr");
+		            cellule(tr, r.nom);
+		            cellule(tr, r.description);
+                    const ordreCellule = cellule(tr, "");
+                    const blocOrdre = document.createElement("div");
+                    blocOrdre.className = "classement-vaisselle";
+                    const numeroOrdre = document.createElement("span");
+                    numeroOrdre.className = "classement-numero";
+                    numeroOrdre.textContent = String(r.ordre_affichage);
+                    blocOrdre.appendChild(numeroOrdre);
+                    if (etat.acces) {
+                        const commandes = document.createElement("span");
+                        commandes.className = "classement-commandes";
+                        for (const [direction, symbole, interdit] of [
+                            ["haut", "↑", etat.references.indexOf(r) === 0],
+                            ["bas", "↓", etat.references.indexOf(r) === etat.references.length - 1]
+                        ]) {
+                            const bouton = document.createElement("button");
+                            bouton.type = "button";
+                            bouton.className = "bouton secondaire";
+                            bouton.textContent = symbole;
+                            bouton.title = direction === "haut" ? "Monter" : "Descendre";
+                            bouton.setAttribute("aria-label", bouton.title + " " + r.nom);
+                            bouton.disabled = interdit || etat.deplacementEnCours;
+                            bouton.classList.add("classement-fleche");
+                            bouton.addEventListener("click", () => deplacerReference(r.id, direction));
+                            commandes.appendChild(bouton);
+                        }
+                        blocOrdre.appendChild(commandes);
+                    }
+                    ordreCellule.appendChild(blocOrdre);
+		            etatCellule(tr, r.actif);
+		            boutonModifier(tr, "reference", r);
+		            references.appendChild(tr);
+		        }
+		        if (!etat.references.length) {
+		            const tr = document.createElement("tr");
+		            const td = cellule(tr, "Aucune référence accessible.");
+		            td.colSpan = 5;
+		            references.appendChild(tr);
+		        }
+		        const parametres = $("lignesParametres");
+		        parametres.replaceChildren();
+		        const noms = new Map(etat.references.map((r) => [r.id, r.nom]));
+		        for (const p of etat.parametres) {
+		            const tr = document.createElement("tr");
+		            cellule(tr, noms.get(p.vaisselle_id) || "Référence inconnue");
+		            cellule(tr, p.type_conditionnement);
+		            cellule(tr, p.quantite_standard);
+		            cellule(tr, nombres(p.consigne_unitaire));
+		            cellule(tr, nombres(p.lavage_unitaire));
+		            cellule(tr, p.seuil_stock);
+		            etatCellule(tr, p.actif);
+		            boutonModifier(tr, "parametre", p);
+		            parametres.appendChild(tr);
+		        }
+		        if (!etat.parametres.length) {
+		            const tr = document.createElement("tr");
+		            const td = cellule(tr, "Aucun paramètre pour cette édition.");
+		            td.colSpan = 8;
+		            parametres.appendChild(tr);
+		        }
+		    }
+
+		    async function chargerParametres() {
+		        if (!etat.editionId) {
+		            etat.parametres = [];
+		            afficher();
+		            return;
+		        }
+		        const { data, error } = await etat.client.from("edition_vaisselle")
+		            .select("id, edition_id, vaisselle_id, quantite_standard, consigne_unitaire, lavage_unitaire, seuil_stock, actif, type_conditionnement")
+		            .eq("edition_id", etat.editionId);
+		        if (error) {
+		            throw error;
+		        }
+		        etat.parametres = data || [];
+		        afficher();
+		    }
+
+            async function deplacerReference(vaisselleId, direction) {
+                if (!etat.acces || etat.deplacementEnCours) {
+                    return;
+                }
+                etat.deplacementEnCours = true;
+                afficher();
+                try {
+                    const fonctionDeplacement = etat.demo
+                        ? "deplacer_vaisselle_demo"
+                        : "deplacer_vaisselle_reel";
+                    const { data, error } = await etat.client.rpc(fonctionDeplacement, {
+                        p_vaisselle_id: vaisselleId,
+                        p_direction: direction
+                    });
+                    if (error) {
+                        throw error;
+                    }
+                    if (!data?.ok) {
+                        throw new Error("Le serveur n'a pas confirmé le déplacement.");
+                    }
+                    await charger();
+                    message(etat.demo ? "Classement Démo enregistré." : "Classement Réel enregistré.", "succes");
+                } catch (erreur) {
+                    message("Déplacement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+                } finally {
+                    etat.deplacementEnCours = false;
+                    afficher();
+                }
+            }
+
+            function trierParametresSelonReferences() {
+                // L'ordre des conditionnements suit les références dans les deux modes.
+                // Ce tri côté navigateur ne modifie aucune donnée Supabase.
+
+                const positions = new Map(
+                    etat.references.map((reference, index) => [reference.id, index])
+                );
+
+                etat.parametres.sort((a, b) => {
+                    const positionA = positions.get(a.vaisselle_id) ?? Number.MAX_SAFE_INTEGER;
+                    const positionB = positions.get(b.vaisselle_id) ?? Number.MAX_SAFE_INTEGER;
+
+                    return positionA - positionB ||
+                        String(a.vaisselle_id).localeCompare(String(b.vaisselle_id));
+                });
+            }
+
+            async function chargerReglesReel() {
+                if (etat.demo) {
+                    return;
+                }
+
+                etat.regles = [];
+                if (!etat.editionId) {
+                    afficherRegles();
+                    return;
+                }
+
+                const { data, error } = await etat.client
+                    .from("regles_retour_vaisselle")
+                    .select("vaisselle_id, type_partenaire, retour_propre_unite_autorise, retour_propre_unite_rembourse_lavage")
+                    .eq("edition_id", etat.editionId);
+
+                if (error) {
+                    afficherRegles();
+                    const compteur = document.getElementById("compteurReglesRemboursement");
+                    if (compteur) {
+                        compteur.textContent = "Lecture des règles impossible : " + error.message;
+                    }
+                    return;
+                }
+
+                etat.regles = Array.isArray(data) ? data : [];
+                afficherRegles();
+            }
+
+            async function chargerReglesDemo() {
+                const { data, error } = await etat.client.rpc("lire_regles_retour_vaisselle_demo");
+                if (error) {
+                    throw new Error("Lecture des règles Démo impossible : " + error.message);
+                }
+                etat.regles = Array.isArray(data?.regles) ? data.regles : [];
+                afficherRegles();
+            }
+
+            async function modifierRegleDemo(reference, type, regle) {
+                if (!etat.demo || etat.regleEnCours) {
+                    return;
+                }
+
+                const actuel = !regle.retour_propre_unite_autorise
+                    ? "0"
+                    : (regle.retour_propre_unite_rembourse_lavage ? "2" : "1");
+                const saisie = window.prompt(
+                    "Règle DÉMO — " + reference.nom + " / " + type + "\n" +
+                    "0 = Retour propre à l’unité non autorisé\n" +
+                    "1 = Retour propre autorisé, consigne seule\n" +
+                    "2 = Retour propre autorisé, consigne + lavage\n\n" +
+                    "Saisir 0, 1 ou 2 :",
+                    actuel
+                );
+                if (saisie === null || saisie === actuel) {
+                    return;
+                }
+                const choix = saisie.trim();
+                if (!["0", "1", "2"].includes(choix)) {
+                    window.alert("Valeur invalide. Saisir uniquement 0, 1 ou 2.");
+                    return;
+                }
+                if (!window.confirm(
+                    "Enregistrer cette modification en mode DÉMO uniquement ?\n" +
+                    reference.nom + " — " + type + "\n" +
+                    "Les règles Réelles ne seront pas modifiées."
+                )) {
+                    return;
+                }
+
+                etat.regleEnCours = true;
+                afficherRegles();
+                try {
+                    const { error } = await etat.client.rpc("enregistrer_regle_retour_vaisselle_demo", {
+                        p_vaisselle_id: reference.id,
+                        p_type_partenaire: type,
+                        p_retour_propre_unite_autorise: choix !== "0",
+                        p_retour_propre_unite_rembourse_lavage: choix === "2"
+                    });
+                    if (error) {
+                        throw error;
+                    }
+                    await chargerReglesDemo();
+                    message("Règle Démo enregistrée : " + reference.nom + " — " + type + ".", "succes");
+                } catch (erreur) {
+                    message("Impossible de modifier la règle Démo : " + erreur.message, "erreur");
+                } finally {
+                    etat.regleEnCours = false;
+                    afficherRegles();
+                }
+            }
+
+            function afficherRegles() {
+                const section = document.getElementById("sectionReglesRemboursement");
+                if (section) {
+                    section.hidden = false;
+                }
+                if (!section) {
+                    return;
+                }
+
+                const contenu = document.getElementById("contenuReglesRemboursement");
+                const compteur = document.getElementById("compteurReglesRemboursement");
+                contenu.replaceChildren();
+
+                const types = [
+                    "Associatif",
+                    "Métier de la bouche",
+                    "Restaurateur",
+                    "Artisan",
+                    "Comité"
+                ];
+
+                const indexRegles = new Map(
+                    etat.regles.map((regle) => [
+                        regle.vaisselle_id + "|" + regle.type_partenaire,
+                        regle
+                    ])
+                );
+
+                const totalAttendu = etat.references.length * types.length;
+                compteur.textContent = etat.regles.length + " règle(s) reçue(s) sur " + totalAttendu + " attendue(s).";
+
+                const enveloppe = document.createElement("div");
+                enveloppe.className = "table-scroll regles-table-scroll";
+                const tableau = document.createElement("table");
+                tableau.className = "tableau-regles";
+                const entete = document.createElement("thead");
+                const trEntete = document.createElement("tr");
+
+                for (const titre of ["Article", ...types]) {
+                    const th = document.createElement("th");
+                    th.scope = "col";
+                    th.textContent = titre;
+                    trEntete.appendChild(th);
+                }
+
+                entete.appendChild(trEntete);
+                tableau.appendChild(entete);
+
+                const corps = document.createElement("tbody");
+                for (const reference of etat.references) {
+                    const tr = document.createElement("tr");
+                    const th = document.createElement("th");
+                    th.scope = "row";
+                    th.textContent = reference.nom;
+                    tr.appendChild(th);
+
+                    for (const type of types) {
+                        const td = document.createElement("td");
+                        td.setAttribute("data-type-stand", type);
+                        const regle = indexRegles.get(reference.id + "|" + type);
+                        const etiquette = document.createElement("span");
+                        etiquette.className = "regle-etiquette";
+
+                        if (!regle) {
+                            etiquette.textContent = "Non configuré";
+                            etiquette.classList.add("regle-manquante");
+                        } else if (!regle.retour_propre_unite_autorise) {
+                            etiquette.textContent = "Non autorisé";
+                            etiquette.classList.add("regle-refusee");
+                        } else if (regle.retour_propre_unite_rembourse_lavage) {
+                            etiquette.textContent = "Consigne + lavage";
+                            etiquette.classList.add("regle-complete");
+                        } else {
+                            etiquette.textContent = "Consigne seule";
+                            etiquette.classList.add("regle-consigne");
+                        }
+
+                        td.appendChild(etiquette);
+                        if (etat.demo && regle) {
+                            const bouton = document.createElement("button");
+                            bouton.type = "button";
+                            bouton.className = "bouton-regle-demo";
+                            bouton.textContent = "Modifier";
+                            bouton.setAttribute("aria-label", "Modifier la règle Démo : " + reference.nom + ", " + type);
+                            bouton.disabled = etat.regleEnCours;
+                            bouton.addEventListener("click", () => modifierRegleDemo(reference, type, regle));
+                            td.appendChild(bouton);
+                        }
+                        tr.appendChild(td);
+                    }
+
+                    corps.appendChild(tr);
+                }
+
+                if (!etat.references.length) {
+                    const tr = document.createElement("tr");
+                    const td = document.createElement("td");
+                    td.colSpan = types.length + 1;
+                    td.textContent = "Aucune référence disponible.";
+                    tr.appendChild(td);
+                    corps.appendChild(tr);
+                }
+
+                tableau.appendChild(corps);
+                enveloppe.appendChild(tableau);
+                contenu.appendChild(enveloppe);
+            }
+
+		    async function charger() {
+		        $("actualiser").disabled = true;
+		        message("Chargement des données depuis Supabase…");
+		        try {
+                const sectionRegles = document.getElementById("sectionReglesRemboursement");
+                if (sectionRegles) {
+                    sectionRegles.hidden = false;
+                }
+                if (etat.demo) {
+                    // La session Démo possède son propre accès RPC.
+                    // Les SELECT directs sont filtrés par RLS et retournent zéro ligne.
+                    const { data: donnees, error: erreurDemo } = await etat.client.rpc(
+                        "charger_ecran_retrait_vaisselle_demo"
+                    );
+
+                    if (erreurDemo) {
+                        throw erreurDemo;
+                    }
+
+                    if (!donnees || !donnees.edition || !donnees.edition.id) {
+                        throw new Error("La fonction de chargement Démo n'a retourné aucune édition.");
+                    }
+
+                    const articles = Array.isArray(donnees.vaisselle)
+                        ? donnees.vaisselle
+                        : [];
+
+                    etat.references = articles.map((article, index) => ({
+                        id: article.vaisselle_id || article.id,
+                        nom: article.nom || "Référence sans nom",
+                        description: article.description || "",
+                        ordre_affichage: article.ordre_affichage ?? index + 1,
+                        actif: article.actif !== false
+                    }));
+
+                    const { data: ordreDemo, error: erreurOrdre } = await etat.client.rpc(
+                        "lire_ordre_vaisselle_demo"
+                    );
+                    if (erreurOrdre) {
+                        throw erreurOrdre;
+                    }
+                    const ordreParId = new Map(
+                        (ordreDemo?.vaisselle || []).map((r) => [r.vaisselle_id, r.ordre_affichage])
+                    );
+                    for (const reference of etat.references) {
+                        reference.ordre_affichage = ordreParId.get(reference.id) ?? reference.ordre_affichage;
+                    }
+                    etat.references.sort((a, b) =>
+                        a.ordre_affichage - b.ordre_affichage ||
+                        a.nom.localeCompare(b.nom, "fr")
+                    );
+                    etat.regles = Array.isArray(donnees.regles_retour)
+                        ? donnees.regles_retour
+                        : [];
+                    // SQL171 : règles Démo isolées, indépendantes du référentiel Réel.
+                    await chargerReglesDemo();
+
+                    etat.editions = [{
+                        id: donnees.edition.id,
+                        annee: donnees.edition.annee || "—",
+                        nom: donnees.edition.nom || "Édition Démo",
+                        est_active: true
+                    }];
+
+                    etat.editionId = donnees.edition.id;
+                    etat.parametres = articles.map((article) => ({
+                        id: article.edition_vaisselle_id || article.id,
+                        edition_id: etat.editionId,
+                        vaisselle_id: article.vaisselle_id || article.id,
+                        type_conditionnement: article.type_conditionnement || "caisse",
+                        quantite_standard: article.quantite_standard ?? 0,
+                        consigne_unitaire: article.consigne_unitaire ?? article.consigne ?? 0,
+                        lavage_unitaire: article.lavage_unitaire ?? article.lavage ?? 0,
+                        seuil_stock: article.seuil_stock ?? 0,
+                        actif: article.actif !== false
+                    }));
+
+                    trierParametresSelonReferences();
+
+                    const choixDemo = $("edition");
+                    choixDemo.replaceChildren();
+                    const optionDemo = document.createElement("option");
+                    optionDemo.value = etat.editionId;
+                    optionDemo.textContent = String(etat.editions[0].annee) + " — " + etat.editions[0].nom + " (Démo)";
+                    choixDemo.appendChild(optionDemo);
+                    choixDemo.value = etat.editionId;
+                    choixDemo.disabled = true;
+
+                    afficher();
+
+                    if (!articles.length) {
+                        message("Le chargement Démo a réussi, mais ne contient aucune référence de vaisselle.", "erreur");
+                    } else {
+                        message(
+                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Classement modifiable avec les flèches ; règles Démo modifiables.",
+                            "succes"
+                        );
+                    }
+                    return;
+                }
+
+		            const [r, e] = await Promise.all([
+		                etat.client.from("referentiel_vaisselle_mdn").select("id, nom, description, ordre_affichage, actif").order("ordre_affichage"),
+		                etat.client.from("editions").select("id, annee, nom, statut, est_active").order("annee", { ascending: false })
+		            ]);
+		            if (r.error) {
+		                throw r.error;
+		            }
+		            if (e.error) {
+		                throw e.error;
+		            }
+		            etat.references = r.data || [];
+		            etat.editions = e.data || [];
+		            const choix = $("edition");
+		            choix.replaceChildren();
+		            for (const edition of etat.editions) {
+		                const option = document.createElement("option");
+		                option.value = edition.id;
+		                option.textContent = edition.annee + " — " + edition.nom + (edition.est_active ? " (active)" : "");
+		                choix.appendChild(option);
+		            }
+		            if (!etat.editions.some((e) => e.id === etat.editionId)) {
+		                etat.editionId = (etat.editions.find((e) => e.est_active) || etat.editions[0] || {}).id || null;
+		            }
+		            choix.disabled = !etat.editions.length;
+		            choix.value = etat.editionId || "";
+		            await chargerParametres();
+                    await chargerReglesReel();
+		            if (etat.references.length === 0 || etat.editions.length === 0) {
+                        const problemes = [];
+
+                        if (etat.references.length === 0) {
+                            problemes.push("aucune référence de vaisselle visible");
+                        }
+
+                        if (etat.editions.length === 0) {
+                            problemes.push("aucune édition visible");
+                        }
+
+                        message(
+                            "Données inaccessibles : " + problemes.join(" ; ") + ". " +
+                            "Les requêtes Supabase ont répondu sans erreur, mais avec zéro ligne. " +
+                            "Vérifier les droits de lecture RLS et les tables interrogées. Aucune écriture effectuée.",
+                            "erreur"
+                        );
+                    } else if (etat.parametres.length === 0) {
+                        message(
+                            "Les références et éditions sont visibles, mais aucun paramètre n'est accessible pour l'édition sélectionnée. " +
+                            "Vérifier les données et les droits de lecture de edition_vaisselle. Aucune écriture effectuée.",
+                            "erreur"
+                        );
+                    } else {
+                        message(
+                            etat.demo
+                                ? "Consultation démo : " + etat.references.length + " références et " + etat.parametres.length + " paramètres chargés. Aucune écriture autorisée."
+                                : "Données chargées : " + etat.references.length + " références et " + etat.parametres.length + " paramètres. Les modifications nécessitent une confirmation explicite.",
+                            "succes"
+                        );
+                    }
+		        } catch (erreur) {
+		            console.error("[MDN] Référentiel vaisselle :", erreur);
+		            message("Chargement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+		        } finally {
+		            $("actualiser").disabled = false;
+		        }
+		    }
+
+		    function ajouterChamp(conteneur, nom, libelle, valeur, type, options) {
+		        const label = document.createElement("label");
+		        label.className = "champ" + (nom === "description" ? " large" : "");
+		        label.textContent = libelle;
+		        const input = type === "select" ? document.createElement("select") : document.createElement("input");
+		        input.name = nom;
+		        if (type === "select") {
+		            for (const [v, texte] of options) {
+		                const option = document.createElement("option");
+		                option.value = v;
+		                option.textContent = texte;
+		                input.appendChild(option);
+		            }
+		        } else {
+		            input.type = type;
+		            if (type === "number") {
+		                input.min = "0";
+		                input.step = ["consigne_unitaire", "lavage_unitaire"].includes(nom) ? "0.01" : "1";
+		            }
+		        }
+		        input.value = String(valeur ?? "");
+		        input.required = nom !== "description";
+		        label.appendChild(input);
+		        conteneur.appendChild(label);
+		    }
+
+		    function valeurComparable(valeur) {
+		        if (valeur === null || valeur === undefined) {
+		            return "";
+		        }
+
+		        return String(valeur);
+		    }
+
+		    function decrireModifications(original, changements) {
+		        const noms = {
+		            nom: "Nom",
+		            description: "Description",
+		            ordre_affichage: "Ordre d'affichage",
+		            type_conditionnement: "Conditionnement",
+		            quantite_standard: "Quantité standard",
+		            consigne_unitaire: "Consigne unitaire (CHF)",
+		            lavage_unitaire: "Lavage unitaire (CHF)",
+		            seuil_stock: "Seuil de stock",
+		            actif: "État"
+		        };
+
+		        return Object.entries(changements)
+		            .filter(([cle, valeur]) => valeurComparable(original[cle]) !== valeurComparable(valeur))
+		            .map(([cle, valeur]) => {
+		                const ancien = cle === "actif"
+		                    ? (original[cle] ? "Actif" : "Inactif")
+		                    : valeurComparable(original[cle]);
+		                const nouveau = cle === "actif"
+		                    ? (valeur ? "Actif" : "Inactif")
+		                    : valeurComparable(valeur);
+
+		                return (noms[cle] || cle) + " : " + ancien + " → " + nouveau;
+		            });
+		    }
+
+            function demanderConfirmation(titre, description, lignes, avertissement) {
+                return new Promise((resolve) => {
+                    const dialogue = $("dialogueConfirmation");
+                    const liste = $("listeConfirmation");
+                    const boutonConfirmer = $("validerConfirmation");
+                    const boutonAnnuler = $("annulerConfirmation");
+
+                    $("titreConfirmation").textContent = titre;
+                    $("texteConfirmation").textContent = description;
+                    $("avertissementConfirmation").textContent = avertissement;
+                    liste.replaceChildren();
+
+                    for (const texte of lignes) {
+                        const ligne = document.createElement("div");
+                        ligne.className = "ligne-confirmation";
+                        const separation = texte.indexOf(" : ");
+                        const libelle = document.createElement("span");
+                        const valeur = document.createElement("strong");
+                        libelle.textContent = separation >= 0 ? texte.slice(0, separation) : texte;
+                        valeur.textContent = separation >= 0 ? texte.slice(separation + 3) : "";
+                        ligne.append(libelle, valeur);
+                        liste.appendChild(ligne);
+                    }
+
+                    let termine = false;
+
+                    function terminer(resultat) {
+                        if (termine) {
+                            return;
+                        }
+
+                        termine = true;
+                        dialogue.close();
+                        resolve(resultat);
+                    }
+
+                    boutonConfirmer.onclick = () => terminer(true);
+                    boutonAnnuler.onclick = () => terminer(false);
+                    dialogue.oncancel = (evenement) => {
+                        evenement.preventDefault();
+                        terminer(false);
+                    };
+                    dialogue.showModal();
+                });
+            }
+
+            function ouvrirAjout() {
+                if (etat.demo || !etat.acces || !etat.editionId) {
+                    return;
+                }
+
+                etat.modification = { type: "ajout", item: null };
+                const champs = $("champsDialogue");
+                champs.replaceChildren();
+                $("titreDialogue").textContent = "Ajouter une référence de vaisselle";
+                $("enregistrer").textContent = "Ajouter";
+                $("avertissementDialogue").textContent =
+                    "La référence sera commune à toutes les éditions. Ses paramètres seront créés uniquement pour l'édition sélectionnée.";
+
+                const ordreSuivant = Math.max(0, ...etat.references.map((r) => Number(r.ordre_affichage) || 0)) + 1;
+                ajouterChamp(champs, "nom", "Nom de la référence", "", "text");
+                ajouterChamp(champs, "description", "Description", "", "text");
+                ajouterChamp(champs, "ordre_affichage", "Ordre d'affichage", ordreSuivant, "number");
+                ajouterChamp(champs, "type_conditionnement", "Type de conditionnement", "caisse", "select", [["caisse", "Caisse"], ["sachet", "Sachet"]]);
+                ajouterChamp(champs, "quantite_standard", "Quantité standard", 1, "number");
+                ajouterChamp(champs, "consigne_unitaire", "Consigne unitaire (CHF)", 0, "number");
+                ajouterChamp(champs, "lavage_unitaire", "Lavage unitaire (CHF)", 0, "number");
+                ajouterChamp(champs, "seuil_stock", "Seuil d'alerte", 0, "number");
+                ajouterChamp(champs, "actif", "État", "true", "select", [["true", "Actif"], ["false", "Inactif"]]);
+                $("dialogue").showModal();
+            }
+
+            async function enregistrerAjout(donnees) {
+                const nom = String(donnees.get("nom") || "").trim();
+                const description = String(donnees.get("description") || "").trim();
+                const ordre = Number(donnees.get("ordre_affichage"));
+                const conditionnement = String(donnees.get("type_conditionnement") || "");
+                const quantite = Number(donnees.get("quantite_standard"));
+                const consigne = Number(donnees.get("consigne_unitaire"));
+                const lavage = Number(donnees.get("lavage_unitaire"));
+                const seuil = Number(donnees.get("seuil_stock"));
+                const actif = donnees.get("actif") === "true";
+
+                if (!nom || !Number.isSafeInteger(ordre) || ordre < 1 ||
+                    !["caisse", "sachet"].includes(conditionnement) ||
+                    !Number.isSafeInteger(quantite) || quantite < 1 ||
+                    !Number.isSafeInteger(seuil) || seuil < 0 ||
+                    ![consigne, lavage].every((v) => Number.isFinite(v) && v >= 0)) {
+                    message("Vérifiez le nom, le conditionnement, les quantités et les tarifs.", "erreur");
+                    return;
+                }
+
+                if (etat.references.some((r) => r.nom.trim().toLocaleLowerCase("fr") === nom.toLocaleLowerCase("fr"))) {
+                    message("Une référence portant ce nom existe déjà.", "erreur");
+                    return;
+                }
+
+                const editionId = etat.editionId;
+                const lignes = [
+                    "Référence : " + nom,
+                    "Édition : " + ($("edition").selectedOptions[0]?.textContent || "—"),
+                    "Conditionnement : " + conditionnement,
+                    "Quantité standard : " + quantite,
+                    "Consigne : " + consigne + " CHF",
+                    "Lavage : " + lavage + " CHF",
+                    "Seuil de stock : " + seuil,
+                    "État : " + (actif ? "Actif" : "Inactif")
+                ];
+
+                const confirme = await demanderConfirmation(
+                    "Confirmer l'ajout de la référence",
+                    "Vérifiez les données avant leur création dans Supabase.",
+                    lignes,
+                    "Cette opération écrit dans le référentiel partagé et dans les paramètres de l'édition. Elle ne crée aucun mouvement de stock."
+                );
+
+                if (!confirme) {
+                    return;
+                }
+
+                const bouton = $("enregistrer");
+                bouton.disabled = true;
+                let referenceCreee = null;
+
+                try {
+                    const { data: acces, error: erreurAcces } = await etat.client.rpc("etat_acces_administration");
+
+                    if (erreurAcces || !acces?.acces_administration || acces.mode_demo === true || etat.demo || !etat.acces) {
+                        throw new Error("Accès administrateur réel requis.");
+                    }
+
+                    if (editionId !== etat.editionId) {
+                        throw new Error("L'édition a changé. Rechargez la page avant l'ajout.");
+                    }
+
+                    const { data: nouvelleReference, error: erreurReference } = await etat.client
+                        .from("referentiel_vaisselle_mdn")
+                        .insert({ nom, description, ordre_affichage: ordre, actif })
+                        .select("id")
+                        .single();
+
+                    if (erreurReference) {
+                        throw erreurReference;
+                    }
+
+                    referenceCreee = nouvelleReference.id;
+
+                    const { data: nouveauParametre, error: erreurParametre } = await etat.client
+                        .from("edition_vaisselle")
+                        .insert({
+                            edition_id: editionId,
+                            vaisselle_id: referenceCreee,
+                            type_conditionnement: conditionnement,
+                            quantite_standard: quantite,
+                            consigne_unitaire: consigne,
+                            lavage_unitaire: lavage,
+                            seuil_stock: seuil,
+                            actif
+                        })
+                        .select("id")
+                        .single();
+
+                    if (erreurParametre || !nouveauParametre?.id) {
+                        throw erreurParametre || new Error("La création des paramètres n'a pas été confirmée.");
+                    }
+
+                    $("dialogue").close();
+                    etat.modification = null;
+                    await charger();
+                    message("Référence « " + nom + " » et paramètres créés pour l'édition sélectionnée.", "succes");
+                } catch (erreur) {
+                    console.error("[MDN] Ajout référentiel vaisselle :", erreur);
+                    if (referenceCreee) {
+                        message(
+                            "Création partielle : la référence a été créée, mais ses paramètres n'ont pas été enregistrés. " +
+                            "Ne recommencez pas l'ajout : corrigez d'abord la référence existante. Détail : " +
+                            (erreur.message || "erreur inconnue"),
+                            "erreur"
+                        );
+                    } else {
+                        message("Ajout impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+                    }
+                } finally {
+                    bouton.disabled = false;
+                }
+            }
+
+		    function ouvrirModification(type, item) {
+		        if (etat.demo || !etat.acces) {
+		            return;
+		        }
+
+		        etat.modification = { type, item: { ...item } };
+                $("enregistrer").textContent = "Enregistrer";
+                $("avertissementDialogue").textContent = "Modification d'un référentiel partagé — mode réel uniquement.";
+		        const champs = $("champsDialogue");
+		        champs.replaceChildren();
+		        $("titreDialogue").textContent = type === "reference" ? "Modifier la référence" : "Modifier les paramètres de l'édition";
+		        if (type === "reference") {
+		            ajouterChamp(champs, "nom", "Nom", item.nom, "text");
+		            ajouterChamp(champs, "description", "Description", item.description, "text");
+		            ajouterChamp(champs, "ordre_affichage", "Ordre d'affichage", item.ordre_affichage, "number");
+		        } else {
+		            ajouterChamp(champs, "type_conditionnement", "Type de conditionnement", item.type_conditionnement, "select", [["caisse", "Caisse"], ["sachet", "Sachet"]]);
+		            ajouterChamp(champs, "quantite_standard", "Quantité standard", item.quantite_standard, "number");
+		            ajouterChamp(champs, "consigne_unitaire", "Consigne unitaire (CHF)", item.consigne_unitaire, "number");
+		            ajouterChamp(champs, "lavage_unitaire", "Lavage unitaire (CHF)", item.lavage_unitaire, "number");
+		            ajouterChamp(champs, "seuil_stock", "Seuil d'alerte", item.seuil_stock, "number");
+		        }
+		        ajouterChamp(champs, "actif", "État", String(item.actif), "select", [["true", "Actif"], ["false", "Inactif"]]);
+		        $("dialogue").showModal();
+		    }
+
+		    async function enregistrer(e) {
+		        e.preventDefault();
+		        if (!etat.modification || etat.demo || !etat.acces) {
+		            return;
+		        }
+		        const { type, item } = etat.modification;
+		        const donnees = new FormData($("formulaire"));
+
+                if (type === "ajout") {
+                    await enregistrerAjout(donnees);
+                    return;
+                }
+		        const changements = { actif: donnees.get("actif") === "true" };
+		        if (type === "reference") {
+		            changements.nom = String(donnees.get("nom") || "").trim();
+		            changements.description = String(donnees.get("description") || "").trim();
+		            changements.ordre_affichage = Number(donnees.get("ordre_affichage"));
+		            if (!changements.nom || !Number.isSafeInteger(changements.ordre_affichage)) {
+		                message("Nom ou ordre d'affichage invalide.", "erreur");
+		                return;
+		            }
+		        } else {
+		            changements.type_conditionnement = String(donnees.get("type_conditionnement"));
+		            for (const nom of ["quantite_standard", "consigne_unitaire", "lavage_unitaire", "seuil_stock"]) {
+		                changements[nom] = Number(donnees.get(nom));
+		            }
+		            if (!Number.isSafeInteger(changements.quantite_standard) || changements.quantite_standard < 1 || !Number.isSafeInteger(changements.seuil_stock) || changements.seuil_stock < 0 || ![changements.consigne_unitaire, changements.lavage_unitaire].every((v) => Number.isFinite(v) && v >= 0)) {
+		                message("Quantité, tarif ou seuil invalide.", "erreur");
+		                return;
+		            }
+		        }
+		        const differences = decrireModifications(item, changements);
+
+		        if (differences.length === 0) {
+		            message("Aucune modification détectée : aucun enregistrement nécessaire.", "succes");
+		            $("dialogue").close();
+		            etat.modification = null;
+		            return;
+		        }
+
+		        const avertissement = type === "reference"
+		            ? "ATTENTION : cette référence est commune à toutes les éditions."
+		            : "ATTENTION : les tarifs et conditionnements de l'édition sélectionnée seront modifiés. Les mouvements passés ne seront pas recalculés.";
+
+                const confirme = await demanderConfirmation(
+                    "Confirmer la modification",
+                    "Les valeurs suivantes seront enregistrées dans l'édition sélectionnée.",
+                    differences,
+                    avertissement
+                );
+
+                if (!confirme) {
+                    return;
+                }
+		        const bouton = $("enregistrer");
+		        bouton.disabled = true;
+		        try {
+		            // Nouveau contrôle serveur avant toute écriture.
+		            const { data: acces, error: erreurAcces } = await etat.client.rpc("etat_acces_administration");
+		            if (erreurAcces || !acces?.acces_administration || acces.mode_demo === true) {
+		                throw new Error("Accès en écriture refusé par le contrôle d'administration.");
+		            }
+		            if (etat.demo || !etat.acces) {
+		                throw new Error("Écriture impossible en mode démo ou sans accès administratif.");
+		            }
+
+		            if (type === "parametre" && item.edition_id !== etat.editionId) {
+		                throw new Error("L'édition sélectionnée a changé. Rechargez les données avant de modifier ce paramètre.");
+		            }
+
+		            const table = type === "reference" ? "referentiel_vaisselle_mdn" : "edition_vaisselle";
+		            let requete = etat.client.from(table).update(changements).eq("id", item.id);
+		            if (type === "parametre") {
+		                requete = requete.eq("edition_id", etat.editionId);
+		            }
+		            const { data, error } = await requete.select("id");
+		            if (error) {
+		                throw error;
+		            }
+		            if (!data || data.length !== 1) {
+		                throw new Error("Modification non confirmée par Supabase. Vérifier les droits RLS.");
+		            }
+		            $("dialogue").close();
+		            etat.modification = null;
+		            await charger();
+		            message("Modification enregistrée dans Supabase.", "succes");
+		        } catch (erreur) {
+		            console.error("[MDN] Modification référentiel :", erreur);
+		            message("Enregistrement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+		        } finally {
+		            bouton.disabled = false;
+		        }
+		    }
+
+		    async function initialiser() {
+		        try {
+		            const auth = await window.MDN_AUTH.protegerPage();
+		            if (!auth) {
+		                return;
+		            }
+		            etat.client = window.MDN_SUPABASE;
+		            if (!etat.client) {
+		                throw new Error("Client Supabase indisponible.");
+		            }
+		            const { data: acces, error } = await etat.client.rpc("etat_acces_administration");
+		            if (error) {
+		                throw error;
+		            }
+		            if (!acces?.acces_administration) {
+		                window.location.replace("accueil.html");
+		                return;
+		            }
+		            etat.acces = true;
+		            etat.demo = acces.mode_demo === true;
+		            document.body.classList.toggle("demo", etat.demo);
+                    $("ajouterReference").hidden = etat.demo;
+		            $("bandeauDemo").hidden = !etat.demo;
+		            $("nomUtilisateur").textContent = etat.demo ? "Mode Démo" : (auth.profil?.prenom || auth.profil?.email || "Administrateur");
+		            $("roleUtilisateur").textContent = etat.demo ? "Utilisateur" : "Administrateur";
+		            window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion: true });
+		            await charger();
+		        } catch (erreur) {
+		            console.error("[MDN] Administration vaisselle :", erreur);
+		            message("Accès impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+		        }
+		    }
+
+		    $("retour").addEventListener("click", () => { window.location.href = etat.demo ? "administration.html?mode=demo" : "administration.html"; });
+		    $("deconnexion").addEventListener("click", () => window.MDN_AUTH.deconnexion());
+		    $("actualiser").addEventListener("click", charger);
+            $("ajouterReference").addEventListener("click", ouvrirAjout);
+		    $("edition").addEventListener("change", async () => {
+		        if (etat.demo) {
+                return;
+            }
+            etat.editionId = $("edition").value;
+		        try {
+		            await chargerParametres();
+                    await chargerReglesReel();
+		        } catch (erreur) {
+		            message("Impossible de charger l'édition : " + erreur.message, "erreur");
+		        }
+		    });
+		    $("annuler").addEventListener("click", () => $("dialogue").close());
+		    $("formulaire").addEventListener("submit", enregistrer);
+		    initialiser();
+		})();
+
+	
+  </script>
+ </body>
 </html>
+
