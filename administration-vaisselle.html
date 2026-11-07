@@ -1066,6 +1066,7 @@
 		    }
 
 		    function afficher() {
+                trierParametresSelonReferences();
 		        $("nombreReferences").textContent = String(etat.references.length);
 		        $("nombreParametres").textContent = String(etat.parametres.length);
 		        $("nombreActives").textContent = String(etat.references.filter((x) => x.actif).length);
@@ -1177,6 +1178,26 @@
                     etat.deplacementEnCours = false;
                     afficher();
                 }
+            }
+
+            function trierParametresSelonReferences() {
+                // En mode Démo, l'ordre des conditionnements suit les références.
+                // Aucune donnée Supabase n'est modifiée par ce tri.
+                if (!etat.demo) {
+                    return;
+                }
+
+                const positions = new Map(
+                    etat.references.map((reference, index) => [reference.id, index])
+                );
+
+                etat.parametres.sort((a, b) => {
+                    const positionA = positions.get(a.vaisselle_id) ?? Number.MAX_SAFE_INTEGER;
+                    const positionB = positions.get(b.vaisselle_id) ?? Number.MAX_SAFE_INTEGER;
+
+                    return positionA - positionB ||
+                        String(a.vaisselle_id).localeCompare(String(b.vaisselle_id));
+                });
             }
 
             function afficherRegles() {
@@ -1352,6 +1373,8 @@
                         seuil_stock: article.seuil_stock ?? 0,
                         actif: article.actif !== false
                     }));
+
+                    trierParametresSelonReferences();
 
                     const choixDemo = $("edition");
                     choixDemo.replaceChildren();
