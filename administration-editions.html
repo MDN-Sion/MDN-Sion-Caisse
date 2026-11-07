@@ -3630,9 +3630,7 @@
 
                     // V9.43 — Export TXT local de la réponse vérifiée SQL161.
                     // Aucun appel réseau supplémentaire, aucune écriture en base.
-                    const boutonExport = creer("button", "v943-exporter", "Exporter le rapport (.txt)", entete);
-                    boutonExport.type = "button";
-                    boutonExport.addEventListener("click", () => {
+                    const genererRapportSimulationV947 = () => {
                         const format = valeur => valeur === undefined || valeur === null ? "—" : String(valeur);
                         const rapport = [
                             "MDN SION — RAPPORT DE SIMULATION DE CRÉATION 2027",
@@ -3669,16 +3667,49 @@
                             "ATTENTION : les quantités actuelles sont fictives.",
                             "Aucune création, activation ou écriture de stock effectuée par cette simulation."
                         ].join("\n");
+                        return rapport;
+                    };
+
+                    // V9.47 — Deux actions locales utilisant exactement le même rapport.
+                    const boutonExport = creer("button", "v943-exporter", "Exporter le rapport (.txt)", entete);
+                    boutonExport.type = "button";
+                    boutonExport.addEventListener("click", () => {
+                        const rapport = genererRapportSimulationV947();
                         const fichier = new Blob(["\uFEFF", rapport], { type: "text/plain;charset=utf-8" });
                         const url = URL.createObjectURL(fichier);
                         const lien = document.createElement("a");
                         lien.href = url;
-                        lien.download = "MDN-Sion-Simulation-2027-Revision-" + format(data.revision) + ".txt";
+                        lien.download = "MDN-Sion-Simulation-2027-Revision-" + String(data.revision ?? "inconnue") + ".txt";
                         document.body.appendChild(lien);
                         lien.click();
                         lien.remove();
                         URL.revokeObjectURL(url);
                     });
+
+                    const boutonCopier = creer("button", "v943-exporter", "Copier le rapport", entete);
+                    boutonCopier.type = "button";
+                    boutonCopier.addEventListener("click", async () => {
+                        const texte = genererRapportSimulationV947();
+                        const libelleInitial = "Copier le rapport";
+                        try {
+                            if (!navigator.clipboard || !navigator.clipboard.writeText) {
+                                throw new Error("Presse-papiers indisponible dans ce navigateur.");
+                            }
+                            await navigator.clipboard.writeText(texte);
+                            boutonCopier.textContent = "Rapport copié";
+                        } catch (erreur) {
+                            boutonCopier.textContent = "Copie impossible : utiliser l’export .txt";
+                        }
+                        boutonCopier.setAttribute("aria-label", libelleInitial);
+                    });
+
+                    const avertissementTest = creer(
+                        "p",
+                        "v941-legende",
+                        "Données de test : les quantités simulées ne doivent pas être validées comme inventaire réel.",
+                        racine
+                    );
+                    avertissementTest.style.fontWeight = "700";
 
                     const grille = creer("div", "v941-grille", null, racine);
                     const carte = (titre, valeur, legende) => {
