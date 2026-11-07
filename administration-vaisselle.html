@@ -616,6 +616,62 @@
             text-align: left;
         }
     }
+  
+        /* V9 : matrice compacte des règles, responsive. */
+        .regles-table-scroll {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .tableau-regles {
+            width: 100%;
+            min-width: 890px;
+            border-collapse: collapse;
+        }
+
+        .tableau-regles th,
+        .tableau-regles td {
+            padding: 11px 12px;
+            border-bottom: 1px solid #dbe3ec;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .tableau-regles thead th {
+            background: #f2f5f8;
+            font-size: 0.88rem;
+        }
+
+        .tableau-regles tbody th {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .regle-etiquette {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .regle-complete {
+            color: #075b35;
+            background: #e3f2e9;
+        }
+
+        .regle-consigne {
+            color: #624700;
+            background: #fff2c8;
+        }
+
+        .regle-refusee,
+        .regle-manquante {
+            color: #922020;
+            background: #fce7e7;
+        }
+
   </style>
  </head>
  <body>
@@ -794,9 +850,14 @@
       </table>
      </div>
     </section>
-    <p class="petit">
-     Les règles de remboursement selon le type de stand restent celles de l'application Vaisselle. Aucun inventaire ni mouvement de stock n'est modifié depuis cette page.
-    </p>
+    <section class="bloc" id="sectionReglesRemboursement">
+     <h2>3. Règles de remboursement — consultation</h2>
+     <p>Retour propre en conditionnement complet : consigne et lavage des pièces remboursés, avec les règles propres au contenant. Retour sale : consigne des pièces uniquement.</p>
+     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. Aucune modification n'est possible depuis cet écran.</p>
+     <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
+     <div id="contenuReglesRemboursement"></div>
+    </section>
+    <p class="petit">Aucun inventaire ni mouvement de stock n'est modifié depuis cette page.</p>
    </section>
   </main>
   <dialog id="dialogue">
@@ -998,62 +1059,110 @@
             }
 
             function afficherRegles() {
-                let section = document.getElementById("sectionReglesRemboursement");
+                const section = document.getElementById("sectionReglesRemboursement");
+                if (section) {
+                    section.hidden = !etat.demo;
+                }
                 if (!section) {
-                    section = document.createElement("section");
-                    section.id = "sectionReglesRemboursement";
-                    section.style.cssText = "margin:24px 0;padding:20px;border:1px solid #d6c9c9;border-radius:14px;overflow-x:auto;";
-                    section.innerHTML = '<h2>Règles de remboursement — consultation</h2>' +
-                        '<p>Retour sale : consigne des pièces uniquement. Retour propre en conditionnement complet : consigne et lavage selon le conditionnement. Les valeurs ci-dessous concernent les retours propres à l’unité.</p>' +
-                        '<div id="contenuReglesRemboursement"></div>';
-                    const parent = document.querySelector("main") || document.body;
-                    parent.appendChild(section);
+                    return;
                 }
+
                 const contenu = document.getElementById("contenuReglesRemboursement");
+                const compteur = document.getElementById("compteurReglesRemboursement");
                 contenu.replaceChildren();
-                const tableau = document.createElement("table");
-                tableau.style.width = "100%";
-                const tete = document.createElement("thead");
-                const ligneTete = document.createElement("tr");
-                for (const titre of ["Article", "Type de stand", "Retour propre à l’unité", "Lavage remboursé"]) {
-                    const th = document.createElement("th");
-                    th.textContent = titre;
-                    ligneTete.appendChild(th);
-                }
-                tete.appendChild(ligneTete);
-                tableau.appendChild(tete);
-                const corps = document.createElement("tbody");
-                const noms = new Map(etat.references.map((r) => [r.id, r.nom]));
-                const regles = [...etat.regles].sort((a, b) =>
-                    (noms.get(a.vaisselle_id) || "").localeCompare(noms.get(b.vaisselle_id) || "", "fr") ||
-                    a.type_partenaire.localeCompare(b.type_partenaire, "fr")
+
+                const types = [
+                    "Associatif",
+                    "Métier de la bouche",
+                    "Restaurateur",
+                    "Artisan",
+                    "Comité"
+                ];
+
+                const indexRegles = new Map(
+                    etat.regles.map((regle) => [
+                        regle.vaisselle_id + "|" + regle.type_partenaire,
+                        regle
+                    ])
                 );
-                for (const regle of regles) {
+
+                const totalAttendu = etat.references.length * types.length;
+                compteur.textContent = etat.regles.length + " règle(s) reçue(s) sur " + totalAttendu + " attendue(s).";
+
+                const enveloppe = document.createElement("div");
+                enveloppe.className = "table-scroll regles-table-scroll";
+                const tableau = document.createElement("table");
+                tableau.className = "tableau-regles";
+                const entete = document.createElement("thead");
+                const trEntete = document.createElement("tr");
+
+                for (const titre of ["Article", ...types]) {
+                    const th = document.createElement("th");
+                    th.scope = "col";
+                    th.textContent = titre;
+                    trEntete.appendChild(th);
+                }
+
+                entete.appendChild(trEntete);
+                tableau.appendChild(entete);
+
+                const corps = document.createElement("tbody");
+                for (const reference of etat.references) {
                     const tr = document.createElement("tr");
-                    for (const valeur of [
-                        noms.get(regle.vaisselle_id) || "Référence inconnue",
-                        regle.type_partenaire,
-                        regle.retour_propre_unite_autorise ? "Oui" : "Non",
-                        regle.retour_propre_unite_rembourse_lavage ? "Oui" : "Non"
-                    ]) {
-                        cellule(tr, valeur);
+                    const th = document.createElement("th");
+                    th.scope = "row";
+                    th.textContent = reference.nom;
+                    tr.appendChild(th);
+
+                    for (const type of types) {
+                        const td = document.createElement("td");
+                        const regle = indexRegles.get(reference.id + "|" + type);
+                        const etiquette = document.createElement("span");
+                        etiquette.className = "regle-etiquette";
+
+                        if (!regle) {
+                            etiquette.textContent = "Non configuré";
+                            etiquette.classList.add("regle-manquante");
+                        } else if (!regle.retour_propre_unite_autorise) {
+                            etiquette.textContent = "Non autorisé";
+                            etiquette.classList.add("regle-refusee");
+                        } else if (regle.retour_propre_unite_rembourse_lavage) {
+                            etiquette.textContent = "Consigne + lavage";
+                            etiquette.classList.add("regle-complete");
+                        } else {
+                            etiquette.textContent = "Consigne seule";
+                            etiquette.classList.add("regle-consigne");
+                        }
+
+                        td.appendChild(etiquette);
+                        tr.appendChild(td);
                     }
+
                     corps.appendChild(tr);
                 }
-                if (!regles.length) {
+
+                if (!etat.references.length) {
                     const tr = document.createElement("tr");
-                    const td = cellule(tr, "Aucune règle disponible pour cette édition.");
-                    td.colSpan = 4;
+                    const td = document.createElement("td");
+                    td.colSpan = types.length + 1;
+                    td.textContent = "Aucune référence disponible.";
+                    tr.appendChild(td);
                     corps.appendChild(tr);
                 }
+
                 tableau.appendChild(corps);
-                contenu.appendChild(tableau);
+                enveloppe.appendChild(tableau);
+                contenu.appendChild(enveloppe);
             }
 
 		    async function charger() {
 		        $("actualiser").disabled = true;
 		        message("Chargement des données depuis Supabase…");
 		        try {
+                const sectionRegles = document.getElementById("sectionReglesRemboursement");
+                if (sectionRegles) {
+                    sectionRegles.hidden = !etat.demo;
+                }
                 if (etat.demo) {
                     // La session Démo possède son propre accès RPC.
                     // Les SELECT directs sont filtrés par RLS et retournent zéro ligne.
