@@ -7,7 +7,7 @@
   <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
   <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
   <title>
-   Référentiel vaisselle · MDN Sion — V6
+   Référentiel vaisselle · MDN Sion — V10
   </title>
   <style>
    
@@ -19,6 +19,24 @@
 			margin: 0;
 			min-height: 100%;
 		}
+
+        /* V10 : le défilement est limité au corps de la page.
+           Cela évite de révéler une bande blanche en tirant sur tablette. */
+        html {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            height: 100%;
+            height: 100dvh;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none;
+        }
 
 		body {
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -625,7 +643,7 @@
 
         .tableau-regles {
             width: 100%;
-            min-width: 890px;
+            min-width: 0;
             border-collapse: collapse;
         }
 
@@ -670,6 +688,82 @@
         .regle-manquante {
             color: #922020;
             background: #fce7e7;
+        }
+
+        /* V10 : la matrice reste sur six colonnes sur grand écran.
+           Sur fenêtre étroite ou tablette, chaque article devient une fiche. */
+        @media (max-width: 1150px) {
+            .regles-table-scroll {
+                overflow-x: hidden;
+            }
+
+            .tableau-regles,
+            .tableau-regles tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .tableau-regles thead {
+                display: none;
+            }
+
+            .tableau-regles tbody tr {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0;
+                margin: 0 0 12px;
+                border: 1px solid #dbe3ec;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #fff;
+            }
+
+            .tableau-regles tbody th {
+                grid-column: 1 / -1;
+                display: block;
+                padding: 10px 12px;
+                background: #f2f5f8;
+                white-space: normal;
+            }
+
+            .tableau-regles tbody td {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                min-width: 0;
+                padding: 10px 12px;
+                border-right: 1px solid #edf0f4;
+            }
+
+            .tableau-regles tbody td::before {
+                content: attr(data-type-stand);
+                display: block;
+                color: #40526a;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .tableau-regles .regle-etiquette {
+                max-width: 100%;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                line-height: 1.35;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .tableau-regles tbody tr {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .tableau-regles tbody td {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
         }
 
   </style>
@@ -1116,6 +1210,7 @@
 
                     for (const type of types) {
                         const td = document.createElement("td");
+                        td.setAttribute("data-type-stand", type);
                         const regle = indexRegles.get(reference.id + "|" + type);
                         const etiquette = document.createElement("span");
                         etiquette.className = "regle-etiquette";
