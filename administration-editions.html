@@ -4135,13 +4135,21 @@
                             input.placeholder = "Gobelets";
                             input.style.width = "110px";
                             input.value = anciennesValeurs[index] ?? "";
-                            input.addEventListener("input", calculerTotalPartielles);
+                            input.addEventListener("input", () => {
+                                calculerTotalPartielles();
+                                actualiserBilanComptage();
+                                programmerSauvegardeComptage();
+                            });
                             label.appendChild(input);
                             caissesIndividuelles.push(input);
                         }
                         calculerTotalPartielles();
                     }
-                    nombrePartielles.input.addEventListener("input", afficherCaissesIndividuelles);
+                    nombrePartielles.input.addEventListener("input", () => {
+                        afficherCaissesIndividuelles();
+                        actualiserBilanComptage();
+                        programmerSauvegardeComptage();
+                    });
                     champReserve("Caisses vides", "caisses_vides");
                     // V9.65 — Contrôle de cohérence visible en direct, sans nouveau bouton.
                     // Ce contrôle n'enregistre aucune donnée et ne déclenche aucune validation officielle.
@@ -4164,7 +4172,7 @@
                         bilanComptage.replaceChildren();
                         creerAudit("strong", "", "Contrôle du comptage — " + (pret ? "saisie complète" : "saisie en cours"), bilanComptage);
                         creerAudit("div", "", `Articles MDN renseignés : ${saisies.length}/${lignesSaisie.length} · Total des unités : ${totalArticles}`, bilanComptage);
-                        creerAudit("div", "", `Caisses partielles renseignées : ${detailValide ? nombre : caissesIndividuelles.filter(champ => entierValide(champ) && Number(champ.value) >= 1 && Number(champ.value) < capaciteCaisse).length}/${nombre ?? "?"}`, bilanComptage);
+                        creerAudit("div", "", nombre === null ? "Nombre de caisses partielles à renseigner" : `Caisses partielles renseignées : ${detailValide ? nombre : caissesIndividuelles.filter(champ => entierValide(champ) && Number(champ.value) >= 1 && Number(champ.value) < capaciteCaisse).length}/${nombre}`, bilanComptage);
                         creerAudit("div", "", `Réserve de gobelets : ${champsComplets && detailValide ? totalReserve + " gobelets (caisses pleines et partielles)" : "à compléter"}`, bilanComptage);
                         if (incompletes.length > 0) {
                             creerAudit("div", "", "Articles à compter : " + incompletes.map(ligne => ligne.article).join(", "), bilanComptage);
@@ -4175,9 +4183,109 @@
                             creerAudit("div", "", "Prêt pour l'export CSV. Aucun inventaire officiel n'est validé.", bilanComptage);
                         }
                     }
-                    lignesSaisie.forEach(ligne => ligne.quantite.addEventListener("input", actualiserBilanComptage));
-                    champsReserve.forEach(champ => champ.input.addEventListener("input", actualiserBilanComptage));
-                    detailPartielles.addEventListener("input", actualiserBilanComptage);
+                    // V9.66 — Brouillon local persistant, isolé par préparation et révision.
+                    // Aucune donnée de ce brouillon n'est envoyée à Supabase.
+                    const cleBrouillonComptage = `mdn-sion-comptage-local-v966:${preparation.id}:${data.revision ?? "inconnue"}`;
+                    const etatSauvegarde = creerAudit("p", "v953-vide", "Brouillon local : aucune saisie enregistrée.", formulaire);
+                    let minuterieSauvegarde = null;
+                    let restaurationEnCours = false;
+
+                    function construireBrouillonComptage() {
+                        return {
+                            version: 1,
+                            preparation_id: preparation.id,
+                            revision: String(data.revision ?? "inconnue"),
+                            articles: lignesSaisie.map(ligne => ({
+                                article: ligne.article,
+                                quantite: ligne.quantite.value,
+                                observation: ligne.observation.value
+                            })),
+                            reserve: champsReserve.map(champ => ({
+                                libelle: champ.libelle,
+                                valeur: champ.input.value
+                            })),
+                            caisses_partielles: caissesIndividuelles.map(champ => champ.value)
+                        };
+                    }
+
+                    function enregistrerBrouillonComptage() {
+                        if (restaurationEnCours) return;
+                        try {
+                            const brouillon = construireBrouillonComptage();
+                            const auMoinsUneValeur = brouillon.articles.some(ligne => ligne.quantite !== "" || ligne.observation !== "") ||
+                                brouillon.reserve.some(champ => champ.valeur !== "") ||
+                                brouillon.caisses_partielles.some(valeur => valeur !== "");
+                            if (auMoinsUneValeur) {
+                                window.localStorage.setItem(cleBrouillonComptage, JSON.stringify(brouillon));
+                                etatSauvegarde.textContent = "Brouillon sauvegardé automatiquement sur cet appareil. Aucune validation officielle.";
+                            } else {
+                                window.localStorage.removeItem(cleBrouillonComptage);
+                                etatSauvegarde.textContent = "Brouillon local : aucune saisie enregistrée.";
+                            }
+                        } catch (erreur) {
+                            etatSauvegarde.textContent = "Sauvegarde locale indisponible : exporte le CSV pour conserver tes saisies.";
+                        }
+                    }
+
+                    function programmerSauvegardeComptage() {
+                        if (restaurationEnCours) return;
+                        if (minuterieSauvegarde !== null) window.clearTimeout(minuterieSauvegarde);
+                        minuterieSauvegarde = window.setTimeout(() => {
+                            minuterieSauvegarde = null;
+                            enregistrerBrouillonComptage();
+                        }, 250);
+                    }
+
+                    function restaurerBrouillonComptage() {
+                        try {
+                            const brut = window.localStorage.getItem(cleBrouillonComptage);
+                            if (!brut) return;
+                            const brouillon = JSON.parse(brut);
+                            if (brouillon.version !== 1 || brouillon.preparation_id !== preparation.id ||
+                                brouillon.revision !== String(data.revision ?? "inconnue") ||
+                                !Array.isArray(brouillon.articles) || !Array.isArray(brouillon.reserve) ||
+                                !Array.isArray(brouillon.caisses_partielles) ||
+                                brouillon.articles.length !== lignesSaisie.length ||
+                                brouillon.reserve.length !== champsReserve.length) return;
+                            restaurationEnCours = true;
+                            lignesSaisie.forEach((ligne, index) => {
+                                const entree = brouillon.articles[index];
+                                if (entree.article !== ligne.article) throw new Error("Catalogue modifié");
+                                ligne.quantite.value = entree.quantite ?? "";
+                                ligne.observation.value = entree.observation ?? "";
+                            });
+                            champsReserve.forEach((champ, index) => {
+                                const entree = brouillon.reserve[index];
+                                if (entree.libelle !== champ.libelle) throw new Error("Réserve modifiée");
+                                champ.input.value = entree.valeur ?? "";
+                            });
+                            afficherCaissesIndividuelles();
+                            caissesIndividuelles.forEach((champ, index) => {
+                                champ.value = brouillon.caisses_partielles[index] ?? "";
+                            });
+                            calculerTotalPartielles();
+                            formulaire.hidden = false;
+                            boutonSaisie.textContent = "Masquer la saisie";
+                            etatSauvegarde.textContent = "Brouillon local restauré automatiquement. Vérifie les quantités avant export.";
+                        } catch (erreur) {
+                            etatSauvegarde.textContent = "Brouillon local non restauré : utilise l'import CSV si nécessaire.";
+                        } finally {
+                            restaurationEnCours = false;
+                        }
+                    }
+
+                    lignesSaisie.forEach(ligne => {
+                        ligne.quantite.addEventListener("input", () => {
+                            actualiserBilanComptage();
+                            programmerSauvegardeComptage();
+                        });
+                        ligne.observation.addEventListener("input", programmerSauvegardeComptage);
+                    });
+                    champsReserve.forEach(champ => champ.input.addEventListener("input", () => {
+                        actualiserBilanComptage();
+                        programmerSauvegardeComptage();
+                    }));
+                    restaurerBrouillonComptage();
                     actualiserBilanComptage();
                     const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
                     exporterSaisie.type = "button";
@@ -4316,6 +4424,8 @@
                                 caissesIndividuelles[index].value = String(quantite);
                             });
                             calculerTotalPartielles();
+                            actualiserBilanComptage();
+                            enregistrerBrouillonComptage();
                             etatReprise.textContent = `Comptage repris : ${valeursArticles.length} articles et ${nombre} caisse(s) partielle(s). Aucune validation effectuée.`;
                         } catch (erreur) {
                             etatReprise.textContent = "Import refusé : " + erreur.message;
@@ -4323,7 +4433,7 @@
                             fichierReprise.value = "";
                         }
                     });
-                    creerAudit("p", "v953-vide", "Attention : le fichier exporté n'est pas une validation officielle. La saisie sera perdue si tu actualises la page.", formulaire);
+                    creerAudit("p", "v953-vide", "Attention : le fichier exporté n'est pas une validation officielle. Le brouillon local reste sur cet appareil et peut être effacé par le navigateur.", formulaire);
 
                     dernierAuditCsvV954 = data;
                     boutonExportAuditV954.disabled = false;
