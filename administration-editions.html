@@ -929,6 +929,14 @@
         .v922-resultat ul { margin: 8px 0; padding-left: 22px; }
         .v922-attention { color: #803600; font-weight: 600; }
         .v922-transfert button:disabled { opacity: .55; cursor: not-allowed; }
+        /* V9.56 : parcours lisible ; les identifiants techniques sont conservés. */
+        .v956-details { margin-top: 18px; border-top: 1px solid #d8e1e8; padding-top: 14px; }
+        .v956-details summary { cursor: pointer; font-weight: 700; color: #34495e; }
+        .v956-details[open] summary { margin-bottom: 12px; }
+        .v956-details p { margin: 8px 0; }
+        .v956-verrou { margin-top: 18px; color: #8b0000; font-weight: 600; }
+        .v956-cache-technique { display: none !important; }
+
 
         /* V9.23 — dialogues intégrés, sans fenêtre système du navigateur. */
         .v923-overlay[hidden] { display: none !important; }
@@ -1245,48 +1253,63 @@
                 <p class="v921-explication">Données enregistrées dans la préparation annuelle, indépendantes des fiches vérifiées dans le brouillon.</p>
                 <div id="contenuSuiviOfficielV921" aria-live="polite">Chargement des états officiels…</div>
                 <section class="v922-transfert" aria-labelledby="titreApercuValidationsV926">
-                    <h3 id="titreApercuValidationsV926">Précontrôle SQL153 · Validations SQL154</h3>
-                    <p>Vérifier les cinq sections sans modifier les données. Les inventaires actuels sont fictifs. <strong>Les validations réelles sont temporairement désactivées.</strong> Les simulations restent disponibles en lecture seule.</p>
+                    <h3 id="titreApercuValidationsV926">1. Vérifier la préparation</h3>
+                    <p>Consulter les cinq étapes nécessaires avant la création de la prochaine édition. Aucune donnée n'est modifiée.</p>
                     <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier les validations</button>
-                        <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
+                        <button type="button" class="bouton secondaire" id="verifierValidationsV926">Vérifier la préparation</button>
                     </div>
-                    <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Précontrôle non exécuté.</div>
+                    <div id="resultatValidationsV926" class="v922-resultat" role="status" aria-live="polite">Vérification non effectuée.</div>
                     <div id="sectionsValidationsV927" aria-live="polite"></div>
                 </section>
-                <section class="v922-transfert" aria-labelledby="titreCreationV935">
-                    <h3 id="titreCreationV935">Préparation de la création 2027 · SQL157</h3>
-                    <p>Contrôle préalable en lecture seule. La création et l'activation de 2027 restent interdites depuis cet écran. Les quantités actuelles sont des données de test et ne doivent pas devenir des stocks définitifs.</p>
-                    <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="apercuCreationV935" aria-pressed="false">Contrôler la création 2027</button>
-                        <button type="button" class="bouton secondaire" id="planCreationV936" aria-pressed="false">Afficher le plan détaillé (SQL158)</button>
-                        <button type="button" class="bouton secondaire" id="simulerCreationV939">Simuler la création (sans écriture)</button>
-                        <button type="button" class="bouton secondaire" id="simulerChaineV940">Simuler la chaîne complète (SQL161)</button>
-                        <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
-                    </div>
-                    <div id="resultatCreationV935" class="v922-resultat" role="status" aria-live="polite">Contrôle SQL157 non exécuté.</div>
-                    <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan SQL158 non exécuté.</div>
-                    <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non exécutée.</div>
-                    <div id="simulationChaineV940" class="v922-resultat" role="status" aria-live="polite">Simulation SQL161 non exécutée.</div>
-                </section>
                 <section class="v922-transfert" aria-labelledby="titreAuditV953">
-                    <h3 id="titreAuditV953">Audit des inventaires 2027 · SQL163</h3>
-                    <p>Consulter le détail des comptages MDN et de la réserve de gobelets avant toute reprise. Les données actuelles sont fictives : cet audit ne valide et ne modifie rien.</p>
+                    <h3 id="titreAuditV953">2. Consulter les inventaires</h3>
+                    <p>Afficher les quantités comptées pour les articles MDN et les caisses de gobelets. <strong>Les quantités actuelles sont fictives.</strong></p>
                     <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher l’audit détaillé (SQL163)</button>
-                        <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Exporter l’audit (.csv)</button>
-                        <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Exporter l’audit lisible (.html)</button>
+                        <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher les inventaires</button>
                     </div>
-                    <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Audit non exécuté.</div>
+                    <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Inventaires non affichés.</div>
+                    <details class="v956-details">
+                        <summary>Exporter les inventaires</summary>
+                        <p>Choisir un fichier pour Excel ou un rapport lisible dans le navigateur.</p>
+                        <div class="v922-actions">
+                            <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Fichier Excel (.csv)</button>
+                            <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Rapport lisible (.html)</button>
+                        </div>
+                    </details>
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
-                    <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
-                    <p>Première étape : vérifier la sauvegarde sans rien modifier. Le transfert, s'il est autorisé, exige ensuite une confirmation distincte.</p>
+                    <h3 id="titreTransfertV922">3. Vérifier le transfert du brouillon</h3>
+                    <p>Comparer les fiches du brouillon avec la préparation officielle avant un éventuel transfert. Une confirmation distincte reste nécessaire.</p>
                     <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="precontrolerTransfertV922">Prévisualiser le transfert</button>
-                        <button type="button" class="bouton" id="confirmerTransfertV922" disabled>Transférer les fiches éligibles</button>
+                        <button type="button" class="bouton secondaire" id="precontrolerTransfertV922">Vérifier les fiches à transférer</button>
+                        <button type="button" class="bouton" id="confirmerTransfertV922" disabled>Confirmer le transfert</button>
                     </div>
-                    <div id="resultatTransfertV922" class="v922-resultat" role="status" aria-live="polite">Aucun précontrôle effectué.</div>
+                    <div id="resultatTransfertV922" class="v922-resultat" role="status" aria-live="polite">Vérification non effectuée.</div>
+                </section>
+                <section class="v922-transfert" aria-labelledby="titreCreationV935">
+                    <h3 id="titreCreationV935">4. Simuler la prochaine édition</h3>
+                    <p>Vérifier l'ensemble de la reprise annuelle sans créer d'édition ni modifier les stocks.</p>
+                    <div class="v922-actions">
+                        <button type="button" class="bouton secondaire" id="simulerChaineV940">Lancer la simulation complète</button>
+                    </div>
+                    <div id="simulationChaineV940" class="v922-resultat" role="status" aria-live="polite">Simulation non effectuée.</div>
+                    <details class="v956-details">
+                        <summary>Contrôles techniques complémentaires</summary>
+                        <p>Outils de diagnostic pour examiner les différentes étapes de la création. Aucune écriture.</p>
+                        <div class="v922-actions">
+                            <button type="button" class="bouton secondaire" id="apercuCreationV935" aria-pressed="false">Contrôle préalable</button>
+                            <button type="button" class="bouton secondaire" id="planCreationV936" aria-pressed="false">Plan détaillé</button>
+                            <button type="button" class="bouton secondaire" id="simulerCreationV939">Simulation de création</button>
+                        </div>
+                        <div id="resultatCreationV935" class="v922-resultat" role="status" aria-live="polite">Contrôle préalable non effectué.</div>
+                        <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan non affiché.</div>
+                        <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non effectuée.</div>
+                    </details>
+                    <p class="v956-verrou">Création de l'édition 2027 indisponible tant que les inventaires réels et les validations officielles ne sont pas terminés.</p>
+                    <div class="v956-cache-technique">
+                        <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
+                        <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
+                    </div>
                 </section>
             </section>
         <section class="panneau" id="panneauInventaires" hidden>
