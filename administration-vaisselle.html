@@ -7,7 +7,7 @@
   <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
   <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
   <title>
-   Référentiel vaisselle · MDN Sion — V10
+   Référentiel vaisselle · MDN Sion — V14
   </title>
   <style>
    
@@ -66,6 +66,11 @@
 		}
 
 		.entete {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            isolation: isolate;
+            backdrop-filter: blur(10px);
 			color: #fff;
 			background: #5c000073;
 			padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
@@ -1083,7 +1088,7 @@
                     numeroOrdre.className = "classement-numero";
                     numeroOrdre.textContent = String(r.ordre_affichage);
                     blocOrdre.appendChild(numeroOrdre);
-                    if (etat.demo) {
+                    if (etat.acces) {
                         const commandes = document.createElement("span");
                         commandes.className = "classement-commandes";
                         for (const [direction, symbole, interdit] of [
@@ -1154,13 +1159,16 @@
 		    }
 
             async function deplacerReference(vaisselleId, direction) {
-                if (!etat.demo || etat.deplacementEnCours) {
+                if (!etat.acces || etat.deplacementEnCours) {
                     return;
                 }
                 etat.deplacementEnCours = true;
                 afficher();
                 try {
-                    const { data, error } = await etat.client.rpc("deplacer_vaisselle_demo", {
+                    const fonctionDeplacement = etat.demo
+                        ? "deplacer_vaisselle_demo"
+                        : "deplacer_vaisselle_reel";
+                    const { data, error } = await etat.client.rpc(fonctionDeplacement, {
                         p_vaisselle_id: vaisselleId,
                         p_direction: direction
                     });
@@ -1171,7 +1179,7 @@
                         throw new Error("Le serveur n'a pas confirmé le déplacement.");
                     }
                     await charger();
-                    message("Classement Démo enregistré.", "succes");
+                    message(etat.demo ? "Classement Démo enregistré." : "Classement Réel enregistré.", "succes");
                 } catch (erreur) {
                     message("Déplacement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
                 } finally {
@@ -1181,11 +1189,8 @@
             }
 
             function trierParametresSelonReferences() {
-                // En mode Démo, l'ordre des conditionnements suit les références.
-                // Aucune donnée Supabase n'est modifiée par ce tri.
-                if (!etat.demo) {
-                    return;
-                }
+                // L'ordre des conditionnements suit les références dans les deux modes.
+                // Ce tri côté navigateur ne modifie aucune donnée Supabase.
 
                 const positions = new Map(
                     etat.references.map((reference, index) => [reference.id, index])
