@@ -4020,9 +4020,62 @@
                     };
                     const afficherQuantite = valeur => valeur === null || valeur === undefined ? "—" : valeur;
                     const fiches = Array.isArray(inv.fiches) ? inv.fiches : [];
-                    tableau("Inventaire des articles MDN", ["Article", "Théorique", "Comptée", "Fiche validée", "Commentaire"],
-                        fiches.map(f => [f.article || "—", afficherQuantite(f.quantite_theorique),
-                            afficherQuantite(f.quantite_comptee), f.fiche_validee ? "Oui" : "Non", f.commentaire || "—"]));
+                    // V9.70 — Comparaison explicite du dernier brouillon Supabase (TEST)
+                    // et de l'inventaire officiel, sans aucun transfert ni écriture.
+                    let brouillonComparaison = null;
+                    let statutComparaison = "Aucun brouillon de test enregistré pour cet utilisateur.";
+                    try {
+                        const { data: lectureBrouillon, error: erreurBrouillon } = await clientSupabase.rpc(
+                            "lire_brouillon_comptage_admin",
+                            { p_preparation_id: preparation.id }
+                        );
+                        if (erreurBrouillon) throw erreurBrouillon;
+                        if (lectureBrouillon?.resultat === "BROUILLON_COMPTAGE_LU") {
+                            const donneesBrouillon = lectureBrouillon.donnees;
+                            if (lectureBrouillon.est_test !== true ||
+                                Number(lectureBrouillon.revision) !== Number(data.revision) ||
+                                donneesBrouillon?.preparation_id !== preparation.id ||
+                                String(donneesBrouillon?.revision) !== String(data.revision) ||
+                                !Array.isArray(donneesBrouillon?.articles)) {
+                                statutComparaison = "Brouillon incompatible avec la révision actuelle : comparaison indisponible.";
+                            } else {
+                                const articlesBrouillon = donneesBrouillon.articles;
+                                const noms = articlesBrouillon.map(a => a.article);
+                                if (noms.length === fiches.length &&
+                                    noms.every(n => typeof n === "string") &&
+                                    new Set(noms).size === noms.length &&
+                                    fiches.every(f => noms.includes(f.article))) {
+                                    brouillonComparaison = new Map(articlesBrouillon.map(a => [a.article, a.quantite]));
+                                    statutComparaison = "Comparaison avec le brouillon Supabase de TEST : aucune quantité officielle modifiée.";
+                                } else {
+                                    statutComparaison = "Références différentes entre brouillon et inventaire : comparaison indisponible.";
+                                }
+                            }
+                        }
+                    } catch (erreurComparaison) {
+                        statutComparaison = "Brouillon Supabase non consultable : " +
+                            (erreurComparaison.message || String(erreurComparaison));
+                    }
+                    creerAudit("p", "v953-vide", statutComparaison, racine);
+                    const quantiteBrouillon = article => {
+                        if (!brouillonComparaison || !brouillonComparaison.has(article)) return null;
+                        const valeur = brouillonComparaison.get(article);
+                        if (typeof valeur !== "string" || !/^[0-9]{1,9}$/.test(valeur)) return null;
+                        return Number(valeur);
+                    };
+                    tableau("Inventaire des articles MDN",
+                        ["Article", "Théorique", "Comptée (officiel)", "Brouillon (TEST)", "Écart", "Fiche validée", "Commentaire"],
+                        fiches.map(f => {
+                            const nouveau = quantiteBrouillon(f.article);
+                            const officiel = f.quantite_comptee === null || f.quantite_comptee === undefined
+                                ? null : Number(f.quantite_comptee);
+                            const ecart = nouveau !== null && officiel !== null && Number.isFinite(officiel)
+                                ? nouveau - officiel : null;
+                            return [f.article || "—", afficherQuantite(f.quantite_theorique),
+                                afficherQuantite(f.quantite_comptee), afficherQuantite(nouveau),
+                                ecart === null ? "—" : (ecart > 0 ? "+" : "") + ecart,
+                                f.fiche_validee ? "Oui" : "Non", f.commentaire || "—"];
+                        }));
                     const reserve = Array.isArray(data.reserve_gobelets) ? data.reserve_gobelets : [];
                     tableau("Réserve de gobelets", ["Référence", "Caisses pleines", "Partielles", "Gobelets partiels", "Caisses vides", "Capacité", "Validée"],
                         reserve.map((r, i) => [String(i + 1), afficherQuantite(r.caisses_pleines),
