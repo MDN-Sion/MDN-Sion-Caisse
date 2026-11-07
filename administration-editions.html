@@ -1207,11 +1207,13 @@
                         <button type="button" class="bouton secondaire" id="apercuCreationV935" aria-pressed="false">Contrôler la création 2027</button>
                         <button type="button" class="bouton secondaire" id="planCreationV936" aria-pressed="false">Afficher le plan détaillé (SQL158)</button>
                         <button type="button" class="bouton secondaire" id="simulerCreationV939">Simuler la création (sans écriture)</button>
+                        <button type="button" class="bouton secondaire" id="simulerChaineV940">Simuler la chaîne complète (SQL161)</button>
                         <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
                     </div>
                     <div id="resultatCreationV935" class="v922-resultat" role="status" aria-live="polite">Contrôle SQL157 non exécuté.</div>
                     <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan SQL158 non exécuté.</div>
                     <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non exécutée.</div>
+                    <div id="simulationChaineV940" class="v922-resultat" role="status" aria-live="polite">Simulation SQL161 non exécutée.</div>
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
                     <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
@@ -3493,6 +3495,76 @@
                     cible.style.whiteSpace = "pre-line";
                 } catch (erreur) {
                     cible.textContent = `Simulation impossible : ${erreur.message || erreur}. Aucune modification.`;
+                } finally {
+                    bouton.disabled = false;
+                }
+            });
+
+            // V9.40 — Simulation complète via SQL162 (moteur SQL161).
+            // Lecture seule : aucune fonction SQL159 ou SQL160 n'est appelée.
+            parId("simulerChaineV940").addEventListener("click", async () => {
+                const cible = parId("simulationChaineV940");
+                const bouton = parId("simulerChaineV940");
+
+                if (modeDemoActif || !clientSupabase) {
+                    cible.textContent = "Simulation SQL161 indisponible en mode démo ou hors connexion.";
+                    return;
+                }
+
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027);
+                if (!preparation) {
+                    cible.textContent = "Préparation 2027 introuvable. Actualise les préparations.";
+                    return;
+                }
+
+                bouton.disabled = true;
+                cible.textContent = "Simulation complète SQL161 en cours…";
+
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "apercu_chaine_creation_2027_admin",
+                        { p_preparation_id: preparation.id }
+                    );
+
+                    if (error) throw error;
+
+                    if (data?.resultat !== "SIMULATION_CHAINE_EDITION_2027" ||
+                        data.nature !== "LECTURE_SEULE" ||
+                        data.preparation_id !== preparation.id ||
+                        data.creation_effectuee !== false ||
+                        data.stocks_modifies !== false ||
+                        data.activation_effectuee !== false) {
+                        throw new Error("Réponse SQL161 non conforme : simulation interrompue.");
+                    }
+
+                    const config = data.configurations || {};
+                    const mdn = data.inventaire_mdn || {};
+                    const reserve = data.reserve_gobelets || {};
+                    const blocages = Array.isArray(data.blocages) ? data.blocages : [];
+                    const lignes = [
+                        "SIMULATION SQL161 — AUCUNE ÉCRITURE",
+                        `Préparation 2027 · Révision ${data.revision ?? "—"}`,
+                        `Validations officielles : ${data.validations_officielles ?? 0}/5`,
+                        `Catalogue : ${config.articles_mdn ?? 0} MDN, ${config.articles_fondation ?? 0} Fondation`,
+                        `Vaisselle : ${config.vaisselle ?? 0} références ; contenants : ${config.contenants ?? 0}`,
+                        `Paramètres de l'édition source : ${config.parametres_source ?? 0}`,
+                        `Inventaire MDN : ${mdn.fiches_validees ?? 0}/${mdn.fiches ?? 0} fiches validées`,
+                        `Quantités MDN simulées : ${mdn.unites_comptees_simulees ?? 0}`,
+                        `Mouvements positifs théoriques : ${mdn.mouvements_positifs_theoriques ?? 0}`,
+                        `Fondation : stock initial ${data.stock_fondation_initial_prevu ?? 0}`,
+                        `Vaisselle : stock opérationnel initial ${data.stock_vaisselle_operationnel_initial_prevu ?? 0}`,
+                        `Réserve gobelets : ${reserve.fiches_validees ?? 0}/${reserve.fiches ?? 0} fiches validées ; hors stock opérationnel`,
+                        `Édition 2027 existante : ${data.edition_2027_existe === true ? "oui" : "non"}`,
+                        `Création autorisable : ${data.creation_autorisable_sur_donnees_reelles === true ? "oui, sous réserve de comptages réels" : "non"}`,
+                        `Blocages : ${blocages.join(", ") || "aucun signalé"}`,
+                        "Les quantités actuelles sont fictives : aucune validation réelle autorisée.",
+                        "Édition 2026 inchangée. Aucune création, activation ou écriture de stock."
+                    ];
+
+                    cible.textContent = lignes.join("\n");
+                    cible.style.whiteSpace = "pre-line";
+                } catch (erreur) {
+                    cible.textContent = `Simulation SQL161 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée par cette action.`;
                 } finally {
                     bouton.disabled = false;
                 }
