@@ -1274,6 +1274,7 @@
                         <div class="v922-actions">
                             <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Fichier Excel (.csv)</button>
                             <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Rapport lisible (.html)</button>
+                            <button type="button" class="bouton secondaire" id="preparerFicheComptageV958" disabled>Fiche de comptage vierge (.html)</button>
                         </div>
                     </details>
                 </section>
@@ -3804,6 +3805,113 @@
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
 
+            // V9.58 — Fiche vierge de comptage physique.
+            // Les quantités de test ne sont jamais reportées dans cette fiche.
+            const boutonFicheComptageV958 = parId("preparerFicheComptageV958");
+
+            boutonFicheComptageV958.addEventListener("click", () => {
+                const audit = dernierAuditCsvV954;
+                if (!audit) return;
+
+                const fiches = Array.isArray(audit.inventaire_mdn?.fiches)
+                    ? audit.inventaire_mdn.fiches
+                    : [];
+                const reserves = Array.isArray(audit.reserve_gobelets)
+                    ? audit.reserve_gobelets
+                    : [];
+
+                const echapperHtml = (valeur) => String(valeur ?? "")
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+
+                const lignesArticles = fiches.map(fiche => `
+                    <tr>
+                        <td>${echapperHtml(fiche.article)}</td>
+                        <td class="a-remplir"></td>
+                        <td class="a-remplir"></td>
+                    </tr>
+                `).join("");
+
+                const lignesReserve = reserves.map((fiche, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="a-remplir"></td>
+                        <td class="a-remplir"></td>
+                        <td class="a-remplir"></td>
+                        <td class="a-remplir"></td>
+                        <td>${echapperHtml(fiche.capacite_caisse)}</td>
+                    </tr>
+                `).join("");
+
+                const contenu = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MDN Sion — Fiche vierge de comptage 2027</title>
+<style>
+    @page { size: A4 landscape; margin: 13mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; color: #243244; margin: 25px auto; max-width: 1100px; padding: 0 16px; }
+    h1, h2 { color: #8b0000; }
+    h1 { font-size: 23px; }
+    h2 { font-size: 17px; margin-top: 25px; }
+    p { line-height: 1.5; }
+    .notice { background: #f3f6f8; border: 1px solid #cbd5df; padding: 12px; }
+    .champs { display: flex; gap: 25px; margin: 16px 0; flex-wrap: wrap; }
+    .champs span { min-width: 240px; border-bottom: 1px solid #333; padding-bottom: 7px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    th, td { border: 1px solid #aab8c5; padding: 8px 10px; text-align: left; }
+    th { background: #e9eff4; }
+    td.a-remplir { height: 33px; }
+    tr { break-inside: avoid; }
+    .consigne { font-weight: bold; color: #8b0000; }
+    .reserve { break-before: page; }
+    .signature { margin-top: 35px; }
+    @media print { body { margin: 0; max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<h1>MDN Sion — Fiche de comptage physique 2027</h1>
+<div class="notice">
+    <strong>DOCUMENT VIERGE — À COMPLÉTER LORS DU COMPTAGE RÉEL.</strong>
+    <p>Cette fiche ne contient aucune quantité de test. Elle ne constitue pas une validation officielle et n'enregistre aucune donnée dans le logiciel.</p>
+    <p>Préparation : ${echapperHtml(audit.preparation_id)} · Révision de référence : ${echapperHtml(audit.revision)}</p>
+</div>
+<div class="champs"><span>Date du comptage :</span><span>Responsable du comptage :</span></div>
+<h2>Articles du Marché de Noël (${fiches.length} références)</h2>
+<table>
+    <thead><tr><th style="width:48%">Article</th><th style="width:18%">Quantité réellement comptée</th><th>Observations / écarts</th></tr></thead>
+    <tbody>${lignesArticles}</tbody>
+</table>
+<section class="reserve">
+    <h2>Réserve de gobelets</h2>
+    <p class="consigne">Compter séparément les caisses pleines, partielles, les gobelets dans les caisses partielles et les caisses vides.</p>
+    <table>
+        <thead><tr><th>Référence</th><th>Caisses pleines</th><th>Caisses partielles</th><th>Gobelets dans caisses partielles</th><th>Caisses vides</th><th>Capacité par caisse (référence)</th></tr></thead>
+        <tbody>${lignesReserve || '<tr><td>1</td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td>À vérifier</td></tr>'}</tbody>
+    </table>
+    <p class="signature">Observations : _______________________________________________________________________________________</p>
+    <p class="signature">Nom et signature du responsable : _____________________________________________________________________</p>
+</section>
+</body>
+</html>`;
+
+                const url = URL.createObjectURL(new Blob([contenu], {
+                    type: "text/html;charset=utf-8"
+                }));
+                const lien = document.createElement("a");
+                lien.href = url;
+                lien.download = `MDN-Sion-Fiche-Comptage-Vierge-2027-Revision-${audit.revision ?? "inconnue"}.html`;
+                document.body.appendChild(lien);
+                lien.click();
+                lien.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+
             // V9.53 — Audit SQL163 en lecture seule ; aucune écriture.
             parId("auditerInventairesV953").addEventListener("click", async () => {
                 const cible = parId("resultatAuditV953");
@@ -3811,6 +3919,7 @@
                 dernierAuditCsvV954 = null;
                 boutonExportAuditV954.disabled = true;
                 boutonExportAuditHtmlV955.disabled = true;
+                boutonFicheComptageV958.disabled = true;
                 if (modeDemoActif || !clientSupabase) {
                     cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
                     return;
@@ -3888,6 +3997,7 @@
                     dernierAuditCsvV954 = data;
                     boutonExportAuditV954.disabled = false;
                     boutonExportAuditHtmlV955.disabled = false;
+                    boutonFicheComptageV958.disabled = false;
                 } catch (erreur) {
                     cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
                 } finally {
