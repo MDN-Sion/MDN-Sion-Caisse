@@ -4541,6 +4541,89 @@
                         }
                     });
 
+                    // V9.73 — Import explicite d'un comptage PHYSIQUE RÉEL (SQL166).
+                    // Ce bouton n'est pas un transfert du brouillon Supabase TEST.
+                    // En mode démo, l'action reste strictement indisponible.
+                    const panneauImportReel = creerAudit("div", "", null, formulaire);
+                    panneauImportReel.style.cssText =
+                        "margin:20px 0;padding:16px;border:1px solid #cbd5df;border-radius:12px;background:#fff";
+                    creerAudit("strong", "", "Import officiel d'un comptage physique réel", panneauImportReel);
+                    creerAudit(
+                        "p", "",
+                        "Réservé aux administrateurs en mode réel. Les données de TEST ne sont jamais importées. " +
+                        "Le comptage doit être complet et provenir d'un inventaire physique réel. " +
+                        "L'import ne valide aucun inventaire et ne crée aucune édition.",
+                        panneauImportReel
+                    );
+                    const boutonImporterReel = creerAudit(
+                        "button", "bouton secondaire", "Importer ce comptage réel (confirmation requise)",
+                        panneauImportReel
+                    );
+                    boutonImporterReel.type = "button";
+                    const statutImportReel = creerAudit("p", "v953-vide", "", panneauImportReel);
+                    const importDisponible = sauvegardeDistantePossible && !modeDemoActif;
+                    boutonImporterReel.disabled = !importDisponible;
+                    if (!importDisponible) {
+                        statutImportReel.textContent =
+                            "Import désactivé : mode démo, connexion absente ou révision indisponible.";
+                    }
+                    boutonImporterReel.addEventListener("click", async () => {
+                        if (!importDisponible || boutonImporterReel.disabled) return;
+                        const incomplet = lignesSaisie.some(ligne => !entierValide(ligne.quantite)) ||
+                            champsReserve.some(champ => !entierValide(champ.input)) ||
+                            caissesIndividuelles.length !== Number(nombrePartielles.input.value) ||
+                            caissesIndividuelles.some(champ => !entierValide(champ) ||
+                                Number(champ.value) < 1 || Number(champ.value) >= capaciteCaisse);
+                        if (incomplet || Number(nombrePartielles.input.value) > 100) {
+                            statutImportReel.textContent =
+                                "Import refusé : renseigne toutes les quantités et chaque caisse partielle.";
+                            return;
+                        }
+                        const confirmationAttendue =
+                            `IMPORTER_COMPTAGE_REEL_REVISION_${revisionComptage}`;
+                        const confirmationSaisie = window.prompt(
+                            "ATTENTION — ÉCRITURE OFFICIELLE. Cette opération remplacera les comptages " +
+                            "non validés de la préparation 2027. N'utilise jamais des valeurs de test. " +
+                            "Pour confirmer un comptage physique RÉEL, recopie exactement :\n\n" +
+                            confirmationAttendue
+                        );
+                        if (confirmationSaisie !== confirmationAttendue) {
+                            statutImportReel.textContent = "Import annulé : confirmation absente ou incorrecte.";
+                            return;
+                        }
+                        const donnees = construireBrouillonComptage();
+                        donnees.revision = String(revisionComptage);
+                        boutonImporterReel.disabled = true;
+                        statutImportReel.textContent = "Import réel en cours…";
+                        try {
+                            const { data: resultat, error } = await clientSupabase.rpc(
+                                "importer_comptage_reel_preparation_admin",
+                                {
+                                    p_preparation_id: preparation.id,
+                                    p_revision_attendue: revisionComptage,
+                                    p_donnees: donnees,
+                                    p_confirmation: confirmationAttendue
+                                }
+                            );
+                            if (error) throw error;
+                            if (resultat?.resultat !== "COMPTAGE_REEL_IMPORTE_NON_VALIDE" ||
+                                resultat.validations_effectuees !== 0 ||
+                                resultat.stocks_operationnels_modifies !== false ||
+                                resultat.edition_creee !== false) {
+                                throw new Error("Réponse inattendue : vérifie l'état officiel avant toute nouvelle tentative.");
+                            }
+                            statutImportReel.textContent =
+                                `Comptage réel importé : ${resultat.articles_importes} articles. ` +
+                                "Aucune validation officielle effectuée. Actualise les inventaires pour contrôler.";
+                        } catch (erreur) {
+                            statutImportReel.textContent =
+                                "Import non confirmé : " + (erreur.message || String(erreur)) +
+                                ". Vérifie les inventaires officiels avant de recommencer.";
+                        } finally {
+                            boutonImporterReel.disabled = false;
+                        }
+                    });
+
                     boutonRepriseSupabase.addEventListener("click", async () => {
                         if (!sauvegardeDistantePossible) return;
                         boutonRepriseSupabase.disabled = true;
