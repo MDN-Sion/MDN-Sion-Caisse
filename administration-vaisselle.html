@@ -7,7 +7,7 @@
   <link href="logo-mdn.png?v=20261107" rel="icon" type="image/png"/>
   <link href="logo-mdn.png?v=20261107" rel="apple-touch-icon"/>
   <title>
-   Référentiel vaisselle · MDN Sion
+   Référentiel vaisselle · MDN Sion — V5
   </title>
   <style>
    
@@ -994,10 +994,46 @@
 		        conteneur.appendChild(label);
 		    }
 
+		    function valeurComparable(valeur) {
+		        if (valeur === null || valeur === undefined) {
+		            return "";
+		        }
+
+		        return String(valeur);
+		    }
+
+		    function decrireModifications(original, changements) {
+		        const noms = {
+		            nom: "Nom",
+		            description: "Description",
+		            ordre_affichage: "Ordre d'affichage",
+		            type_conditionnement: "Conditionnement",
+		            quantite_standard: "Quantité standard",
+		            consigne_unitaire: "Consigne unitaire (CHF)",
+		            lavage_unitaire: "Lavage unitaire (CHF)",
+		            seuil_stock: "Seuil de stock",
+		            actif: "État"
+		        };
+
+		        return Object.entries(changements)
+		            .filter(([cle, valeur]) => valeurComparable(original[cle]) !== valeurComparable(valeur))
+		            .map(([cle, valeur]) => {
+		                const ancien = cle === "actif"
+		                    ? (original[cle] ? "Actif" : "Inactif")
+		                    : valeurComparable(original[cle]);
+		                const nouveau = cle === "actif"
+		                    ? (valeur ? "Actif" : "Inactif")
+		                    : valeurComparable(valeur);
+
+		                return (noms[cle] || cle) + " : " + ancien + " → " + nouveau;
+		            });
+		    }
+
 		    function ouvrirModification(type, item) {
 		        if (etat.demo || !etat.acces) {
 		            return;
 		        }
+
 		        etat.modification = { type, item: { ...item } };
 		        const champs = $("champsDialogue");
 		        champs.replaceChildren();
@@ -1043,10 +1079,29 @@
 		                return;
 		            }
 		        }
+		        const differences = decrireModifications(item, changements);
+
+		        if (differences.length === 0) {
+		            message("Aucune modification détectée : aucun enregistrement nécessaire.", "succes");
+		            $("dialogue").close();
+		            etat.modification = null;
+		            return;
+		        }
+
 		        const avertissement = type === "reference"
-		            ? "Confirmer la modification de cette référence commune à toutes les éditions ?"
-		            : "Confirmer la modification des paramètres de l'édition sélectionnée ? Les mouvements passés ne seront pas recalculés.";
-		        if (!window.confirm(avertissement)) {
+		            ? "ATTENTION : cette référence est commune à toutes les éditions."
+		            : "ATTENTION : les tarifs et conditionnements de l'édition sélectionnée seront modifiés. Les mouvements passés ne seront pas recalculés.";
+
+		        const confirmation = [
+		            avertissement,
+		            "",
+		            "Modifications prévues :",
+		            ...differences,
+		            "",
+		            "Confirmer l'enregistrement dans les données réelles ?"
+		        ].join("\n");
+
+		        if (!window.confirm(confirmation)) {
 		            return;
 		        }
 		        const bouton = $("enregistrer");
@@ -1057,6 +1112,14 @@
 		            if (erreurAcces || !acces?.acces_administration || acces.mode_demo === true) {
 		                throw new Error("Accès en écriture refusé par le contrôle d'administration.");
 		            }
+		            if (etat.demo || !etat.acces) {
+		                throw new Error("Écriture impossible en mode démo ou sans accès administratif.");
+		            }
+
+		            if (type === "parametre" && item.edition_id !== etat.editionId) {
+		                throw new Error("L'édition sélectionnée a changé. Rechargez les données avant de modifier ce paramètre.");
+		            }
+
 		            const table = type === "reference" ? "referentiel_vaisselle_mdn" : "edition_vaisselle";
 		            let requete = etat.client.from(table).update(changements).eq("id", item.id);
 		            if (type === "parametre") {
