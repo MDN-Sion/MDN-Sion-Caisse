@@ -884,7 +884,9 @@
         .v941-indicateur { font-size: 1.55rem; font-weight: 800; line-height: 1.2; color: #850000; }
         .v941-legende { margin-top: 5px; font-size: .88rem; color: #506174; }
         .v941-ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 9px; }
-        .v941-ligne strong { text-align: right; }
+        .v941-ligne strong { text-align: right; white-space: nowrap; flex: 0 0 auto; }
+        .v941-ligne > span { min-width: 0; flex: 1 1 auto; overflow-wrap: normal; }
+        /* V9.42 — Les chiffres et les réponses courtes restent sur une seule ligne. */
         .v941-sous-titre { margin: 0 0 10px; font-size: 1.02rem; }
         .v941-blocages { border: 1px solid #e7b7b7; background: #fff8f7; border-radius: 13px; padding: 14px 16px; }
         .v941-blocages ul { margin: 8px 0 0; padding-left: 22px; }
