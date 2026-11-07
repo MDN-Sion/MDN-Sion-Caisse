@@ -70,9 +70,10 @@
             top: 0;
             z-index: 1000;
             isolation: isolate;
-            backdrop-filter: blur(10px);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
 			color: #fff;
-			background: #5c000073;
+			background: #8B0000;
 			padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
 		}
 
@@ -1205,10 +1206,39 @@
                 });
             }
 
+            async function chargerReglesReel() {
+                if (etat.demo) {
+                    return;
+                }
+
+                etat.regles = [];
+                if (!etat.editionId) {
+                    afficherRegles();
+                    return;
+                }
+
+                const { data, error } = await etat.client
+                    .from("regles_retour_vaisselle")
+                    .select("vaisselle_id, type_partenaire, retour_propre_unite_autorise, retour_propre_unite_rembourse_lavage")
+                    .eq("edition_id", etat.editionId);
+
+                if (error) {
+                    afficherRegles();
+                    const compteur = document.getElementById("compteurReglesRemboursement");
+                    if (compteur) {
+                        compteur.textContent = "Lecture des règles impossible : " + error.message;
+                    }
+                    return;
+                }
+
+                etat.regles = Array.isArray(data) ? data : [];
+                afficherRegles();
+            }
+
             function afficherRegles() {
                 const section = document.getElementById("sectionReglesRemboursement");
                 if (section) {
-                    section.hidden = !etat.demo;
+                    section.hidden = false;
                 }
                 if (!section) {
                     return;
@@ -1309,7 +1339,7 @@
 		        try {
                 const sectionRegles = document.getElementById("sectionReglesRemboursement");
                 if (sectionRegles) {
-                    sectionRegles.hidden = !etat.demo;
+                    sectionRegles.hidden = false;
                 }
                 if (etat.demo) {
                     // La session Démo possède son propre accès RPC.
@@ -1429,6 +1459,7 @@
 		            choix.disabled = !etat.editions.length;
 		            choix.value = etat.editionId || "";
 		            await chargerParametres();
+                    await chargerReglesReel();
 		            if (etat.references.length === 0 || etat.editions.length === 0) {
                         const problemes = [];
 
@@ -1880,6 +1911,7 @@
             etat.editionId = $("edition").value;
 		        try {
 		            await chargerParametres();
+                    await chargerReglesReel();
 		        } catch (erreur) {
 		            message("Impossible de charger l'édition : " + erreur.message, "erreur");
 		        }
