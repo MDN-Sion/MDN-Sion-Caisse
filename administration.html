@@ -807,12 +807,11 @@
 				<button id="ouvrirArticles" class="action-module" type="button">Ouvrir</button>
 			</article>
 
-			<article class="module">
-				<span class="etat-bientot">À venir</span>
+			<article class="module actif">
 				<div class="icone">🍽️</div>
 				<h3>Référentiel vaisselle</h3>
 				<p>Gérer le référentiel MDN, les conditionnements et les paramètres de vaisselle.</p>
-				<button class="action-module" type="button" disabled>Ouvrir</button>
+				<button id="ouvrirReferentielVaisselle" class="action-module" type="button">Ouvrir</button>
 			</article>
 
 			<article class="module">
@@ -857,6 +856,7 @@
 			const boutonDeconnexion = document.getElementById("boutonDeconnexion");
 			const ouvrirArticles = document.getElementById("ouvrirArticles");
 			const ouvrirUtilisateurs = document.getElementById("ouvrirUtilisateurs");
+			const ouvrirReferentielVaisselle = document.getElementById("ouvrirReferentielVaisselle");
 
 			let modeDemoActif = false;
 
@@ -883,6 +883,12 @@
 				window.location.href = modeDemoActif
 					? "administration-utilisateurs.html?mode=demo"
 					: "administration-utilisateurs.html";
+			});
+
+			ouvrirReferentielVaisselle.addEventListener("click", function () {
+				window.location.href = modeDemoActif
+					? "administration-vaisselle.html?mode=demo"
+					: "administration-vaisselle.html";
 			});
 
 			boutonDeconnexion.addEventListener("click", async function () {
