@@ -496,6 +496,47 @@
 				grid-column: 1;
 			}
 		}
+
+        /* En-tête fixe et opaque : même rendu que la page Vaisselle V17. */
+        html {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            height: 100%;
+            height: 100dvh;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .entete {
+            position: relative;
+            z-index: 1000;
+            flex: 0 0 auto;
+            isolation: isolate;
+            background: linear-gradient(#5c000073, #5c000073),
+                        linear-gradient(145deg, #7b0000, #a00000 48%, #650000);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        body.mode-demo .entete {
+            background: #B38B00;
+        }
+
+        .contenu {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
 	</style>
 </head>
 <body>
