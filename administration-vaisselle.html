@@ -376,6 +376,120 @@
 		}
 	
 
+        /* Tableaux adaptatifs : toutes les colonnes visibles sur ordinateur. */
+        .table-scroll {
+            width: 100%;
+            min-width: 0;
+            overflow-x: visible;
+        }
+
+        .table-scroll table {
+            width: 100%;
+            min-width: 0;
+            table-layout: fixed;
+        }
+
+        .table-scroll th,
+        .table-scroll td {
+            padding: 10px 7px;
+            font-size: 13px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            white-space: normal;
+        }
+
+        .table-scroll th {
+            font-size: 12px;
+        }
+
+        /* Références : 5 colonnes. */
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(1) {
+            width: 22%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(2) {
+            width: 38%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(3) {
+            width: 9%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(4) {
+            width: 12%;
+        }
+
+        .bloc:nth-of-type(1) .table-scroll th:nth-child(5) {
+            width: 19%;
+        }
+
+        /* Paramètres : 8 colonnes. */
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(1) {
+            width: 17%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(2) {
+            width: 16%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(3) {
+            width: 14%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(4) {
+            width: 11%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(5) {
+            width: 10%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(6) {
+            width: 12%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(7) {
+            width: 9%;
+        }
+
+        .bloc:nth-of-type(2) .table-scroll th:nth-child(8) {
+            width: 11%;
+        }
+
+        @media (max-width: 1050px) {
+            .bloc {
+                padding: 12px;
+            }
+
+            .table-scroll th,
+            .table-scroll td {
+                padding: 9px 5px;
+                font-size: 12px;
+            }
+
+            .table-scroll th {
+                font-size: 11px;
+            }
+        }
+
+        /* Très petits écrans : conserver des colonnes lisibles. */
+        @media (max-width: 650px) {
+            .table-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .table-scroll table {
+                min-width: 680px;
+                table-layout: fixed;
+            }
+
+            .bloc:nth-of-type(1) .table-scroll table {
+                min-width: 540px;
+            }
+        }
+
         /* En-tête : mêmes proportions que les autres pages MDN. */
         .entete-contenu {
             grid-template-columns: auto minmax(0, 1fr) auto;
