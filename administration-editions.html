@@ -4306,6 +4306,99 @@
                         enregistrerBrouillonComptage();
                     });
 
+                    // V9.68 — Sauvegarde distante isolée des inventaires officiels.
+                    // Les RPC SQL164 ne touchent jamais aux stocks ni aux validations.
+                    const boutonSauvegardeSupabase = creerAudit(
+                        "button", "bouton secondaire", "Sauvegarder le brouillon dans Supabase (test)", formulaire
+                    );
+                    boutonSauvegardeSupabase.type = "button";
+                    boutonSauvegardeSupabase.style.marginRight = "12px";
+                    const boutonRepriseSupabase = creerAudit(
+                        "button", "bouton secondaire", "Reprendre le brouillon Supabase", formulaire
+                    );
+                    boutonRepriseSupabase.type = "button";
+                    boutonRepriseSupabase.style.marginRight = "12px";
+                    const etatSupabaseComptage = creerAudit(
+                        "p", "v953-vide", "Brouillon distant non chargé. Aucune validation officielle.", formulaire
+                    );
+                    const revisionComptage = Number(data.revision);
+                    const sauvegardeDistantePossible = Boolean(
+                        clientSupabase && preparation.id && Number.isSafeInteger(revisionComptage) && revisionComptage > 0
+                    );
+                    boutonSauvegardeSupabase.disabled = !sauvegardeDistantePossible;
+                    boutonRepriseSupabase.disabled = !sauvegardeDistantePossible;
+
+                    boutonSauvegardeSupabase.addEventListener("click", async () => {
+                        if (!sauvegardeDistantePossible) return;
+                        boutonSauvegardeSupabase.disabled = true;
+                        etatSupabaseComptage.textContent = "Sauvegarde du brouillon de test en cours…";
+                        try {
+                            enregistrerBrouillonComptage();
+                            const { data: resultat, error } = await clientSupabase.rpc(
+                                "enregistrer_brouillon_comptage_admin",
+                                {
+                                    p_preparation_id: preparation.id,
+                                    p_revision: revisionComptage,
+                                    p_donnees: construireBrouillonComptage()
+                                }
+                            );
+                            if (error) throw error;
+                            if (resultat?.resultat !== "BROUILLON_COMPTAGE_ENREGISTRE" ||
+                                resultat.est_test !== true || resultat.stocks_modifies !== false ||
+                                resultat.validation_effectuee !== false) {
+                                throw new Error("Réponse de sauvegarde non conforme.");
+                            }
+                            etatSupabaseComptage.textContent =
+                                "Brouillon de test enregistré dans Supabase. Aucun inventaire validé.";
+                        } catch (erreur) {
+                            etatSupabaseComptage.textContent =
+                                "Échec de sauvegarde Supabase : " + (erreur.message || String(erreur));
+                        } finally {
+                            boutonSauvegardeSupabase.disabled = false;
+                        }
+                    });
+
+                    boutonRepriseSupabase.addEventListener("click", async () => {
+                        if (!sauvegardeDistantePossible) return;
+                        boutonRepriseSupabase.disabled = true;
+                        etatSupabaseComptage.textContent = "Lecture du brouillon Supabase en cours…";
+                        try {
+                            const { data: resultat, error } = await clientSupabase.rpc(
+                                "lire_brouillon_comptage_admin",
+                                { p_preparation_id: preparation.id }
+                            );
+                            if (error) throw error;
+                            if (resultat?.resultat === "AUCUN_BROUILLON") {
+                                etatSupabaseComptage.textContent = "Aucun brouillon Supabase enregistré pour cet utilisateur.";
+                                return;
+                            }
+                            const brouillon = resultat?.donnees;
+                            if (resultat?.resultat !== "BROUILLON_COMPTAGE_LU" ||
+                                resultat.est_test !== true ||
+                                Number(resultat.revision) !== revisionComptage ||
+                                brouillon?.preparation_id !== preparation.id ||
+                                String(brouillon?.revision) !== String(revisionComptage) ||
+                                !Array.isArray(brouillon?.articles) ||
+                                brouillon.articles.length !== lignesSaisie.length ||
+                                !Array.isArray(brouillon.reserve) ||
+                                brouillon.reserve.length !== champsReserve.length ||
+                                !Array.isArray(brouillon.caisses_partielles)) {
+                                throw new Error("Brouillon incompatible avec la préparation actuelle.");
+                            }
+                            if (!window.confirm(
+                                "Remplacer la saisie locale par le brouillon Supabase ? Les données locales actuelles seront remplacées."
+                            )) return;
+                            // Réutilisation du restaurateur validé en V9.66.
+                            window.localStorage.setItem(cleBrouillonComptage, JSON.stringify(brouillon));
+                            window.location.reload();
+                        } catch (erreur) {
+                            etatSupabaseComptage.textContent =
+                                "Impossible de reprendre le brouillon : " + (erreur.message || String(erreur));
+                        } finally {
+                            boutonRepriseSupabase.disabled = false;
+                        }
+                    });
+
                     const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
                     exporterSaisie.type = "button";
                     exporterSaisie.addEventListener("click", () => {
