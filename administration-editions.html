@@ -1198,6 +1198,12 @@
         .v982-commandes h5 { margin: 0 0 6px; font-size: 1rem; }
         .v982-commandes .v922-actions { display: flex; flex-wrap: wrap; gap: 8px; }
         .v982-commandes button:disabled { opacity: .58; cursor: not-allowed; }
+    
+        /* V9.83 — Essai fonctionnel local, distinct des commandes réelles. */
+        .v983-test { margin-top:12px; padding:12px 14px; border:1px solid #d3dee6; border-radius:12px; background:#fff; }
+        .v983-test h5 { margin:0 0 5px; font-size:1rem; }
+        .v983-test p { margin:5px 0 10px; line-height:1.4; }
+        #resultatParcoursV983 { margin-top:10px; white-space:pre-line; line-height:1.5; }
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1558,6 +1564,12 @@
                                     <button type="button" class="bouton secondaire" id="activerEditionV982" disabled>3. Activer 2027</button>
                                 </div>
                                 <p id="etatCommandesV982" role="status" aria-live="polite">Opérations réelles verrouillées. Aucune écriture autorisée en phase de test.</p>
+                                <div class="v983-test" aria-labelledby="titreEssaiV983">
+                                    <h5 id="titreEssaiV983">Essai du parcours complet — sans écriture</h5>
+                                    <p>Vérifie en une seule fois les conditions de création, puis l'ordre création → stocks → activation. Les deux dernières étapes sont simulées localement ; aucun appel SQL d'écriture n'est effectué.</p>
+                                    <button type="button" class="bouton secondaire" id="testerParcoursV983">Tester les trois étapes sans rien créer</button>
+                                    <div id="resultatParcoursV983" role="status" aria-live="polite">Essai non lancé.</div>
+                                </div>
                             </div>
                         </div>
                         <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
@@ -6128,6 +6140,57 @@
             parId("creerEditionV982").addEventListener("click", () => executerOperationV982("creation"));
             parId("initialiserStocksV982").addEventListener("click", () => executerOperationV982("stocks"));
             parId("activerEditionV982").addEventListener("click", () => executerOperationV982("activation"));
+
+
+            // V9.83 — Essai en lecture seule : aucun appel aux trois RPC d'écriture.
+            parId("testerParcoursV983").addEventListener("click", async () => {
+                const sortie = parId("resultatParcoursV983");
+                const bouton = parId("testerParcoursV983");
+                if (modeDemoActif || !clientSupabase) {
+                    sortie.textContent = "Contrôle SQL161 indisponible dans ce mode. Aucun changement effectué.";
+                    return;
+                }
+                bouton.disabled = true;
+                sortie.textContent = "Vérification des conditions officielles en lecture seule…";
+                try {
+                    const preparation = preparationCouranteV982();
+                    const { data, error } = await clientSupabase.rpc(
+                        "apercu_chaine_creation_2027_admin",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (error) throw error;
+                    if (data?.resultat !== "SIMULATION_CHAINE_EDITION_2027" ||
+                        data.nature !== "LECTURE_SEULE" ||
+                        data.preparation_id !== preparation.id ||
+                        data.creation_effectuee !== false ||
+                        data.stocks_modifies !== false ||
+                        data.activation_effectuee !== false ||
+                        !Array.isArray(data.blocages)) {
+                        throw new Error("La réponse de lecture seule ne satisfait pas les contrôles de sécurité.");
+                    }
+                    const mdn = data.inventaire_mdn || {};
+                    const reserve = data.reserve_gobelets || {};
+                    const revision = Number(data.revision);
+                    const creationPossible = Number.isInteger(revision) && revision > 0 &&
+                        Number(data.validations_officielles) === 5 &&
+                        Number(mdn.fiches) === 16 && Number(mdn.fiches_validees) === 16 &&
+                        Number(reserve.fiches) === 1 && Number(reserve.fiches_validees) === 1 &&
+                        data.blocages.length === 0;
+                    const etapes = [
+                        creationPossible
+                            ? "1. Création : conditions satisfaites, appel réel volontairement non exécuté."
+                            : `1. Création : REFUSÉE (${data.blocages.length} blocage(s), ${Number(data.validations_officielles)}/5 validations, ${Number(mdn.fiches_validees)}/16 inventaires, réserve ${Number(reserve.fiches_validees)}/1).`,
+                        "2. Stocks MDN : NON EXÉCUTÉS. Exige une édition créée et des inventaires certifiés.",
+                        "3. Activation : NON EXÉCUTÉE. Exige l'initialisation des stocks et la protection SQL167.",
+                        "Bilan : 0 édition créée, 0 mouvement de stock, 0 activation."
+                    ];
+                    sortie.textContent = etapes.join("\n");
+                } catch (erreur) {
+                    sortie.textContent = "Essai interrompu : " + (erreur.message || String(erreur)) + ". Aucune opération réelle déclenchée.";
+                } finally {
+                    bouton.disabled = false;
+                }
+            });
 
             initialiser();
         })();
