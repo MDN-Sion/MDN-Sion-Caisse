@@ -3918,13 +3918,20 @@
                             }
                         });
 
+                        // V9.51 — Finaliser le document avant de déclencher l'impression.
+                        // Ne pas dépendre de l'événement load : avec window.open(""),
+                        // il peut déjà avoir eu lieu avant l'ajout du gestionnaire.
+                        documentImpression.close();
                         fenetre.focus();
-                        // L'impression attend que le nouveau document soit prêt.
-                        fenetre.addEventListener("load", () => {
+
+                        fenetre.setTimeout(() => {
+                            if (fenetre.closed) {
+                                return;
+                            }
+
                             fenetre.focus();
                             fenetre.print();
-                        }, { once: true });
-                        documentImpression.close();
+                        }, 300);
                     });
 
                     const avertissementTest = creer(
