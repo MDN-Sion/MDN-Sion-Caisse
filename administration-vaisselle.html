@@ -807,6 +807,32 @@
             }
         }
 
+
+        /* V18 — commandes de modification des règles, uniquement en mode Démo. */
+        .bouton-regle-demo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            margin: 5px 0 0;
+            padding: 5px 10px;
+            border: 1px solid #a48219;
+            border-radius: 8px;
+            background: #fff9e6;
+            color: #664b00;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .bouton-regle-demo:disabled {
+            opacity: .55;
+            cursor: wait;
+        }
+        .tableau-regles td .bouton-regle-demo {
+            display: flex;
+            width: fit-content;
+        }
+
 </style>
  </head>
  <body>
@@ -857,7 +883,7 @@
      </div>
     </div>
     <div class="bandeau" hidden="" id="bandeauDemo">
-     MODE DÉMO — Classement modifiable avec les flèches ; règles consultables. Les références et paramètres sont partagés avec le mode réel.
+     MODE DÉMO — Classement modifiable avec les flèches ; règles Démo modifiables. Les références et paramètres sont partagés avec le mode réel.
     </div>
     <div aria-live="polite" id="message" role="status">
      Chargement sécurisé…
@@ -986,9 +1012,9 @@
      </div>
     </section>
     <section class="bloc" id="sectionReglesRemboursement">
-     <h2>3. Règles de remboursement — consultation</h2>
+     <h2>3. Règles de remboursement — Réel : consultation / Démo : modification</h2>
      <p>Retour propre en conditionnement complet : consigne et lavage des pièces remboursés, avec les règles propres au contenant. Retour sale : consigne des pièces uniquement.</p>
-     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. Aucune modification n'est possible depuis cet écran.</p>
+     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. En mode Réel, les règles restent en consultation. En mode Démo, chaque règle peut être modifiée sans toucher aux données réelles.</p>
      <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
      <div id="contenuReglesRemboursement"></div>
     </section>
@@ -1040,7 +1066,7 @@
 		"use strict";
 		(function () {
 		    const $ = (id) => document.getElementById(id);
-		    const etat = { client: null, demo: true, editions: [], references: [], parametres: [], editionId: null, modification: null, acces: false, regles: [], deplacementEnCours: false };
+		    const etat = { client: null, demo: true, editions: [], references: [], parametres: [], editionId: null, modification: null, acces: false, regles: [], deplacementEnCours: false, regleEnCours: false };
 		    const nombres = (v) => Number(v || 0).toLocaleString("fr-CH", { maximumFractionDigits: 2 });
 
 		    function message(texte, type = "") {
@@ -1243,6 +1269,69 @@
                 afficherRegles();
             }
 
+            async function chargerReglesDemo() {
+                const { data, error } = await etat.client.rpc("lire_regles_retour_vaisselle_demo");
+                if (error) {
+                    throw new Error("Lecture des règles Démo impossible : " + error.message);
+                }
+                etat.regles = Array.isArray(data?.regles) ? data.regles : [];
+                afficherRegles();
+            }
+
+            async function modifierRegleDemo(reference, type, regle) {
+                if (!etat.demo || etat.regleEnCours) {
+                    return;
+                }
+
+                const actuel = !regle.retour_propre_unite_autorise
+                    ? "0"
+                    : (regle.retour_propre_unite_rembourse_lavage ? "2" : "1");
+                const saisie = window.prompt(
+                    "Règle DÉMO — " + reference.nom + " / " + type + "\n" +
+                    "0 = Retour propre à l’unité non autorisé\n" +
+                    "1 = Retour propre autorisé, consigne seule\n" +
+                    "2 = Retour propre autorisé, consigne + lavage\n\n" +
+                    "Saisir 0, 1 ou 2 :",
+                    actuel
+                );
+                if (saisie === null || saisie === actuel) {
+                    return;
+                }
+                const choix = saisie.trim();
+                if (!["0", "1", "2"].includes(choix)) {
+                    window.alert("Valeur invalide. Saisir uniquement 0, 1 ou 2.");
+                    return;
+                }
+                if (!window.confirm(
+                    "Enregistrer cette modification en mode DÉMO uniquement ?\n" +
+                    reference.nom + " — " + type + "\n" +
+                    "Les règles Réelles ne seront pas modifiées."
+                )) {
+                    return;
+                }
+
+                etat.regleEnCours = true;
+                afficherRegles();
+                try {
+                    const { error } = await etat.client.rpc("enregistrer_regle_retour_vaisselle_demo", {
+                        p_vaisselle_id: reference.id,
+                        p_type_partenaire: type,
+                        p_retour_propre_unite_autorise: choix !== "0",
+                        p_retour_propre_unite_rembourse_lavage: choix === "2"
+                    });
+                    if (error) {
+                        throw error;
+                    }
+                    await chargerReglesDemo();
+                    message("Règle Démo enregistrée : " + reference.nom + " — " + type + ".", "succes");
+                } catch (erreur) {
+                    message("Impossible de modifier la règle Démo : " + erreur.message, "erreur");
+                } finally {
+                    etat.regleEnCours = false;
+                    afficherRegles();
+                }
+            }
+
             function afficherRegles() {
                 const section = document.getElementById("sectionReglesRemboursement");
                 if (section) {
@@ -1321,6 +1410,16 @@
                         }
 
                         td.appendChild(etiquette);
+                        if (etat.demo && regle) {
+                            const bouton = document.createElement("button");
+                            bouton.type = "button";
+                            bouton.className = "bouton-regle-demo";
+                            bouton.textContent = "Modifier";
+                            bouton.setAttribute("aria-label", "Modifier la règle Démo : " + reference.nom + ", " + type);
+                            bouton.disabled = etat.regleEnCours;
+                            bouton.addEventListener("click", () => modifierRegleDemo(reference, type, regle));
+                            td.appendChild(bouton);
+                        }
                         tr.appendChild(td);
                     }
 
@@ -1395,7 +1494,8 @@
                     etat.regles = Array.isArray(donnees.regles_retour)
                         ? donnees.regles_retour
                         : [];
-                    afficherRegles();
+                    // SQL171 : règles Démo isolées, indépendantes du référentiel Réel.
+                    await chargerReglesDemo();
 
                     etat.editions = [{
                         id: donnees.edition.id,
@@ -1434,7 +1534,7 @@
                         message("Le chargement Démo a réussi, mais ne contient aucune référence de vaisselle.", "erreur");
                     } else {
                         message(
-                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Classement modifiable avec les flèches ; règles consultables.",
+                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Classement modifiable avec les flèches ; règles Démo modifiables.",
                             "succes"
                         );
                     }
