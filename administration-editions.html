@@ -497,6 +497,21 @@
             color: white;
         }
 
+        /* V9.37 — repère persistant du dernier contrôle consulté.
+           L'état actif ne signifie jamais validation officielle. */
+        #apercuCreationV935[aria-pressed="true"],
+        #planCreationV936[aria-pressed="true"] {
+            background: var(--mdn-rouge);
+            border-color: var(--mdn-rouge);
+            color: #ffffff;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, .12);
+        }
+
+        #apercuCreationV935[aria-pressed="true"]:hover,
+        #planCreationV936[aria-pressed="true"]:hover {
+            filter: brightness(.94);
+        }
+
         .navigation-editions button:focus-visible,
         .bouton:focus-visible {
             outline: 3px solid #3c7ca8;
@@ -1176,8 +1191,8 @@
                     <h3 id="titreCreationV935">Préparation de la création 2027 · SQL157</h3>
                     <p>Contrôle préalable en lecture seule. La création et l'activation de 2027 restent interdites depuis cet écran. Les quantités actuelles sont des données de test et ne doivent pas devenir des stocks définitifs.</p>
                     <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="apercuCreationV935">Contrôler la création 2027</button>
-                        <button type="button" class="bouton secondaire" id="planCreationV936">Afficher le plan détaillé (SQL158)</button>
+                        <button type="button" class="bouton secondaire" id="apercuCreationV935" aria-pressed="false">Contrôler la création 2027</button>
+                        <button type="button" class="bouton secondaire" id="planCreationV936" aria-pressed="false">Afficher le plan détaillé (SQL158)</button>
                         <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
                     </div>
                     <div id="resultatCreationV935" class="v922-resultat" role="status" aria-live="polite">Contrôle SQL157 non exécuté.</div>
@@ -3238,6 +3253,14 @@
                 }
             });
 
+            // V9.37 — met en évidence le dernier contrôle demandé,
+            // sans le confondre avec une validation ou une écriture en base.
+            function activerBoutonControleCreationV937(idBouton) {
+                ["apercuCreationV935", "planCreationV936"].forEach(id => {
+                    parId(id).setAttribute("aria-pressed", String(id === idBouton));
+                });
+            }
+
             // V9.35 — prévisualisation de création SQL157, lecture seule.
             // Aucune RPC de création ou d'activation n'est appelée.
             parId("apercuCreationV935").addEventListener("click", async () => {
@@ -3256,6 +3279,7 @@
                     cible.textContent = "Préparation 2027 introuvable. Actualise les préparations.";
                     return;
                 }
+                activerBoutonControleCreationV937("apercuCreationV935");
                 bouton.disabled = true;
                 cible.textContent = "Contrôle SQL157 en cours…";
                 try {
@@ -3318,6 +3342,7 @@
                     cible.textContent = "Préparation 2027 introuvable.";
                     return;
                 }
+                activerBoutonControleCreationV937("planCreationV936");
                 bouton.disabled = true;
                 cible.textContent = "Lecture du plan SQL158…";
                 try {
