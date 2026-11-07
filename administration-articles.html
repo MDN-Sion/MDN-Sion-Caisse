@@ -961,6 +961,125 @@
       background: #B38B00;
     }
 
+
+    /* Correctifs ciblés : centrage des icônes et fenêtre d'édition compacte. */
+    .bouton-modifier,
+    .fermer-modale {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      vertical-align: middle;
+    }
+
+    /* La modale doit passer devant l'en-tête fixe (z-index : 1000). */
+    .modale-fond {
+      z-index: 2000;
+      padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+
+    .modale {
+      width: min(720px, 100%);
+      max-height: calc(100dvh - 32px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modale-entete {
+      position: relative;
+      flex: 0 0 auto;
+      padding: 12px 16px;
+    }
+
+    .modale-entete h3 {
+      font-size: 19px;
+    }
+
+    .fermer-modale {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+    }
+
+    .formulaire-article {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 16px 16px;
+    }
+
+    .grille-formulaire {
+      gap: 10px 14px;
+    }
+
+    .champ label {
+      margin-bottom: 4px;
+    }
+
+    .champ input,
+    .champ select {
+      height: 44px;
+      min-height: 44px;
+      padding: 8px 10px;
+    }
+
+    .champ textarea {
+      height: 66px;
+      min-height: 66px;
+      padding: 8px 10px;
+    }
+
+    .ligne-interrupteur {
+      height: 44px;
+      min-height: 44px;
+    }
+
+    .zone-photo-article {
+      padding: 10px;
+      gap: 12px;
+    }
+
+    .apercu-photo-article {
+      width: 68px;
+      height: 68px;
+      flex-basis: 68px;
+    }
+
+    .actions-formulaire {
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    @media (max-width: 650px) {
+      .modale-fond {
+        align-items: center;
+        padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+      }
+
+      .modale {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        border-radius: 14px;
+      }
+
+      .formulaire-article {
+        padding: 12px;
+      }
+
+      .actions-formulaire {
+        margin: 12px 0 0;
+        padding: 12px 0 0;
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+      }
+    }
+
   </style>
 </head>
 
