@@ -4143,6 +4143,42 @@
                     }
                     nombrePartielles.input.addEventListener("input", afficherCaissesIndividuelles);
                     champReserve("Caisses vides", "caisses_vides");
+                    // V9.65 — Contrôle de cohérence visible en direct, sans nouveau bouton.
+                    // Ce contrôle n'enregistre aucune donnée et ne déclenche aucune validation officielle.
+                    const bilanComptage = creerAudit("div", "v965-bilan-comptage", null, formulaire);
+                    bilanComptage.setAttribute("role", "status");
+                    bilanComptage.setAttribute("aria-live", "polite");
+                    bilanComptage.style.cssText = "margin:18px 0;padding:14px 16px;border:1px solid #cbd5df;border-radius:12px;background:#fff;line-height:1.65";
+                    function actualiserBilanComptage() {
+                        const saisies = lignesSaisie.filter(ligne => entierValide(ligne.quantite));
+                        const incompletes = lignesSaisie.filter(ligne => !entierValide(ligne.quantite));
+                        const totalArticles = saisies.reduce((somme, ligne) => somme + Number(ligne.quantite.value), 0);
+                        const champsComplets = champsReserve.every(champ => entierValide(champ.input));
+                        const nombre = entierValide(nombrePartielles.input) ? Number(nombrePartielles.input.value) : null;
+                        const detailValide = nombre !== null && nombre <= 100 && caissesIndividuelles.length === nombre &&
+                            caissesIndividuelles.every(champ => entierValide(champ) && Number(champ.value) >= 1 && Number(champ.value) < capaciteCaisse);
+                        const totalPartiels = detailValide ? caissesIndividuelles.reduce((somme, champ) => somme + Number(champ.value), 0) : 0;
+                        const pleines = entierValide(champsReserve[0].input) ? Number(champsReserve[0].input.value) : 0;
+                        const totalReserve = pleines * capaciteCaisse + totalPartiels;
+                        const pret = incompletes.length === 0 && champsComplets && detailValide;
+                        bilanComptage.replaceChildren();
+                        creerAudit("strong", "", "Contrôle du comptage — " + (pret ? "saisie complète" : "saisie en cours"), bilanComptage);
+                        creerAudit("div", "", `Articles MDN renseignés : ${saisies.length}/${lignesSaisie.length} · Total des unités : ${totalArticles}`, bilanComptage);
+                        creerAudit("div", "", `Caisses partielles renseignées : ${detailValide ? nombre : caissesIndividuelles.filter(champ => entierValide(champ) && Number(champ.value) >= 1 && Number(champ.value) < capaciteCaisse).length}/${nombre ?? "?"}`, bilanComptage);
+                        creerAudit("div", "", `Réserve de gobelets : ${champsComplets && detailValide ? totalReserve + " gobelets (caisses pleines et partielles)" : "à compléter"}`, bilanComptage);
+                        if (incompletes.length > 0) {
+                            creerAudit("div", "", "Articles à compter : " + incompletes.map(ligne => ligne.article).join(", "), bilanComptage);
+                        }
+                        if (!pret) {
+                            creerAudit("div", "", "L'export exige toutes les quantités, y compris zéro, et le détail de chaque caisse partielle.", bilanComptage);
+                        } else {
+                            creerAudit("div", "", "Prêt pour l'export CSV. Aucun inventaire officiel n'est validé.", bilanComptage);
+                        }
+                    }
+                    lignesSaisie.forEach(ligne => ligne.quantite.addEventListener("input", actualiserBilanComptage));
+                    champsReserve.forEach(champ => champ.input.addEventListener("input", actualiserBilanComptage));
+                    detailPartielles.addEventListener("input", actualiserBilanComptage);
+                    actualiserBilanComptage();
                     const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
                     exporterSaisie.type = "button";
                     exporterSaisie.addEventListener("click", () => {
