@@ -4029,6 +4029,91 @@
                             afficherQuantite(r.caisses_partielles), afficherQuantite(r.gobelets_dans_caisses_partielles),
                             afficherQuantite(r.caisses_vides), afficherQuantite(r.capacite_caisse), r.fiche_validee ? "Oui" : "Non"]));
                     creerAudit("p", "v953-vide", "Lecture seule : aucun comptage, aucune validation et aucun stock modifié.", racine);
+
+                    // V9.62 — Préparation locale d'un comptage réel, sans écriture Supabase.
+                    // Les champs sont volontairement vides : les valeurs fictives ne sont jamais reprises.
+                    const zoneSaisie = creerAudit("section", "v962-comptage", null, racine);
+                    creerAudit("h4", "", "Préparer un nouveau comptage", zoneSaisie);
+                    creerAudit("p", "v953-note", "Saisir uniquement les quantités réellement constatées. Cette préparation reste locale au navigateur : elle n'enregistre et ne valide rien dans Supabase.", zoneSaisie);
+                    const boutonSaisie = creerAudit("button", "bouton secondaire", "Saisir un nouveau comptage", zoneSaisie);
+                    boutonSaisie.type = "button";
+                    const formulaire = creerAudit("div", "v962-formulaire", null, zoneSaisie);
+                    formulaire.hidden = true;
+                    boutonSaisie.addEventListener("click", () => {
+                        formulaire.hidden = !formulaire.hidden;
+                        boutonSaisie.textContent = formulaire.hidden ? "Saisir un nouveau comptage" : "Masquer la saisie";
+                    });
+                    const tableSaisie = creerAudit("table", "v953-table", null, formulaire);
+                    const enteteSaisie = creerAudit("thead", "", null, tableSaisie);
+                    const ligneEntete = creerAudit("tr", "", null, enteteSaisie);
+                    ["Article", "Quantité réelle", "Observations"].forEach(t => creerAudit("th", "", t, ligneEntete));
+                    const corpsSaisie = creerAudit("tbody", "", null, tableSaisie);
+                    const lignesSaisie = [];
+                    fiches.forEach(f => {
+                        const tr = creerAudit("tr", "", null, corpsSaisie);
+                        creerAudit("td", "", f.article || "—", tr);
+                        const tdQuantite = creerAudit("td", "", null, tr);
+                        const quantite = document.createElement("input");
+                        quantite.type = "number";
+                        quantite.min = "0";
+                        quantite.step = "1";
+                        quantite.inputMode = "numeric";
+                        quantite.placeholder = "À compter";
+                        quantite.setAttribute("aria-label", `Quantité réelle : ${f.article || "article"}`);
+                        quantite.style.width = "110px";
+                        tdQuantite.appendChild(quantite);
+                        const tdObservation = creerAudit("td", "", null, tr);
+                        const observation = document.createElement("input");
+                        observation.type = "text";
+                        observation.placeholder = "Facultatif";
+                        observation.setAttribute("aria-label", `Observations : ${f.article || "article"}`);
+                        tdObservation.appendChild(observation);
+                        lignesSaisie.push({ article: f.article || "", quantite, observation });
+                    });
+                    const titreReserve = creerAudit("h4", "", "Réserve de gobelets — comptage réel", formulaire);
+                    const champsReserve = [
+                        ["Caisses pleines", "caisses_pleines"],
+                        ["Caisses partielles", "caisses_partielles"],
+                        ["Gobelets dans les caisses partielles", "gobelets_partiels"],
+                        ["Caisses vides", "caisses_vides"]
+                    ].map(([libelle, cle]) => {
+                        const ligne = creerAudit("div", "", null, formulaire);
+                        const label = creerAudit("label", "", libelle + " : ", ligne);
+                        const input = document.createElement("input");
+                        input.type = "number";
+                        input.min = "0";
+                        input.step = "1";
+                        input.placeholder = "À compter";
+                        input.style.width = "110px";
+                        label.appendChild(input);
+                        return { libelle, cle, input };
+                    });
+                    const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
+                    exporterSaisie.type = "button";
+                    exporterSaisie.addEventListener("click", () => {
+                        const toutesValeurs = [...lignesSaisie.map(l => l.quantite), ...champsReserve.map(c => c.input)];
+                        if (toutesValeurs.some(input => input.value === "" || !Number.isSafeInteger(Number(input.value)) || Number(input.value) < 0)) {
+                            window.alert("Renseigne toutes les quantités avec des nombres entiers positifs ou zéro avant l'export.");
+                            return;
+                        }
+                        const echapper = valeur => '"' + String(valeur ?? "").replaceAll('"', '""') + '"';
+                        const csv = [
+                            ["Type", "Article / référence", "Quantité réelle", "Observations"],
+                            ...lignesSaisie.map(l => ["MDN", l.article, l.quantite.value, l.observation.value]),
+                            ...champsReserve.map(c => ["Réserve gobelets", c.libelle, c.input.value, ""])
+                        ].map(ligne => ligne.map(echapper).join(";")).join("\r\n");
+                        const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const lien = document.createElement("a");
+                        lien.href = url;
+                        lien.download = "MDN-Sion-Comptage-Reel-2027-NON-VALIDE.csv";
+                        document.body.appendChild(lien);
+                        lien.click();
+                        lien.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    });
+                    creerAudit("p", "v953-vide", "Attention : le fichier exporté n'est pas une validation officielle. La saisie sera perdue si tu actualises la page.", formulaire);
+
                     dernierAuditCsvV954 = data;
                     boutonExportAuditV954.disabled = false;
                     boutonExportAuditHtmlV955.disabled = false;
