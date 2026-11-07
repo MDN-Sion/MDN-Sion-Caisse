@@ -1179,6 +1179,18 @@
         .v978-parcours ol { margin: 10px 0; padding-left: 23px; }
         .v978-parcours li { margin: 5px 0; line-height: 1.45; }
         .v978-parcours .v978-etat { margin-top: 10px; color: #8b0000; }
+        /* V9.80 — Précontrôle opérationnel en lecture seule. */
+        .v980-precontrole {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border: 1px solid #d5dfe5;
+            border-radius: 10px;
+            background: #f5f8fa;
+        }
+        .v980-precontrole h5 { margin: 0 0 6px; font-size: 1rem; }
+        .v980-precontrole p { margin: 6px 0; }
+        .v980-precontrole .v922-actions { margin: 9px 0; }
+
 
     </style>
 </head>
@@ -1522,6 +1534,16 @@
                             <li><strong>Création :</strong> créer l’édition 2027 avec confirmation explicite et contrôle de révision, sans activation automatique.</li>
                             <li><strong>Mise en service :</strong> initialiser les stocks MDN, vérifier les résultats, puis activer 2027 séparément.</li>
                         </ol>
+                        <div class="v980-precontrole" aria-labelledby="titrePrecontroleV980">
+                            <h5 id="titrePrecontroleV980">Précontrôle de mise en service</h5>
+                            <p>Les trois opérations sont distinctes. Ce contrôle utilise la simulation SQL161 et ne déclenche aucune écriture.</p>
+                            <div class="v922-actions">
+                                <button type="button" class="bouton secondaire" id="verifierMiseEnServiceV980">Vérifier les conditions de création</button>
+                            </div>
+                            <p id="etatCreationV980" role="status" aria-live="polite">Création : non contrôlée.</p>
+                            <p id="etatInitialisationV980">Initialisation MDN : aucune édition 2027 créée.</p>
+                            <p id="etatActivationV980">Activation : verrouillée pendant les tests.</p>
+                        </div>
                         <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
                     </section>
                     <div class="v956-cache-technique">
@@ -5039,6 +5061,11 @@
 
             // V9.40 — Simulation complète via SQL162 (moteur SQL161).
             // Lecture seule : aucune fonction SQL159 ou SQL160 n'est appelée.
+            parId("verifierMiseEnServiceV980").addEventListener("click", () => {
+                // Réutilise la simulation existante ; aucun RPC d'écriture.
+                parId("simulerChaineV940").click();
+            });
+
             parId("simulerChaineV940").addEventListener("click", async () => {
                 const cible = parId("simulationChaineV940");
                 const bouton = parId("simulerChaineV940");
@@ -5112,6 +5139,32 @@
                         const verrou = document.createElement("strong");
                         verrou.textContent = "Création verrouillée en phase de test.";
                         etatParcoursV979.appendChild(verrou);
+                    }
+                    // V9.80 — Précontrôle de mise en service, strictement en lecture seule.
+                    // Même si SQL161 ne remonte aucun blocage, aucune commande réelle
+                    // de création, de stock ou d'activation n'est déclenchée ici.
+                    const etatCreationV980 = parId("etatCreationV980");
+                    const etatInitialisationV980 = parId("etatInitialisationV980");
+                    const etatActivationV980 = parId("etatActivationV980");
+                    if (etatCreationV980) {
+                        const nbValidations = Number(data.validations_officielles ?? 0);
+                        const fichesValidees = Number(mdn.fiches_validees ?? 0);
+                        const fiches = Number(mdn.fiches ?? 0);
+                        const reservesValidees = Number(reserve.fiches_validees ?? 0);
+                        const reserves = Number(reserve.fiches ?? 0);
+                        const preconditionsRemplies = nbValidations === 5 &&
+                            fiches === 16 && fichesValidees === 16 &&
+                            reserves === 1 && reservesValidees === 1 &&
+                            blocages.length === 0;
+                        etatCreationV980.textContent = preconditionsRemplies
+                            ? "Création : précontrôle favorable, mais exécution réelle désactivée pendant les tests."
+                            : `Création : bloquée (${blocages.length} blocage(s), ${nbValidations}/5 validations, ${fichesValidees}/16 inventaires, réserve ${reservesValidees}/1).`;
+                        if (etatInitialisationV980) {
+                            etatInitialisationV980.textContent = "Initialisation MDN : impossible avant création et certification des stocks réels.";
+                        }
+                        if (etatActivationV980) {
+                            etatActivationV980.textContent = "Activation : désactivée. La fonction SQL existante doit être sécurisée pour exiger l'initialisation des stocks avant toute activation.";
+                        }
                     }
                     // V9.41 — Construction sécurisée de l'affichage (aucune écriture).
                     // Les valeurs issues de Supabase sont insérées via textContent.
