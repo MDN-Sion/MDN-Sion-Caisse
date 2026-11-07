@@ -405,15 +405,15 @@
 
         /* Références : 5 colonnes. */
         .bloc:nth-of-type(1) .table-scroll th:nth-child(1) {
-            width: 22%;
+            width: 20%;
         }
 
         .bloc:nth-of-type(1) .table-scroll th:nth-child(2) {
-            width: 38%;
+            width: 30%;
         }
 
         .bloc:nth-of-type(1) .table-scroll th:nth-child(3) {
-            width: 9%;
+            width: 20%;
         }
 
         .bloc:nth-of-type(1) .table-scroll th:nth-child(4) {
@@ -421,7 +421,60 @@
         }
 
         .bloc:nth-of-type(1) .table-scroll th:nth-child(5) {
-            width: 19%;
+            width: 18%;
+        }
+
+        /* V8 : classement compact, sans chevauchement avec la colonne État. */
+        .classement-vaisselle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+
+        .classement-numero {
+            flex: 0 0 20px;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+
+        .classement-commandes {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .classement-commandes .classement-fleche {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            min-width: 34px;
+            height: 34px;
+            min-height: 34px;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1050px) {
+            .classement-vaisselle {
+                gap: 5px;
+            }
+
+            .classement-commandes {
+                gap: 4px;
+            }
+
+            .classement-commandes .classement-fleche {
+                width: 30px;
+                min-width: 30px;
+                height: 32px;
+                min-height: 32px;
+            }
         }
 
         /* Paramètres : 8 colonnes. */
@@ -840,10 +893,16 @@
 		            const tr = document.createElement("tr");
 		            cellule(tr, r.nom);
 		            cellule(tr, r.description);
-                    const ordreCellule = cellule(tr, r.ordre_affichage);
+                    const ordreCellule = cellule(tr, "");
+                    const blocOrdre = document.createElement("div");
+                    blocOrdre.className = "classement-vaisselle";
+                    const numeroOrdre = document.createElement("span");
+                    numeroOrdre.className = "classement-numero";
+                    numeroOrdre.textContent = String(r.ordre_affichage);
+                    blocOrdre.appendChild(numeroOrdre);
                     if (etat.demo) {
                         const commandes = document.createElement("span");
-                        commandes.style.cssText = "display:inline-flex;gap:6px;margin-left:10px;vertical-align:middle;";
+                        commandes.className = "classement-commandes";
                         for (const [direction, symbole, interdit] of [
                             ["haut", "↑", etat.references.indexOf(r) === 0],
                             ["bas", "↓", etat.references.indexOf(r) === etat.references.length - 1]
@@ -855,12 +914,13 @@
                             bouton.title = direction === "haut" ? "Monter" : "Descendre";
                             bouton.setAttribute("aria-label", bouton.title + " " + r.nom);
                             bouton.disabled = interdit || etat.deplacementEnCours;
-                            bouton.style.cssText = "padding:4px 9px;min-width:34px;";
+                            bouton.classList.add("classement-fleche");
                             bouton.addEventListener("click", () => deplacerReference(r.id, direction));
                             commandes.appendChild(bouton);
                         }
-                        ordreCellule.appendChild(commandes);
+                        blocOrdre.appendChild(commandes);
                     }
+                    ordreCellule.appendChild(blocOrdre);
 		            etatCellule(tr, r.actif);
 		            boutonModifier(tr, "reference", r);
 		            references.appendChild(tr);
