@@ -1522,9 +1522,8 @@
                             <li><strong>Création :</strong> créer l’édition 2027 avec confirmation explicite et contrôle de révision, sans activation automatique.</li>
                             <li><strong>Mise en service :</strong> initialiser les stocks MDN, vérifier les résultats, puis activer 2027 séparément.</li>
                         </ol>
-                        <p class="v978-etat"><strong>État actuel :</strong> 0/5 validations, 0/16 inventaires validés, réserve 0/1. <strong>Création verrouillée.</strong></p>
+                        <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
                     </section>
-                    <p class="v956-verrou">Création de l'édition 2027 indisponible tant que les inventaires réels et les validations officielles ne sont pas terminés.</p>
                     <div class="v956-cache-technique">
                         <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
                         <button type="button" class="bouton" disabled title="Aucune création avec les données de test">Créer l'édition 2027 (verrouillé)</button>
@@ -5092,6 +5091,28 @@
                     const mdn = data.inventaire_mdn || {};
                     const reserve = data.reserve_gobelets || {};
                     const blocages = Array.isArray(data.blocages) ? data.blocages : [];
+                    // V9.79 — État de préparation actualisé depuis SQL161, sans écriture.
+                    // Le verrouillage de création est maintenu indépendamment du résultat.
+                    const etatParcoursV979 = parId("etatParcoursV979");
+                    if (etatParcoursV979) {
+                        const nbValidations = Number(data.validations_officielles ?? 0);
+                        const nbFiches = Number(mdn.fiches ?? 0);
+                        const nbValidees = Number(mdn.fiches_validees ?? 0);
+                        const nbReserves = Number(reserve.fiches ?? 0);
+                        const nbReservesValidees = Number(reserve.fiches_validees ?? 0);
+                        const compteursValides = [nbValidations, nbFiches, nbValidees, nbReserves, nbReservesValidees]
+                            .every(Number.isFinite);
+                        const etat = compteursValides
+                            ? `${nbValidations}/5 validations, ${nbValidees}/${nbFiches} inventaires validés, réserve ${nbReservesValidees}/${nbReserves}.`
+                            : "Compteurs indisponibles dans le résultat de simulation.";
+                        etatParcoursV979.replaceChildren();
+                        const libelle = document.createElement("strong");
+                        libelle.textContent = "Dernier contrôle : ";
+                        etatParcoursV979.append(libelle, document.createTextNode(etat + " "));
+                        const verrou = document.createElement("strong");
+                        verrou.textContent = "Création verrouillée en phase de test.";
+                        etatParcoursV979.appendChild(verrou);
+                    }
                     // V9.41 — Construction sécurisée de l'affichage (aucune écriture).
                     // Les valeurs issues de Supabase sont insérées via textContent.
                     cible.replaceChildren();
@@ -5505,6 +5526,8 @@
                     }
                 } catch (erreur) {
                     cible.textContent = `Simulation SQL161 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée par cette action.`;
+                    const etatParcoursV979 = parId("etatParcoursV979");
+                    if (etatParcoursV979) etatParcoursV979.textContent = "Simulation non disponible. Création verrouillée en phase de test.";
                 } finally {
                     bouton.disabled = false;
                 }
