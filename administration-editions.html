@@ -3601,6 +3601,13 @@
                     creer("h4", "", "Simulation complète SQL161 · Révision " + (data.revision ?? "—"), entete);
                     creer("span", "v941-etiquette", "Lecture seule · Aucune écriture", entete);
 
+                    // V9.44 — Libellés communs à l'écran et au rapport exporté.
+                    const libellesBlocages = {
+                        CINQ_VALIDATIONS_OFFICIELLES_REQUISES: "Les cinq validations officielles sont requises.",
+                        INVENTAIRE_MDN_NON_VALIDE: "L'inventaire MDN n'est pas entièrement validé.",
+                        RESERVE_GOBELETS_NON_VALIDEE: "La réserve de gobelets n'est pas validée."
+                    };
+
                     // V9.43 — Export TXT local de la réponse vérifiée SQL161.
                     // Aucun appel réseau supplémentaire, aucune écriture en base.
                     const boutonExport = creer("button", "v943-exporter", "Exporter le rapport (.txt)", entete);
@@ -3637,7 +3644,7 @@
                             "Édition 2027 existante : " + (data.edition_2027_existe === true ? "Oui" : "Non"),
                             "",
                             "BLOCAGES",
-                            ...(blocages.length ? blocages.map(code => "- " + code) : ["Aucun blocage signalé"]),
+                            ...(blocages.length ? blocages.map(code => "- " + (libellesBlocages[code] || code)) : ["Aucun blocage signalé"]),
                             "",
                             "ATTENTION : les quantités actuelles sont fictives.",
                             "Aucune création, activation ou écriture de stock effectuée par cette simulation."
@@ -3699,12 +3706,7 @@
                     creer("h5", "v941-sous-titre", blocages.length ? `Blocages détectés (${blocages.length})` : "Aucun blocage signalé", zoneBlocages);
                     if (blocages.length) {
                         const liste = creer("ul", "", null, zoneBlocages);
-                        const libelles = {
-                            CINQ_VALIDATIONS_OFFICIELLES_REQUISES: "Les cinq validations officielles sont requises.",
-                            INVENTAIRE_MDN_NON_VALIDE: "L'inventaire MDN n'est pas entièrement validé.",
-                            RESERVE_GOBELETS_NON_VALIDEE: "La réserve de gobelets n'est pas validée."
-                        };
-                        blocages.forEach(code => creer("li", "", libelles[code] || code, liste));
+                        blocages.forEach(code => creer("li", "", libellesBlocages[code] || code, liste));
                     }
                     creer("p", "v941-note", "Les quantités actuellement présentes sont fictives et ne doivent pas être validées comme inventaire réel.", racine);
                     creer("p", "v941-note", "Simulation uniquement : aucune édition créée, aucune activation et aucun mouvement de stock enregistré.", racine);
