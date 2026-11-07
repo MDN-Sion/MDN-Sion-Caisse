@@ -1275,6 +1275,7 @@
                             <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Fichier Excel (.csv)</button>
                             <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Rapport lisible (.html)</button>
                             <button type="button" class="bouton secondaire" id="preparerFicheComptageV958" disabled>Fiche de comptage vierge (.html)</button>
+                            <button type="button" class="bouton secondaire" id="imprimerFicheComptageV959" disabled>Imprimer / Enregistrer en PDF</button>
                         </div>
                     </details>
                 </section>
@@ -3809,9 +3810,7 @@
             // Les quantités de test ne sont jamais reportées dans cette fiche.
             const boutonFicheComptageV958 = parId("preparerFicheComptageV958");
 
-            boutonFicheComptageV958.addEventListener("click", () => {
-                const audit = dernierAuditCsvV954;
-                if (!audit) return;
+            function genererFicheComptageV959(audit) {
 
                 const fiches = Array.isArray(audit.inventaire_mdn?.fiches)
                     ? audit.inventaire_mdn.fiches
@@ -3837,7 +3836,7 @@
 
                 const lignesReserve = reserves.map((fiche, index) => `
                     <tr>
-                        <td>${index + 1}</td>
+                        <td>Gobelets</td>
                         <td class="a-remplir"></td>
                         <td class="a-remplir"></td>
                         <td class="a-remplir"></td>
@@ -3892,7 +3891,7 @@
     <p class="consigne">Compter séparément les caisses pleines, partielles, les gobelets dans les caisses partielles et les caisses vides.</p>
     <table>
         <thead><tr><th>Référence</th><th>Caisses pleines</th><th>Caisses partielles</th><th>Gobelets dans caisses partielles</th><th>Caisses vides</th><th>Capacité par caisse (référence)</th></tr></thead>
-        <tbody>${lignesReserve || '<tr><td>1</td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td>À vérifier</td></tr>'}</tbody>
+        <tbody>${lignesReserve || '<tr><td>Gobelets</td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td class="a-remplir"></td><td>À vérifier</td></tr>'}</tbody>
     </table>
     <p class="signature">Observations : _______________________________________________________________________________________</p>
     <p class="signature">Nom et signature du responsable : _____________________________________________________________________</p>
@@ -3900,6 +3899,13 @@
 </body>
 </html>`;
 
+                return contenu;
+            }
+
+            boutonFicheComptageV958.addEventListener("click", () => {
+                const audit = dernierAuditCsvV954;
+                if (!audit) return;
+                const contenu = genererFicheComptageV959(audit);
                 const url = URL.createObjectURL(new Blob([contenu], {
                     type: "text/html;charset=utf-8"
                 }));
@@ -3912,6 +3918,29 @@
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
 
+            // V9.59 — Ouverture directe de la boîte d'impression / sauvegarde PDF.
+            const boutonImprimerFicheV959 = parId("imprimerFicheComptageV959");
+            boutonImprimerFicheV959.addEventListener("click", () => {
+                const audit = dernierAuditCsvV954;
+                if (!audit) return;
+
+                // Ouvrir immédiatement depuis le clic évite le blocage des popups.
+                const fenetre = window.open("", "_blank");
+                if (!fenetre) {
+                    window.alert("Le navigateur a bloqué la fenêtre d'impression. Autorisez les fenêtres contextuelles pour ce site.");
+                    return;
+                }
+
+                const contenu = genererFicheComptageV959(audit);
+                fenetre.document.open();
+                fenetre.document.write(contenu);
+                fenetre.document.close();
+                fenetre.addEventListener("load", () => {
+                    fenetre.focus();
+                    fenetre.print();
+                }, { once: true });
+            });
+
             // V9.53 — Audit SQL163 en lecture seule ; aucune écriture.
             parId("auditerInventairesV953").addEventListener("click", async () => {
                 const cible = parId("resultatAuditV953");
@@ -3920,6 +3949,7 @@
                 boutonExportAuditV954.disabled = true;
                 boutonExportAuditHtmlV955.disabled = true;
                 boutonFicheComptageV958.disabled = true;
+                boutonImprimerFicheV959.disabled = true;
                 if (modeDemoActif || !clientSupabase) {
                     cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
                     return;
@@ -3998,6 +4028,7 @@
                     boutonExportAuditV954.disabled = false;
                     boutonExportAuditHtmlV955.disabled = false;
                     boutonFicheComptageV958.disabled = false;
+                    boutonImprimerFicheV959.disabled = false;
                 } catch (erreur) {
                     cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
                 } finally {
