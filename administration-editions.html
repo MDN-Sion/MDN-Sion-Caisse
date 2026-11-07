@@ -3726,9 +3726,9 @@
                         boutonCopier.setAttribute("aria-label", libelleInitial);
                     });
 
-                    // V9.49 — Impression locale du même rapport, sans appel Supabase.
-                    // La fenêtre est ouverte directement au clic pour éviter le blocage
-                    // des fenêtres contextuelles par les navigateurs.
+                    // V9.50 — Rapport A4 structuré, à partir du texte exact de l’export.
+                    // La présentation imprimée est distincte du rapport .txt,
+                    // mais les informations proviennent de la même source.
                     const boutonImprimer = creer("button", "v943-exporter", "Imprimer le rapport", entete);
                     boutonImprimer.type = "button";
                     boutonImprimer.addEventListener("click", () => {
@@ -3741,34 +3741,190 @@
 
                         const documentImpression = fenetre.document;
                         documentImpression.title = "MDN Sion — Rapport de simulation 2027";
+                        documentImpression.documentElement.lang = "fr";
 
                         const styleImpression = documentImpression.createElement("style");
                         styleImpression.textContent = `
-                            @page { size: A4 portrait; margin: 16mm; }
+                            @page {
+                                size: A4 portrait;
+                                margin: 15mm 17mm;
+                            }
+                            * { box-sizing: border-box; }
                             body {
                                 margin: 0;
                                 font-family: Arial, Helvetica, sans-serif;
-                                color: #202020;
-                                font-size: 11pt;
+                                font-size: 10.5pt;
+                                line-height: 1.45;
+                                color: #17263a;
+                                background: #ffffff;
                             }
-                            pre {
-                                white-space: pre-wrap;
+                            .rapport-titre {
+                                margin: 0 0 4mm;
+                                color: #800000;
+                                font-size: 18pt;
+                                font-weight: 800;
+                                line-height: 1.2;
+                            }
+                            .rapport-sous-titre {
+                                margin: 0 0 5mm;
+                                color: #38536a;
+                                font-size: 9.5pt;
+                                font-weight: 700;
+                            }
+                            .rapport-meta {
+                                border: 1px solid #d8e0e7;
+                                background: #f4f7f9;
+                                border-radius: 5px;
+                                padding: 3mm 4mm;
+                                margin-bottom: 5mm;
+                            }
+                            .rapport-meta p {
+                                margin: 1mm 0;
                                 overflow-wrap: anywhere;
-                                font-family: inherit;
-                                line-height: 1.5;
+                            }
+                            .rapport-section {
+                                margin: 0 0 4mm;
+                                break-inside: avoid;
+                                page-break-inside: avoid;
+                            }
+                            .rapport-section h2 {
+                                margin: 0 0 2mm;
+                                padding: 0 0 1.5mm;
+                                border-bottom: 1px solid #c9d5df;
+                                color: #800000;
+                                font-size: 11pt;
+                                font-weight: 800;
+                            }
+                            .rapport-ligne {
+                                display: flex;
+                                justify-content: space-between;
+                                gap: 8mm;
+                                padding: 0.5mm 0;
+                            }
+                            .rapport-valeur {
+                                flex: 0 0 auto;
+                                font-weight: 700;
+                                text-align: right;
+                                white-space: nowrap;
+                            }
+                            .rapport-blocages {
+                                border: 1px solid #e4b3b3;
+                                background: #fff7f7;
+                                border-radius: 5px;
+                                padding: 3mm 4mm;
+                            }
+                            .rapport-blocages h2 { border-bottom-color: #e4b3b3; }
+                            .rapport-blocage { margin: 1mm 0; }
+                            .rapport-avertissement {
+                                margin-top: 4mm;
+                                border-top: 1px solid #c9d5df;
+                                padding-top: 3mm;
+                                font-size: 9pt;
+                                font-weight: 700;
+                                color: #800000;
                             }
                             @media screen {
-                                body { padding: 24px; max-width: 800px; margin: auto; }
+                                body {
+                                    max-width: 210mm;
+                                    margin: 20px auto;
+                                    padding: 15mm 17mm;
+                                    box-shadow: 0 0 16px #00000020;
+                                }
                             }
                         `;
                         documentImpression.head.appendChild(styleImpression);
 
-                        const contenuImpression = documentImpression.createElement("pre");
-                        contenuImpression.textContent = genererRapportSimulationV947();
-                        documentImpression.body.appendChild(contenuImpression);
+                        const rapport = genererRapportSimulationV947();
+                        const lignes = rapport.replace(/\r\n/g, "\n").split("\n");
+                        const corps = documentImpression.body;
+                        let sectionCourante = null;
+                        let blocMeta = null;
+                        let dansAvertissement = false;
+
+                        function ajouterElement(tag, classe, contenu, parent) {
+                            const element = documentImpression.createElement(tag);
+                            if (classe) {
+                                element.className = classe;
+                            }
+                            if (contenu !== null) {
+                                element.textContent = contenu;
+                            }
+                            parent.appendChild(element);
+                            return element;
+                        }
+
+                        const titresSections = new Set([
+                            "CATALOGUES",
+                            "INVENTAIRES MDN",
+                            "STOCKS ET RÉSERVE",
+                            "CRÉATION",
+                            "BLOCAGES"
+                        ]);
+
+                        lignes.forEach((ligneOriginale, index) => {
+                            const ligne = ligneOriginale.trim();
+                            if (!ligne) {
+                                return;
+                            }
+
+                            if (index === 0) {
+                                ajouterElement("h1", "rapport-titre", ligne, corps);
+                                return;
+                            }
+
+                            if (index === 1) {
+                                ajouterElement("p", "rapport-sous-titre", ligne, corps);
+                                blocMeta = ajouterElement("div", "rapport-meta", null, corps);
+                                return;
+                            }
+
+                            if (titresSections.has(ligne)) {
+                                sectionCourante = ajouterElement(
+                                    "section",
+                                    ligne === "BLOCAGES" ? "rapport-section rapport-blocages" : "rapport-section",
+                                    null,
+                                    corps
+                                );
+                                ajouterElement("h2", null, ligne, sectionCourante);
+                                return;
+                            }
+
+                            if (ligne.startsWith("ATTENTION :")) {
+                                dansAvertissement = true;
+                                ajouterElement("p", "rapport-avertissement", ligne, corps);
+                                return;
+                            }
+
+                            if (dansAvertissement) {
+                                ajouterElement("p", "rapport-avertissement", ligne, corps);
+                                return;
+                            }
+
+                            if (sectionCourante) {
+                                if (ligne.startsWith("- ")) {
+                                    ajouterElement("p", "rapport-blocage", "• " + ligne.slice(2), sectionCourante);
+                                } else {
+                                    const separation = ligne.lastIndexOf(" : ");
+                                    if (separation >= 0) {
+                                        const rangee = ajouterElement("div", "rapport-ligne", null, sectionCourante);
+                                        ajouterElement("span", null, ligne.slice(0, separation), rangee);
+                                        ajouterElement("span", "rapport-valeur", ligne.slice(separation + 3), rangee);
+                                    } else {
+                                        ajouterElement("p", null, ligne, sectionCourante);
+                                    }
+                                }
+                            } else {
+                                ajouterElement("p", null, ligne, blocMeta || corps);
+                            }
+                        });
 
                         fenetre.focus();
-                        fenetre.print();
+                        // L'impression attend que le nouveau document soit prêt.
+                        fenetre.addEventListener("load", () => {
+                            fenetre.focus();
+                            fenetre.print();
+                        }, { once: true });
+                        documentImpression.close();
                     });
 
                     const avertissementTest = creer(
