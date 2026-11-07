@@ -879,10 +879,49 @@
         .v953-resume span { padding: 9px 12px; border: 1px solid #d7dfe5; background: white; border-radius: 9px; }
         .v953-table-conteneur { width: 100%; overflow-x: auto; border: 1px solid #d7dfe5; border-radius: 10px; background: white; }
         .v953-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-        /* V9.71 : conserver des colonnes lisibles, avec défilement horizontal si nécessaire. */
-        .v953-table-comparaison { min-width: 1060px; }
-        .v953-table-comparaison td:first-child { min-width: 220px; white-space: normal; }
-        .v953-table-comparaison td:not(:first-child) { white-space: nowrap; }
+        /* V9.72 — Le tableau complet tient sur ordinateur sans défilement horizontal.
+           Sur téléphone, seul le tableau défile ; le nom de l'article reste visible. */
+        .v953-table-comparaison {
+            width: 100%;
+            min-width: 0;
+            table-layout: fixed;
+            font-size: 13px;
+        }
+        .v953-table-comparaison th,
+        .v953-table-comparaison td {
+            padding: 9px 7px;
+            white-space: normal;
+            overflow-wrap: break-word;
+            vertical-align: middle;
+        }
+        .v953-table-comparaison th:first-child,
+        .v953-table-comparaison td:first-child { width: 25%; text-align: left; }
+        .v953-table-comparaison th:nth-child(2),
+        .v953-table-comparaison td:nth-child(2) { width: 10%; }
+        .v953-table-comparaison th:nth-child(3),
+        .v953-table-comparaison td:nth-child(3) { width: 15%; }
+        .v953-table-comparaison th:nth-child(4),
+        .v953-table-comparaison td:nth-child(4) { width: 15%; }
+        .v953-table-comparaison th:nth-child(5),
+        .v953-table-comparaison td:nth-child(5) { width: 8%; }
+        .v953-table-comparaison th:nth-child(6),
+        .v953-table-comparaison td:nth-child(6) { width: 12%; }
+        .v953-table-comparaison th:nth-child(7),
+        .v953-table-comparaison td:nth-child(7) { width: 15%; }
+        @media (max-width: 700px) {
+            .v953-table-comparaison { min-width: 760px; }
+            .v953-table-comparaison th:first-child,
+            .v953-table-comparaison td:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 1;
+                background: #fff;
+            }
+            .v953-table-comparaison th:first-child {
+                z-index: 2;
+                background: #edf2f5;
+            }
+        }
         .v953-table th, .v953-table td { padding: 10px 12px; border-bottom: 1px solid #e1e7eb; text-align: left; }
         .v953-table th { background: #edf2f5; color: #31475c; white-space: nowrap; }
         .v953-table td.v953-nombre { text-align: right; font-variant-numeric: tabular-nums; }
