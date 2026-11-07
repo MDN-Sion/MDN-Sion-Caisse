@@ -4070,37 +4070,105 @@
                         tdObservation.appendChild(observation);
                         lignesSaisie.push({ article: f.article || "", quantite, observation });
                     });
-                    const titreReserve = creerAudit("h4", "", "Réserve de gobelets — comptage réel", formulaire);
-                    const champsReserve = [
-                        ["Caisses pleines", "caisses_pleines"],
-                        ["Caisses partielles", "caisses_partielles"],
-                        ["Gobelets dans les caisses partielles", "gobelets_partiels"],
-                        ["Caisses vides", "caisses_vides"]
-                    ].map(([libelle, cle]) => {
+                    // V9.63 — Chaque caisse partielle dispose de son propre comptage.
+                    creerAudit("h4", "", "Réserve de gobelets — comptage réel", formulaire);
+                    const capaciteCaisse = Number(reserve[0]?.capacite_caisse) || 480;
+                    const champsReserve = [];
+                    function champReserve(libelle, cle) {
                         const ligne = creerAudit("div", "", null, formulaire);
+                        ligne.style.margin = "10px 0";
                         const label = creerAudit("label", "", libelle + " : ", ligne);
                         const input = document.createElement("input");
                         input.type = "number";
                         input.min = "0";
                         input.step = "1";
+                        input.inputMode = "numeric";
                         input.placeholder = "À compter";
                         input.style.width = "110px";
                         label.appendChild(input);
-                        return { libelle, cle, input };
-                    });
+                        const champ = { libelle, cle, input };
+                        champsReserve.push(champ);
+                        return champ;
+                    }
+                    champReserve("Caisses pleines", "caisses_pleines");
+                    const nombrePartielles = champReserve("Caisses partielles", "caisses_partielles");
+                    const detailPartielles = creerAudit("div", "", null, formulaire);
+                    detailPartielles.style.margin = "8px 0 16px 18px";
+                    const totalPartielles = creerAudit("p", "", "Total des gobelets dans les caisses partielles : —", formulaire);
+                    const caissesIndividuelles = [];
+                    function entierValide(input) {
+                        return input.value.trim() !== "" && Number.isSafeInteger(Number(input.value)) && Number(input.value) >= 0;
+                    }
+                    function calculerTotalPartielles() {
+                        const toutesRenseignees = caissesIndividuelles.length > 0 && caissesIndividuelles.every(entierValide);
+                        const total = toutesRenseignees
+                            ? caissesIndividuelles.reduce((somme, champ) => somme + Number(champ.value), 0)
+                            : 0;
+                        totalPartielles.textContent = "Total des gobelets dans les caisses partielles : " +
+                            (caissesIndividuelles.length === 0 ? "0" : toutesRenseignees ? String(total) : "À compléter");
+                        return total;
+                    }
+                    function afficherCaissesIndividuelles() {
+                        const nombre = Number(nombrePartielles.input.value);
+                        if (!entierValide(nombrePartielles.input) || nombre > 100) {
+                            detailPartielles.replaceChildren();
+                            caissesIndividuelles.length = 0;
+                            totalPartielles.textContent = "Total des gobelets dans les caisses partielles : —";
+                            return;
+                        }
+                        const anciennesValeurs = caissesIndividuelles.map(champ => champ.value);
+                        caissesIndividuelles.length = 0;
+                        detailPartielles.replaceChildren();
+                        if (nombre > 0) {
+                            creerAudit("p", "", `Indique le nombre de gobelets dans chaque caisse partielle (de 1 à ${capaciteCaisse - 1}).`, detailPartielles);
+                        }
+                        for (let index = 0; index < nombre; index++) {
+                            const ligne = creerAudit("div", "", null, detailPartielles);
+                            ligne.style.margin = "8px 0";
+                            const label = creerAudit("label", "", `Caisse partielle n° ${index + 1} : `, ligne);
+                            const input = document.createElement("input");
+                            input.type = "number";
+                            input.min = "1";
+                            input.max = String(capaciteCaisse - 1);
+                            input.step = "1";
+                            input.inputMode = "numeric";
+                            input.placeholder = "Gobelets";
+                            input.style.width = "110px";
+                            input.value = anciennesValeurs[index] ?? "";
+                            input.addEventListener("input", calculerTotalPartielles);
+                            label.appendChild(input);
+                            caissesIndividuelles.push(input);
+                        }
+                        calculerTotalPartielles();
+                    }
+                    nombrePartielles.input.addEventListener("input", afficherCaissesIndividuelles);
+                    champReserve("Caisses vides", "caisses_vides");
                     const exporterSaisie = creerAudit("button", "bouton secondaire", "Exporter le comptage saisi (.csv)", formulaire);
                     exporterSaisie.type = "button";
                     exporterSaisie.addEventListener("click", () => {
                         const toutesValeurs = [...lignesSaisie.map(l => l.quantite), ...champsReserve.map(c => c.input)];
-                        if (toutesValeurs.some(input => input.value === "" || !Number.isSafeInteger(Number(input.value)) || Number(input.value) < 0)) {
+                        if (toutesValeurs.some(input => !entierValide(input))) {
                             window.alert("Renseigne toutes les quantités avec des nombres entiers positifs ou zéro avant l'export.");
                             return;
                         }
+                        const nombre = Number(nombrePartielles.input.value);
+                        if (nombre > 100 || caissesIndividuelles.length !== nombre) {
+                            window.alert("Le nombre de caisses partielles est invalide (maximum 100).");
+                            return;
+                        }
+                        if (caissesIndividuelles.some(input => !entierValide(input) || Number(input.value) < 1 || Number(input.value) >= capaciteCaisse)) {
+                            window.alert(`Chaque caisse partielle doit contenir entre 1 et ${capaciteCaisse - 1} gobelets.`);
+                            return;
+                        }
+                        const total = calculerTotalPartielles();
                         const echapper = valeur => '"' + String(valeur ?? "").replaceAll('"', '""') + '"';
                         const csv = [
                             ["Type", "Article / référence", "Quantité réelle", "Observations"],
                             ...lignesSaisie.map(l => ["MDN", l.article, l.quantite.value, l.observation.value]),
-                            ...champsReserve.map(c => ["Réserve gobelets", c.libelle, c.input.value, ""])
+                            ...champsReserve.map(c => ["Réserve gobelets", c.libelle, c.input.value, ""]),
+                            ...caissesIndividuelles.map((input, index) => ["Réserve gobelets", `Caisse partielle n° ${index + 1}`, input.value, ""]),
+                            ["Réserve gobelets", "Total gobelets dans les caisses partielles", String(total), "Calcul automatique"],
+                            ["Réserve gobelets", "Capacité d'une caisse", String(capaciteCaisse), "Référence"]
                         ].map(ligne => ligne.map(echapper).join(";")).join("\r\n");
                         const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
                         const url = URL.createObjectURL(blob);
