@@ -4358,6 +4358,47 @@
                         }
                     });
 
+                    // V9.69 — Précontrôle distant en lecture seule (SQL165).
+                    const boutonPrecontroleSupabase = creerAudit(
+                        "button", "bouton secondaire", "Vérifier le brouillon Supabase", formulaire
+                    );
+                    boutonPrecontroleSupabase.type = "button";
+                    boutonPrecontroleSupabase.style.marginRight = "12px";
+                    boutonPrecontroleSupabase.disabled = !sauvegardeDistantePossible;
+                    boutonPrecontroleSupabase.addEventListener("click", async () => {
+                        if (!sauvegardeDistantePossible) return;
+                        boutonPrecontroleSupabase.disabled = true;
+                        etatSupabaseComptage.textContent = "Vérification du brouillon distant…";
+                        try {
+                            const { data: resultat, error } = await clientSupabase.rpc(
+                                "precontroler_brouillon_comptage_admin",
+                                { p_preparation_id: preparation.id }
+                            );
+                            if (error) throw error;
+                            if (resultat?.resultat === "AUCUN_BROUILLON") {
+                                etatSupabaseComptage.textContent = "Aucun brouillon distant à vérifier.";
+                                return;
+                            }
+                            if (resultat?.resultat !== "PRECONTROLE_BROUILLON" ||
+                                resultat.transfert_autorise !== false ||
+                                resultat.validation_effectuee !== false ||
+                                resultat.stocks_modifies !== false) {
+                                throw new Error("Réponse de précontrôle non conforme.");
+                            }
+                            const erreurs = Array.isArray(resultat.erreurs) ? resultat.erreurs : [];
+                            etatSupabaseComptage.textContent =
+                                `Précontrôle : ${resultat.articles_renseignes}/${resultat.articles_attendus} articles. ` +
+                                (resultat.pret_pour_examen ?
+                                    "Comptage complet, mais toujours en TEST : aucun transfert officiel autorisé." :
+                                    "À compléter : " + erreurs.join(" "));
+                        } catch (erreur) {
+                            etatSupabaseComptage.textContent =
+                                "Échec du précontrôle : " + (erreur.message || String(erreur));
+                        } finally {
+                            boutonPrecontroleSupabase.disabled = false;
+                        }
+                    });
+
                     boutonRepriseSupabase.addEventListener("click", async () => {
                         if (!sauvegardeDistantePossible) return;
                         boutonRepriseSupabase.disabled = true;
