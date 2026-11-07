@@ -871,6 +871,29 @@
         }
         .v922-transfert h3 { margin: 0 0 8px; }
         .v922-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+
+        /* V9.41 — Présentation structurée de la simulation SQL161. */
+        .v941-simulation { display: grid; gap: 14px; margin-top: 12px; }
+        .v941-simulation-entete { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .v941-simulation-entete h4 { margin: 0; font-size: 1.13rem; }
+        .v941-etiquette { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 11px; font-weight: 700; font-size: .83rem; background: #e8f3ec; color: #236341; }
+        .v941-etiquette-attente { background: #fff0e7; color: #8a390f; }
+        .v941-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+        .v941-carte { background: #fff; border: 1px solid #d7dfe5; border-radius: 13px; padding: 14px 16px; min-width: 0; }
+        .v941-carte h5 { margin: 0 0 12px; font-size: 1rem; color: #31475c; }
+        .v941-indicateur { font-size: 1.55rem; font-weight: 800; line-height: 1.2; color: #850000; }
+        .v941-legende { margin-top: 5px; font-size: .88rem; color: #506174; }
+        .v941-ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 9px; }
+        .v941-ligne strong { text-align: right; }
+        .v941-sous-titre { margin: 0 0 10px; font-size: 1.02rem; }
+        .v941-blocages { border: 1px solid #e7b7b7; background: #fff8f7; border-radius: 13px; padding: 14px 16px; }
+        .v941-blocages ul { margin: 8px 0 0; padding-left: 22px; }
+        .v941-blocages li { margin: 5px 0; overflow-wrap: anywhere; }
+        .v941-note { margin: 0; font-size: .92rem; color: #4d5c69; }
+        @media (max-width: 560px) {
+            .v941-grille { grid-template-columns: 1fr; }
+            .v941-carte { padding: 12px; }
+        }
         .v922-resultat { margin-top: 12px; line-height: 1.5; overflow-wrap: anywhere; }
         .v922-resultat ul { margin: 8px 0; padding-left: 22px; }
         .v922-attention { color: #803600; font-weight: 600; }
@@ -3541,28 +3564,81 @@
                     const mdn = data.inventaire_mdn || {};
                     const reserve = data.reserve_gobelets || {};
                     const blocages = Array.isArray(data.blocages) ? data.blocages : [];
-                    const lignes = [
-                        "SIMULATION SQL161 — AUCUNE ÉCRITURE",
-                        `Préparation 2027 · Révision ${data.revision ?? "—"}`,
-                        `Validations officielles : ${data.validations_officielles ?? 0}/5`,
-                        `Catalogue : ${config.articles_mdn ?? 0} MDN, ${config.articles_fondation ?? 0} Fondation`,
-                        `Vaisselle : ${config.vaisselle ?? 0} références ; contenants : ${config.contenants ?? 0}`,
-                        `Paramètres de l'édition source : ${config.parametres_source ?? 0}`,
-                        `Inventaire MDN : ${mdn.fiches_validees ?? 0}/${mdn.fiches ?? 0} fiches validées`,
-                        `Quantités MDN simulées : ${mdn.unites_comptees_simulees ?? 0}`,
-                        `Mouvements positifs théoriques : ${mdn.mouvements_positifs_theoriques ?? 0}`,
-                        `Fondation : stock initial ${data.stock_fondation_initial_prevu ?? 0}`,
-                        `Vaisselle : stock opérationnel initial ${data.stock_vaisselle_operationnel_initial_prevu ?? 0}`,
-                        `Réserve gobelets : ${reserve.fiches_validees ?? 0}/${reserve.fiches ?? 0} fiches validées ; hors stock opérationnel`,
-                        `Édition 2027 existante : ${data.edition_2027_existe === true ? "oui" : "non"}`,
-                        `Création autorisable : ${data.creation_autorisable_sur_donnees_reelles === true ? "oui, sous réserve de comptages réels" : "non"}`,
-                        `Blocages : ${blocages.join(", ") || "aucun signalé"}`,
-                        "Les quantités actuelles sont fictives : aucune validation réelle autorisée.",
-                        "Édition 2026 inchangée. Aucune création, activation ou écriture de stock."
-                    ];
+                    // V9.41 — Construction sécurisée de l'affichage (aucune écriture).
+                    // Les valeurs issues de Supabase sont insérées via textContent.
+                    cible.replaceChildren();
+                    cible.style.whiteSpace = "normal";
 
-                    cible.textContent = lignes.join("\n");
-                    cible.style.whiteSpace = "pre-line";
+                    const creer = (tag, classe, texte, parent) => {
+                        const element = document.createElement(tag);
+                        if (classe) element.className = classe;
+                        if (texte !== undefined && texte !== null) {
+                            element.textContent = String(texte);
+                        }
+                        if (parent) parent.appendChild(element);
+                        return element;
+                    };
+
+                    const racine = creer("div", "v941-simulation", null, cible);
+                    const entete = creer("div", "v941-simulation-entete", null, racine);
+                    creer("h4", "", "Simulation complète SQL161 · Révision " + (data.revision ?? "—"), entete);
+                    creer("span", "v941-etiquette", "Lecture seule · Aucune écriture", entete);
+
+                    const grille = creer("div", "v941-grille", null, racine);
+                    const carte = (titre, valeur, legende) => {
+                        const bloc = creer("section", "v941-carte", null, grille);
+                        creer("h5", "", titre, bloc);
+                        creer("div", "v941-indicateur", valeur, bloc);
+                        if (legende) creer("div", "v941-legende", legende, bloc);
+                        return bloc;
+                    };
+                    const ligne = (parent, libelle, valeur) => {
+                        const bloc = creer("div", "v941-ligne", null, parent);
+                        creer("span", "", libelle, bloc);
+                        creer("strong", "", valeur, bloc);
+                    };
+
+                    const validations = carte(
+                        "Validations officielles",
+                        `${data.validations_officielles ?? 0}/5`,
+                        "Cinq validations nécessaires avant la création réelle"
+                    );
+                    creer("span", "v941-etiquette v941-etiquette-attente", "En attente", validations);
+
+                    const catalogues = carte("Catalogues", `${(config.articles_mdn ?? 0) + (config.articles_fondation ?? 0)} articles`, "Configurations de la future édition");
+                    ligne(catalogues, "Marché de Noël", config.articles_mdn ?? 0);
+                    ligne(catalogues, "Fondation", config.articles_fondation ?? 0);
+                    ligne(catalogues, "Vaisselle", config.vaisselle ?? 0);
+                    ligne(catalogues, "Contenants", config.contenants ?? 0);
+                    ligne(catalogues, "Paramètres source", config.parametres_source ?? 0);
+
+                    const inventaires = carte("Inventaires MDN", `${mdn.fiches_validees ?? 0}/${mdn.fiches ?? 0}`, "Fiches d'inventaire validées");
+                    ligne(inventaires, "Quantités simulées", mdn.unites_comptees_simulees ?? 0);
+                    ligne(inventaires, "Mouvements positifs théoriques", mdn.mouvements_positifs_theoriques ?? 0);
+
+                    const stocks = carte("Stocks et réserve", "0", "Stock initial prévu : Fondation et vaisselle opérationnelle");
+                    ligne(stocks, "Fondation", data.stock_fondation_initial_prevu ?? 0);
+                    ligne(stocks, "Vaisselle opérationnelle", data.stock_vaisselle_operationnel_initial_prevu ?? 0);
+                    ligne(stocks, "Réserve gobelets validée", `${reserve.fiches_validees ?? 0}/${reserve.fiches ?? 0}`);
+                    ligne(stocks, "Réserve hors stock opérationnel", "Oui");
+
+                    const creation = carte("Création de 2027", data.creation_autorisable_sur_donnees_reelles === true ? "Précontrôles OK" : "Interdite", "Aucune création ni activation effectuée");
+                    ligne(creation, "Édition 2027 existante", data.edition_2027_existe === true ? "Oui" : "Non");
+                    ligne(creation, "Édition 2026 modifiée", "Non");
+
+                    const zoneBlocages = creer("section", "v941-blocages", null, racine);
+                    creer("h5", "v941-sous-titre", blocages.length ? `Blocages détectés (${blocages.length})` : "Aucun blocage signalé", zoneBlocages);
+                    if (blocages.length) {
+                        const liste = creer("ul", "", null, zoneBlocages);
+                        const libelles = {
+                            CINQ_VALIDATIONS_OFFICIELLES_REQUISES: "Les cinq validations officielles sont requises.",
+                            INVENTAIRE_MDN_NON_VALIDE: "L'inventaire MDN n'est pas entièrement validé.",
+                            RESERVE_GOBELETS_NON_VALIDEE: "La réserve de gobelets n'est pas validée."
+                        };
+                        blocages.forEach(code => creer("li", "", libelles[code] || code, liste));
+                    }
+                    creer("p", "v941-note", "Les quantités actuellement présentes sont fictives et ne doivent pas être validées comme inventaire réel.", racine);
+                    creer("p", "v941-note", "Simulation uniquement : aucune édition créée, aucune activation et aucun mouvement de stock enregistré.", racine);
                 } catch (erreur) {
                     cible.textContent = `Simulation SQL161 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée par cette action.`;
                 } finally {
