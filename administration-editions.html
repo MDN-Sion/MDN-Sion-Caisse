@@ -497,7 +497,20 @@
             color: white;
         }
 
-        /* V9.37 — repère persistant du dernier contrôle consulté.
+        /* V9.38 — repère de la dernière action dans chaque panneau.
+           Ne s'applique pas aux onglets, aux confirmations, ni aux boutons désactivés. */
+        .bouton.secondaire.v938-dernier-controle:not(:disabled) {
+            background: var(--mdn-rouge);
+            border-color: var(--mdn-rouge);
+            color: #ffffff;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, .12);
+        }
+
+        .bouton.secondaire.v938-dernier-controle:not(:disabled):hover {
+            filter: brightness(.94);
+        }
+
+        /* V9.37 — repère persistant des contrôles SQL157/SQL158.
            L'état actif ne signifie jamais validation officielle. */
         #apercuCreationV935[aria-pressed="true"],
         #planCreationV936[aria-pressed="true"] {
@@ -1545,6 +1558,25 @@
 
             parId("precontrolerTransfertV922").addEventListener("click", precontrolerTransfertV922);
             parId("confirmerTransfertV922").addEventListener("click", confirmerTransfertV922);
+
+            // V9.38 — repère visuel cohérent pour les actions de consultation
+            // sur toute la page Éditions, et pas uniquement SQL157 / SQL158.
+            // Chaque panneau conserve son dernier contrôle consulté.
+            // Un bouton d'action n'est pas une validation officielle :
+            // on utilise une classe visuelle, pas aria-pressed.
+            document.addEventListener("click", evenement => {
+                const bouton = evenement.target.closest("button.bouton.secondaire");
+                if (!bouton || bouton.disabled || bouton.closest("[role='dialog']")) return;
+                if (bouton.matches("[aria-pressed], [aria-selected], [data-v912-ouvrir], [data-section], [data-v97-onglet], [data-fiche-source]")) return;
+                if (bouton.matches("[data-action], [data-enregistrer], [data-v8-action], [data-v97-enregistrer]")) return;
+                if (/^(annuler|fermer|supprimer|déverrouiller|reverrouiller)/i.test(bouton.textContent.trim())) return;
+                const panneau = bouton.closest(".v922-transfert, .v911-commandes, .v920-actions-validations, .inventaire-actions, .barre, .panneau");
+                if (!panneau) return;
+                panneau.querySelectorAll(".v938-dernier-controle").forEach(autre => {
+                    autre.classList.remove("v938-dernier-controle");
+                });
+                bouton.classList.add("v938-dernier-controle");
+            }, true);
 
             function afficherVueV912(vue) {
                 const vues = ["accueil", "brouillon", "source", "inventaires"];
