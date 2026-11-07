@@ -1116,6 +1116,36 @@
     #titreAuditV953 ~ .v956-details > summary {
         line-height: 1.35;
     }
+
+    /* V9.76 — Rapport de simulation plus compact, sans changement de logique. */
+    .v941-simulation {
+        gap: 9px;
+        margin-top: 9px;
+    }
+    .v941-simulation .v941-grille {
+        gap: 9px;
+        align-items: start;
+    }
+    .v941-simulation .v941-carte {
+        padding: 11px 13px;
+    }
+    .v941-simulation .v941-carte h5 {
+        margin-bottom: 7px;
+    }
+    .v941-simulation .v941-blocages {
+        padding: 11px 13px;
+    }
+    .v941-simulation .v941-blocages ul {
+        margin-top: 5px;
+    }
+    .v941-simulation .v941-blocages li {
+        margin: 3px 0;
+    }
+    .v941-simulation .v941-note,
+    .v941-simulation .v941-legende {
+        line-height: 1.4;
+    }
+
 </style>
 </head>
 <body data-v912-vue="accueil">
@@ -5041,7 +5071,7 @@
                         "Simulation exécutée le " + horodatageSimulationV948 + " (heure locale).",
                         racine
                     );
-                    dateVisibleV948.style.margin = "0 0 12px";
+                    dateVisibleV948.style.margin = "0 0 4px";
 
                     // V9.44 — Libellés communs à l'écran et au rapport exporté.
                     const libellesBlocages = {
@@ -5404,8 +5434,6 @@
                         const liste = creer("ul", "", null, zoneBlocages);
                         blocages.forEach(code => creer("li", "", libellesBlocages[code] || code, liste));
                     }
-                    creer("p", "v941-note", "Les quantités actuellement présentes sont fictives et ne doivent pas être validées comme inventaire réel.", racine);
-                    creer("p", "v941-note", "Simulation uniquement : aucune édition créée, aucune activation et aucun mouvement de stock enregistré.", racine);
                 } catch (erreur) {
                     cible.textContent = `Simulation SQL161 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée par cette action.`;
                 } finally {
