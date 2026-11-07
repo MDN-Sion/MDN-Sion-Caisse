@@ -1274,6 +1274,7 @@
                     <p>Consulter le détail des comptages MDN et de la réserve de gobelets avant toute reprise. Les données actuelles sont fictives : cet audit ne valide et ne modifie rien.</p>
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher l’audit détaillé (SQL163)</button>
+                        <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Exporter l’audit (.csv)</button>
                     </div>
                     <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Audit non exécuté.</div>
                 </section>
@@ -3583,10 +3584,81 @@
             });
 
 
+            // V9.54 — Export CSV local de la dernière réponse SQL163 validée.
+            // Aucune modification des données Supabase.
+            let dernierAuditCsvV954 = null;
+            const boutonExportAuditV954 = parId("exporterAuditCsvV954");
+
+            const echapperCelluleCsvV954 = (valeur) => {
+                let texte = valeur === null || valeur === undefined ? "" : String(valeur);
+                // Évite l'interprétation de formules par Excel / LibreOffice.
+                if (/^[\s]*[=+@-]/.test(texte) && !/^-?\d+(?:[.,]\d+)?$/.test(texte.trim())) {
+                    texte = "'" + texte;
+                }
+                return '"' + texte.replace(/"/g, '""') + '"';
+            };
+
+            boutonExportAuditV954.addEventListener("click", () => {
+                const audit = dernierAuditCsvV954;
+                if (!audit) return;
+
+                const lignes = [];
+                const ajouter = (...cellules) => {
+                    lignes.push(cellules.map(echapperCelluleCsvV954).join(";"));
+                };
+                const inv = audit.inventaire_mdn || {};
+                const fiches = Array.isArray(inv.fiches) ? inv.fiches : [];
+                const reserve = Array.isArray(audit.reserve_gobelets) ? audit.reserve_gobelets : [];
+
+                ajouter("MDN SION — AUDIT DES INVENTAIRES 2027 — DONNÉES DE TEST");
+                ajouter("LECTURE SEULE — NE PAS UTILISER COMME INVENTAIRE VALIDÉ");
+                ajouter("Préparation", audit.preparation_id);
+                ajouter("Révision", audit.revision);
+                ajouter("Validations officielles", `${audit.validations_officielles ?? 0}/5`);
+                ajouter();
+                ajouter("INVENTAIRE MDN");
+                ajouter("Article", "Quantité théorique", "Quantité comptée (TEST)", "Fiche validée", "Commentaire");
+                fiches.forEach(f => ajouter(
+                    f.article || "",
+                    f.quantite_theorique,
+                    f.quantite_comptee,
+                    f.fiche_validee ? "Oui" : "Non",
+                    f.commentaire || ""
+                ));
+                ajouter();
+                ajouter("RÉSERVE DE GOBELETS");
+                ajouter("Référence", "Caisses pleines", "Caisses partielles", "Gobelets dans les caisses partielles", "Caisses vides", "Capacité caisse", "Fiche validée");
+                reserve.forEach((r, i) => ajouter(
+                    i + 1,
+                    r.caisses_pleines,
+                    r.caisses_partielles,
+                    r.gobelets_dans_caisses_partielles,
+                    r.caisses_vides,
+                    r.capacite_caisse,
+                    r.fiche_validee ? "Oui" : "Non"
+                ));
+                ajouter();
+                ajouter("ATTENTION : quantités fictives, aucune validation ni écriture effectuée.");
+
+                const contenu = "\uFEFF" + lignes.join("\r\n") + "\r\n";
+                const url = URL.createObjectURL(new Blob([contenu], {
+                    type: "text/csv;charset=utf-8"
+                }));
+                const lien = document.createElement("a");
+                lien.href = url;
+                lien.download = `MDN-Sion-Audit-Inventaires-2027-Revision-${audit.revision ?? "inconnue"}-TEST.csv`;
+                document.body.appendChild(lien);
+                lien.click();
+                lien.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+
             // V9.53 — Audit SQL163 en lecture seule ; aucune écriture.
             parId("auditerInventairesV953").addEventListener("click", async () => {
                 const cible = parId("resultatAuditV953");
                 const bouton = parId("auditerInventairesV953");
+                dernierAuditCsvV954 = null;
+                boutonExportAuditV954.disabled = true;
                 if (modeDemoActif || !clientSupabase) {
                     cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
                     return;
@@ -3661,6 +3733,8 @@
                             afficherQuantite(r.caisses_partielles), afficherQuantite(r.gobelets_dans_caisses_partielles),
                             afficherQuantite(r.caisses_vides), afficherQuantite(r.capacite_caisse), r.fiche_validee ? "Oui" : "Non"]));
                     creerAudit("p", "v953-vide", "Lecture seule : aucun comptage, aucune validation et aucun stock modifié.", racine);
+                    dernierAuditCsvV954 = data;
+                    boutonExportAuditV954.disabled = false;
                 } catch (erreur) {
                     cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
                 } finally {
