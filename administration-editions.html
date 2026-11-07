@@ -1165,6 +1165,21 @@
             scroll-margin-top: 205px;
         }
 
+    
+        /* V9.78 — Parcours de création compact, informatif, sans action réelle. */
+        .v978-parcours {
+            margin-top: 14px;
+            padding: 14px 16px;
+            border: 1px solid #d5dfe5;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+        .v978-parcours h4 { margin: 0 0 7px; }
+        .v978-parcours p { margin: 6px 0; line-height: 1.45; }
+        .v978-parcours ol { margin: 10px 0; padding-left: 23px; }
+        .v978-parcours li { margin: 5px 0; line-height: 1.45; }
+        .v978-parcours .v978-etat { margin-top: 10px; color: #8b0000; }
+
     </style>
 </head>
 <body data-v912-vue="accueil">
@@ -1496,6 +1511,19 @@
                         <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan non affiché.</div>
                         <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non effectuée.</div>
                     </details>
+                    <!-- V9.78 — Parcours de création documenté, sans écriture ni déverrouillage. -->
+                    <section class="v978-parcours" aria-labelledby="titreParcoursV978">
+                        <h4 id="titreParcoursV978">Parcours de mise en service de 2027</h4>
+                        <p>Les fonctions de création, d’initialisation des stocks MDN et d’activation existent déjà. Leur exécution reste distincte et interdite tant que les comptages réels ne sont pas certifiés.</p>
+                        <ol>
+                            <li><strong>Comptages réels :</strong> remplacer les données de test, contrôler les 16 inventaires MDN et la réserve de gobelets.</li>
+                            <li><strong>Validations officielles :</strong> terminer les cinq validations et vérifier qu’elles concernent la révision courante.</li>
+                            <li><strong>Contrôle final :</strong> relancer la simulation complète et obtenir zéro blocage.</li>
+                            <li><strong>Création :</strong> créer l’édition 2027 avec confirmation explicite et contrôle de révision, sans activation automatique.</li>
+                            <li><strong>Mise en service :</strong> initialiser les stocks MDN, vérifier les résultats, puis activer 2027 séparément.</li>
+                        </ol>
+                        <p class="v978-etat"><strong>État actuel :</strong> 0/5 validations, 0/16 inventaires validés, réserve 0/1. <strong>Création verrouillée.</strong></p>
+                    </section>
                     <p class="v956-verrou">Création de l'édition 2027 indisponible tant que les inventaires réels et les validations officielles ne sont pas terminés.</p>
                     <div class="v956-cache-technique">
                         <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
