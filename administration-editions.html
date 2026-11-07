@@ -1204,7 +1204,15 @@
         .v983-test h5 { margin:0 0 5px; font-size:1rem; }
         .v983-test p { margin:5px 0 10px; line-height:1.4; }
         #resultatParcoursV983 { margin-top:10px; white-space:pre-line; line-height:1.5; }
-    </style>
+            /* V9.84 — Certification lisible et mise en service compacte. */
+        .v984-certification { display:flex; align-items:flex-start; gap:10px; padding:12px; margin:10px 0;
+            border:1px solid #d5e0e7; border-radius:10px; background:#fff; line-height:1.45; }
+        .v984-certification input { flex:0 0 auto; width:18px; height:18px; margin-top:3px; }
+        .v978-parcours ol { display:none; }
+        .v978-parcours > p { margin:8px 0; }
+        .v982-commandes { margin-top:10px; }
+        .v980-precontrole p { margin:7px 0; }
+        </style>
 </head>
 <body data-v912-vue="accueil">
 
@@ -1535,44 +1543,34 @@
                         <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan non affiché.</div>
                         <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non effectuée.</div>
                     </details>
-                    <!-- V9.81 — Parcours conservé, protection SQL167 confirmée ; aucune écriture. -->
+                    <!-- V9.84 — Mise en service : interface finale, contrôles serveur et confirmations distinctes. -->
                     <section class="v978-parcours" aria-labelledby="titreParcoursV978">
-                        <h4 id="titreParcoursV978">Parcours de mise en service de 2027</h4>
-                        <p>Les fonctions de création, d’initialisation des stocks MDN et d’activation existent déjà. Leur exécution reste distincte et interdite tant que les comptages réels ne sont pas certifiés.</p>
-                        <ol>
-                            <li><strong>Comptages réels :</strong> remplacer les données de test, contrôler les 16 inventaires MDN et la réserve de gobelets.</li>
-                            <li><strong>Validations officielles :</strong> terminer les cinq validations et vérifier qu’elles concernent la révision courante.</li>
-                            <li><strong>Contrôle final :</strong> relancer la simulation complète et obtenir zéro blocage.</li>
-                            <li><strong>Création :</strong> créer l’édition 2027 avec confirmation explicite et contrôle de révision, sans activation automatique.</li>
-                            <li><strong>Mise en service :</strong> initialiser les stocks MDN, vérifier les résultats, puis activer 2027 séparément.</li>
-                        </ol>
+                        <h4 id="titreParcoursV978">Mise en service de l’édition 2027</h4>
+                        <p>Les inventaires réels et les cinq validations doivent être certifiés avant toute création. La création, l’initialisation et l’activation sont indépendantes.</p>
                         <div class="v980-precontrole" aria-labelledby="titrePrecontroleV980">
-                            <h5 id="titrePrecontroleV980">Précontrôle de mise en service · Protection SQL167 installée</h5>
-                            <p>Création, initialisation des stocks et activation sont trois opérations distinctes. La protection SQL167 empêche l’activation de 2027 avant l’initialisation des stocks. Le précontrôle utilise SQL161, sans écriture.</p>
+                            <h5 id="titrePrecontroleV980">État de préparation</h5>
                             <div class="v922-actions">
-                                <button type="button" class="bouton secondaire" id="verifierMiseEnServiceV980">Vérifier les conditions de création</button>
+                                <button type="button" class="bouton secondaire" id="verifierMiseEnServiceV980">Actualiser les conditions</button>
                             </div>
-                            <p id="etatCreationV980" role="status" aria-live="polite">Création : non contrôlée.</p>
-                            <p id="etatInitialisationV980">Initialisation MDN : aucune édition 2027 créée.</p>
-                            <p id="etatActivationV980">Activation : protégée par SQL167, verrouillée pendant les tests.</p>
+                            <p id="etatCreationV980" role="status" aria-live="polite">Création : en attente du contrôle serveur.</p>
+                            <p id="etatInitialisationV980">Stocks MDN : initialisation après création uniquement.</p>
+                            <p id="etatActivationV980">Activation : protégée par SQL167.</p>
                             <div class="v982-commandes" aria-labelledby="titreCommandesV982">
-                                <h5 id="titreCommandesV982">Opérations de mise en service</h5>
-                                <p>Commandes raccordées aux fonctions SQL159, SQL160 et SQL167. Exécution désactivée tant que les comptages sont fictifs.</p>
+                                <h5 id="titreCommandesV982">Opérations définitives — mode réel uniquement</h5>
+                                <p>Les boutons ne deviennent disponibles qu’après contrôle serveur favorable et certification explicite des comptages réels. Ils restent inactifs pendant les essais.</p>
+                                <label class="v984-certification">
+                                    <input type="checkbox" id="certifierDonneesReellesV984" disabled>
+                                    Je certifie que les données fictives ont été remplacées par les inventaires physiques réels, vérifiés et validés.
+                                </label>
                                 <div class="v922-actions">
-                                    <button type="button" class="bouton secondaire" id="creerEditionV982" disabled>1. Créer 2027</button>
+                                    <button type="button" class="bouton secondaire" id="creerEditionV982" disabled>1. Créer 2027 (inactive)</button>
                                     <button type="button" class="bouton secondaire" id="initialiserStocksV982" disabled>2. Initialiser les stocks MDN</button>
                                     <button type="button" class="bouton secondaire" id="activerEditionV982" disabled>3. Activer 2027</button>
                                 </div>
-                                <p id="etatCommandesV982" role="status" aria-live="polite">Opérations réelles verrouillées. Aucune écriture autorisée en phase de test.</p>
-                                <div class="v983-test" aria-labelledby="titreEssaiV983">
-                                    <h5 id="titreEssaiV983">Essai du parcours complet — sans écriture</h5>
-                                    <p>Vérifie en une seule fois les conditions de création, puis l'ordre création → stocks → activation. Les deux dernières étapes sont simulées localement ; aucun appel SQL d'écriture n'est effectué.</p>
-                                    <button type="button" class="bouton secondaire" id="testerParcoursV983">Tester les trois étapes sans rien créer</button>
-                                    <div id="resultatParcoursV983" role="status" aria-live="polite">Essai non lancé.</div>
-                                </div>
+                                <p id="etatCommandesV982" role="status" aria-live="polite">Aucune opération réelle autorisée. Contrôle requis.</p>
                             </div>
                         </div>
-                        <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
+                        <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> aucune création autorisée avant certification des inventaires.</p>
                     </section>
                     <div class="v956-cache-technique">
                         <button type="button" class="bouton secondaire" id="basculerValidationsReellesV934" disabled title="Données de test : validations réelles désactivées">Validations réelles verrouillées (tests)</button>
@@ -5129,6 +5127,24 @@
                         throw new Error("Réponse SQL161 non conforme : simulation interrompue.");
                     }
 
+                    // V9.84 : contrôle d'éligibilité côté serveur ; aucune écriture.
+                    const inventaireV984 = data.inventaire_mdn || {};
+                    const reserveV984 = data.reserve_gobelets || {};
+                    const revisionV984 = Number(data.revision);
+                    const pretV984 = !modeDemoActif && Number.isInteger(revisionV984) && revisionV984 > 0 &&
+                        Array.isArray(data.blocages) && data.blocages.length === 0 &&
+                        Number(data.validations_officielles) === 5 &&
+                        Number(inventaireV984.fiches) === 16 && Number(inventaireV984.fiches_validees) === 16 &&
+                        Number(reserveV984.fiches) === 1 && Number(reserveV984.fiches_validees) === 1;
+                    OPERATIONS_REELLES_2027_AUTORISEES_V982 = pretV984;
+                    controleServeurV984 = pretV984 ? { preparationId: preparation.id, revision: revisionV984 } : null;
+                    certificationV984.disabled = !pretV984;
+                    if (!pretV984) certificationV984.checked = false;
+                    actualiserCommandesV984();
+                    parId("etatCommandesV982").textContent = pretV984
+                        ? "Contrôles serveur favorables. Les opérations nécessitent une certification explicite et une confirmation individuelle."
+                        : "Opérations verrouillées : inventaires ou validations officiels incomplets.";
+
                     // V9.48 — Horodatage figé de la simulation réussie.
                     // Il ne change pas lorsque le rapport est copié ou exporté.
                     const dateSimulationV948 = new Date();
@@ -5165,7 +5181,9 @@
                         libelle.textContent = "Dernier contrôle : ";
                         etatParcoursV979.append(libelle, document.createTextNode(etat + " "));
                         const verrou = document.createElement("strong");
-                        verrou.textContent = "Création verrouillée en phase de test.";
+                        verrou.textContent = OPERATIONS_REELLES_2027_AUTORISEES_V982
+                            ? "Contrôles favorables : certification requise avant toute opération."
+                            : "Création verrouillée : conditions officielles non remplies.";
                         etatParcoursV979.appendChild(verrou);
                     }
                     // V9.80 — Précontrôle de mise en service, strictement en lecture seule.
@@ -6032,7 +6050,24 @@
             // V9.82 — Chaîne d'exécution réelle, implémentée mais non autorisée.
             // IMPORTANT : ce verrou est indépendant des contrôles SQL serveur.
             // Les fonctions sont volontairement inaccessibles durant les tests.
-            const OPERATIONS_REELLES_2027_AUTORISEES_V982 = false;
+            let OPERATIONS_REELLES_2027_AUTORISEES_V982 = false;
+            let controleServeurV984 = null;
+            const certificationV984 = parId("certifierDonneesReellesV984");
+            function actualiserCommandesV984() {
+                const certifie = certificationV984.checked && !certificationV984.disabled;
+                const autorise = !modeDemoActif && OPERATIONS_REELLES_2027_AUTORISEES_V982 && certifie && !operationEnCoursV982;
+                parId("creerEditionV982").disabled = !autorise || Boolean(editionCreeeV982);
+                parId("initialiserStocksV982").disabled = !autorise || !editionCreeeV982 || stocksInitialisesV982;
+                parId("activerEditionV982").disabled = !autorise || !editionCreeeV982 || !stocksInitialisesV982;
+            }
+            certificationV984.addEventListener("change", actualiserCommandesV984);
+            function invaliderControleV984() {
+                OPERATIONS_REELLES_2027_AUTORISEES_V982 = false;
+                controleServeurV984 = null;
+                certificationV984.checked = false;
+                certificationV984.disabled = true;
+                actualiserCommandesV984();
+            }
             let editionCreeeV982 = null;
             let stocksInitialisesV982 = false;
             let operationEnCoursV982 = false;
@@ -6050,12 +6085,19 @@
                     throw new Error("Opérations réelles désactivées : aucun stock réel ne peut être modifié.");
                 }
                 const preparation = preparationCouranteV982();
+                if (!controleServeurV984 || controleServeurV984.preparationId !== preparation.id ||
+                    !certificationV984.checked) {
+                    throw new Error("Contrôle serveur et certification des inventaires réels obligatoires.");
+                }
                 const { data, error } = await clientSupabase.rpc(
                     "apercu_chaine_creation_2027_admin",
                     { p_preparation_id: preparation.id }
                 );
                 if (error) throw error;
-                if (data?.nature !== "LECTURE_SEULE" ||
+                if (data?.resultat !== "SIMULATION_CHAINE_EDITION_2027" ||
+                    data?.preparation_id !== preparation.id ||
+                    Number(data.revision) !== controleServeurV984.revision ||
+                    data?.nature !== "LECTURE_SEULE" ||
                     data?.creation_effectuee !== false ||
                     data?.stocks_modifies !== false ||
                     data?.activation_effectuee !== false) {
@@ -6099,6 +6141,7 @@
                         editionCreeeV982 = resultat.edition_id;
                         stocksInitialisesV982 = false;
                         etat.textContent = "Édition 2027 créée sans activation. Initialisation des stocks encore nécessaire.";
+                        actualiserCommandesV984();
                     } else if (type === "stocks") {
                         if (!editionCreeeV982) throw new Error("Aucune création 2027 confirmée dans cette session.");
                         const confirmation = `CERTIFIER_INVENTAIRE_REEL_MDN_2027_REVISION_${revision}`;
@@ -6116,6 +6159,7 @@
                         }
                         stocksInitialisesV982 = true;
                         etat.textContent = "Stocks MDN initialisés. Activation distincte encore nécessaire.";
+                        actualiserCommandesV984();
                     } else if (type === "activation") {
                         if (!editionCreeeV982 || !stocksInitialisesV982) {
                             throw new Error("Création et initialisation des stocks doivent être confirmées avant l'activation.");
@@ -6129,11 +6173,13 @@
                             throw new Error("Réponse d'activation inattendue : vérifier les éditions actives.");
                         }
                         etat.textContent = "Édition 2027 activée. Vérifier l'état des éditions.";
+                        invaliderControleV984();
                     }
                 } catch (erreur) {
                     etat.textContent = "Opération non effectuée ou interrompue : " + (erreur.message || erreur);
                 } finally {
                     operationEnCoursV982 = false;
+                    actualiserCommandesV984();
                 }
             }
 
@@ -6141,56 +6187,6 @@
             parId("initialiserStocksV982").addEventListener("click", () => executerOperationV982("stocks"));
             parId("activerEditionV982").addEventListener("click", () => executerOperationV982("activation"));
 
-
-            // V9.83 — Essai en lecture seule : aucun appel aux trois RPC d'écriture.
-            parId("testerParcoursV983").addEventListener("click", async () => {
-                const sortie = parId("resultatParcoursV983");
-                const bouton = parId("testerParcoursV983");
-                if (modeDemoActif || !clientSupabase) {
-                    sortie.textContent = "Contrôle SQL161 indisponible dans ce mode. Aucun changement effectué.";
-                    return;
-                }
-                bouton.disabled = true;
-                sortie.textContent = "Vérification des conditions officielles en lecture seule…";
-                try {
-                    const preparation = preparationCouranteV982();
-                    const { data, error } = await clientSupabase.rpc(
-                        "apercu_chaine_creation_2027_admin",
-                        { p_preparation_id: preparation.id }
-                    );
-                    if (error) throw error;
-                    if (data?.resultat !== "SIMULATION_CHAINE_EDITION_2027" ||
-                        data.nature !== "LECTURE_SEULE" ||
-                        data.preparation_id !== preparation.id ||
-                        data.creation_effectuee !== false ||
-                        data.stocks_modifies !== false ||
-                        data.activation_effectuee !== false ||
-                        !Array.isArray(data.blocages)) {
-                        throw new Error("La réponse de lecture seule ne satisfait pas les contrôles de sécurité.");
-                    }
-                    const mdn = data.inventaire_mdn || {};
-                    const reserve = data.reserve_gobelets || {};
-                    const revision = Number(data.revision);
-                    const creationPossible = Number.isInteger(revision) && revision > 0 &&
-                        Number(data.validations_officielles) === 5 &&
-                        Number(mdn.fiches) === 16 && Number(mdn.fiches_validees) === 16 &&
-                        Number(reserve.fiches) === 1 && Number(reserve.fiches_validees) === 1 &&
-                        data.blocages.length === 0;
-                    const etapes = [
-                        creationPossible
-                            ? "1. Création : conditions satisfaites, appel réel volontairement non exécuté."
-                            : `1. Création : REFUSÉE (${data.blocages.length} blocage(s), ${Number(data.validations_officielles)}/5 validations, ${Number(mdn.fiches_validees)}/16 inventaires, réserve ${Number(reserve.fiches_validees)}/1).`,
-                        "2. Stocks MDN : NON EXÉCUTÉS. Exige une édition créée et des inventaires certifiés.",
-                        "3. Activation : NON EXÉCUTÉE. Exige l'initialisation des stocks et la protection SQL167.",
-                        "Bilan : 0 édition créée, 0 mouvement de stock, 0 activation."
-                    ];
-                    sortie.textContent = etapes.join("\n");
-                } catch (erreur) {
-                    sortie.textContent = "Essai interrompu : " + (erreur.message || String(erreur)) + ". Aucune opération réelle déclenchée.";
-                } finally {
-                    bouton.disabled = false;
-                }
-            });
 
             initialiser();
         })();
