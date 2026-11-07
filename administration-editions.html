@@ -872,6 +872,20 @@
         .v922-transfert h3 { margin: 0 0 8px; }
         .v922-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 
+
+        /* V9.53 — Audit SQL163 : consultation détaillée sans écriture. */
+        .v953-audit { margin-top: 14px; display: grid; gap: 14px; }
+        .v953-resume { display: flex; flex-wrap: wrap; gap: 10px; }
+        .v953-resume span { padding: 9px 12px; border: 1px solid #d7dfe5; background: white; border-radius: 9px; }
+        .v953-table-conteneur { width: 100%; overflow-x: auto; border: 1px solid #d7dfe5; border-radius: 10px; background: white; }
+        .v953-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+        .v953-table th, .v953-table td { padding: 10px 12px; border-bottom: 1px solid #e1e7eb; text-align: left; }
+        .v953-table th { background: #edf2f5; color: #31475c; white-space: nowrap; }
+        .v953-table td.v953-nombre { text-align: right; font-variant-numeric: tabular-nums; }
+        .v953-table tr:last-child td { border-bottom: 0; }
+        .v953-note { color: #850000; font-weight: 700; }
+        .v953-vide { color: #536579; }
+
         /* V9.41 — Présentation structurée de la simulation SQL161. */
         .v941-simulation { display: grid; gap: 14px; margin-top: 12px; }
         .v941-simulation-entete { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
@@ -1254,6 +1268,14 @@
                     <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan SQL158 non exécuté.</div>
                     <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non exécutée.</div>
                     <div id="simulationChaineV940" class="v922-resultat" role="status" aria-live="polite">Simulation SQL161 non exécutée.</div>
+                </section>
+                <section class="v922-transfert" aria-labelledby="titreAuditV953">
+                    <h3 id="titreAuditV953">Audit des inventaires 2027 · SQL163</h3>
+                    <p>Consulter le détail des comptages MDN et de la réserve de gobelets avant toute reprise. Les données actuelles sont fictives : cet audit ne valide et ne modifie rien.</p>
+                    <div class="v922-actions">
+                        <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher l’audit détaillé (SQL163)</button>
+                    </div>
+                    <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Audit non exécuté.</div>
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreTransfertV922">
                     <h3 id="titreTransfertV922">Transfert contrôlé du brouillon 2027</h3>
@@ -3555,6 +3577,92 @@
                     cible.style.whiteSpace = "pre-line";
                 } catch (erreur) {
                     cible.textContent = `Simulation impossible : ${erreur.message || erreur}. Aucune modification.`;
+                } finally {
+                    bouton.disabled = false;
+                }
+            });
+
+
+            // V9.53 — Audit SQL163 en lecture seule ; aucune écriture.
+            parId("auditerInventairesV953").addEventListener("click", async () => {
+                const cible = parId("resultatAuditV953");
+                const bouton = parId("auditerInventairesV953");
+                if (modeDemoActif || !clientSupabase) {
+                    cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
+                    return;
+                }
+                const preparation = preparations.find(p => Number(p.annee_cible) === 2027);
+                if (!preparation) {
+                    cible.textContent = "Préparation 2027 introuvable. Actualise les préparations.";
+                    return;
+                }
+                bouton.disabled = true;
+                cible.textContent = "Lecture des inventaires SQL163 en cours…";
+                try {
+                    const { data, error } = await clientSupabase.rpc(
+                        "auditer_inventaires_preparation_admin",
+                        { p_preparation_id: preparation.id }
+                    );
+                    if (error) throw error;
+                    if (data?.resultat !== "AUDIT_INVENTAIRES_PREPARATION" ||
+                        data.nature !== "LECTURE_SEULE" ||
+                        data.preparation_id !== preparation.id ||
+                        data.validation_effectuee !== false ||
+                        data.edition_creee !== false ||
+                        data.stocks_modifies !== false) {
+                        throw new Error("Réponse SQL163 non conforme : affichage interrompu.");
+                    }
+                    cible.replaceChildren();
+                    const creerAudit = (tag, classe, texte, parent) => {
+                        const el = document.createElement(tag);
+                        if (classe) el.className = classe;
+                        if (texte !== null && texte !== undefined) el.textContent = String(texte);
+                        parent.appendChild(el);
+                        return el;
+                    };
+                    const racine = creerAudit("div", "v953-audit", null, cible);
+                    creerAudit("h4", "", `Audit 2027 · Révision ${data.revision ?? "—"}`, racine);
+                    creerAudit("p", "v953-note", "Données de test : ne pas valider les comptages comme inventaire réel.", racine);
+                    const resume = creerAudit("div", "v953-resume", null, racine);
+                    const inv = data.inventaire_mdn || {};
+                    [
+                        `Fiches MDN : ${inv.nombre_fiches ?? "—"}`,
+                        `Validées : ${inv.fiches_validees ?? "—"}`,
+                        `Sans comptage : ${inv.fiches_sans_comptage ?? "—"}`,
+                        `Quantités comptées : ${inv.quantites_comptees ?? "—"}`,
+                        `Validations officielles : ${data.validations_officielles ?? "—"}/5`
+                    ].forEach(valeur => creerAudit("span", "", valeur, resume));
+                    const tableau = (titre, entetes, lignes) => {
+                        creerAudit("h4", "", titre, racine);
+                        const conteneur = creerAudit("div", "v953-table-conteneur", null, racine);
+                        const table = creerAudit("table", "v953-table", null, conteneur);
+                        const thead = creerAudit("thead", "", null, table);
+                        const tr = creerAudit("tr", "", null, thead);
+                        entetes.forEach(t => creerAudit("th", "", t, tr));
+                        const tbody = creerAudit("tbody", "", null, table);
+                        if (!lignes.length) {
+                            const vide = creerAudit("tr", "", null, tbody);
+                            const cellule = creerAudit("td", "v953-vide", "Aucune fiche disponible.", vide);
+                            cellule.colSpan = entetes.length;
+                        }
+                        lignes.forEach(ligne => {
+                            const ligneHtml = creerAudit("tr", "", null, tbody);
+                            ligne.forEach((valeur, index) => creerAudit("td", index > 0 ? "v953-nombre" : "", valeur, ligneHtml));
+                        });
+                    };
+                    const afficherQuantite = valeur => valeur === null || valeur === undefined ? "—" : valeur;
+                    const fiches = Array.isArray(inv.fiches) ? inv.fiches : [];
+                    tableau("Inventaire des articles MDN", ["Article", "Théorique", "Comptée", "Fiche validée", "Commentaire"],
+                        fiches.map(f => [f.article || "—", afficherQuantite(f.quantite_theorique),
+                            afficherQuantite(f.quantite_comptee), f.fiche_validee ? "Oui" : "Non", f.commentaire || "—"]));
+                    const reserve = Array.isArray(data.reserve_gobelets) ? data.reserve_gobelets : [];
+                    tableau("Réserve de gobelets", ["Référence", "Caisses pleines", "Partielles", "Gobelets partiels", "Caisses vides", "Capacité", "Validée"],
+                        reserve.map((r, i) => [String(i + 1), afficherQuantite(r.caisses_pleines),
+                            afficherQuantite(r.caisses_partielles), afficherQuantite(r.gobelets_dans_caisses_partielles),
+                            afficherQuantite(r.caisses_vides), afficherQuantite(r.capacite_caisse), r.fiche_validee ? "Oui" : "Non"]));
+                    creerAudit("p", "v953-vide", "Lecture seule : aucun comptage, aucune validation et aucun stock modifié.", racine);
+                } catch (erreur) {
+                    cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
                 } finally {
                     bouton.disabled = false;
                 }
