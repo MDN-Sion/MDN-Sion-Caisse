@@ -375,6 +375,33 @@
 			}
 		}
 	
+
+        /* En-tête : mêmes proportions que les autres pages MDN. */
+        .entete-contenu {
+            grid-template-columns: auto minmax(0, 1fr) auto;
+        }
+
+        #retour,
+        #deconnexion {
+            width: auto;
+            min-width: 0;
+            min-height: 42px;
+            padding: 9px 14px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #retour {
+            justify-self: start;
+        }
+
+        @media (max-width: 680px) {
+            #retour,
+            #deconnexion {
+                padding: 8px;
+                font-size: 12px;
+            }
+        }
   </style>
  </head>
  <body>
@@ -693,6 +720,75 @@
 		        $("actualiser").disabled = true;
 		        message("Chargement des données depuis Supabase…");
 		        try {
+                if (etat.demo) {
+                    // La session Démo possède son propre accès RPC.
+                    // Les SELECT directs sont filtrés par RLS et retournent zéro ligne.
+                    const { data: donnees, error: erreurDemo } = await etat.client.rpc(
+                        "charger_ecran_retrait_vaisselle_demo"
+                    );
+
+                    if (erreurDemo) {
+                        throw erreurDemo;
+                    }
+
+                    if (!donnees || !donnees.edition || !donnees.edition.id) {
+                        throw new Error("La fonction de chargement Démo n'a retourné aucune édition.");
+                    }
+
+                    const articles = Array.isArray(donnees.vaisselle)
+                        ? donnees.vaisselle
+                        : [];
+
+                    etat.references = articles.map((article, index) => ({
+                        id: article.vaisselle_id || article.id,
+                        nom: article.nom || "Référence sans nom",
+                        description: article.description || "",
+                        ordre_affichage: article.ordre_affichage ?? index + 1,
+                        actif: article.actif !== false
+                    }));
+
+                    etat.editions = [{
+                        id: donnees.edition.id,
+                        annee: donnees.edition.annee || "—",
+                        nom: donnees.edition.nom || "Édition Démo",
+                        est_active: true
+                    }];
+
+                    etat.editionId = donnees.edition.id;
+                    etat.parametres = articles.map((article) => ({
+                        id: article.edition_vaisselle_id || article.id,
+                        edition_id: etat.editionId,
+                        vaisselle_id: article.vaisselle_id || article.id,
+                        type_conditionnement: article.type_conditionnement || "caisse",
+                        quantite_standard: article.quantite_standard ?? 0,
+                        consigne_unitaire: article.consigne_unitaire ?? article.consigne ?? 0,
+                        lavage_unitaire: article.lavage_unitaire ?? article.lavage ?? 0,
+                        seuil_stock: article.seuil_stock ?? 0,
+                        actif: article.actif !== false
+                    }));
+
+                    const choixDemo = $("edition");
+                    choixDemo.replaceChildren();
+                    const optionDemo = document.createElement("option");
+                    optionDemo.value = etat.editionId;
+                    optionDemo.textContent = String(etat.editions[0].annee) + " — " + etat.editions[0].nom + " (Démo)";
+                    choixDemo.appendChild(optionDemo);
+                    choixDemo.value = etat.editionId;
+                    choixDemo.disabled = true;
+
+                    afficher();
+
+                    if (!articles.length) {
+                        message("Le chargement Démo a réussi, mais ne contient aucune référence de vaisselle.", "erreur");
+                    } else {
+                        message(
+                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Consultation uniquement.",
+                            "succes"
+                        );
+                    }
+                    return;
+                }
+
 		            const [r, e] = await Promise.all([
 		                etat.client.from("referentiel_vaisselle_mdn").select("id, nom, description, ordre_affichage, actif").order("ordre_affichage"),
 		                etat.client.from("editions").select("id, annee, nom, statut, est_active").order("annee", { ascending: false })
@@ -907,7 +1003,10 @@
 		    $("deconnexion").addEventListener("click", () => window.MDN_AUTH.deconnexion());
 		    $("actualiser").addEventListener("click", charger);
 		    $("edition").addEventListener("change", async () => {
-		        etat.editionId = $("edition").value;
+		        if (etat.demo) {
+                return;
+            }
+            etat.editionId = $("edition").value;
 		        try {
 		            await chargerParametres();
 		        } catch (erreur) {
