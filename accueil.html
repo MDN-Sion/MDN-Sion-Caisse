@@ -9,12 +9,8 @@
   >
 
   <meta name="theme-color" content="#8B0000">
-  <!-- Icônes navigateur et Safari / iPad -->
-  <link rel="icon" type="image/png" href="logo-mdn.png?v=20261102">
-  <link rel="shortcut icon" type="image/png" href="logo-mdn.png?v=20261102">
-
-  <!-- Icône d’ajout à l’écran d’accueil Apple -->
-  <link rel="apple-touch-icon" href="logo-mdn.png?v=20261102">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
 
   <meta
     name="description"
@@ -32,6 +28,7 @@
     body {
       width: 100%;
       height: 100%;
+      overscroll-behavior: none;
       margin: 0;
       padding: 0;
     }
@@ -39,8 +36,10 @@
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow: hidden;
+      overscroll-behavior: none;
+      position: fixed;
+      inset: 0;
 
       margin: 0;
 
@@ -178,6 +177,8 @@
 
       display: flex;
       flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     /* ======================================================
@@ -210,11 +211,19 @@
 
       margin: 0 auto;
 
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      justify-content: space-between;
-
       gap: 18px;
+    }
+
+    .titre-accueil-entete {
+      margin: 0;
+      color: #ffffff;
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .marque {
@@ -278,6 +287,7 @@
 
     .zone-utilisateur {
       min-width: 0;
+      justify-self: end;
 
       display: flex;
       align-items: center;
@@ -349,7 +359,11 @@
 
     .contenu {
       width: min(100%, 1220px);
-      flex: 1 0 auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      scrollbar-width: thin;
       display: flex;
       flex-direction: column;
 
@@ -784,6 +798,7 @@
     @media (max-width: 620px) {
 
       .barre-haute-contenu {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: flex-start;
       }
 
@@ -793,6 +808,28 @@
 
       .identite-utilisateur {
         display: none;
+      }
+
+      .marque-embleme {
+        width: 38px;
+        height: 38px;
+      }
+
+      .marque-titre {
+        font-size: 15px;
+      }
+
+      .titre-accueil-entete {
+        font-size: 20px;
+      }
+
+      .barre-haute-contenu {
+        gap: 8px;
+      }
+
+      .bouton-deconnexion {
+        padding: 8px;
+        font-size: 12px;
       }
 
       .contenu {
@@ -996,6 +1033,8 @@
         </div>
 
 
+        <h1 class="titre-accueil-entete">Accueil</h1>
+
         <div class="zone-utilisateur">
 
           <div class="identite-utilisateur">
@@ -1035,19 +1074,6 @@
          ==================================================== -->
 
     <main class="contenu">
-
-      <section class="bienvenue">
-
-        <h1>
-          Accueil
-        </h1>
-
-        <p id="texteBienvenue">
-          Chargement de votre espace…
-        </p>
-
-      </section>
-
 
       <div
         id="messageAccueil"
@@ -1481,12 +1507,6 @@
         );
 
 
-      const texteBienvenue =
-        document.getElementById(
-          "texteBienvenue"
-        );
-
-
       const messageAccueil =
         document.getElementById(
           "messageAccueil"
@@ -1751,11 +1771,6 @@ const zoneReinitialisationDemo =
              MESSAGE D'ACCUEIL
              ================================================ */
 
-          texteBienvenue.textContent =
-            sessionDemoDediee
-              ? "MODE DÉMO — aucune donnée réelle n’est utilisée."
-              : ("Connecté en tant que " + auth.libelleRole + ".");
-
 
           /* ================================================
              DROITS D'AFFICHAGE
@@ -1789,8 +1804,7 @@ const zoneReinitialisationDemo =
           );
 
 
-          texteBienvenue.textContent =
-            "L'accès à l'application n'a pas pu être validé.";
+
 
 
           /*
@@ -2050,8 +2064,8 @@ document.querySelectorAll(
         "click",
         function () {
           window.location.href = modeDemoActif
-            ? "suivi-rapports.html?mode=demo"
-            : "suivi-rapports.html";
+            ? "rapports.html?mode=demo"
+            : "rapports.html";
         }
       );
 
