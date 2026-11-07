@@ -35,7 +35,8 @@
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
 
       margin: 0;
 
@@ -168,13 +169,11 @@
 
     .application {
       width: 100%;
-      height: 100vh;
-      height: 100dvh;
-      min-height: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
 
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
 
     /* ======================================================
@@ -346,11 +345,9 @@
 
     .contenu {
       width: min(100%, 1220px);
-      min-height: 0;
-      flex: 1 1 auto;
+      flex: 1 0 auto;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
 
       margin: 0 auto;
 
@@ -519,80 +516,23 @@
        MODULES
        ====================================================== */
 
+    /* Toutes les tuiles sont visibles, comme dans l'administration. */
     .carrousel-modules {
-      position: relative;
-      min-height: 0;
-      flex: 0 0 auto;
-      display: flex;
-      align-items: stretch;
-      gap: 8px;
+      display: block;
+      width: 100%;
     }
 
     .grille-modules {
-      flex: 1 1 auto;
-      min-width: 0;
-      min-height: 0;
-      display: flex;
-      background: transparent;
-      border: 0;
-      box-shadow: none;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-behavior: smooth;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      overscroll-behavior-x: contain;
-      touch-action: pan-x pan-y;
-      padding: 2px;
-    }
-
-    .grille-modules::-webkit-scrollbar {
-      display: none;
-    }
-
-    .grille-modules .module {
-      flex: 0 0 calc((100% - 27px) / 2.18);
-      scroll-snap-align: start;
-    }
-
-    .carrousel-modules .module {
-      box-shadow: none;
+      width: 100%;
+      overflow: visible;
+      padding: 0;
     }
 
     .bouton-carrousel {
-      flex: 0 0 36px;
-      width: 36px;
-      min-height: 170px;
-      padding: 0;
-      border: 1px solid rgba(255, 255, 255, 0.38);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.18);
-      color: #ffffff;
-      cursor: pointer;
-      font-size: 30px;
-      line-height: 1;
-      font-weight: 800;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
-    }
-
-    .bouton-carrousel:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.28);
-    }
-
-    .bouton-carrousel:disabled {
-      opacity: 0.28;
-      cursor: default;
-    }
-
-    body.mode-demo .bouton-carrousel {
-      border-color: rgba(255, 238, 173, 0.72);
-      background: rgba(255, 246, 214, 0.16);
-    }
-
-    body.mode-demo .bouton-carrousel:hover:not(:disabled) {
-      background: rgba(255, 246, 214, 0.28);
+      display: none;
     }
 
     .module {
@@ -827,8 +767,8 @@
 
     @media (max-width: 900px) {
 
-      .grille-modules .module {
-        flex-basis: calc((100% - 18px) / 2);
+      .grille-modules {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
     }
@@ -872,8 +812,8 @@
         gap: 14px;
       }
 
-      .grille-modules .module {
-        flex-basis: 100%;
+      .grille-modules {
+        grid-template-columns: 1fr;
       }
 
       .bouton-carrousel {
@@ -1145,18 +1085,7 @@
         class="carrousel-modules"
         aria-label="Navigation des modules"
       >
-
-        <button
-          id="boutonCarrouselPrecedent"
-          class="bouton-carrousel"
-          type="button"
-          aria-label="Modules précédents"
-          title="Modules précédents"
-        >
-          ‹
-        </button>
-
-        <section
+<section
           id="carrouselModules"
           class="grille-modules"
           aria-label="Modules de l'application"
@@ -1410,13 +1339,13 @@
           </p>
 
           <button
+            id="boutonRapports"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir Suivi & Rapports"
+            data-texte-demo="Démo - Ouvrir Suivi & Rapports"
           >
-            Bientôt disponible
+            Ouvrir Suivi & Rapports
           </button>
 
         </article>
@@ -1456,31 +1385,20 @@
           </p>
 
           <button
+            id="boutonAdministration"
             class="bouton-module"
             type="button"
-            disabled
-            data-texte-reel="Bientôt disponible"
-            data-texte-demo="Démo - Bientôt disponible"
+            data-texte-reel="Ouvrir l'administration"
+            data-texte-demo="Démo - Ouvrir l'administration"
           >
-            Bientôt disponible
+            Ouvrir l'administration
           </button>
 
         </article>
 
       
         </section>
-
-        <button
-          id="boutonCarrouselSuivant"
-          class="bouton-carrousel"
-          type="button"
-          aria-label="Modules suivants"
-          title="Modules suivants"
-        >
-          ›
-        </button>
-
-      </div>
+</div>
 
     </main>
 
@@ -1585,22 +1503,6 @@
         );
 
 
-      const carrouselModules =
-        document.getElementById(
-          "carrouselModules"
-        );
-
-      const boutonCarrouselPrecedent =
-        document.getElementById(
-          "boutonCarrouselPrecedent"
-        );
-
-      const boutonCarrouselSuivant =
-        document.getElementById(
-          "boutonCarrouselSuivant"
-        );
-
-
       const boutonCaisse =
         document.getElementById(
           "boutonCaisse"
@@ -1657,102 +1559,6 @@ const zoneReinitialisationDemo =
         document.getElementById(
           "moduleAdministration"
         );
-
-
-      /* ====================================================
-         CARROUSEL DES MODULES
-         Présentation uniquement : aucune logique métier modifiée.
-         ==================================================== */
-
-      function modulesVisiblesCarrousel() {
-        return Array.from(
-          carrouselModules.querySelectorAll(".module")
-        ).filter(function (module) {
-          return (
-            !module.classList.contains("masque") &&
-            module.offsetParent !== null
-          );
-        });
-      }
-
-      function largeurPasCarrousel() {
-        const modules = modulesVisiblesCarrousel();
-
-        if (!modules.length) {
-          return carrouselModules.clientWidth;
-        }
-
-        const styles =
-          window.getComputedStyle(carrouselModules);
-
-        const gap =
-          parseFloat(
-            styles.columnGap ||
-            styles.gap ||
-            "0"
-          ) || 0;
-
-        return (
-          modules[0].getBoundingClientRect().width +
-          gap
-        );
-      }
-
-      function actualiserBoutonsCarrousel() {
-        const marge = 4;
-
-        const maxScroll =
-          Math.max(
-            0,
-            carrouselModules.scrollWidth -
-            carrouselModules.clientWidth
-          );
-
-        boutonCarrouselPrecedent.disabled =
-          carrouselModules.scrollLeft <= marge;
-
-        boutonCarrouselSuivant.disabled =
-          carrouselModules.scrollLeft >=
-          (maxScroll - marge);
-      }
-
-      function deplacerCarrousel(direction) {
-        carrouselModules.scrollBy({
-          left:
-            largeurPasCarrousel() *
-            direction,
-          behavior: "smooth"
-        });
-      }
-
-      boutonCarrouselPrecedent.addEventListener(
-        "click",
-        function () {
-          deplacerCarrousel(-1);
-        }
-      );
-
-      boutonCarrouselSuivant.addEventListener(
-        "click",
-        function () {
-          deplacerCarrousel(1);
-        }
-      );
-
-      carrouselModules.addEventListener(
-        "scroll",
-        actualiserBoutonsCarrousel,
-        { passive: true }
-      );
-
-      window.addEventListener(
-        "resize",
-        function () {
-          window.requestAnimationFrame(
-            actualiserBoutonsCarrousel
-          );
-        }
-      );
 
 
       /* ====================================================
@@ -1859,9 +1665,7 @@ const zoneReinitialisationDemo =
           peutSuperviser || sessionDemoDediee
         );
 
-        window.requestAnimationFrame(
-          actualiserBoutonsCarrousel
-        );
+
 
       }
 
@@ -2233,6 +2037,31 @@ document.querySelectorAll(
 
 
       /* ====================================================
+         NAVIGATION SUIVI & RAPPORTS / ADMINISTRATION
+         Les modules sont déjà masqués selon le rôle dans
+         appliquerDroits(). Les pages vérifient aussi les droits.
+         ==================================================== */
+
+      document.getElementById("boutonRapports").addEventListener(
+        "click",
+        function () {
+          window.location.href = modeDemoActif
+            ? "suivi-rapports.html?mode=demo"
+            : "suivi-rapports.html";
+        }
+      );
+
+      document.getElementById("boutonAdministration").addEventListener(
+        "click",
+        function () {
+          window.location.href = modeDemoActif
+            ? "administration.html?mode=demo"
+            : "administration.html";
+        }
+      );
+
+
+      /* ====================================================
          DECONNEXION
          ==================================================== */
 
@@ -2269,9 +2098,7 @@ document.querySelectorAll(
 
       initialiserAccueil();
 
-      window.requestAnimationFrame(
-        actualiserBoutonsCarrousel
-      );
+
 
     })();
   </script>
