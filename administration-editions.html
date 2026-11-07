@@ -1274,7 +1274,6 @@
                         <div class="v922-actions">
                             <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Fichier Excel (.csv)</button>
                             <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Rapport lisible (.html)</button>
-                            <button type="button" class="bouton secondaire" id="preparerFicheComptageV958" disabled>Fiche de comptage vierge (.html)</button>
                             <button type="button" class="bouton secondaire" id="imprimerFicheComptageV959" disabled>Imprimer / Enregistrer en PDF</button>
                         </div>
                     </details>
@@ -3808,7 +3807,6 @@
 
             // V9.58 — Fiche vierge de comptage physique.
             // Les quantités de test ne sont jamais reportées dans cette fiche.
-            const boutonFicheComptageV958 = parId("preparerFicheComptageV958");
 
             function genererFicheComptageV959(audit) {
 
@@ -3852,25 +3850,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MDN Sion — Fiche vierge de comptage 2027</title>
 <style>
-    @page { size: A4 landscape; margin: 13mm; }
+    /* V9.61 — Fiche de comptage optimisée pour une seule page A4 paysage. */
+    @page { size: A4 landscape; margin: 8mm; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; color: #243244; margin: 25px auto; max-width: 1100px; padding: 0 16px; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: Arial, sans-serif;
+        color: #243244;
+        max-width: 280mm;
+        margin: 12px auto;
+        padding: 0 8px;
+        font-size: 10px;
+    }
     h1, h2 { color: #8b0000; }
-    h1 { font-size: 23px; }
-    h2 { font-size: 17px; margin-top: 25px; }
-    p { line-height: 1.5; }
-    .notice { background: #f3f6f8; border: 1px solid #cbd5df; padding: 12px; }
-    .champs { display: flex; gap: 25px; margin: 16px 0; flex-wrap: wrap; }
-    .champs span { min-width: 240px; border-bottom: 1px solid #333; padding-bottom: 7px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
-    th, td { border: 1px solid #aab8c5; padding: 8px 10px; text-align: left; }
+    h1 { font-size: 17px; margin: 0 0 7px; }
+    h2 { font-size: 12px; margin: 10px 0 5px; }
+    p { line-height: 1.25; margin: 4px 0; }
+    .notice {
+        background: #f3f6f8;
+        border: 1px solid #cbd5df;
+        padding: 6px 9px;
+    }
+    .champs { display: flex; gap: 22px; margin: 8px 0; }
+    .champs span { flex: 1; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; margin-top: 4px; }
+    th, td { border: 1px solid #aab8c5; padding: 3px 6px; text-align: left; }
     th { background: #e9eff4; }
-    td.a-remplir { height: 33px; }
-    tr { break-inside: avoid; }
+    td.a-remplir { height: 21px; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
     .consigne { font-weight: bold; color: #8b0000; }
-    .reserve { break-before: page; }
-    .signature { margin-top: 35px; }
-    @media print { body { margin: 0; max-width: none; padding: 0; } }
+    .reserve { break-before: auto; page-break-before: auto; break-inside: avoid; page-break-inside: avoid; margin-top: 9px; }
+    .reserve table { font-size: 9px; }
+    .reserve th, .reserve td { padding: 4px 5px; }
+    .signature { margin-top: 10px; }
+    @media print {
+        html, body { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+        h1 { font-size: 16px; }
+        h2 { font-size: 11px; }
+        .notice { padding: 5px 8px; }
+        td.a-remplir { height: 20px; }
+        .reserve { margin-top: 7px; }
+        .signature { margin-top: 8px; }
+        table, .notice, .reserve { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
 </style>
 </head>
 <body>
@@ -3902,23 +3924,7 @@
                 return contenu;
             }
 
-            boutonFicheComptageV958.addEventListener("click", () => {
-                const audit = dernierAuditCsvV954;
-                if (!audit) return;
-                const contenu = genererFicheComptageV959(audit);
-                const url = URL.createObjectURL(new Blob([contenu], {
-                    type: "text/html;charset=utf-8"
-                }));
-                const lien = document.createElement("a");
-                lien.href = url;
-                lien.download = `MDN-Sion-Fiche-Comptage-Vierge-2027-Revision-${audit.revision ?? "inconnue"}.html`;
-                document.body.appendChild(lien);
-                lien.click();
-                lien.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            });
-
-            // V9.59 — Ouverture directe de la boîte d'impression / sauvegarde PDF.
+            // V9.61 — Impression A4 paysage compacte, sans saut de page forcé.
             const boutonImprimerFicheV959 = parId("imprimerFicheComptageV959");
             boutonImprimerFicheV959.addEventListener("click", () => {
                 const audit = dernierAuditCsvV954;
@@ -3948,7 +3954,6 @@
                 dernierAuditCsvV954 = null;
                 boutonExportAuditV954.disabled = true;
                 boutonExportAuditHtmlV955.disabled = true;
-                boutonFicheComptageV958.disabled = true;
                 boutonImprimerFicheV959.disabled = true;
                 if (modeDemoActif || !clientSupabase) {
                     cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
@@ -4027,7 +4032,6 @@
                     dernierAuditCsvV954 = data;
                     boutonExportAuditV954.disabled = false;
                     boutonExportAuditHtmlV955.disabled = false;
-                    boutonFicheComptageV958.disabled = false;
                     boutonImprimerFicheV959.disabled = false;
                 } catch (erreur) {
                     cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
