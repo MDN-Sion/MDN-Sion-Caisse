@@ -879,6 +879,10 @@
         .v953-resume span { padding: 9px 12px; border: 1px solid #d7dfe5; background: white; border-radius: 9px; }
         .v953-table-conteneur { width: 100%; overflow-x: auto; border: 1px solid #d7dfe5; border-radius: 10px; background: white; }
         .v953-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+        /* V9.71 : conserver des colonnes lisibles, avec défilement horizontal si nécessaire. */
+        .v953-table-comparaison { min-width: 1060px; }
+        .v953-table-comparaison td:first-child { min-width: 220px; white-space: normal; }
+        .v953-table-comparaison td:not(:first-child) { white-space: nowrap; }
         .v953-table th, .v953-table td { padding: 10px 12px; border-bottom: 1px solid #e1e7eb; text-align: left; }
         .v953-table th { background: #edf2f5; color: #31475c; white-space: nowrap; }
         .v953-table td.v953-nombre { text-align: right; font-variant-numeric: tabular-nums; }
@@ -4000,10 +4004,11 @@
                         `Quantités comptées : ${inv.quantites_comptees ?? "—"}`,
                         `Validations officielles : ${data.validations_officielles ?? "—"}/5`
                     ].forEach(valeur => creerAudit("span", "", valeur, resume));
-                    const tableau = (titre, entetes, lignes) => {
+                    const tableau = (titre, entetes, lignes, comparaison = false) => {
+                        
                         creerAudit("h4", "", titre, racine);
                         const conteneur = creerAudit("div", "v953-table-conteneur", null, racine);
-                        const table = creerAudit("table", "v953-table", null, conteneur);
+                        const table = creerAudit("table", comparaison ? "v953-table v953-table-comparaison" : "v953-table", null, conteneur);
                         const thead = creerAudit("thead", "", null, table);
                         const tr = creerAudit("tr", "", null, thead);
                         entetes.forEach(t => creerAudit("th", "", t, tr));
@@ -4023,6 +4028,7 @@
                     // V9.70 — Comparaison explicite du dernier brouillon Supabase (TEST)
                     // et de l'inventaire officiel, sans aucun transfert ni écriture.
                     let brouillonComparaison = null;
+                    let donneesComparaison = null;
                     let statutComparaison = "Aucun brouillon de test enregistré pour cet utilisateur.";
                     try {
                         const { data: lectureBrouillon, error: erreurBrouillon } = await clientSupabase.rpc(
@@ -4046,6 +4052,7 @@
                                     new Set(noms).size === noms.length &&
                                     fiches.every(f => noms.includes(f.article))) {
                                     brouillonComparaison = new Map(articlesBrouillon.map(a => [a.article, a.quantite]));
+                                    donneesComparaison = donneesBrouillon;
                                     statutComparaison = "Comparaison avec le brouillon Supabase de TEST : aucune quantité officielle modifiée.";
                                 } else {
                                     statutComparaison = "Références différentes entre brouillon et inventaire : comparaison indisponible.";
@@ -4075,12 +4082,55 @@
                                 afficherQuantite(f.quantite_comptee), afficherQuantite(nouveau),
                                 ecart === null ? "—" : (ecart > 0 ? "+" : "") + ecart,
                                 f.fiche_validee ? "Oui" : "Non", f.commentaire || "—"];
-                        }));
+                        }), true);
                     const reserve = Array.isArray(data.reserve_gobelets) ? data.reserve_gobelets : [];
-                    tableau("Réserve de gobelets", ["Référence", "Caisses pleines", "Partielles", "Gobelets partiels", "Caisses vides", "Capacité", "Validée"],
-                        reserve.map((r, i) => [String(i + 1), afficherQuantite(r.caisses_pleines),
-                            afficherQuantite(r.caisses_partielles), afficherQuantite(r.gobelets_dans_caisses_partielles),
-                            afficherQuantite(r.caisses_vides), afficherQuantite(r.capacite_caisse), r.fiche_validee ? "Oui" : "Non"]));
+                    // V9.71 — La réserve est également comparée au brouillon TEST.
+                    // Le détail des caisses partielles reste consultable sans écriture.
+                    const champsReserveTest = new Map(
+                        Array.isArray(donneesComparaison?.reserve)
+                            ? donneesComparaison.reserve.map(item => [item.libelle, item.valeur])
+                            : []
+                    );
+                    const lireReserveTest = libelle => {
+                        const valeur = champsReserveTest.get(libelle);
+                        return typeof valeur === "string" && /^[0-9]{1,9}$/.test(valeur)
+                            ? Number(valeur) : null;
+                    };
+                    const reserveOfficielle = reserve[0] || {};
+                    const valeursReserve = [
+                        ["Caisses pleines", "caisses_pleines"],
+                        ["Caisses partielles", "caisses_partielles"],
+                        ["Gobelets dans les caisses partielles", "gobelets_dans_caisses_partielles"],
+                        ["Caisses vides", "caisses_vides"]
+                    ];
+                    const detailCaissesTest = Array.isArray(donneesComparaison?.caisses_partielles)
+                        ? donneesComparaison.caisses_partielles : [];
+                    const nombrePartiellesTest = lireReserveTest("Caisses partielles");
+                    const detailValide = donneesComparaison && nombrePartiellesTest !== null &&
+                        detailCaissesTest.length === nombrePartiellesTest &&
+                        detailCaissesTest.every(v => typeof v === "string" && /^[0-9]{1,9}$/.test(v));
+                    const totalPartiellesTest = detailValide
+                        ? detailCaissesTest.reduce((total, valeur) => total + Number(valeur), 0) : null;
+                    tableau("Réserve de gobelets — comparaison",
+                        ["Élément", "Compté (officiel)", "Brouillon (TEST)", "Écart"],
+                        valeursReserve.map(([libelle, cle]) => {
+                            const officiel = reserveOfficielle[cle] == null ? null : Number(reserveOfficielle[cle]);
+                            const test = cle === "gobelets_dans_caisses_partielles"
+                                ? totalPartiellesTest : lireReserveTest(libelle);
+                            const ecart = test !== null && officiel !== null && Number.isFinite(officiel)
+                                ? test - officiel : null;
+                            return [libelle, afficherQuantite(officiel), afficherQuantite(test),
+                                ecart === null ? "—" : (ecart > 0 ? "+" : "") + ecart];
+                        }));
+                    if (detailValide && detailCaissesTest.length) {
+                        creerAudit("p", "v953-vide",
+                            "Détail des caisses partielles (TEST) : " +
+                            detailCaissesTest.map((valeur, index) => `n° ${index + 1} : ${valeur} gobelets`).join(" · "),
+                            racine);
+                    }
+                    creerAudit("p", "v953-vide",
+                        "Capacité de référence : " + afficherQuantite(reserveOfficielle.capacite_caisse) +
+                        " · Inventaire officiel validé : " + (reserveOfficielle.fiche_validee ? "Oui" : "Non"), racine);
                     creerAudit("p", "v953-vide", "Lecture seule : aucun comptage, aucune validation et aucun stock modifié.", racine);
 
                     // V9.62 — Préparation locale d'un comptage réel, sans écriture Supabase.
