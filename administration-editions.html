@@ -1523,7 +1523,7 @@
                         <div id="resultatPlanV936" class="v922-resultat" role="status" aria-live="polite">Plan non affiché.</div>
                         <div id="simulationCreationV939" class="v922-resultat" role="status" aria-live="polite">Simulation de création non effectuée.</div>
                     </details>
-                    <!-- V9.78 — Parcours de création documenté, sans écriture ni déverrouillage. -->
+                    <!-- V9.81 — Parcours conservé, protection SQL167 confirmée ; aucune écriture. -->
                     <section class="v978-parcours" aria-labelledby="titreParcoursV978">
                         <h4 id="titreParcoursV978">Parcours de mise en service de 2027</h4>
                         <p>Les fonctions de création, d’initialisation des stocks MDN et d’activation existent déjà. Leur exécution reste distincte et interdite tant que les comptages réels ne sont pas certifiés.</p>
@@ -1535,14 +1535,14 @@
                             <li><strong>Mise en service :</strong> initialiser les stocks MDN, vérifier les résultats, puis activer 2027 séparément.</li>
                         </ol>
                         <div class="v980-precontrole" aria-labelledby="titrePrecontroleV980">
-                            <h5 id="titrePrecontroleV980">Précontrôle de mise en service</h5>
-                            <p>Les trois opérations sont distinctes. Ce contrôle utilise la simulation SQL161 et ne déclenche aucune écriture.</p>
+                            <h5 id="titrePrecontroleV980">Précontrôle de mise en service · Protection SQL167 installée</h5>
+                            <p>Création, initialisation des stocks et activation sont trois opérations distinctes. La protection SQL167 empêche l’activation de 2027 avant l’initialisation des stocks. Le précontrôle utilise SQL161, sans écriture.</p>
                             <div class="v922-actions">
                                 <button type="button" class="bouton secondaire" id="verifierMiseEnServiceV980">Vérifier les conditions de création</button>
                             </div>
                             <p id="etatCreationV980" role="status" aria-live="polite">Création : non contrôlée.</p>
                             <p id="etatInitialisationV980">Initialisation MDN : aucune édition 2027 créée.</p>
-                            <p id="etatActivationV980">Activation : verrouillée pendant les tests.</p>
+                            <p id="etatActivationV980">Activation : protégée par SQL167, verrouillée pendant les tests.</p>
                         </div>
                         <p class="v978-etat" id="etatParcoursV979" role="status" aria-live="polite"><strong>État :</strong> lance la simulation complète pour actualiser les contrôles. <strong>Création verrouillée.</strong></p>
                     </section>
@@ -5163,7 +5163,7 @@
                             etatInitialisationV980.textContent = "Initialisation MDN : impossible avant création et certification des stocks réels.";
                         }
                         if (etatActivationV980) {
-                            etatActivationV980.textContent = "Activation : désactivée. La fonction SQL existante doit être sécurisée pour exiger l'initialisation des stocks avant toute activation.";
+                            etatActivationV980.textContent = "Activation : protection SQL167 installée. Exécution réelle désactivée tant que les comptages et les validations ne sont pas certifiés.";
                         }
                     }
                     // V9.41 — Construction sécurisée de l'affichage (aucune écriture).
