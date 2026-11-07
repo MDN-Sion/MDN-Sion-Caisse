@@ -613,7 +613,7 @@
      </div>
     </div>
     <div class="bandeau" hidden="" id="bandeauDemo">
-     MODE DÉMO — Consultation uniquement. Les références et paramètres sont partagés avec le mode réel.
+     MODE DÉMO — Classement modifiable avec les flèches ; règles consultables. Les références et paramètres sont partagés avec le mode réel.
     </div>
     <div aria-live="polite" id="message" role="status">
      Chargement sécurisé…
@@ -791,7 +791,7 @@
 		"use strict";
 		(function () {
 		    const $ = (id) => document.getElementById(id);
-		    const etat = { client: null, demo: true, editions: [], references: [], parametres: [], editionId: null, modification: null, acces: false };
+		    const etat = { client: null, demo: true, editions: [], references: [], parametres: [], editionId: null, modification: null, acces: false, regles: [], deplacementEnCours: false };
 		    const nombres = (v) => Number(v || 0).toLocaleString("fr-CH", { maximumFractionDigits: 2 });
 
 		    function message(texte, type = "") {
@@ -840,7 +840,27 @@
 		            const tr = document.createElement("tr");
 		            cellule(tr, r.nom);
 		            cellule(tr, r.description);
-		            cellule(tr, r.ordre_affichage);
+                    const ordreCellule = cellule(tr, r.ordre_affichage);
+                    if (etat.demo) {
+                        const commandes = document.createElement("span");
+                        commandes.style.cssText = "display:inline-flex;gap:6px;margin-left:10px;vertical-align:middle;";
+                        for (const [direction, symbole, interdit] of [
+                            ["haut", "↑", etat.references.indexOf(r) === 0],
+                            ["bas", "↓", etat.references.indexOf(r) === etat.references.length - 1]
+                        ]) {
+                            const bouton = document.createElement("button");
+                            bouton.type = "button";
+                            bouton.className = "bouton secondaire";
+                            bouton.textContent = symbole;
+                            bouton.title = direction === "haut" ? "Monter" : "Descendre";
+                            bouton.setAttribute("aria-label", bouton.title + " " + r.nom);
+                            bouton.disabled = interdit || etat.deplacementEnCours;
+                            bouton.style.cssText = "padding:4px 9px;min-width:34px;";
+                            bouton.addEventListener("click", () => deplacerReference(r.id, direction));
+                            commandes.appendChild(bouton);
+                        }
+                        ordreCellule.appendChild(commandes);
+                    }
 		            etatCellule(tr, r.actif);
 		            boutonModifier(tr, "reference", r);
 		            references.appendChild(tr);
@@ -890,6 +910,86 @@
 		        afficher();
 		    }
 
+            async function deplacerReference(vaisselleId, direction) {
+                if (!etat.demo || etat.deplacementEnCours) {
+                    return;
+                }
+                etat.deplacementEnCours = true;
+                afficher();
+                try {
+                    const { data, error } = await etat.client.rpc("deplacer_vaisselle_demo", {
+                        p_vaisselle_id: vaisselleId,
+                        p_direction: direction
+                    });
+                    if (error) {
+                        throw error;
+                    }
+                    if (!data?.ok) {
+                        throw new Error("Le serveur n'a pas confirmé le déplacement.");
+                    }
+                    await charger();
+                    message("Classement Démo enregistré.", "succes");
+                } catch (erreur) {
+                    message("Déplacement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
+                } finally {
+                    etat.deplacementEnCours = false;
+                    afficher();
+                }
+            }
+
+            function afficherRegles() {
+                let section = document.getElementById("sectionReglesRemboursement");
+                if (!section) {
+                    section = document.createElement("section");
+                    section.id = "sectionReglesRemboursement";
+                    section.style.cssText = "margin:24px 0;padding:20px;border:1px solid #d6c9c9;border-radius:14px;overflow-x:auto;";
+                    section.innerHTML = '<h2>Règles de remboursement — consultation</h2>' +
+                        '<p>Retour sale : consigne des pièces uniquement. Retour propre en conditionnement complet : consigne et lavage selon le conditionnement. Les valeurs ci-dessous concernent les retours propres à l’unité.</p>' +
+                        '<div id="contenuReglesRemboursement"></div>';
+                    const parent = document.querySelector("main") || document.body;
+                    parent.appendChild(section);
+                }
+                const contenu = document.getElementById("contenuReglesRemboursement");
+                contenu.replaceChildren();
+                const tableau = document.createElement("table");
+                tableau.style.width = "100%";
+                const tete = document.createElement("thead");
+                const ligneTete = document.createElement("tr");
+                for (const titre of ["Article", "Type de stand", "Retour propre à l’unité", "Lavage remboursé"]) {
+                    const th = document.createElement("th");
+                    th.textContent = titre;
+                    ligneTete.appendChild(th);
+                }
+                tete.appendChild(ligneTete);
+                tableau.appendChild(tete);
+                const corps = document.createElement("tbody");
+                const noms = new Map(etat.references.map((r) => [r.id, r.nom]));
+                const regles = [...etat.regles].sort((a, b) =>
+                    (noms.get(a.vaisselle_id) || "").localeCompare(noms.get(b.vaisselle_id) || "", "fr") ||
+                    a.type_partenaire.localeCompare(b.type_partenaire, "fr")
+                );
+                for (const regle of regles) {
+                    const tr = document.createElement("tr");
+                    for (const valeur of [
+                        noms.get(regle.vaisselle_id) || "Référence inconnue",
+                        regle.type_partenaire,
+                        regle.retour_propre_unite_autorise ? "Oui" : "Non",
+                        regle.retour_propre_unite_rembourse_lavage ? "Oui" : "Non"
+                    ]) {
+                        cellule(tr, valeur);
+                    }
+                    corps.appendChild(tr);
+                }
+                if (!regles.length) {
+                    const tr = document.createElement("tr");
+                    const td = cellule(tr, "Aucune règle disponible pour cette édition.");
+                    td.colSpan = 4;
+                    corps.appendChild(tr);
+                }
+                tableau.appendChild(corps);
+                contenu.appendChild(tableau);
+            }
+
 		    async function charger() {
 		        $("actualiser").disabled = true;
 		        message("Chargement des données depuis Supabase…");
@@ -920,6 +1020,27 @@
                         ordre_affichage: article.ordre_affichage ?? index + 1,
                         actif: article.actif !== false
                     }));
+
+                    const { data: ordreDemo, error: erreurOrdre } = await etat.client.rpc(
+                        "lire_ordre_vaisselle_demo"
+                    );
+                    if (erreurOrdre) {
+                        throw erreurOrdre;
+                    }
+                    const ordreParId = new Map(
+                        (ordreDemo?.vaisselle || []).map((r) => [r.vaisselle_id, r.ordre_affichage])
+                    );
+                    for (const reference of etat.references) {
+                        reference.ordre_affichage = ordreParId.get(reference.id) ?? reference.ordre_affichage;
+                    }
+                    etat.references.sort((a, b) =>
+                        a.ordre_affichage - b.ordre_affichage ||
+                        a.nom.localeCompare(b.nom, "fr")
+                    );
+                    etat.regles = Array.isArray(donnees.regles_retour)
+                        ? donnees.regles_retour
+                        : [];
+                    afficherRegles();
 
                     etat.editions = [{
                         id: donnees.edition.id,
@@ -956,7 +1077,7 @@
                         message("Le chargement Démo a réussi, mais ne contient aucune référence de vaisselle.", "erreur");
                     } else {
                         message(
-                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Consultation uniquement.",
+                            "Mode Démo : " + articles.length + " références chargées via le même accès que Vaisselle & Consignes. Classement modifiable avec les flèches ; règles consultables.",
                             "succes"
                         );
                     }
