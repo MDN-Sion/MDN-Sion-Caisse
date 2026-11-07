@@ -1018,7 +1018,23 @@
         .v923-dialogue .bouton:disabled { opacity: .45; cursor: not-allowed; }
         .v923-statut { padding: 12px 14px; border-radius: 12px; background: #edf4f1; border: 1px solid #cadfd5; }
         .v923-statut.erreur { background: #fff5e8; border-color: #efd0a3; color: #753c00; }
-    </style>
+    
+    /* V9.74 — Actions du comptage regroupées et adaptatives. */
+    .v974-actions-comptage { margin: 18px 0 12px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .v974-actions-comptage .bouton { margin: 0 !important; }
+    .v974-volet { margin: 10px 0; padding: 0 16px; background: #fff; border: 1px solid #d5dfe8; border-radius: 11px; }
+    .v974-volet > summary { cursor: pointer; padding: 15px 2px; font-weight: 700; color: #30465f; }
+    .v974-volet[open] { padding-bottom: 16px; }
+    .v974-volet[open] > summary { border-bottom: 1px solid #e1e7ec; margin-bottom: 12px; }
+    .v974-volet .bouton { margin: 6px 8px 6px 0 !important; max-width: 100%; white-space: normal; }
+    .v974-volet .v953-vide { margin: 10px 0; }
+    .v974-aide { color: #4c6077; margin: 10px 0; }
+    .v974-volet > div[style] { margin: 10px 0 !important; }
+    @media (max-width: 650px) {
+        .v974-actions-comptage .bouton, .v974-volet .bouton { width: 100%; }
+        .v974-volet { padding-left: 12px; padding-right: 12px; }
+    }
+</style>
 </head>
 <body data-v912-vue="accueil">
 
@@ -1306,13 +1322,13 @@
                 </section>
                 <section class="v922-transfert" aria-labelledby="titreAuditV953">
                     <h3 id="titreAuditV953">2. Consulter les inventaires</h3>
-                    <p>Afficher les quantités comptées pour les articles MDN et les caisses de gobelets. <strong>Les quantités actuelles sont fictives.</strong></p>
+                    <p>Consulter les quantités officielles et préparer un comptage. <strong>Les valeurs actuelles sont des données de test.</strong></p>
                     <div class="v922-actions">
-                        <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher les inventaires</button>
+                        <button type="button" class="bouton secondaire" id="auditerInventairesV953">Consulter le tableau des inventaires</button>
                     </div>
                     <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Inventaires non affichés.</div>
                     <details class="v956-details">
-                        <summary>Exporter les inventaires</summary>
+                        <summary>Exports et impression des inventaires officiels</summary>
                         <p>Choisir un fichier pour Excel ou un rapport lisible dans le navigateur.</p>
                         <div class="v922-actions">
                             <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Fichier Excel (.csv)</button>
@@ -4439,7 +4455,7 @@
                         formulaire
                     );
                     boutonEnregistrerComptage.type = "button";
-                    boutonEnregistrerComptage.style.marginRight = "12px";
+                    boutonEnregistrerComptage.style.marginRight = "0";
                     boutonEnregistrerComptage.addEventListener("click", () => {
                         if (minuterieSauvegarde !== null) {
                             window.clearTimeout(minuterieSauvegarde);
@@ -4713,6 +4729,45 @@
                     fichierReprise.setAttribute("aria-label", "Choisir un comptage CSV à reprendre");
                     etiquetteReprise.appendChild(fichierReprise);
                     const etatReprise = creerAudit("p", "v953-vide", "Le fichier est relu uniquement dans ce navigateur, sans enregistrement dans Supabase.", zoneReprise);
+
+                    // V9.74 — Présentation simplifiée, sans modifier les traitements existants.
+                    // Les éléments sont déplacés dans des volets repliables : les mêmes
+                    // boutons, identifiants, événements et protections sont conservés.
+                    const groupeActionsComptage = creerAudit("div", "v974-actions-comptage", null, formulaire);
+                    formulaire.insertBefore(groupeActionsComptage, boutonEnregistrerComptage);
+                    groupeActionsComptage.appendChild(boutonEnregistrerComptage);
+
+                    function creerVoletComptage(titre, description) {
+                        const volet = creerAudit("details", "v974-volet", null, formulaire);
+                        creerAudit("summary", "", titre, volet);
+                        if (description) {
+                            creerAudit("p", "v974-aide", description, volet);
+                        }
+                        return volet;
+                    }
+
+                    const voletSauvegardeTest = creerVoletComptage(
+                        "Sauvegarde et reprise Supabase (TEST)",
+                        "Brouillon de test uniquement : aucune quantité officielle n'est modifiée."
+                    );
+                    voletSauvegardeTest.appendChild(boutonSauvegardeSupabase);
+                    voletSauvegardeTest.appendChild(boutonRepriseSupabase);
+                    voletSauvegardeTest.appendChild(etatSupabaseComptage);
+                    voletSauvegardeTest.appendChild(boutonPrecontroleSupabase);
+
+                    const voletImportOfficiel = creerVoletComptage(
+                        "Import officiel d'un comptage réel",
+                        "Action réservée aux administrateurs en mode réel, après inventaire physique."
+                    );
+                    voletImportOfficiel.appendChild(panneauImportReel);
+
+                    const voletFichiers = creerVoletComptage(
+                        "Fichier CSV : exporter ou reprendre un comptage",
+                        "Exporter une copie du comptage ou reprendre un fichier déjà enregistré."
+                    );
+                    voletFichiers.appendChild(exporterSaisie);
+                    voletFichiers.appendChild(zoneReprise);
+
 
                     function analyserLigneCsv(ligne) {
                         const champs = [];
