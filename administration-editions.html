@@ -1275,6 +1275,7 @@
                     <div class="v922-actions">
                         <button type="button" class="bouton secondaire" id="auditerInventairesV953">Afficher l’audit détaillé (SQL163)</button>
                         <button type="button" class="bouton secondaire" id="exporterAuditCsvV954" disabled>Exporter l’audit (.csv)</button>
+                        <button type="button" class="bouton secondaire" id="exporterAuditHtmlV955" disabled>Exporter l’audit lisible (.html)</button>
                     </div>
                     <div id="resultatAuditV953" class="v922-resultat" role="status" aria-live="polite">Audit non exécuté.</div>
                 </section>
@@ -3653,12 +3654,135 @@
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
 
+
+            // V9.55 — Rapport HTML lisible, avec largeurs de colonnes.
+            // Le CSV est conservé pour Excel ; cet export s'ouvre dans un navigateur.
+            const boutonExportAuditHtmlV955 = parId("exporterAuditHtmlV955");
+
+            const echapperHtmlAuditV955 = (valeur) => String(
+                valeur === null || valeur === undefined ? "" : valeur
+            ).replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#39;");
+
+            boutonExportAuditHtmlV955.addEventListener("click", () => {
+                const audit = dernierAuditCsvV954;
+                if (!audit) return;
+
+                const inv = audit.inventaire_mdn || {};
+                const fiches = Array.isArray(inv.fiches) ? inv.fiches : [];
+                const reserve = Array.isArray(audit.reserve_gobelets) ? audit.reserve_gobelets : [];
+                const e = echapperHtmlAuditV955;
+
+                const lignesMdn = fiches.map(f => `
+                    <tr>
+                        <td>${e(f.article)}</td>
+                        <td class="nombre">${e(f.quantite_theorique)}</td>
+                        <td class="nombre">${e(f.quantite_comptee)}</td>
+                        <td>${f.fiche_validee ? "Oui" : "Non"}</td>
+                        <td>${e(f.commentaire)}</td>
+                    </tr>
+                `).join("");
+
+                const lignesReserve = reserve.map((r, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td class="nombre">${e(r.caisses_pleines)}</td>
+                        <td class="nombre">${e(r.caisses_partielles)}</td>
+                        <td class="nombre">${e(r.gobelets_dans_caisses_partielles)}</td>
+                        <td class="nombre">${e(r.caisses_vides)}</td>
+                        <td class="nombre">${e(r.capacite_caisse)}</td>
+                        <td>${r.fiche_validee ? "Oui" : "Non"}</td>
+                    </tr>
+                `).join("");
+
+                const contenu = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MDN Sion — Audit inventaires 2027 — Données de test</title>
+<style>
+    :root { font-family: Arial, sans-serif; color: #1f2937; }
+    body { max-width: 1200px; margin: 32px auto; padding: 0 22px; }
+    h1 { color: #8b0000; font-size: 25px; }
+    h2 { color: #8b0000; font-size: 19px; margin-top: 32px; }
+    .alerte { background: #fff1f1; border: 1px solid #cc9999;
+        padding: 14px; border-radius: 8px; font-weight: bold; }
+    .infos { background: #f3f6f9; padding: 14px; border-radius: 8px; }
+    .tableau { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; }
+    th, td { border: 1px solid #d8e0e7; padding: 10px 12px;
+        text-align: left; vertical-align: top; }
+    th { background: #eaf0f4; color: #30435a; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    td.nombre { text-align: right; white-space: nowrap; }
+    .tableau-mdn th:first-child { min-width: 240px; }
+    .tableau-mdn th:last-child { min-width: 160px; }
+    .tableau-reserve th { min-width: 105px; }
+    @media print {
+        @page { size: A4 landscape; margin: 12mm; }
+        body { margin: 0; padding: 0; }
+        table { font-size: 10px; }
+        th, td { padding: 6px; }
+        tr { break-inside: avoid; }
+    }
+</style>
+</head>
+<body>
+<h1>MDN Sion — Audit des inventaires 2027</h1>
+<p class="alerte">DONNÉES DE TEST — Lecture seule. Ne pas utiliser comme inventaire réel validé.</p>
+<div class="infos">
+    <p><strong>Préparation :</strong> ${e(audit.preparation_id)}</p>
+    <p><strong>Révision :</strong> ${e(audit.revision)}</p>
+    <p><strong>Validations officielles :</strong> ${e(audit.validations_officielles ?? 0)}/5</p>
+</div>
+<h2>Inventaire MDN (${fiches.length} fiches)</h2>
+<div class="tableau">
+<table class="tableau-mdn">
+<thead><tr>
+    <th>Article</th><th>Quantité théorique</th>
+    <th>Quantité comptée (TEST)</th><th>Fiche validée</th><th>Commentaire</th>
+</tr></thead>
+<tbody>${lignesMdn}</tbody>
+</table>
+</div>
+<h2>Réserve de gobelets</h2>
+<div class="tableau">
+<table class="tableau-reserve">
+<thead><tr>
+    <th>Référence</th><th>Caisses pleines</th><th>Caisses partielles</th>
+    <th>Gobelets partiels</th><th>Caisses vides</th>
+    <th>Capacité caisse</th><th>Fiche validée</th>
+</tr></thead>
+<tbody>${lignesReserve}</tbody>
+</table>
+</div>
+<p class="alerte">Aucune validation, création d'édition ou écriture de stock effectuée.</p>
+</body>
+</html>`;
+
+                const url = URL.createObjectURL(new Blob([contenu], {
+                    type: "text/html;charset=utf-8"
+                }));
+                const lien = document.createElement("a");
+                lien.href = url;
+                lien.download = `MDN-Sion-Audit-Inventaires-2027-Revision-${audit.revision ?? "inconnue"}-TEST.html`;
+                document.body.appendChild(lien);
+                lien.click();
+                lien.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+
             // V9.53 — Audit SQL163 en lecture seule ; aucune écriture.
             parId("auditerInventairesV953").addEventListener("click", async () => {
                 const cible = parId("resultatAuditV953");
                 const bouton = parId("auditerInventairesV953");
                 dernierAuditCsvV954 = null;
                 boutonExportAuditV954.disabled = true;
+                boutonExportAuditHtmlV955.disabled = true;
                 if (modeDemoActif || !clientSupabase) {
                     cible.textContent = "Audit SQL163 indisponible en mode démo ou hors connexion.";
                     return;
@@ -3735,6 +3859,7 @@
                     creerAudit("p", "v953-vide", "Lecture seule : aucun comptage, aucune validation et aucun stock modifié.", racine);
                     dernierAuditCsvV954 = data;
                     boutonExportAuditV954.disabled = false;
+                    boutonExportAuditHtmlV955.disabled = false;
                 } catch (erreur) {
                     cible.textContent = `Audit SQL163 indisponible : ${erreur.message || erreur}. Aucune écriture effectuée.`;
                 } finally {
