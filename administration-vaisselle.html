@@ -771,7 +771,29 @@
             }
         }
 
-  </style>
+  
+        /* V12 — Même encadrement arrondi pour les tableaux 1 et 2. */
+        .table-scroll.tableau-arrondi {
+            border: 1px solid #dbe3ec;
+            border-radius: 12px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .table-scroll.tableau-arrondi table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        @media (max-width: 650px) {
+            .table-scroll.tableau-arrondi {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+</style>
  </head>
  <body>
   <header class="entete">
@@ -871,7 +893,7 @@
      <p class="petit">
       Le nom et la description sont communs à toutes les éditions. Une désactivation n'efface pas l'historique.
      </p>
-     <div class="table-scroll">
+     <div class="table-scroll tableau-arrondi">
       <table>
        <thead>
         <tr>
@@ -909,7 +931,7 @@
      <p class="petit">
       Les valeurs de cette section dépendent de l'édition sélectionnée. Les montants sont en CHF par unité.
      </p>
-     <div class="table-scroll">
+     <div class="table-scroll tableau-arrondi">
       <table>
        <thead>
         <tr>
