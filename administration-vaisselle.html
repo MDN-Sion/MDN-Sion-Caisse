@@ -719,7 +719,37 @@
 		            choix.disabled = !etat.editions.length;
 		            choix.value = etat.editionId || "";
 		            await chargerParametres();
-		            message(etat.demo ? "Consultation démo : aucune écriture autorisée." : "Données chargées. Les modifications nécessitent une confirmation explicite.", "succes");
+		            if (etat.references.length === 0 || etat.editions.length === 0) {
+                        const problemes = [];
+
+                        if (etat.references.length === 0) {
+                            problemes.push("aucune référence de vaisselle visible");
+                        }
+
+                        if (etat.editions.length === 0) {
+                            problemes.push("aucune édition visible");
+                        }
+
+                        message(
+                            "Données inaccessibles : " + problemes.join(" ; ") + ". " +
+                            "Les requêtes Supabase ont répondu sans erreur, mais avec zéro ligne. " +
+                            "Vérifier les droits de lecture RLS et les tables interrogées. Aucune écriture effectuée.",
+                            "erreur"
+                        );
+                    } else if (etat.parametres.length === 0) {
+                        message(
+                            "Les références et éditions sont visibles, mais aucun paramètre n'est accessible pour l'édition sélectionnée. " +
+                            "Vérifier les données et les droits de lecture de edition_vaisselle. Aucune écriture effectuée.",
+                            "erreur"
+                        );
+                    } else {
+                        message(
+                            etat.demo
+                                ? "Consultation démo : " + etat.references.length + " références et " + etat.parametres.length + " paramètres chargés. Aucune écriture autorisée."
+                                : "Données chargées : " + etat.references.length + " références et " + etat.parametres.length + " paramètres. Les modifications nécessitent une confirmation explicite.",
+                            "succes"
+                        );
+                    }
 		        } catch (erreur) {
 		            console.error("[MDN] Référentiel vaisselle :", erreur);
 		            message("Chargement impossible : " + (erreur.message || "erreur inconnue"), "erreur");
