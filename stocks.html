@@ -4686,7 +4686,8 @@
         const libellesStands = new Map();
         if (Array.isArray(mouvements)) {
           mouvements.forEach(function (m) {
-            if (!m.stand_demo_id || m.statut_operation === "annule") return;
+            // Les opérations annulées restent comptabilisées avec leurs contre-mouvements.
+            if (!m.stand_demo_id) return;
             const ancien = soldesStands.get(m.stand_demo_id) || 0;
             libellesStands.set(m.stand_demo_id, libelleStandContenant(m));
             const retrait = ["retrait", "retrait_partenaire"].includes(m.type_mouvement);
