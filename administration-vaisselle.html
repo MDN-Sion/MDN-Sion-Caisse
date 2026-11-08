@@ -937,14 +937,159 @@
         }
 
 
-/* V23 — Administration isolée des contenants en mode Démo. */
-.contenants-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.contenants-formulaire { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-.contenants-formulaire label { display: flex; flex-direction: column; gap: 6px; }
-.contenants-formulaire .option-contenant { flex-direction: row; align-items: center; }
-.contenants-formulaire input[type="number"] { width: 100%; min-width: 0; padding: 10px; border: 1px solid #b7bfd1; border-radius: 8px; }
-#dialogueContenant .dialog-contenu { width: min(740px, 92vw); max-height: 85vh; overflow: auto; }
-@media (max-width: 600px) { #dialogueContenant .dialog-contenu { width: 94vw; } }
+        /* V24 — Contenants : harmonisation du tableau et fenêtre compacte. */
+        #lignesContenantsDemo tr > td:first-child {
+            background: #f2f5f8;
+            font-weight: 700;
+            color: #19315c;
+        }
+
+        #sectionContenantsDemo .table-scroll table {
+            min-width: 650px;
+        }
+
+        #sectionContenantsDemo td:last-child {
+            text-align: center;
+        }
+
+        #dialogueContenant {
+            box-sizing: border-box;
+            width: min(94vw, 620px);
+            max-width: 620px;
+            max-height: calc(100dvh - 24px);
+            margin: auto;
+            padding: 0;
+            overflow: hidden;
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px #0005;
+        }
+
+        #dialogueContenant::backdrop {
+            background: #0009;
+        }
+
+        #dialogueContenant .dialog-contenu {
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-height: calc(100dvh - 24px);
+            min-width: 0;
+            margin: 0;
+            padding: 22px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #dialogueContenant h3 {
+            margin: 0 0 6px;
+            font-size: 21px;
+        }
+
+        #dialogueContenant .petit {
+            margin: 0 0 14px;
+            line-height: 1.5;
+        }
+
+        .contenants-formulaire {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 14px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .contenants-formulaire .champ-tarif-contenant {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .contenants-formulaire input[type="number"] {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #b7bfd1;
+            border-radius: 9px;
+            font: inherit;
+        }
+
+        .contenants-formulaire .groupe-options-contenant {
+            grid-column: 1 / -1;
+            min-width: 0;
+            margin: 0;
+            padding: 12px 14px;
+            border: 1px solid #dbe3ec;
+            border-radius: 11px;
+            background: #f8fafc;
+        }
+
+        .contenants-formulaire .groupe-options-contenant legend {
+            padding: 0 5px;
+            font-size: 13px;
+            font-weight: 750;
+            color: #172c59;
+        }
+
+        .contenants-formulaire .options-contenant {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 14px;
+            min-width: 0;
+        }
+
+        .contenants-formulaire .option-contenant {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 8px;
+            min-width: 0;
+            font-size: 13px;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .contenants-formulaire .option-contenant input {
+            flex: 0 0 auto;
+            margin: 2px 0 0;
+            width: 16px;
+            height: 16px;
+            accent-color: #8b0000;
+        }
+
+        #erreurContenant {
+            color: #9a1717;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        #dialogueContenant .dialog-actions {
+            position: sticky;
+            bottom: -22px;
+            z-index: 1;
+            justify-content: flex-end;
+            padding: 12px 0 0;
+            background: #fff;
+        }
+
+        @media (max-width: 520px) {
+            #dialogueContenant .dialog-contenu {
+                padding: 16px;
+            }
+
+            .contenants-formulaire .options-contenant {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            #dialogueContenant .dialog-actions {
+                bottom: -16px;
+            }
+        }
 </style>
  </head>
  <body>
@@ -1709,23 +1854,51 @@
             let contenantEnEdition = null;
             let enregistrementContenantEnCours = false;
 
-            function creerChampContenant(nom, libelle, valeur, type) {
+            function creerChampContenant(nom, libelle, valeur, type, destination) {
                 const etiquette = document.createElement("label");
                 const champ = document.createElement("input");
+                const parent = destination || $("champsContenant");
+
                 champ.name = nom;
                 champ.type = type;
+
                 if (type === "checkbox") {
                     etiquette.className = "option-contenant";
                     champ.checked = valeur === true;
                     etiquette.append(champ, document.createTextNode(libelle));
                 } else {
+                    etiquette.className = "champ-tarif-contenant";
                     champ.value = String(valeur ?? 0);
                     champ.required = true;
                     champ.min = "0";
                     champ.step = "0.01";
                     etiquette.append(document.createTextNode(libelle), champ);
                 }
-                $("champsContenant").appendChild(etiquette);
+
+                parent.appendChild(etiquette);
+            }
+
+            function creerGroupeOptionsContenant(titre, options, contenant) {
+                const groupe = document.createElement("fieldset");
+                const legende = document.createElement("legend");
+                const grille = document.createElement("div");
+
+                groupe.className = "groupe-options-contenant";
+                grille.className = "options-contenant";
+                legende.textContent = titre;
+                groupe.append(legende, grille);
+
+                for (const [cle, libelle] of options) {
+                    creerChampContenant(
+                        cle,
+                        libelle,
+                        contenant[cle],
+                        "checkbox",
+                        grille
+                    );
+                }
+
+                $("champsContenant").appendChild(groupe);
             }
 
             function ouvrirContenantDemo(contenant) {
@@ -1733,19 +1906,47 @@
                 $("titreContenant").textContent = "Modifier — " + contenant.nom;
                 $("erreurContenant").textContent = "";
                 $("champsContenant").replaceChildren();
-                creerChampContenant("consigne", "Consigne (CHF)", contenant.consigne, "number");
-                creerChampContenant("lavage", "Lavage (CHF)", contenant.lavage, "number");
-                for (const [cle, libelle] of [
-                    ["actif", "Contenant actif"],
-                    ["retour_propre_rembourse_consigne", "Retour propre : rembourser la consigne"],
-                    ["retour_propre_rembourse_lavage", "Retour propre : rembourser le lavage"],
-                    ["retour_propre_reintegre_stock", "Retour propre : réintégrer au stock"],
-                    ["retour_sale_rembourse_consigne", "Retour sale : rembourser la consigne"],
-                    ["retour_sale_rembourse_lavage", "Retour sale : rembourser le lavage"],
-                    ["retour_sale_reintegre_stock", "Retour sale : réintégrer au stock"]
-                ]) {
-                    creerChampContenant(cle, libelle, contenant[cle], "checkbox");
-                }
+
+                creerChampContenant(
+                    "consigne",
+                    "Consigne (CHF)",
+                    contenant.consigne,
+                    "number"
+                );
+
+                creerChampContenant(
+                    "lavage",
+                    "Lavage (CHF)",
+                    contenant.lavage,
+                    "number"
+                );
+
+                creerGroupeOptionsContenant(
+                    "État du contenant",
+                    [["actif", "Contenant actif"]],
+                    contenant
+                );
+
+                creerGroupeOptionsContenant(
+                    "Retour propre",
+                    [
+                        ["retour_propre_rembourse_consigne", "Rembourser la consigne"],
+                        ["retour_propre_rembourse_lavage", "Rembourser le lavage"],
+                        ["retour_propre_reintegre_stock", "Réintégrer au stock"]
+                    ],
+                    contenant
+                );
+
+                creerGroupeOptionsContenant(
+                    "Retour sale",
+                    [
+                        ["retour_sale_rembourse_consigne", "Rembourser la consigne"],
+                        ["retour_sale_rembourse_lavage", "Rembourser le lavage"],
+                        ["retour_sale_reintegre_stock", "Réintégrer au stock"]
+                    ],
+                    contenant
+                );
+
                 $("dialogueContenant").showModal();
             }
 
