@@ -813,16 +813,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 30px;
-            margin: 5px 0 0;
-            padding: 5px 10px;
-            border: 1px solid #a48219;
-            border-radius: 8px;
-            background: #fff9e6;
-            color: #664b00;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
+            margin: 0;
         }
         .bouton-regle-demo:disabled {
             opacity: .55;
@@ -950,6 +941,23 @@
 
         #sectionContenantsDemo td:last-child {
             text-align: center;
+        }
+
+        /* Boutons Modifier identiques dans les quatre rubriques. */
+        .bouton-modifier-vaisselle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 15px;
+            border: 1px solid #8b0000;
+            border-radius: 11px;
+            background: #fff;
+            color: #8b0000;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
         }
 
         #dialogueContenant {
@@ -1269,17 +1277,16 @@
      </div>
     </section>
     <section class="bloc" id="sectionReglesRemboursement">
-     <h2>3. Règles de remboursement — Réel : consultation / Démo : modification</h2>
-     <p>Retour propre en conditionnement complet : consigne et lavage des pièces remboursés, avec les règles propres au contenant. Retour sale : consigne des pièces uniquement.</p>
-     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. En mode Réel, les règles restent en consultation. En mode Démo, les règles de chaque article peuvent être modifiées ensemble, sans toucher aux données réelles.</p>
+     <h2>3. Règles de remboursement</h2>
+
+     <p class="petit">Retour propre à l’unité, selon le type de stand.</p>
      <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
      <div id="contenuReglesRemboursement"></div>
     </section>
 
     <section class="bloc" id="sectionContenantsDemo" hidden>
-      <h2>4. Contenants — paramètres Démo</h2>
-      <p class="petit">Consigne, lavage et règles de remboursement des caisses et autres contenants. Les modifications sont enregistrées séparément du mode Réel.</p>
-      <p class="petit"><strong>Attention :</strong> ces paramètres ne sont pas encore raccordés au calcul des retraits et retours. Les modifier ici n'affecte pas encore la facturation.</p>
+      <h2>4. Contenants et consignes</h2>
+
       <div class="table-scroll tableau-arrondi">
         <table>
           <thead><tr><th>Contenant</th><th>Consigne</th><th>Lavage</th><th>État</th><th>Source</th><th>Gestion</th></tr></thead>
@@ -1287,7 +1294,7 @@
         </table>
       </div>
     </section>
-    <p class="petit">Aucun inventaire ni mouvement de stock n'est modifié depuis cette page.</p>
+
    </section>
   </main>
   <dialog id="dialogue">
@@ -1325,12 +1332,12 @@
   <dialog id="dialogueReglesArticle" aria-labelledby="titreReglesArticle">
     <div class="dialog-contenu">
       <h3 id="titreReglesArticle">Modifier les règles de remboursement</h3>
-      <p class="petit">Mode Démo uniquement. Sélectionne le remboursement du retour propre à l’unité pour chaque type de stand.</p>
+
       <div id="champsReglesArticle"></div>
       <div id="confirmationReglesArticle" hidden>
         <strong>Confirmer les modifications en Démo ?</strong>
         <ul id="detailsConfirmationRegles"></ul>
-        <p class="petit">Les règles du mode Réel ne seront pas modifiées.</p>
+
       </div>
       <p id="erreurReglesArticle" role="alert"></p>
       <div class="dialog-actions">
@@ -1343,7 +1350,7 @@
   <dialog id="dialogueContenant" aria-labelledby="titreContenant">
     <form class="dialog-contenu" id="formulaireContenant">
       <h3 id="titreContenant">Modifier un contenant Démo</h3>
-      <p class="petit">Ces modifications restent isolées du mode Réel. Le calcul à la validation est raccordé ; l’affichage préalable des tarifs dans l’écran Vaisselle reste à harmoniser.</p>
+
       <div class="contenants-formulaire" id="champsContenant"></div>
       <p id="erreurContenant" role="alert"></p>
       <div class="dialog-actions">
@@ -1394,7 +1401,7 @@
 		        if (!etat.demo) {
 		            const bouton = document.createElement("button");
 		            bouton.type = "button";
-		            bouton.className = "bouton secondaire";
+		            bouton.className = "bouton secondaire bouton-modifier-vaisselle";
 		            bouton.textContent = "Modifier";
 		            bouton.addEventListener("click", () => ouvrirModification(type, item));
 		            td.appendChild(bouton);
@@ -1822,7 +1829,7 @@
                         gestion.setAttribute("data-type-stand", "Gestion");
                         const bouton = document.createElement("button");
                         bouton.type = "button";
-                        bouton.className = "bouton-regle-demo";
+                        bouton.className = "bouton secondaire bouton-regle-demo bouton-modifier-vaisselle";
                         bouton.textContent = "Modifier";
                         bouton.disabled = etat.regleEnCours;
                         bouton.setAttribute("aria-label", "Modifier les règles Démo de " + reference.nom);
@@ -1963,7 +1970,7 @@
                     const actions = document.createElement("td");
                     const bouton = document.createElement("button");
                     bouton.type = "button";
-                    bouton.className = "bouton secondaire";
+                    bouton.className = "bouton secondaire bouton-modifier-vaisselle";
                     bouton.textContent = "Modifier";
                     bouton.addEventListener("click", () => ouvrirContenantDemo(contenant));
                     actions.appendChild(bouton);
@@ -2678,4 +2685,3 @@
   </script>
  </body>
 </html>
-
