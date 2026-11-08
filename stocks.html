@@ -915,6 +915,7 @@
     .caisse-operation-icone-correction { color:#8060a6; background:#f4f0fc; }
     .caisse-operation-icone-retrait { color:#a65c38; background:#fff0e8; }
     .caisse-operation-icone-retour { color:#268878; background:#e9f8f4; }
+    .caisse-operation-icone-transfert { color:#187e9d; background:#e9f7fc; }
 
     /* Historique des articles : mêmes repères visuels que les caisses. */
     .mouvement.mouvement-article-couleur {
@@ -928,6 +929,7 @@
     .mouvement.mouvement-article-annulation { background:#fff4df; border-left-color:#bc7b20; }
     .mouvement.mouvement-article-correction { background:#f4f0fc; border-left-color:#8060a6; }
     .mouvement.mouvement-article-retour-mdn { background:#eef8f0; border-left-color:#398354; }
+    .mouvement.mouvement-article-transfert { background:#e9f7fc; border-left-color:#187e9d; }
     .mouvement-article-titre-icone { display:inline-flex; align-items:center; gap:9px; min-width:0; }
     .mouvement-article-titre-icone .caisse-operation-icone { flex-shrink:0; }
     .mouvement.mouvement-article-cliquable:hover,
@@ -4934,22 +4936,29 @@
                       typeMouvement.includes("ajustement")
                     ))
                   );
-                  const estLivraison = !estAnnulation && !estCorrection && (
+                  // Un transfert Réserve → Stock MDN est une opération interne,
+                  // distincte d'une livraison ou d'une correction de stock.
+                  const estTransfertReserve = !estAnnulation && !estCorrection && (
+                    typeOperation === "transfert_reserve_operationnel" ||
+                    typeMouvement === "transfert_reserve_operationnel"
+                  );
+                  const estLivraison = !estAnnulation && !estCorrection && !estTransfertReserve && (
                     typeOperation.includes("livraison") ||
                     typeMouvement.includes("livraison") ||
                     typeOperation.includes("approvisionnement") ||
                     typeMouvement.includes("approvisionnement")
                   );
-                  const estRetrait = !estAnnulation && !estCorrection && !estLivraison && (
+                  const estRetrait = !estAnnulation && !estCorrection && !estTransfertReserve && !estLivraison && (
                     estOperationRetrait ||
                     typeMouvement === "retrait" ||
                     typeMouvement === "retrait_partenaire"
                   );
-                  const estRetour = !estAnnulation && !estCorrection && !estLivraison && !estRetrait && (
+                  const estRetour = !estAnnulation && !estCorrection && !estTransfertReserve && !estLivraison && !estRetrait && (
                     estOperationRetour || typeMouvement.startsWith("retour_")
                   );
                   const categorie = estAnnulation ? "annulation"
                     : estCorrection ? "correction"
+                    : estTransfertReserve ? "transfert"
                     : estLivraison ? "livraison"
                     : estRetrait ? "retrait"
                     : estRetour ? (x.stand_id ? "retour" : "retourMdn")
@@ -4961,7 +4970,8 @@
                     retourMdn: ["mouvement-article-retour-mdn", "caisse-operation-icone-retour-mdn"],
                     livraison: ["mouvement-article-livraison", "caisse-operation-icone-livraison"],
                     annulation: ["mouvement-article-annulation", "caisse-operation-icone-annulation"],
-                    correction: ["mouvement-article-correction", "caisse-operation-icone-correction"]
+                    correction: ["mouvement-article-correction", "caisse-operation-icone-correction"],
+                    transfert: ["mouvement-article-transfert", "caisse-operation-icone-transfert"]
                   };
                   const icones = {
                     livraison: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17h4V5H2v12h3"/><path d="M14 9h4l4 4v4h-3"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>',
@@ -4969,7 +4979,8 @@
                     retourMdn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5v-9"/><path d="M12 13v9"/><path d="m16 15 2 2 4-4"/></svg>',
                     correction: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
                     retrait: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="M4 7.5V17l8 4.5 3-1.7"/><path d="M12 12v9"/><path d="M20 7.5v4"/><path d="M16 16h6"/><path d="m19 13 3 3-3 3"/></svg>',
-                    retour: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="M4 7.5V17l8 4.5 8-4.5v-4"/><path d="M12 12v9"/><path d="M15 16h7"/><path d="m18 13-3 3 3 3"/></svg>'
+                    retour: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="M4 7.5V17l8 4.5 8-4.5v-4"/><path d="M12 12v9"/><path d="M15 16h7"/><path d="m18 13-3 3 3 3"/></svg>',
+                    transfert: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="7" height="10" rx="1.5"/><rect x="15" y="7" width="7" height="10" rx="1.5"/><path d="M10 12h4"/><path d="m12 9 3 3-3 3"/><path d="M4 10h3M17 10h3"/></svg>'
                   };
                   const styleCategorie = categorie ? couleurs[categorie] : null;
                   const libelleOperation = estAnnulation ? "Annulation d’opération"
