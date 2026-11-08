@@ -1343,7 +1343,7 @@
   <dialog id="dialogueContenant" aria-labelledby="titreContenant">
     <form class="dialog-contenu" id="formulaireContenant">
       <h3 id="titreContenant">Modifier un contenant Démo</h3>
-      <p class="petit">Ces modifications restent isolées du mode Réel et ne sont pas encore appliquées au moteur de calcul.</p>
+      <p class="petit">Ces modifications restent isolées du mode Réel. Le calcul à la validation est raccordé ; l’affichage préalable des tarifs dans l’écran Vaisselle reste à harmoniser.</p>
       <div class="contenants-formulaire" id="champsContenant"></div>
       <p id="erreurContenant" role="alert"></p>
       <div class="dialog-actions">
@@ -2609,7 +2609,7 @@
                     $("ajouterReference").hidden = etat.demo;
 		            $("bandeauDemo").hidden = !etat.demo;
 		            $("nomUtilisateur").textContent = etat.demo ? "Mode Démo" : (auth.profil?.prenom || auth.profil?.email || "Administrateur");
-		            $("roleUtilisateur").textContent = etat.demo ? "Utilisateur" : "Administrateur";
+		            $("roleUtilisateur").textContent = etat.demo ? "Administration" : "Administrateur";
 		            window.MDN_AUTH.surveillerSession({ redirigerApresDeconnexion: true });
 		            await charger();
 		        } catch (erreur) {
