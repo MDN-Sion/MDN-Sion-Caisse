@@ -4603,6 +4603,18 @@
         }
       }
 
+      function libelleStandContenant(mouvement) {
+        if (!mouvement || !mouvement.stand_demo_id) return "—";
+
+        const numero = String(mouvement.numero_stand || "").trim();
+        const nom = String(mouvement.raison_sociale || mouvement.nom_stand || "").trim();
+
+        if (numero && nom) return numero + " · " + nom;
+        if (numero) return numero;
+        if (nom) return nom;
+        return "Stand Démo · " + String(mouvement.stand_demo_id).slice(0, 8);
+      }
+
       function afficherDetailContenant(typeContenantId) {
         if (!typeContenantId) return;
 
@@ -4660,7 +4672,7 @@
                   return `<tr>
                     <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
                     <td>${echapperHtml(nomsMouvements[m.type_mouvement] || m.type_mouvement)}</td>
-                    <td>${echapperHtml(m.stand_demo_id ? "Stand Démo · " + m.stand_demo_id.slice(0, 8) : "—")}</td>
+                    <td>${echapperHtml(libelleStandContenant(m))}</td>
                     <td>${echapperHtml(m.etat || "—")}</td>
                     <td>${echapperHtml(m.contenu || "—")}</td>
                     <td><strong>${formatNombre(m.quantite)}</strong></td>
@@ -4669,10 +4681,12 @@
               </table></div>`;
 
         const soldesStands = new Map();
+        const libellesStands = new Map();
         if (Array.isArray(mouvements)) {
           mouvements.forEach(function (m) {
             if (!m.stand_demo_id || m.statut_operation === "annule") return;
             const ancien = soldesStands.get(m.stand_demo_id) || 0;
+            libellesStands.set(m.stand_demo_id, libelleStandContenant(m));
             const retrait = ["retrait", "retrait_partenaire"].includes(m.type_mouvement);
             const retour = ["retour_sale", "retour_sale_partenaire", "retour_propre", "retour_propre_partenaire"].includes(m.type_mouvement);
             if (retrait || retour) {
@@ -4686,8 +4700,8 @@
         const repartitionHtml = mouvements === null
           ? '<div class="detail-vide">Répartition indisponible.</div>'
           : repartitionStands.length
-            ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand Démo (identifiant)</th><th>Solde net de caisses</th></tr></thead><tbody>${repartitionStands.map(function (entree) {
-                return `<tr><td>${echapperHtml(entree[0])}</td><td><strong>${formatNombre(entree[1])}</strong></td></tr>`;
+            ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand</th><th>Solde net de caisses</th></tr></thead><tbody>${repartitionStands.map(function (entree) {
+                return `<tr><td>${echapperHtml(libellesStands.get(entree[0]) || "Stand Démo · " + entree[0].slice(0, 8))}</td><td><strong>${formatNombre(entree[1])}</strong></td></tr>`;
               }).join("")}</tbody></table></div>`
             : '<div class="detail-vide">Aucune caisse actuellement attribuable à un stand dans les mouvements consultables.</div>';
 
