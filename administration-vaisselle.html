@@ -1535,6 +1535,12 @@
                     await chargerReglesDemo().catch(() => {});
                 } finally {
                     etat.regleEnCours = false;
+                    // Le tableau a été reconstruit pendant l'enregistrement,
+                    // lorsque regleEnCours était encore vrai. Ses boutons
+                    // « Modifier » sont donc désactivés : les réactiver ici.
+                    document.querySelectorAll(".bouton-regle-demo").forEach((bouton) => {
+                        bouton.disabled = false;
+                    });
                     $("enregistrerReglesArticle").disabled = false;
                     $("annulerReglesArticle").disabled = false;
                     if (editionRegles && confirmation.hidden) {
