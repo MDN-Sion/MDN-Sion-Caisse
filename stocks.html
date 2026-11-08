@@ -899,6 +899,14 @@
     .detail-table tr.caisse-historique-annulation td,
     .detail-table tr.caisse-historique-retour-mdn td,
     .detail-table tr.caisse-historique-correction td { border-bottom-color:#e1e5eb; }
+    /* Pictogrammes des mouvements particuliers : même style que la légende validée. */
+    .caisse-operation-avec-icone { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+    .caisse-operation-icone { display:inline-flex; flex:0 0 28px; width:28px; height:28px; align-items:center; justify-content:center; border-radius:9px; }
+    .caisse-operation-icone svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+    .caisse-operation-icone-livraison { color:#3974ba; background:#edf5ff; }
+    .caisse-operation-icone-annulation { color:#bc7b20; background:#fff4df; }
+    .caisse-operation-icone-retour-mdn { color:#398354; background:#eef8f0; }
+    .caisse-operation-icone-correction { color:#8060a6; background:#f4f0fc; }
     .detail-vide { padding:12px; color:#888; text-align:center; font-size:11px; }
     .detail-meta { display:flex; flex-wrap:wrap; gap:6px 12px; color:#666; font-size:10px; line-height:1.4; }
     .detail-commentaire { margin-top:8px; padding:8px 10px; border-radius:9px; background:#fff; border:1px solid #e7e7e7; font-size:10px; color:#555; }
@@ -4677,6 +4685,14 @@
           inventaire_final: "Inventaire final"
         };
 
+        // Icônes vectorielles locales : aucun chargement externe nécessaire.
+        const iconesMouvementsCaisses = {
+          livraison: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17h4V5H2v12h3"/><path d="M14 9h4l4 4v4h-3"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>',
+          annulation: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>',
+          retourMdn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5v-9"/><path d="M12 13v9"/><path d="m16 15 2 2 4-4"/></svg>',
+          correction: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'
+        };
+
         const historiqueHtml = mouvements === null
           ? `<div class="detail-explication">Historique indisponible : ${echapperHtml(erreurMouvementsContenants || "accès aux mouvements non autorisé")}. Le stock propre reste celui calculé par Supabase. Aucun mouvement n'a été modifié.</div>`
           : mouvements.length === 0
@@ -4708,9 +4724,30 @@
                       ? "Correction du stock MDN"
                       : (nomsMouvements[m.type_mouvement] || m.type_mouvement);
 
+                  const categorieIcone = estAnnulation
+                    ? "annulation"
+                    : estLivraison
+                      ? "livraison"
+                      : estCorrection
+                        ? "correction"
+                        : estRetourInterne
+                          ? "retourMdn"
+                          : null;
+
+                  const classesIcones = {
+                    livraison: "caisse-operation-icone-livraison",
+                    annulation: "caisse-operation-icone-annulation",
+                    retourMdn: "caisse-operation-icone-retour-mdn",
+                    correction: "caisse-operation-icone-correction"
+                  };
+
+                  const operationAffichee = categorieIcone
+                    ? `<span class="caisse-operation-avec-icone"><span class="caisse-operation-icone ${classesIcones[categorieIcone]}">${iconesMouvementsCaisses[categorieIcone]}</span><span>${echapperHtml(libelleOperation)}</span></span>`
+                    : echapperHtml(libelleOperation);
+
                   return `<tr class="${classeHistorique}">
                     <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
-                    <td>${echapperHtml(libelleOperation)}</td>
+                    <td>${operationAffichee}</td>
                     <td>${echapperHtml(libelleStandContenant(m))}</td>
                     <td>${echapperHtml(m.etat || "—")}</td>
                     <td>${echapperHtml(m.contenu || "—")}</td>
