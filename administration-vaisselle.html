@@ -2234,6 +2234,29 @@
 		            message("Impossible de charger l'édition : " + erreur.message, "erreur");
 		        }
 		    });
+            // V20 : branchement des actions de la fenêtre de règles par article.
+            $("annulerReglesArticle").addEventListener("click", () => {
+                if (etat.regleEnCours) {
+                    return;
+                }
+                $("dialogueReglesArticle").close();
+                editionRegles = null;
+            });
+
+            $("enregistrerReglesArticle").addEventListener("click", enregistrerReglesArticle);
+
+            $("dialogueReglesArticle").addEventListener("cancel", (evenement) => {
+                if (etat.regleEnCours) {
+                    evenement.preventDefault();
+                }
+            });
+
+            $("dialogueReglesArticle").addEventListener("close", () => {
+                if (!etat.regleEnCours) {
+                    editionRegles = null;
+                }
+            });
+
 		    $("annuler").addEventListener("click", () => $("dialogue").close());
 		    $("formulaire").addEventListener("submit", enregistrer);
 		    initialiser();
