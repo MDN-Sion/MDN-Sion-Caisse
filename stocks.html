@@ -3410,15 +3410,27 @@
         if (!editionCourante?.id) return;
 
         try {
-          const { data, error } = await window.MDN_SUPABASE
-            .from("mouvements_stock_contenants")
-            .select("id,edition_id,type_contenant_id,type_mouvement,etat,contenu,quantite,reference_type,reference_id,created_at,is_demo")
-            .eq("edition_id", editionCourante.id)
-            .eq("is_demo", modeDemo)
-            .order("created_at", { ascending: false })
-            .limit(2000);
+          let data;
 
-          if (error) throw error;
+          if (modeDemo) {
+            const reponse = await window.MDN_SUPABASE.rpc(
+              "consulter_mouvements_caisses_demo",
+              { p_edition_id: editionCourante.id }
+            );
+            if (reponse.error) throw reponse.error;
+            data = reponse.data;
+          } else {
+            const reponse = await window.MDN_SUPABASE
+              .from("mouvements_stock_contenants")
+              .select("id,edition_id,type_contenant_id,type_mouvement,etat,contenu,quantite,reference_type,reference_id,created_at,is_demo")
+              .eq("edition_id", editionCourante.id)
+              .eq("is_demo", false)
+              .order("created_at", { ascending: false })
+              .limit(2000);
+            if (reponse.error) throw reponse.error;
+            data = reponse.data;
+          }
+
           mouvementsContenantsCourants = Array.isArray(data) ? data : [];
         } catch (erreur) {
           erreurMouvementsContenants = erreur?.message || "Lecture des mouvements indisponible.";
@@ -4611,10 +4623,6 @@
           return ["retrait", "retrait_partenaire"].includes(m.type_mouvement)
             ? total + entier(m.quantite) : total;
         }, 0);
-        const totalRetoursPropres = mouvements === null ? null : mouvements.reduce(function (total, m) {
-          return ["retour_propre", "retour_propre_partenaire"].includes(m.type_mouvement)
-            ? total + entier(m.quantite) : total;
-        }, 0);
 
         ouvrirDetail(
           "📦 " + (ligne.contenant || "Contenant"),
@@ -4647,17 +4655,41 @@
           : mouvements.length === 0
             ? '<div class="detail-vide">Aucun mouvement consultable pour ce contenant.</div>'
             : `<div class="tableau-defilement"><table class="detail-table">
-                <thead><tr><th>Date</th><th>Opération</th><th>État</th><th>Contenu</th><th>Quantité</th></tr></thead>
+                <thead><tr><th>Date</th><th>Opération</th><th>Stand</th><th>État</th><th>Contenu</th><th>Quantité</th></tr></thead>
                 <tbody>${mouvements.map(function (m) {
                   return `<tr>
                     <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
                     <td>${echapperHtml(nomsMouvements[m.type_mouvement] || m.type_mouvement)}</td>
+                    <td>${echapperHtml(m.stand_demo_id ? "Stand Démo · " + m.stand_demo_id.slice(0, 8) : "—")}</td>
                     <td>${echapperHtml(m.etat || "—")}</td>
                     <td>${echapperHtml(m.contenu || "—")}</td>
                     <td><strong>${formatNombre(m.quantite)}</strong></td>
                   </tr>`;
                 }).join("")}</tbody>
               </table></div>`;
+
+        const soldesStands = new Map();
+        if (Array.isArray(mouvements)) {
+          mouvements.forEach(function (m) {
+            if (!m.stand_demo_id || m.statut_operation === "annule") return;
+            const ancien = soldesStands.get(m.stand_demo_id) || 0;
+            const retrait = ["retrait", "retrait_partenaire"].includes(m.type_mouvement);
+            const retour = ["retour_sale", "retour_sale_partenaire", "retour_propre", "retour_propre_partenaire"].includes(m.type_mouvement);
+            if (retrait || retour) {
+              soldesStands.set(m.stand_demo_id, ancien + (retrait ? entier(m.quantite) : -entier(m.quantite)));
+            }
+          });
+        }
+        const repartitionStands = Array.from(soldesStands.entries())
+          .filter(function (entree) { return entree[1] !== 0; })
+          .sort(function (a, b) { return b[1] - a[1]; });
+        const repartitionHtml = mouvements === null
+          ? '<div class="detail-vide">Répartition indisponible.</div>'
+          : repartitionStands.length
+            ? `<div class="tableau-defilement"><table class="detail-table"><thead><tr><th>Stand Démo (identifiant)</th><th>Solde net de caisses</th></tr></thead><tbody>${repartitionStands.map(function (entree) {
+                return `<tr><td>${echapperHtml(entree[0])}</td><td><strong>${formatNombre(entree[1])}</strong></td></tr>`;
+              }).join("")}</tbody></table></div>`
+            : '<div class="detail-vide">Aucune caisse actuellement attribuable à un stand dans les mouvements consultables.</div>';
 
         contenuModalDetail.innerHTML = `
           <div class="detail-sections">
@@ -4666,7 +4698,6 @@
               <div class="detail-grille">
                 ${indicateur("Stock MDN · vides propres", ligne.stock_vide_propre)}
                 ${indicateur("Retraits enregistrés", totalRetraits)}
-                ${indicateur("Retours propres enregistrés", totalRetoursPropres)}
                 ${indicateur("Retours sales enregistrés", totalRetoursSales)}
               </div>
               <div class="detail-explication">
@@ -4674,6 +4705,11 @@
                 Les caisses retournées sales sont suivies séparément et ne sont pas réintégrées au stock propre.
                 Les nombres de mouvements sont des cumuls consultables, pas des stocks disponibles.
               </div>
+            </section>
+            <section class="detail-carte">
+              <h3>Caisses détenues par les stands</h3>
+              <div class="detail-aide">Solde des retraits moins les retours enregistrés. Les mouvements anciens sans lien avec une opération stand ne peuvent pas être attribués automatiquement.</div>
+              ${repartitionHtml}
             </section>
             <section class="detail-carte">
               <h3>Historique des mouvements</h3>
