@@ -886,6 +886,19 @@
     .detail-table { width:100%; min-width:520px; }
     .detail-table th, .detail-table td { text-align:left; }
     .detail-table td:last-child, .detail-table th:last-child { text-align:right; }
+    /* Historique des caisses : distinction visuelle des mouvements internes. */
+    .detail-table tr.caisse-historique-livraison td { background:#edf5ff; }
+    .detail-table tr.caisse-historique-livraison td:first-child { box-shadow:inset 3px 0 #3974ba; }
+    .detail-table tr.caisse-historique-annulation td { background:#fff4df; }
+    .detail-table tr.caisse-historique-annulation td:first-child { box-shadow:inset 3px 0 #bc7b20; }
+    .detail-table tr.caisse-historique-retour-mdn td { background:#eef8f0; }
+    .detail-table tr.caisse-historique-retour-mdn td:first-child { box-shadow:inset 3px 0 #398354; }
+    .detail-table tr.caisse-historique-correction td { background:#f4f0fc; }
+    .detail-table tr.caisse-historique-correction td:first-child { box-shadow:inset 3px 0 #8060a6; }
+    .detail-table tr.caisse-historique-livraison td,
+    .detail-table tr.caisse-historique-annulation td,
+    .detail-table tr.caisse-historique-retour-mdn td,
+    .detail-table tr.caisse-historique-correction td { border-bottom-color:#e1e5eb; }
     .detail-vide { padding:12px; color:#888; text-align:center; font-size:11px; }
     .detail-meta { display:flex; flex-wrap:wrap; gap:6px 12px; color:#666; font-size:10px; line-height:1.4; }
     .detail-commentaire { margin-top:8px; padding:8px 10px; border-radius:9px; background:#fff; border:1px solid #e7e7e7; font-size:10px; color:#555; }
@@ -4604,7 +4617,9 @@
       }
 
       function libelleStandContenant(mouvement) {
-        if (!mouvement || !mouvement.stand_demo_id) return "—";
+        // Les mouvements internes sont rattachés au stock MDN,
+        // sans créer artificiellement une opération pour un stand.
+        if (!mouvement || !mouvement.stand_demo_id) return "Stock MDN";
 
         const numero = String(mouvement.numero_stand || "").trim();
         const nom = String(mouvement.raison_sociale || mouvement.nom_stand || "").trim();
@@ -4669,11 +4684,33 @@
             : `<div class="tableau-defilement"><table class="detail-table">
                 <thead><tr><th>Date</th><th>Opération</th><th>Stand</th><th>État</th><th>Contenu</th><th>Quantité</th></tr></thead>
                 <tbody>${mouvements.map(function (m) {
-                  return `<tr>
+                  const estAnnulation = m.reference_type === "annulation_operation_vaisselle_demo";
+                  const estLivraison = ["livraison_vaisselle", "livraison_papival"].includes(m.type_mouvement);
+                  const estCorrection = m.reference_type === "correction_operation_stock";
+                  const estRetourInterne = !m.stand_demo_id && !estAnnulation && !estLivraison && !estCorrection
+                    && ["retour_propre", "retour_propre_partenaire", "retour_sale", "retour_sale_partenaire"].includes(m.type_mouvement);
+
+                  const classeHistorique = estAnnulation
+                    ? "caisse-historique-annulation"
+                    : estLivraison
+                      ? "caisse-historique-livraison"
+                      : estCorrection
+                        ? "caisse-historique-correction"
+                        : estRetourInterne
+                          ? "caisse-historique-retour-mdn"
+                          : "";
+
+                  // Le type physique du contre-mouvement ne suffit pas
+                  // à identifier la nature de l'opération annulée.
+                  const libelleOperation = estAnnulation
+                    ? "Annulation d’opération stand"
+                    : estCorrection
+                      ? "Correction du stock MDN"
+                      : (nomsMouvements[m.type_mouvement] || m.type_mouvement);
+
+                  return `<tr class="${classeHistorique}">
                     <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
-                    <td>${echapperHtml(m.reference_type === "annulation_operation_vaisselle_demo"
-                      ? "Annulation de " + (m.type_mouvement === "retour_propre_partenaire" ? "retrait" : "mouvement")
-                      : (nomsMouvements[m.type_mouvement] || m.type_mouvement))}</td>
+                    <td>${echapperHtml(libelleOperation)}</td>
                     <td>${echapperHtml(libelleStandContenant(m))}</td>
                     <td>${echapperHtml(m.etat || "—")}</td>
                     <td>${echapperHtml(m.contenu || "—")}</td>
