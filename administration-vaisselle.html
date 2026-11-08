@@ -923,6 +923,19 @@
             }
         }
 
+
+        /* V22 — Évite le double trait entre la dernière catégorie
+           (Comité) et le pied de fiche sur écran étroit. */
+        @media (max-width: 1150px) {
+            .tableau-regles tbody tr > td:nth-last-child(2) {
+                border-bottom: 0;
+            }
+            .tableau-regles tbody tr > td.cellule-gestion-regles {
+                border-top: 1px solid #dbe3ec;
+                border-bottom: 0;
+            }
+        }
+
 </style>
  </head>
  <body>
