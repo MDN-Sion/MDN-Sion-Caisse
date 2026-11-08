@@ -1602,7 +1602,7 @@
             }
 
             function ouvrirEditionRegles(reference) {
-                if (!etat.demo || etat.regleEnCours) {
+                if (!etat.acces || etat.regleEnCours) {
                     return;
                 }
 
@@ -1711,7 +1711,10 @@
                 let nombreEnregistre = 0;
                 try {
                     for (const changement of changements) {
-                        const { error } = await etat.client.rpc("enregistrer_regle_retour_vaisselle_demo", {
+                        const { error } = await etat.client.rpc(
+                            etat.demo ? "enregistrer_regle_retour_vaisselle_demo" : "enregistrer_regle_retour_vaisselle_reel",
+                            {
+                            ...(etat.demo ? {} : { p_edition_id: etat.editionId }),
                             p_vaisselle_id: editionRegles.reference.id,
                             p_type_partenaire: changement.type,
                             p_retour_propre_unite_autorise: changement.code !== "0",
@@ -1725,13 +1728,13 @@
                     const article = editionRegles.reference.nom;
                     $("dialogueReglesArticle").close();
                     editionRegles = null;
-                    await chargerReglesDemo();
-                    message(nombreEnregistre + " règle(s) Démo enregistrée(s) pour " + article + ".", "succes");
+                    await (etat.demo ? chargerReglesDemo() : chargerReglesReel());
+                    message(nombreEnregistre + " règle(s) enregistrée(s) pour " + article + ".", "succes");
                 } catch (exception) {
                     erreur.textContent = "Enregistrement incomplet (" + nombreEnregistre + "/" + changements.length + ") : " + exception.message;
                     confirmation.hidden = true;
                     $("enregistrerReglesArticle").textContent = "Réessayer";
-                    await chargerReglesDemo().catch(() => {});
+                    await (etat.demo ? chargerReglesDemo() : chargerReglesReel()).catch(() => {});
                 } finally {
                     etat.regleEnCours = false;
                     // Le tableau a été reconstruit pendant l'enregistrement,
@@ -1780,7 +1783,7 @@
                 const entete = document.createElement("thead");
                 const trEntete = document.createElement("tr");
 
-                for (const titre of ["Article", ...types, ...(etat.demo ? ["Gestion"] : [])]) {
+                for (const titre of ["Article", ...types, "Gestion"]) {
                     const th = document.createElement("th");
                     th.scope = "col";
                     th.textContent = titre;
@@ -1823,7 +1826,7 @@
                         tr.appendChild(td);
                     }
 
-                    if (etat.demo) {
+                    if (etat.acces) {
                         const gestion = document.createElement("td");
                         gestion.className = "cellule-gestion-regles";
                         gestion.setAttribute("data-type-stand", "Gestion");
@@ -1832,7 +1835,7 @@
                         bouton.className = "bouton secondaire bouton-regle-demo bouton-modifier-vaisselle";
                         bouton.textContent = "Modifier";
                         bouton.disabled = etat.regleEnCours;
-                        bouton.setAttribute("aria-label", "Modifier les règles Démo de " + reference.nom);
+                        bouton.setAttribute("aria-label", "Modifier les règles de " + reference.nom);
                         bouton.addEventListener("click", () => ouvrirEditionRegles(reference));
                         gestion.appendChild(bouton);
                         tr.appendChild(gestion);
@@ -1844,7 +1847,7 @@
                 if (!etat.references.length) {
                     const tr = document.createElement("tr");
                     const td = document.createElement("td");
-                    td.colSpan = types.length + 1 + (etat.demo ? 1 : 0);
+                    td.colSpan = types.length + 2;
                     td.textContent = "Aucune référence disponible.";
                     tr.appendChild(td);
                     corps.appendChild(tr);
@@ -1966,7 +1969,9 @@
                     cellule(ligne, nombres(contenant.consigne) + " CHF");
                     cellule(ligne, nombres(contenant.lavage) + " CHF");
                     etatCellule(ligne, contenant.actif);
-                    cellule(ligne, contenant.personnalise_demo ? "Personnalisé Démo" : "Valeurs de référence");
+                    cellule(ligne, etat.demo
+                        ? (contenant.personnalise_demo ? "Personnalisé Démo" : "Valeurs de référence")
+                        : "Réel");
                     const actions = document.createElement("td");
                     const bouton = document.createElement("button");
                     bouton.type = "button";
@@ -1986,11 +1991,12 @@
             }
 
             async function chargerContenantsDemo() {
-                $("sectionContenantsDemo").hidden = !etat.demo;
-                if (!etat.demo) {
-                    return;
-                }
-                const { data, error } = await etat.client.rpc("charger_configuration_contenants_demo");
+                $("sectionContenantsDemo").hidden = false;
+                const { data, error } = etat.demo
+                    ? await etat.client.rpc("charger_configuration_contenants_demo")
+                    : await etat.client.rpc("charger_configuration_contenants_reel", {
+                        p_edition_id: etat.editionId
+                    });
                 if (error) {
                     throw error;
                 }
@@ -2032,7 +2038,8 @@
                 $("erreurContenant").textContent = "";
                 try {
                     const { data, error } = await etat.client.rpc(
-                        "enregistrer_configuration_contenant_demo", parametres
+                        etat.demo ? "enregistrer_configuration_contenant_demo" : "enregistrer_configuration_contenant_reel",
+                        etat.demo ? parametres : { ...parametres, p_edition_id: etat.editionId }
                     );
                     if (error) {
                         throw error;
@@ -2046,7 +2053,7 @@
                     await chargerContenantsDemo();
                     $("dialogueContenant").close();
                     contenantEnEdition = null;
-                    message("Paramètres du contenant enregistrés en Démo.", "succes");
+                    message("Paramètres du contenant enregistrés.", "succes");
                 } catch (erreur) {
                     $("erreurContenant").textContent = "Enregistrement impossible : " + (erreur.message || "erreur inconnue");
                 } finally {
@@ -2185,6 +2192,7 @@
 		            choix.value = etat.editionId || "";
 		            await chargerParametres();
                     await chargerReglesReel();
+                    await chargerContenantsDemo();
 		            if (etat.references.length === 0 || etat.editions.length === 0) {
                         const problemes = [];
 
@@ -2637,6 +2645,7 @@
 		        try {
 		            await chargerParametres();
                     await chargerReglesReel();
+                    await chargerContenantsDemo();
 		        } catch (erreur) {
 		            message("Impossible de charger l'édition : " + erreur.message, "erreur");
 		        }
