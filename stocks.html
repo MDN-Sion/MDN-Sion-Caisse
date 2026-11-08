@@ -3398,25 +3398,73 @@
         }).join("");
       }
 
-      function ajouterContenantsAuTableau(contenants) {
-        if (!Array.isArray(contenants) || contenants.length === 0) {
-          return;
+      // Consultation des mouvements de contenants : lecture seule, édition et mode isolés.
+      // Un refus RLS ne doit jamais être interprété comme un stock nul.
+      let mouvementsContenantsCourants = null;
+      let erreurMouvementsContenants = null;
+
+      async function chargerMouvementsContenants() {
+        mouvementsContenantsCourants = null;
+        erreurMouvementsContenants = null;
+
+        if (!editionCourante?.id) return;
+
+        try {
+          const { data, error } = await window.MDN_SUPABASE
+            .from("mouvements_stock_contenants")
+            .select("id,edition_id,type_contenant_id,type_mouvement,etat,contenu,quantite,reference_type,reference_id,created_at,is_demo")
+            .eq("edition_id", editionCourante.id)
+            .eq("is_demo", modeDemo)
+            .order("created_at", { ascending: false })
+            .limit(2000);
+
+          if (error) throw error;
+          mouvementsContenantsCourants = Array.isArray(data) ? data : [];
+        } catch (erreur) {
+          erreurMouvementsContenants = erreur?.message || "Lecture des mouvements indisponible.";
+          console.warn("[MDN Sion] Historique des caisses indisponible :", erreur);
         }
+      }
+
+      function mouvementsDuContenant(typeContenantId) {
+        if (!Array.isArray(mouvementsContenantsCourants)) return null;
+        return mouvementsContenantsCourants.filter(function (mouvement) {
+          return mouvement.type_contenant_id === typeContenantId;
+        });
+      }
+
+      function quantiteRetoursSalesContenant(mouvements) {
+        return mouvements.reduce(function (total, mouvement) {
+          return mouvement.etat === "sale" &&
+            ["retour_sale", "retour_sale_partenaire"].includes(mouvement.type_mouvement)
+              ? total + entier(mouvement.quantite)
+              : total;
+        }, 0);
+      }
+
+      function ajouterContenantsAuTableau(contenants) {
+        if (!Array.isArray(contenants) || contenants.length === 0) return;
 
         const lignesContenants = contenants.map(function (ligne) {
+          const mouvements = mouvementsDuContenant(ligne.type_contenant_id);
+          const retoursSales = mouvements === null
+            ? "—"
+            : formatNombre(quantiteRetoursSalesContenant(mouvements));
+
           return `
             <tr class="ligne-stock-cliquable ligne-contenant" data-type-contenant-id="${echapperHtml(ligne.type_contenant_id || "")}">
               <td class="article-cell">
                 <strong>${echapperHtml(ligne.contenant)}</strong>
-                <small>Vide propre</small>
+                <small>Contenant vide · détail accessible au clic</small>
               </td>
-
-              <td class="nombre-tente">${formatNombre(ligne.stock_vide_propre)}</td>
+              <td class="nombre-tente">${formatNombre(ligne.stock_vide_propre)}
+                <span class="stock-physique">Caisses vides propres</span>
+              </td>
               <td>—</td>
+              <td><strong>${formatNombre(ligne.stock_vide_propre)}</strong></td>
+              <td><span class="badge-stock ok">Suivi distinct</span></td>
               <td>—</td>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
+              <td class="nombre-sale">${retoursSales}</td>
             </tr>
           `;
         }).join("");
@@ -4555,33 +4603,81 @@
           return;
         }
 
+        const mouvements = mouvementsDuContenant(typeContenantId);
+        const totalRetoursSales = mouvements === null
+          ? null
+          : quantiteRetoursSalesContenant(mouvements);
+        const totalRetraits = mouvements === null ? null : mouvements.reduce(function (total, m) {
+          return ["retrait", "retrait_partenaire"].includes(m.type_mouvement)
+            ? total + entier(m.quantite) : total;
+        }, 0);
+        const totalRetoursPropres = mouvements === null ? null : mouvements.reduce(function (total, m) {
+          return ["retour_propre", "retour_propre_partenaire"].includes(m.type_mouvement)
+            ? total + entier(m.quantite) : total;
+        }, 0);
+
         ouvrirDetail(
           "📦 " + (ligne.contenant || "Contenant"),
-          "Situation actuelle du contenant vide propre"
+          "Situation actuelle et mouvements du contenant"
         );
+
+        const indicateur = function (libelle, valeur) {
+          return `<div class="detail-indicateur"><span>${echapperHtml(libelle)}</span><strong>${valeur === null ? "—" : formatNombre(valeur)}</strong></div>`;
+        };
+
+        const nomsMouvements = {
+          inventaire_initial: "Inventaire initial",
+          livraison_papival: "Livraison Papival",
+          livraison_vaisselle: "Livraison de vaisselle",
+          retrait: "Retrait",
+          retrait_partenaire: "Retrait stand",
+          retour_propre: "Retour propre",
+          retour_propre_partenaire: "Retour propre stand",
+          retour_sale: "Retour sale",
+          retour_sale_partenaire: "Retour sale stand",
+          approvisionnement_mdn: "Approvisionnement MDN",
+          conditionnement: "Conditionnement",
+          deconditionnement: "Déconditionnement",
+          ajustement: "Ajustement",
+          inventaire_final: "Inventaire final"
+        };
+
+        const historiqueHtml = mouvements === null
+          ? `<div class="detail-explication">Historique indisponible : ${echapperHtml(erreurMouvementsContenants || "accès aux mouvements non autorisé")}. Le stock propre reste celui calculé par Supabase. Aucun mouvement n'a été modifié.</div>`
+          : mouvements.length === 0
+            ? '<div class="detail-vide">Aucun mouvement consultable pour ce contenant.</div>'
+            : `<div class="tableau-defilement"><table class="detail-table">
+                <thead><tr><th>Date</th><th>Opération</th><th>État</th><th>Contenu</th><th>Quantité</th></tr></thead>
+                <tbody>${mouvements.map(function (m) {
+                  return `<tr>
+                    <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
+                    <td>${echapperHtml(nomsMouvements[m.type_mouvement] || m.type_mouvement)}</td>
+                    <td>${echapperHtml(m.etat || "—")}</td>
+                    <td>${echapperHtml(m.contenu || "—")}</td>
+                    <td><strong>${formatNombre(m.quantite)}</strong></td>
+                  </tr>`;
+                }).join("")}</tbody>
+              </table></div>`;
 
         contenuModalDetail.innerHTML = `
           <div class="detail-sections">
             <section class="detail-carte">
               <h3>Situation actuelle</h3>
               <div class="detail-grille">
-                <div class="detail-indicateur">
-                  <span>Stock MDN</span>
-                  <strong>${formatNombre(ligne.stock_vide_propre)}</strong>
-                </div>
-                <div class="detail-indicateur">
-                  <span>État</span>
-                  <strong>Vide propre</strong>
-                </div>
+                ${indicateur("Stock MDN · vides propres", ligne.stock_vide_propre)}
+                ${indicateur("Retraits enregistrés", totalRetraits)}
+                ${indicateur("Retours propres enregistrés", totalRetoursPropres)}
+                ${indicateur("Retours sales enregistrés", totalRetoursSales)}
+              </div>
+              <div class="detail-explication">
+                Le stock disponible correspond uniquement aux caisses vides propres.
+                Les caisses retournées sales sont suivies séparément et ne sont pas réintégrées au stock propre.
+                Les nombres de mouvements sont des cumuls consultables, pas des stocks disponibles.
               </div>
             </section>
-
             <section class="detail-carte">
-              <h3>À propos de ce stock</h3>
-              <div class="detail-aide">
-                Ce stock correspond aux contenants vides propres actuellement disponibles au Stock MDN.
-                Les livraisons et corrections de contenants sont conservées dans l’historique des opérations de stock.
-              </div>
+              <h3>Historique des mouvements</h3>
+              ${historiqueHtml}
             </section>
           </div>
         `;
@@ -5984,6 +6080,7 @@
           contenantsCourants = contenants;
 
           afficherStocks(stocks);
+          await chargerMouvementsContenants();
           ajouterContenantsAuTableau(contenants);
 
           await enrichirHistoriqueContenants(mouvements);
