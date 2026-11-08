@@ -936,6 +936,15 @@
             }
         }
 
+
+/* V23 — Administration isolée des contenants en mode Démo. */
+.contenants-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.contenants-formulaire { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.contenants-formulaire label { display: flex; flex-direction: column; gap: 6px; }
+.contenants-formulaire .option-contenant { flex-direction: row; align-items: center; }
+.contenants-formulaire input[type="number"] { width: 100%; min-width: 0; padding: 10px; border: 1px solid #b7bfd1; border-radius: 8px; }
+#dialogueContenant .dialog-contenu { width: min(740px, 92vw); max-height: 85vh; overflow: auto; }
+@media (max-width: 600px) { #dialogueContenant .dialog-contenu { width: 94vw; } }
 </style>
  </head>
  <body>
@@ -1121,6 +1130,18 @@
      <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
      <div id="contenuReglesRemboursement"></div>
     </section>
+
+    <section class="bloc" id="sectionContenantsDemo" hidden>
+      <h2>4. Contenants — paramètres Démo</h2>
+      <p class="petit">Consigne, lavage et règles de remboursement des caisses et autres contenants. Les modifications sont enregistrées séparément du mode Réel.</p>
+      <p class="petit"><strong>Attention :</strong> ces paramètres ne sont pas encore raccordés au calcul des retraits et retours. Les modifier ici n'affecte pas encore la facturation.</p>
+      <div class="table-scroll tableau-arrondi">
+        <table>
+          <thead><tr><th>Contenant</th><th>Consigne</th><th>Lavage</th><th>État</th><th>Source</th><th>Gestion</th></tr></thead>
+          <tbody id="lignesContenantsDemo"><tr><td colspan="6">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <p class="petit">Aucun inventaire ni mouvement de stock n'est modifié depuis cette page.</p>
    </section>
   </main>
@@ -1172,6 +1193,19 @@
         <button class="bouton" id="enregistrerReglesArticle" type="button">Enregistrer</button>
       </div>
     </div>
+  </dialog>
+
+  <dialog id="dialogueContenant" aria-labelledby="titreContenant">
+    <form class="dialog-contenu" id="formulaireContenant">
+      <h3 id="titreContenant">Modifier un contenant Démo</h3>
+      <p class="petit">Ces modifications restent isolées du mode Réel et ne sont pas encore appliquées au moteur de calcul.</p>
+      <div class="contenants-formulaire" id="champsContenant"></div>
+      <p id="erreurContenant" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="bouton secondaire" id="annulerContenant" type="button">Annuler</button>
+        <button class="bouton" id="enregistrerContenant" type="submit">Enregistrer</button>
+      </div>
+    </form>
   </dialog>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
   </script>
@@ -1669,6 +1703,151 @@
                 contenu.appendChild(enveloppe);
             }
 
+
+            // V23 : administration des contenants, isolée en mode Démo.
+            let contenantsDemo = [];
+            let contenantEnEdition = null;
+            let enregistrementContenantEnCours = false;
+
+            function creerChampContenant(nom, libelle, valeur, type) {
+                const etiquette = document.createElement("label");
+                const champ = document.createElement("input");
+                champ.name = nom;
+                champ.type = type;
+                if (type === "checkbox") {
+                    etiquette.className = "option-contenant";
+                    champ.checked = valeur === true;
+                    etiquette.append(champ, document.createTextNode(libelle));
+                } else {
+                    champ.value = String(valeur ?? 0);
+                    champ.required = true;
+                    champ.min = "0";
+                    champ.step = "0.01";
+                    etiquette.append(document.createTextNode(libelle), champ);
+                }
+                $("champsContenant").appendChild(etiquette);
+            }
+
+            function ouvrirContenantDemo(contenant) {
+                contenantEnEdition = contenant;
+                $("titreContenant").textContent = "Modifier — " + contenant.nom;
+                $("erreurContenant").textContent = "";
+                $("champsContenant").replaceChildren();
+                creerChampContenant("consigne", "Consigne (CHF)", contenant.consigne, "number");
+                creerChampContenant("lavage", "Lavage (CHF)", contenant.lavage, "number");
+                for (const [cle, libelle] of [
+                    ["actif", "Contenant actif"],
+                    ["retour_propre_rembourse_consigne", "Retour propre : rembourser la consigne"],
+                    ["retour_propre_rembourse_lavage", "Retour propre : rembourser le lavage"],
+                    ["retour_propre_reintegre_stock", "Retour propre : réintégrer au stock"],
+                    ["retour_sale_rembourse_consigne", "Retour sale : rembourser la consigne"],
+                    ["retour_sale_rembourse_lavage", "Retour sale : rembourser le lavage"],
+                    ["retour_sale_reintegre_stock", "Retour sale : réintégrer au stock"]
+                ]) {
+                    creerChampContenant(cle, libelle, contenant[cle], "checkbox");
+                }
+                $("dialogueContenant").showModal();
+            }
+
+            function afficherContenantsDemo() {
+                const corps = $("lignesContenantsDemo");
+                corps.replaceChildren();
+                for (const contenant of contenantsDemo) {
+                    const ligne = document.createElement("tr");
+                    cellule(ligne, contenant.nom);
+                    cellule(ligne, nombres(contenant.consigne) + " CHF");
+                    cellule(ligne, nombres(contenant.lavage) + " CHF");
+                    etatCellule(ligne, contenant.actif);
+                    cellule(ligne, contenant.personnalise_demo ? "Personnalisé Démo" : "Valeurs de référence");
+                    const actions = document.createElement("td");
+                    const bouton = document.createElement("button");
+                    bouton.type = "button";
+                    bouton.className = "bouton secondaire";
+                    bouton.textContent = "Modifier";
+                    bouton.addEventListener("click", () => ouvrirContenantDemo(contenant));
+                    actions.appendChild(bouton);
+                    ligne.appendChild(actions);
+                    corps.appendChild(ligne);
+                }
+                if (!contenantsDemo.length) {
+                    const ligne = document.createElement("tr");
+                    const vide = cellule(ligne, "Aucun contenant disponible.");
+                    vide.colSpan = 6;
+                    corps.appendChild(ligne);
+                }
+            }
+
+            async function chargerContenantsDemo() {
+                $("sectionContenantsDemo").hidden = !etat.demo;
+                if (!etat.demo) {
+                    return;
+                }
+                const { data, error } = await etat.client.rpc("charger_configuration_contenants_demo");
+                if (error) {
+                    throw error;
+                }
+                if (!data?.ok) {
+                    throw new Error("Le chargement des contenants Démo n'a pas été confirmé.");
+                }
+                contenantsDemo = Array.isArray(data.contenants) ? data.contenants : [];
+                afficherContenantsDemo();
+            }
+
+            async function enregistrerContenantDemo(evenement) {
+                evenement.preventDefault();
+                if (!contenantEnEdition || enregistrementContenantEnCours) {
+                    return;
+                }
+                const formulaire = $("formulaireContenant");
+                const valeurs = new FormData(formulaire);
+                const consigne = Number(valeurs.get("consigne"));
+                const lavage = Number(valeurs.get("lavage"));
+                if (!Number.isFinite(consigne) || !Number.isFinite(lavage) || consigne < 0 || lavage < 0) {
+                    $("erreurContenant").textContent = "Les tarifs doivent être des nombres positifs ou nuls.";
+                    return;
+                }
+                const parametres = {
+                    p_type_contenant_id: contenantEnEdition.id,
+                    p_consigne: consigne,
+                    p_lavage: lavage
+                };
+                for (const cle of [
+                    "actif", "retour_propre_rembourse_consigne", "retour_propre_rembourse_lavage",
+                    "retour_propre_reintegre_stock", "retour_sale_rembourse_consigne",
+                    "retour_sale_rembourse_lavage", "retour_sale_reintegre_stock"
+                ]) {
+                    parametres["p_" + cle] = formulaire.elements.namedItem(cle).checked;
+                }
+                enregistrementContenantEnCours = true;
+                $("enregistrerContenant").disabled = true;
+                $("annulerContenant").disabled = true;
+                $("erreurContenant").textContent = "";
+                try {
+                    const { data, error } = await etat.client.rpc(
+                        "enregistrer_configuration_contenant_demo", parametres
+                    );
+                    if (error) {
+                        throw error;
+                    }
+                    if (!data?.ok) {
+                        // SQL175 renvoie un résultat explicite sans champ ok.
+                        if (data?.resultat !== "CONFIGURATION_CONTENANT_DEMO_ENREGISTREE") {
+                            throw new Error("Enregistrement non confirmé par Supabase.");
+                        }
+                    }
+                    await chargerContenantsDemo();
+                    $("dialogueContenant").close();
+                    contenantEnEdition = null;
+                    message("Paramètres du contenant enregistrés en Démo.", "succes");
+                } catch (erreur) {
+                    $("erreurContenant").textContent = "Enregistrement impossible : " + (erreur.message || "erreur inconnue");
+                } finally {
+                    enregistrementContenantEnCours = false;
+                    $("enregistrerContenant").disabled = false;
+                    $("annulerContenant").disabled = false;
+                }
+            }
+
 		    async function charger() {
 		        $("actualiser").disabled = true;
 		        message("Chargement des données depuis Supabase…");
@@ -1747,6 +1926,7 @@
                     }));
 
                     trierParametresSelonReferences();
+                    await chargerContenantsDemo();
 
                     const choixDemo = $("edition");
                     choixDemo.replaceChildren();
@@ -2253,6 +2433,18 @@
 		            message("Impossible de charger l'édition : " + erreur.message, "erreur");
 		        }
 		    });
+            $("annulerContenant").addEventListener("click", () => {
+                if (!enregistrementContenantEnCours) {
+                    $("dialogueContenant").close();
+                    contenantEnEdition = null;
+                }
+            });
+            $("formulaireContenant").addEventListener("submit", enregistrerContenantDemo);
+            $("dialogueContenant").addEventListener("cancel", (evenement) => {
+                if (enregistrementContenantEnCours) {
+                    evenement.preventDefault();
+                }
+            });
             // V20 : branchement des actions de la fenêtre de règles par article.
             $("annulerReglesArticle").addEventListener("click", () => {
                 if (etat.regleEnCours) {
