@@ -4671,7 +4671,9 @@
                 <tbody>${mouvements.map(function (m) {
                   return `<tr>
                     <td>${echapperHtml(formatDateHeure(m.created_at))}</td>
-                    <td>${echapperHtml(nomsMouvements[m.type_mouvement] || m.type_mouvement)}</td>
+                    <td>${echapperHtml(m.reference_type === "annulation_operation_vaisselle_demo"
+                      ? "Annulation de " + (m.type_mouvement === "retour_propre_partenaire" ? "retrait" : "mouvement")
+                      : (nomsMouvements[m.type_mouvement] || m.type_mouvement))}</td>
                     <td>${echapperHtml(libelleStandContenant(m))}</td>
                     <td>${echapperHtml(m.etat || "—")}</td>
                     <td>${echapperHtml(m.contenu || "—")}</td>
