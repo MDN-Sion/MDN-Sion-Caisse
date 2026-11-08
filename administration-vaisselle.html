@@ -833,6 +833,96 @@
             width: fit-content;
         }
 
+
+        /* V19 — première colonne grisée sur les tableaux 1 et 2. */
+        #lignesReferences tr > td:first-child,
+        #lignesParametres tr > td:first-child {
+            background: #f2f5f8;
+        }
+
+        /* V19 — bordure inférieure uniforme dans la matrice. */
+        .tableau-regles tbody tr:last-child > th,
+        .tableau-regles tbody tr:last-child > td {
+            border-bottom: 0;
+        }
+        .tableau-regles tbody th {
+            background: #f2f5f8;
+        }
+        .tableau-regles .cellule-gestion-regles {
+            text-align: center;
+            white-space: nowrap;
+        }
+        .tableau-regles .cellule-gestion-regles .bouton-regle-demo {
+            display: inline-flex;
+            margin: 0;
+        }
+
+        #dialogueReglesArticle {
+            width: min(94vw, 630px);
+            max-height: calc(100dvh - 30px);
+            overflow-y: auto;
+            border: 0;
+            border-radius: 16px;
+            padding: 0;
+            box-shadow: 0 20px 60px #0005;
+        }
+        #dialogueReglesArticle::backdrop {
+            background: #0009;
+        }
+        #dialogueReglesArticle .dialog-contenu {
+            padding: clamp(16px, 3vw, 24px);
+        }
+        .ligne-edition-regle {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+            align-items: center;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid #e4eaf0;
+        }
+        .ligne-edition-regle label {
+            font-weight: 700;
+        }
+        .ligne-edition-regle select {
+            width: 100%;
+        }
+        #confirmationReglesArticle {
+            margin-top: 14px;
+            padding: 12px;
+            border: 1px solid #d6bb64;
+            border-radius: 10px;
+            background: #fff9e9;
+        }
+        #confirmationReglesArticle ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        #erreurReglesArticle {
+            color: #9a1717;
+            font-weight: 700;
+        }
+        @media (max-width: 1150px) {
+            .tableau-regles tbody td.cellule-gestion-regles {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+                background: #f7f9fb;
+                border-top: 1px solid #dbe3ec;
+                border-right: 0;
+            }
+            .tableau-regles tbody td.cellule-gestion-regles::before {
+                display: none;
+            }
+        }
+        @media (max-width: 560px) {
+            .ligne-edition-regle {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 5px;
+            }
+        }
+
 </style>
  </head>
  <body>
@@ -938,7 +1028,7 @@
        <thead>
         <tr>
          <th>
-          Référence
+          Article
          </th>
          <th>
           Description
@@ -1014,7 +1104,7 @@
     <section class="bloc" id="sectionReglesRemboursement">
      <h2>3. Règles de remboursement — Réel : consultation / Démo : modification</h2>
      <p>Retour propre en conditionnement complet : consigne et lavage des pièces remboursés, avec les règles propres au contenant. Retour sale : consigne des pièces uniquement.</p>
-     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. En mode Réel, les règles restent en consultation. En mode Démo, chaque règle peut être modifiée sans toucher aux données réelles.</p>
+     <p>Le tableau ci-dessous présente les règles du <strong>retour propre à l’unité</strong> selon le type de stand. En mode Réel, les règles restent en consultation. En mode Démo, les règles de chaque article peuvent être modifiées ensemble, sans toucher aux données réelles.</p>
      <p class="petit" id="compteurReglesRemboursement">Chargement des règles…</p>
      <div id="contenuReglesRemboursement"></div>
     </section>
@@ -1050,6 +1140,23 @@
       <div class="dialog-actions">
         <button class="bouton secondaire" id="annulerConfirmation" type="button">Annuler</button>
         <button class="bouton" id="validerConfirmation" type="button">Confirmer</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="dialogueReglesArticle" aria-labelledby="titreReglesArticle">
+    <div class="dialog-contenu">
+      <h3 id="titreReglesArticle">Modifier les règles de remboursement</h3>
+      <p class="petit">Mode Démo uniquement. Sélectionne le remboursement du retour propre à l’unité pour chaque type de stand.</p>
+      <div id="champsReglesArticle"></div>
+      <div id="confirmationReglesArticle" hidden>
+        <strong>Confirmer les modifications en Démo ?</strong>
+        <ul id="detailsConfirmationRegles"></ul>
+        <p class="petit">Les règles du mode Réel ne seront pas modifiées.</p>
+      </div>
+      <p id="erreurReglesArticle" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="bouton secondaire" id="annulerReglesArticle" type="button">Annuler</button>
+        <button class="bouton" id="enregistrerReglesArticle" type="button">Enregistrer</button>
       </div>
     </div>
   </dialog>
@@ -1278,57 +1385,161 @@
                 afficherRegles();
             }
 
-            async function modifierRegleDemo(reference, type, regle) {
+            const typesRegles = [
+                "Associatif",
+                "Métier de la bouche",
+                "Restaurateur",
+                "Artisan",
+                "Comité"
+            ];
+
+            let editionRegles = null;
+
+            function codeRegle(regle) {
+                if (!regle || !regle.retour_propre_unite_autorise) {
+                    return "0";
+                }
+                return regle.retour_propre_unite_rembourse_lavage ? "2" : "1";
+            }
+
+            function ouvrirEditionRegles(reference) {
                 if (!etat.demo || etat.regleEnCours) {
                     return;
                 }
 
-                const actuel = !regle.retour_propre_unite_autorise
-                    ? "0"
-                    : (regle.retour_propre_unite_rembourse_lavage ? "2" : "1");
-                const saisie = window.prompt(
-                    "Règle DÉMO — " + reference.nom + " / " + type + "\n" +
-                    "0 = Retour propre à l’unité non autorisé\n" +
-                    "1 = Retour propre autorisé, consigne seule\n" +
-                    "2 = Retour propre autorisé, consigne + lavage\n\n" +
-                    "Saisir 0, 1 ou 2 :",
-                    actuel
+                const dialogue = $("dialogueReglesArticle");
+                const champs = $("champsReglesArticle");
+                const confirmation = $("confirmationReglesArticle");
+                const erreur = $("erreurReglesArticle");
+                const index = new Map(
+                    etat.regles.map((regle) => [
+                        regle.vaisselle_id + "|" + regle.type_partenaire,
+                        regle
+                    ])
                 );
-                if (saisie === null || saisie === actuel) {
+
+                editionRegles = { reference, valeursInitiales: new Map() };
+                $("titreReglesArticle").textContent = "Modifier les règles — " + reference.nom;
+                champs.replaceChildren();
+                confirmation.hidden = true;
+                erreur.textContent = "";
+                $("enregistrerReglesArticle").disabled = false;
+                $("enregistrerReglesArticle").textContent = "Enregistrer";
+
+                for (const type of typesRegles) {
+                    const regle = index.get(reference.id + "|" + type);
+                    const code = codeRegle(regle);
+                    editionRegles.valeursInitiales.set(type, code);
+
+                    const ligne = document.createElement("div");
+                    ligne.className = "ligne-edition-regle";
+                    const label = document.createElement("label");
+                    label.textContent = type;
+                    const select = document.createElement("select");
+                    select.dataset.typePartenaire = type;
+                    select.id = "regle-article-" + typesRegles.indexOf(type);
+                    label.htmlFor = select.id;
+
+                    for (const [valeur, libelle] of [
+                        ["0", "Retour propre à l’unité non autorisé"],
+                        ["1", "Consigne seule"],
+                        ["2", "Consigne + lavage"]
+                    ]) {
+                        const option = document.createElement("option");
+                        option.value = valeur;
+                        option.textContent = libelle;
+                        select.appendChild(option);
+                    }
+                    select.value = code;
+                    select.addEventListener("change", () => {
+                        confirmation.hidden = true;
+                        $("enregistrerReglesArticle").textContent = "Enregistrer";
+                    });
+                    ligne.append(label, select);
+                    champs.appendChild(ligne);
+                }
+
+                dialogue.showModal();
+            }
+
+            function modificationsReglesArticle() {
+                if (!editionRegles) {
+                    return [];
+                }
+                return Array.from($("champsReglesArticle").querySelectorAll("select"))
+                    .filter((select) => select.value !== editionRegles.valeursInitiales.get(select.dataset.typePartenaire))
+                    .map((select) => ({
+                        type: select.dataset.typePartenaire,
+                        code: select.value,
+                        libelle: select.selectedOptions[0].textContent
+                    }));
+            }
+
+            async function enregistrerReglesArticle() {
+                if (!editionRegles || etat.regleEnCours) {
                     return;
                 }
-                const choix = saisie.trim();
-                if (!["0", "1", "2"].includes(choix)) {
-                    window.alert("Valeur invalide. Saisir uniquement 0, 1 ou 2.");
+
+                const changements = modificationsReglesArticle();
+                const confirmation = $("confirmationReglesArticle");
+                const erreur = $("erreurReglesArticle");
+                erreur.textContent = "";
+
+                if (!changements.length) {
+                    $("dialogueReglesArticle").close();
+                    editionRegles = null;
                     return;
                 }
-                if (!window.confirm(
-                    "Enregistrer cette modification en mode DÉMO uniquement ?\n" +
-                    reference.nom + " — " + type + "\n" +
-                    "Les règles Réelles ne seront pas modifiées."
-                )) {
+
+                if (confirmation.hidden) {
+                    const liste = $("detailsConfirmationRegles");
+                    liste.replaceChildren();
+                    for (const changement of changements) {
+                        const ligne = document.createElement("li");
+                        ligne.textContent = changement.type + " : " + changement.libelle;
+                        liste.appendChild(ligne);
+                    }
+                    confirmation.hidden = false;
+                    $("enregistrerReglesArticle").textContent = "Confirmer l’enregistrement";
                     return;
                 }
 
                 etat.regleEnCours = true;
-                afficherRegles();
+                $("enregistrerReglesArticle").disabled = true;
+                $("annulerReglesArticle").disabled = true;
+                $("enregistrerReglesArticle").textContent = "Enregistrement…";
+
+                let nombreEnregistre = 0;
                 try {
-                    const { error } = await etat.client.rpc("enregistrer_regle_retour_vaisselle_demo", {
-                        p_vaisselle_id: reference.id,
-                        p_type_partenaire: type,
-                        p_retour_propre_unite_autorise: choix !== "0",
-                        p_retour_propre_unite_rembourse_lavage: choix === "2"
-                    });
-                    if (error) {
-                        throw error;
+                    for (const changement of changements) {
+                        const { error } = await etat.client.rpc("enregistrer_regle_retour_vaisselle_demo", {
+                            p_vaisselle_id: editionRegles.reference.id,
+                            p_type_partenaire: changement.type,
+                            p_retour_propre_unite_autorise: changement.code !== "0",
+                            p_retour_propre_unite_rembourse_lavage: changement.code === "2"
+                        });
+                        if (error) {
+                            throw error;
+                        }
+                        nombreEnregistre += 1;
                     }
+                    const article = editionRegles.reference.nom;
+                    $("dialogueReglesArticle").close();
+                    editionRegles = null;
                     await chargerReglesDemo();
-                    message("Règle Démo enregistrée : " + reference.nom + " — " + type + ".", "succes");
-                } catch (erreur) {
-                    message("Impossible de modifier la règle Démo : " + erreur.message, "erreur");
+                    message(nombreEnregistre + " règle(s) Démo enregistrée(s) pour " + article + ".", "succes");
+                } catch (exception) {
+                    erreur.textContent = "Enregistrement incomplet (" + nombreEnregistre + "/" + changements.length + ") : " + exception.message;
+                    confirmation.hidden = true;
+                    $("enregistrerReglesArticle").textContent = "Réessayer";
+                    await chargerReglesDemo().catch(() => {});
                 } finally {
                     etat.regleEnCours = false;
-                    afficherRegles();
+                    $("enregistrerReglesArticle").disabled = false;
+                    $("annulerReglesArticle").disabled = false;
+                    if (editionRegles && confirmation.hidden) {
+                        $("enregistrerReglesArticle").textContent = "Enregistrer";
+                    }
                 }
             }
 
@@ -1345,13 +1556,7 @@
                 const compteur = document.getElementById("compteurReglesRemboursement");
                 contenu.replaceChildren();
 
-                const types = [
-                    "Associatif",
-                    "Métier de la bouche",
-                    "Restaurateur",
-                    "Artisan",
-                    "Comité"
-                ];
+                const types = typesRegles;
 
                 const indexRegles = new Map(
                     etat.regles.map((regle) => [
@@ -1370,7 +1575,7 @@
                 const entete = document.createElement("thead");
                 const trEntete = document.createElement("tr");
 
-                for (const titre of ["Article", ...types]) {
+                for (const titre of ["Article", ...types, ...(etat.demo ? ["Gestion"] : [])]) {
                     const th = document.createElement("th");
                     th.scope = "col";
                     th.textContent = titre;
@@ -1410,17 +1615,22 @@
                         }
 
                         td.appendChild(etiquette);
-                        if (etat.demo && regle) {
-                            const bouton = document.createElement("button");
-                            bouton.type = "button";
-                            bouton.className = "bouton-regle-demo";
-                            bouton.textContent = "Modifier";
-                            bouton.setAttribute("aria-label", "Modifier la règle Démo : " + reference.nom + ", " + type);
-                            bouton.disabled = etat.regleEnCours;
-                            bouton.addEventListener("click", () => modifierRegleDemo(reference, type, regle));
-                            td.appendChild(bouton);
-                        }
                         tr.appendChild(td);
+                    }
+
+                    if (etat.demo) {
+                        const gestion = document.createElement("td");
+                        gestion.className = "cellule-gestion-regles";
+                        gestion.setAttribute("data-type-stand", "Gestion");
+                        const bouton = document.createElement("button");
+                        bouton.type = "button";
+                        bouton.className = "bouton-regle-demo";
+                        bouton.textContent = "Modifier";
+                        bouton.disabled = etat.regleEnCours;
+                        bouton.setAttribute("aria-label", "Modifier les règles Démo de " + reference.nom);
+                        bouton.addEventListener("click", () => ouvrirEditionRegles(reference));
+                        gestion.appendChild(bouton);
+                        tr.appendChild(gestion);
                     }
 
                     corps.appendChild(tr);
@@ -1429,7 +1639,7 @@
                 if (!etat.references.length) {
                     const tr = document.createElement("tr");
                     const td = document.createElement("td");
-                    td.colSpan = types.length + 1;
+                    td.colSpan = types.length + 1 + (etat.demo ? 1 : 0);
                     td.textContent = "Aucune référence disponible.";
                     tr.appendChild(td);
                     corps.appendChild(tr);
