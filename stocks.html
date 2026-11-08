@@ -4913,21 +4913,40 @@
 
                   // Catégorisation visuelle seulement : aucun changement de données ou de calcul.
                   const estAnnulation = typeReference.includes("annulation") || typeOperation.includes("annulation");
+                  // Le type métier prime sur le mouvement technique "ajustement".
+                  // Une référence d'annulation ou de correction explicite conserve
+                  // néanmoins sa catégorie, même si elle concerne un retour.
+                  const estReferenceCorrection =
+                    typeReference.includes("correction") ||
+                    typeReference.includes("reconciliation") ||
+                    typeReference === "annulation_operation_stock";
+                  const estOperationRetour =
+                    typeOperation.startsWith("retour_");
+                  const estOperationRetrait =
+                    typeOperation === "retrait" ||
+                    typeOperation === "retrait_partenaire";
                   const estCorrection = !estAnnulation && (
-                    typeReference.includes("correction") || typeReference.includes("reconciliation") ||
-                    typeOperation.includes("correction") || typeOperation.includes("ajustement") ||
-                    typeMouvement.includes("correction") || typeMouvement.includes("ajustement")
+                    estReferenceCorrection ||
+                    (!estOperationRetour && !estOperationRetrait && (
+                      typeOperation.includes("correction") ||
+                      typeOperation.includes("ajustement") ||
+                      typeMouvement.includes("correction") ||
+                      typeMouvement.includes("ajustement")
+                    ))
                   );
                   const estLivraison = !estAnnulation && !estCorrection && (
-                    typeOperation.includes("livraison") || typeMouvement.includes("livraison") ||
-                    typeOperation.includes("approvisionnement") || typeMouvement.includes("approvisionnement")
+                    typeOperation.includes("livraison") ||
+                    typeMouvement.includes("livraison") ||
+                    typeOperation.includes("approvisionnement") ||
+                    typeMouvement.includes("approvisionnement")
                   );
                   const estRetrait = !estAnnulation && !estCorrection && !estLivraison && (
-                    typeOperation === "retrait" || typeOperation === "retrait_partenaire" ||
-                    typeMouvement === "retrait" || typeMouvement === "retrait_partenaire"
+                    estOperationRetrait ||
+                    typeMouvement === "retrait" ||
+                    typeMouvement === "retrait_partenaire"
                   );
                   const estRetour = !estAnnulation && !estCorrection && !estLivraison && !estRetrait && (
-                    typeOperation.startsWith("retour_") || typeMouvement.startsWith("retour_")
+                    estOperationRetour || typeMouvement.startsWith("retour_")
                   );
                   const categorie = estAnnulation ? "annulation"
                     : estCorrection ? "correction"
