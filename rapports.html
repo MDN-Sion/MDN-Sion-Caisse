@@ -1164,7 +1164,7 @@
 
       <section class="panel gobelets-report" id="gobeletsReportPanel" style="margin-bottom:16px" hidden>
         <div class="panel-head">
-          <h2>🥤 Gobelets caisse — <span id="gobeletsModeTitre">Démo</span></h2>
+          <h2>🥤 Gobelets caisse<span id="gobeletsModeTitre"> — Démo</span></h2>
           <span class="badge" id="gobeletsReportStatus">Chargement…</span>
         </div>
         <div class="panel-body">
@@ -1535,7 +1535,7 @@
       function renderGobelets() {
         const panel = $("gobeletsReportPanel");
         panel.hidden = false;
-        $("gobeletsModeTitre").textContent = demo ? "Démo" : "Réel";
+        $("gobeletsModeTitre").textContent = demo ? " — Démo" : "";
         $("gobeletsTracesLibelle").textContent = demo ? "Opérations historiques sans trace de stock" : "Achats sans trace de stock";
 
         const data = gobeletsReport;
