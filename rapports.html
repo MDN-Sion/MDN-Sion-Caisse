@@ -1324,6 +1324,10 @@
             <summary style="cursor:pointer;font-weight:700;color:#8b0000">Voir les sessions et comptages</summary>
             <div id="caissePhysiqueDetail" style="padding-top:12px"></div>
           </details>
+          <details style="margin-top:12px;border:1px solid #ddd;border-radius:14px;padding:14px">
+            <summary style="cursor:pointer;font-weight:700;color:#8b0000">Voir le rapprochement financier</summary>
+            <div id="caissePhysiqueRapprochement" style="padding-top:12px"></div>
+          </details>
           <div class="sub" id="caissePhysiqueNote" style="margin-top:12px;color:#777;font-size:12px;line-height:1.5"></div>
         </div>
       </section>
@@ -1420,6 +1424,7 @@
       let gobeletsReport = null;
       let gobeletsVentilation = null;
       let caissePhysiqueRapport = null;
+      let caissePhysiqueRapprochement = null;
       let availablePeriodInitialized = false;
 
       function esc(value) {
@@ -1751,6 +1756,7 @@
           $("caissePhysiqueSorties").textContent = "—";
           $("caissePhysiqueSolde").textContent = "—";
           $("caissePhysiqueDetail").textContent = "Le rapport de caisse physique n’a pas pu être chargé.";
+          $("caissePhysiqueRapprochement").textContent = "Rapprochement indisponible.";
           $("caissePhysiqueNote").textContent = "Les autres rubriques restent accessibles. Vérifier les droits de la fonction SQL194.";
           return;
         }
@@ -1778,6 +1784,45 @@
           }
         }
         $("caissePhysiqueDetail").innerHTML = lignes.join("") || "Aucune session enregistrée pour cette édition.";
+
+        // SQL196 : rapprochement par session, sans affectation fictive en Démo.
+        const rapprochement = caissePhysiqueRapprochement;
+        const rapprochementElement = $("caissePhysiqueRapprochement");
+        if (!rapprochement || !Array.isArray(rapprochement.sessions)) {
+          rapprochementElement.textContent = "Rapprochement indisponible. Le rapport principal reste consultable.";
+        } else {
+          const lignesRapprochement = rapprochement.sessions.map((session) => {
+            const informations = [
+              `<strong>${esc(session.numero_session || "Session")} · ${esc(session.statut || "")}</strong>`,
+              `Fonds initial : ${money(session.fond_initial)}`
+            ];
+            if (session.mouvements_attribuables) {
+              informations.push(`Entrées : ${money(session.entrees)}`);
+              informations.push(`Sorties : ${money(session.sorties)}`);
+              informations.push(`Théorique calculé : ${money(session.theorique_calcule)}`);
+            } else {
+              informations.push("Mouvements par session : non disponibles en Démo");
+            }
+            if (session.theorique_cloture !== null && session.theorique_cloture !== undefined) {
+              informations.push(`Théorique de clôture : ${money(session.theorique_cloture)}`);
+            }
+            if (session.montant_compte !== null && session.montant_compte !== undefined) {
+              informations.push(`Montant compté : ${money(session.montant_compte)}`);
+            }
+            if (session.ecart !== null && session.ecart !== undefined) {
+              informations.push(`Écart enregistré : ${money(session.ecart)}`);
+            }
+            return `<div class="payment-row" style="display:block;line-height:1.7">${informations.join("<div></div>")}</div>`;
+          });
+          if (Array.isArray(rapprochement.comptages) && rapprochement.comptages.length) {
+            lignesRapprochement.push(`<strong>Comptages enregistrés (${rapprochement.comptages.length})</strong>`);
+            for (const comptage of rapprochement.comptages) {
+              lignesRapprochement.push(`<div class="payment-row"><span>${esc(comptage.type_comptage || "Comptage")} · ${esc(dateTime(comptage.created_at))}</span><strong>Écart : ${money(comptage.ecart)}</strong></div>`);
+            }
+          }
+          rapprochementElement.innerHTML = (lignesRapprochement.join("") || "Aucune session pour cette édition.")
+            + `<div class="sub" style="margin-top:12px">${esc(rapprochement.note || "")}</div>`;
+        }
         $("caissePhysiqueNote").textContent = demo
           ? "Les mouvements Démo sont regroupés par édition et ne sont pas attribués artificiellement à une session."
           : "Les montants sont cumulés sur l’édition entière, sans additionner les fonds initiaux des sessions au solde des mouvements. Les comptages sont présentés séparément.";
@@ -1944,6 +1989,21 @@
             });
           } catch (caisseError) {
             console.error("Chargement du rapport de caisse physique :", caisseError);
+          }
+
+          // SQL196 : accès contrôlé par SQL195 pour les deux modes.
+          caissePhysiqueRapprochement = null;
+          try {
+            const editionId = report?.edition?.id;
+            if (!editionId) {
+              throw new Error("Identifiant de l’édition absent du rapport principal.");
+            }
+            caissePhysiqueRapprochement = await rpc("rapprochement_caisse_physique_mdn", {
+              p_edition_id: editionId,
+              p_demo: demo
+            });
+          } catch (rapprochementError) {
+            console.error("Chargement du rapprochement de caisse :", rapprochementError);
           }
 
           render();
