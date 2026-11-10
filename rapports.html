@@ -1328,6 +1328,18 @@
             <summary style="cursor:pointer;font-weight:700;color:#8b0000">Voir le rapprochement financier</summary>
             <div id="caissePhysiqueRapprochement" style="padding-top:12px"></div>
           </details>
+          <details id="caisseHistoriqueVolet" style="margin-top:12px;border:1px solid #ddd;border-radius:14px;padding:14px">
+            <summary style="cursor:pointer;font-weight:700;color:#8b0000">Voir l’historique des mouvements d’espèces</summary>
+            <div style="padding-top:12px">
+              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:12px">
+                <label style="display:grid;gap:4px;flex:1;min-width:130px">Du <input id="historiqueCaisseDebut" type="date" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:100%"></label>
+                <label style="display:grid;gap:4px;flex:1;min-width:130px">Au <input id="historiqueCaisseFin" type="date" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:100%"></label>
+                <label style="display:grid;gap:4px;flex:1;min-width:150px">Type de mouvement <select id="historiqueCaisseType" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:100%"><option value="">Tous les types</option></select></label>
+                <button type="button" id="historiqueCaisseFiltrer" style="padding:9px 14px;border:1px solid #8b0000;border-radius:9px;background:#8b0000;color:white;cursor:pointer">Filtrer</button>
+              </div>
+              <div id="historiqueCaisseResultat" aria-live="polite">Ouvrez cette rubrique pour consulter les mouvements.</div>
+            </div>
+          </details>
           <div class="sub" id="caissePhysiqueNote" style="margin-top:12px;color:#777;font-size:12px;line-height:1.5"></div>
         </div>
       </section>
@@ -1425,6 +1437,7 @@
       let gobeletsVentilation = null;
       let caissePhysiqueRapport = null;
       let caissePhysiqueRapprochement = null;
+      let historiqueCaisseTypes = [];
       let availablePeriodInitialized = false;
 
       function esc(value) {
@@ -1744,6 +1757,57 @@
         $("gobeletsNote").textContent = String(data.note || "Les dons ne constituent pas une entrée d’espèces. Les mouvements historiques ne sont pas modifiés.");
       }
 
+      async function chargerHistoriqueCaisse() {
+        const cible = $("historiqueCaisseResultat");
+        const editionId = report?.edition?.id;
+        if (!editionId || !caissePhysiqueRapport) {
+          cible.textContent = "Historique indisponible : édition ou rapport de caisse absent.";
+          return;
+        }
+        const debut = $("historiqueCaisseDebut").value;
+        const fin = $("historiqueCaisseFin").value;
+        if (debut && fin && debut > fin) {
+          cible.textContent = "La date de début doit précéder la date de fin.";
+          return;
+        }
+        cible.textContent = "Chargement des mouvements…";
+        $("historiqueCaisseFiltrer").disabled = true;
+        try {
+          const donnees = await rpc("historique_mouvements_caisse_mdn", {
+            p_edition_id: editionId,
+            p_demo: demo,
+            p_debut: debut ? new Date(debut + "T00:00:00").toISOString() : null,
+            p_fin: fin ? new Date(fin + "T23:59:59.999").toISOString() : null,
+            p_type_mouvement: $("historiqueCaisseType").value || null
+          });
+          const mouvements = Array.isArray(donnees.mouvements) ? donnees.mouvements : [];
+          const total = Number(donnees.nombre_total || 0);
+          const select = $("historiqueCaisseType");
+          const types = new Set(historiqueCaisseTypes);
+          mouvements.forEach(m => { if (m.type_mouvement) types.add(m.type_mouvement); });
+          historiqueCaisseTypes = [...types].sort();
+          const selection = select.value;
+          select.innerHTML = '<option value="">Tous les types</option>'
+            + historiqueCaisseTypes.map(t => `<option value="${esc(t)}">${esc(t.replaceAll("_", " "))}</option>`).join("");
+          select.value = selection;
+          const resume = `<div class="payment-row"><span>${total.toLocaleString("fr-CH")} mouvement(s) · ${mouvements.length} affiché(s)</span><strong>Solde : ${money(donnees.solde)}</strong></div>`
+            + `<div class="payment-row"><span>Entrées : ${money(donnees.entrees)}</span><span>Sorties : ${money(donnees.sorties)}</span></div>`;
+          const lignes = mouvements.map(m => {
+            const sens = Number(m.montant) < 0 ? "Sortie" : "Entrée";
+            const infos = [m.numero_session, m.numero_mouvement, m.reference_type].filter(Boolean).map(esc).join(" · ");
+            const commentaire = m.commentaire ? `<div class="sub">${esc(m.commentaire)}</div>` : "";
+            return `<div class="payment-row" style="align-items:start;gap:12px"><div style="min-width:0"><strong>${esc(dateTime(m.created_at))}</strong> · ${esc((m.type_mouvement || sens).replaceAll("_", " "))}<div class="sub">${infos || "Mouvement Démo · édition"}</div>${commentaire}</div><strong style="white-space:nowrap">${money(m.montant)}</strong></div>`;
+          });
+          cible.innerHTML = resume + (lignes.join("") || '<div class="sub" style="padding-top:12px">Aucun mouvement sur cette période.</div>')
+            + (total > mouvements.length ? '<div class="sub" style="padding-top:12px">Seuls les 500 mouvements les plus récents sont affichés. Affinez les dates pour consulter les autres.</div>' : '');
+        } catch (error) {
+          console.error("Historique de caisse physique :", error);
+          cible.textContent = "Historique indisponible : " + (error?.message || "Erreur de chargement.");
+        } finally {
+          $("historiqueCaisseFiltrer").disabled = false;
+        }
+      }
+
       function renderCaissePhysique() {
         const panel = $("caissePhysiqueRapport");
         panel.hidden = false;
@@ -1977,6 +2041,10 @@
 
           // SQL194 : rapport caisse physique, indépendant du filtre de dates.
           // Un refus d’accès ne bloque jamais les autres rapports.
+          $("caisseHistoriqueVolet").open = false;
+          $("historiqueCaisseResultat").textContent = "Ouvrez cette rubrique pour consulter les mouvements.";
+          historiqueCaisseTypes = [];
+          $("historiqueCaisseType").innerHTML = '<option value="">Tous les types</option>';
           caissePhysiqueRapport = null;
           try {
             const editionId = report?.edition?.id;
@@ -2016,6 +2084,11 @@
       }
 
       function bind() {
+        $("historiqueCaisseFiltrer").addEventListener("click", chargerHistoriqueCaisse);
+        $("caisseHistoriqueVolet").addEventListener("toggle", () => {
+          if ($("caisseHistoriqueVolet").open) chargerHistoriqueCaisse();
+        });
+
         $("back").onclick = () => { location.href = "accueil.html"; };
         $("logout").onclick = async () => { await window.MDN_AUTH.deconnexion(); };
         $("applyBtn").onclick = loadReport;
