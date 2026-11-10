@@ -188,6 +188,33 @@
         font-size: 14px;
         line-height: 1.5;
     }
+    .edit-input {
+        width: 90px;
+        max-width: 100%;
+        padding: 9px;
+        border: 1px solid #ccc;
+        border-radius: 9px;
+        font: inherit;
+    }
+    .edit-select {
+        padding: 9px;
+        border: 1px solid #ccc;
+        border-radius: 9px;
+        background: white;
+        font: inherit;
+    }
+    .save-button {
+        padding: 9px 14px;
+        border: none;
+        border-radius: 9px;
+        background: #8b0000;
+        color: white;
+        font-weight: 700;
+    }
+    .save-button:disabled {
+        opacity: 0.5;
+        cursor: wait;
+    }
     .error {
         color: #8b0000;
     }
@@ -234,7 +261,7 @@
         <span class="badge" id="mode">Chargement…</span>
       </div>
       <div class="content">
-        <p class="hint">Consultation des moyens de paiement configurés, de leur état et de leur impact sur la caisse physique.</p>
+        <p class="hint">Configuration des moyens de paiement, de leur état et de leur impact sur la caisse physique.</p>
         <div class="grid">
           <div class="metric">
             <small>Moyens configurés</small>
@@ -258,6 +285,7 @@
                 <th>Code</th>
                 <th>État</th>
                 <th>Caisse physique</th>
+                <th id="actions-head" hidden>Action</th>
               </tr>
             </thead>
             <tbody id="rows">
@@ -267,7 +295,7 @@
             </tbody>
           </table>
         </div>
-        <p class="notice" id="notice">Cette première version est en lecture seule. Les réglages du référentiel sont partagés entre Démo et Réel : aucune modification n'est autorisée depuis cette page.</p>
+        <p class="notice" id="notice">Chargement de la configuration…</p>
       </div>
     </section>
   </main>
@@ -294,30 +322,142 @@
       return td;
     }
 
+    let modeDemo = false;
+    let enregistrementEnCours = false;
+
+    function champOrdre(moyen) {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0";
+        input.max = "9999";
+        input.step = "1";
+        input.value = String(moyen.ordre_affichage);
+        input.className = "edit-input";
+        input.setAttribute("aria-label", "Ordre de " + moyen.nom);
+        return input;
+    }
+
+    function champEtat(moyen) {
+        const select = document.createElement("select");
+        select.className = "edit-select";
+        select.setAttribute("aria-label", "État de " + moyen.nom);
+
+        for (const optionData of [
+            { value: "true", label: "Actif" },
+            { value: "false", label: "Inactif" }
+        ]) {
+            const option = document.createElement("option");
+            option.value = optionData.value;
+            option.textContent = optionData.label;
+            select.appendChild(option);
+        }
+
+        select.value = String(moyen.actif === true);
+        select.disabled = moyen.code === "especes";
+        return select;
+    }
+
+    async function enregistrerMoyen(moyen, input, select, button) {
+        if (enregistrementEnCours || !modeDemo) {
+            return;
+        }
+
+        const ordre = Number(input.value);
+
+        if (!Number.isInteger(ordre) || ordre < 0 || ordre > 9999) {
+            byId("notice").textContent = "L'ordre doit être un entier compris entre 0 et 9999.";
+            return;
+        }
+
+        enregistrementEnCours = true;
+        button.disabled = true;
+        button.textContent = "Enregistrement…";
+
+        try {
+            const { error } = await window.MDN_SUPABASE.rpc(
+                "enregistrer_configuration_moyen_paiement_demo",
+                {
+                    p_code: moyen.code,
+                    p_actif: select.value === "true",
+                    p_ordre_affichage: ordre
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            byId("notice").textContent = "Configuration Démo enregistrée pour « " + moyen.nom + " ».";
+            await chargerConfiguration();
+        } catch (error) {
+            console.error("[MDN Sion] Enregistrement moyen de paiement :", error);
+            byId("notice").textContent = "Enregistrement impossible : " + (error.message || String(error));
+            button.disabled = false;
+            button.textContent = "Enregistrer";
+        } finally {
+            enregistrementEnCours = false;
+        }
+    }
+
     function render(moyens) {
-      byId("count").textContent = String(moyens.length);
-      byId("active").textContent = String(moyens.filter((item) => item.actif === true).length);
-      byId("cash").textContent = String(moyens.filter((item) => item.impacte_caisse_physique === true).length);
+        byId("count").textContent = String(moyens.length);
+        byId("active").textContent = String(moyens.filter((item) => item.actif === true).length);
+        byId("cash").textContent = String(moyens.filter((item) => item.impacte_caisse_physique === true).length);
+        byId("actions-head").hidden = !modeDemo;
 
-      const tbody = byId("rows");
-      tbody.replaceChildren();
+        const tbody = byId("rows");
+        tbody.replaceChildren();
 
-      if (moyens.length === 0) {
-        const row = document.createElement("tr");
-        cell(row, "Aucun moyen de paiement configuré.").colSpan = 5;
-        tbody.appendChild(row);
-        return;
-      }
+        if (moyens.length === 0) {
+            const row = document.createElement("tr");
+            cell(row, "Aucun moyen de paiement configuré.").colSpan = modeDemo ? 6 : 5;
+            tbody.appendChild(row);
+            return;
+        }
 
-      for (const moyen of moyens) {
-        const row = document.createElement("tr");
-        cell(row, moyen.ordre_affichage);
-        cell(row, moyen.nom);
-        cell(row, moyen.code);
-        cell(row, "").replaceChildren(badge(moyen.actif === true, "Actif", "Inactif"));
-        cell(row, "").replaceChildren(badge(moyen.impacte_caisse_physique === true, "Oui", "Non"));
-        tbody.appendChild(row);
-      }
+        for (const moyen of moyens) {
+            const row = document.createElement("tr");
+            const ordreCell = cell(row, "");
+            cell(row, moyen.nom);
+            cell(row, moyen.code);
+            const etatCell = cell(row, "");
+            cell(row, "").replaceChildren(badge(moyen.impacte_caisse_physique === true, "Oui", "Non"));
+
+            if (modeDemo) {
+                const input = champOrdre(moyen);
+                const select = champEtat(moyen);
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "save-button";
+                button.textContent = "Enregistrer";
+                button.addEventListener("click", () => enregistrerMoyen(moyen, input, select, button));
+                ordreCell.replaceChildren(input);
+                etatCell.replaceChildren(select);
+                cell(row, "").replaceChildren(button);
+            } else {
+                ordreCell.textContent = String(moyen.ordre_affichage);
+                etatCell.replaceChildren(badge(moyen.actif === true, "Actif", "Inactif"));
+            }
+
+            tbody.appendChild(row);
+        }
+    }
+
+    async function chargerConfiguration() {
+        const { data, error } = await window.MDN_SUPABASE.rpc("lire_configuration_moyens_paiement");
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data || !Array.isArray(data.moyens_paiement)) {
+            throw new Error("Réponse inattendue de la fonction SQL200.");
+        }
+
+        modeDemo = data.mode_demo === true;
+        document.body.classList.toggle("demo", modeDemo);
+        byId("mode").textContent = modeDemo ? "Démo · modification" : "Réel · consultation";
+        render(data.moyens_paiement);
     }
 
     async function init() {
@@ -347,14 +487,10 @@
         const identity = auth.profil?.prenom || auth.profil?.email || "Administration";
         byId("identity").textContent = identity + " · " + (demo ? "Mode Démo" : auth.libelleRole || "Administrateur");
 
-        const { data, error } = await client.rpc("charger_administration_moyens_paiement");
-        if (error) {
-          throw error;
-        }
-        if (!data || !Array.isArray(data.moyens_paiement)) {
-          throw new Error("Réponse inattendue de la fonction SQL199.");
-        }
-        render(data.moyens_paiement);
+        await chargerConfiguration();
+        byId("notice").textContent = modeDemo
+          ? "Les modifications sont enregistrées uniquement en Démo. Elles ne modifient ni le référentiel Réel ni les opérations existantes. Les écrans d’encaissement ne sont pas encore reliés à ces réglages."
+          : "Mode Réel en consultation. Aucune modification du référentiel ni des opérations de caisse n’est effectuée.";
       } catch (error) {
         console.error("[MDN Sion] Moyens de paiement :", error);
         const row = document.createElement("tr");
@@ -362,7 +498,7 @@
         td.colSpan = 5;
         td.className = "error";
         byId("rows").replaceChildren(row);
-        byId("notice").textContent = "Aucune modification n'a été effectuée. Vérifiez la fonction SQL199 et les droits de la session.";
+        byId("notice").textContent = "Aucune modification n'a été effectuée. Vérifiez la fonction SQL200 et les droits de la session.";
         byId("mode").textContent = "Indisponible";
       }
     }
