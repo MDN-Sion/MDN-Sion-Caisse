@@ -1307,6 +1307,38 @@
         </div>
       </section>
 
+      <!-- SQL198 : synthèse des flux connus, sans double comptage. -->
+      <section class="panel" id="syntheseFinanciereBloc" style="margin-bottom:16px" hidden>
+        <div class="panel-head">
+          <h2>📊 Synthèse financière<span id="syntheseFinanciereMode"></span></h2>
+          <span class="badge" id="syntheseFinanciereEtat">Chargement…</span>
+        </div>
+        <div class="panel-body">
+          <div class="dish-metrics" style="padding:0;grid-template-columns:repeat(3,minmax(0,1fr))">
+            <div class="dish-metric"><div class="label">Achats Gobelets · période</div><div class="value" id="syntheseAchats">—</div></div>
+            <div class="dish-metric"><div class="label">Couvertures connues · période</div><div class="value" id="syntheseCouvertures">—</div></div>
+            <div class="dish-metric"><div class="label">Écart de couverture · période</div><div class="value" id="syntheseEcart">—</div></div>
+          </div>
+          <details class="gobelets-ventilation-details" style="margin-top:16px">
+            <summary>Voir la synthèse des flux financiers</summary>
+            <div style="padding:14px 16px">
+              <div class="payment-row"><span>Retours Gobelets · période</span><strong id="syntheseRetours">—</strong></div>
+              <div class="payment-row"><span>Dons de consigne abandonnée · période (hors espèces)</span><strong id="syntheseDons">—</strong></div>
+              <div class="payment-row"><span>Compensations Gobelets · période (hors espèces)</span><strong id="syntheseCompensations">—</strong></div>
+              <div class="payment-row"><span>Entrées d’espèces · édition entière</span><strong id="syntheseEntrees">—</strong></div>
+              <div class="payment-row"><span>Sorties d’espèces · édition entière</span><strong id="syntheseSorties">—</strong></div>
+              <div class="payment-row"><span>Solde des mouvements · édition entière</span><strong id="syntheseSolde">—</strong></div>
+              <div class="sub" style="margin-top:12px;color:#777;font-size:12px;line-height:1.5">
+                Les données Gobelets suivent le filtre de dates ; les données de caisse couvrent l’édition entière.
+                Les paiements Gobelets ne sont pas additionnés aux mouvements de caisse.
+                Les compensations et les consignes abandonnées ne sont pas des entrées d’espèces.
+                Les ventes générales figurent dans les autres sections de Suivi &amp; Rapports.
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
       <!-- SQL194 : consultation indépendante de la caisse physique. -->
       <section class="panel" id="caissePhysiqueRapport" style="margin-bottom:16px" hidden>
         <div class="panel-head">
@@ -1435,6 +1467,7 @@
       let report = null;
       let gobeletsReport = null;
       let gobeletsVentilation = null;
+      let syntheseFinanciere = null;
       let caissePhysiqueRapport = null;
       let caissePhysiqueRapprochement = null;
       let historiqueCaisseTypes = [];
@@ -1892,6 +1925,44 @@
           : "Les montants sont cumulés sur l’édition entière, sans additionner les fonds initiaux des sessions au solde des mouvements. Les comptages sont présentés séparément.";
       }
 
+      function renderSyntheseFinanciere() {
+        const bloc = $("syntheseFinanciereBloc");
+        bloc.hidden = false;
+        $("syntheseFinanciereMode").textContent = demo ? " — Démo" : "";
+        $("syntheseFinanciereEtat").textContent = demo ? "Démo" : "Réel";
+
+        const donnees = syntheseFinanciere;
+        if (!donnees || donnees.ok !== true) {
+          $("syntheseFinanciereEtat").textContent = "Indisponible";
+          for (const id of [
+            "syntheseAchats", "syntheseCouvertures", "syntheseEcart",
+            "syntheseRetours", "syntheseDons", "syntheseCompensations",
+            "syntheseEntrees", "syntheseSorties", "syntheseSolde"
+          ]) {
+            $(id).textContent = "—";
+          }
+          return;
+        }
+
+        const gobelets = donnees.gobelets || {};
+        const caisse = donnees.caisse_edition || {};
+        const valeurs = {
+          syntheseAchats: gobelets.achats_chf,
+          syntheseCouvertures: gobelets.couvertures_connues_chf,
+          syntheseEcart: gobelets.ecart_couverture_chf,
+          syntheseRetours: gobelets.retours_chf,
+          syntheseDons: gobelets.dons_consigne_chf,
+          syntheseCompensations: gobelets.compensations_chf,
+          syntheseEntrees: caisse.entrees_chf,
+          syntheseSorties: caisse.sorties_chf,
+          syntheseSolde: caisse.solde_mouvements_chf
+        };
+
+        for (const [id, valeur] of Object.entries(valeurs)) {
+          $(id).textContent = money(valeur);
+        }
+      }
+
       function renderPeriod() {
         const available = report?.periode_disponible || {};
         const availableStart = inputDate(available.premiere_activite);
@@ -1955,6 +2026,7 @@
         renderDishActivity();
         renderGobelets();
         renderCaissePhysique();
+        renderSyntheseFinanciere();
         renderStocks();
         renderPeriod();
 
@@ -2072,6 +2144,24 @@
             });
           } catch (rapprochementError) {
             console.error("Chargement du rapprochement de caisse :", rapprochementError);
+          }
+
+          // SQL198 : lecture agrégée, même contrôle d'accès Démo/Réel que SQL195.
+          syntheseFinanciere = null;
+          try {
+            const editionId = report?.edition?.id;
+            if (!editionId) {
+              throw new Error("Identifiant de l’édition absent du rapport principal.");
+            }
+
+            syntheseFinanciere = await rpc("synthese_financiere_mdn", {
+              p_edition_id: editionId,
+              p_demo: demo,
+              p_date_debut: startIso(dateStart.value),
+              p_date_fin: endExclusiveIso(dateEnd.value)
+            });
+          } catch (syntheseError) {
+            console.error("Chargement de la synthèse financière :", syntheseError);
           }
 
           render();
