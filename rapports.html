@@ -335,6 +335,8 @@
       margin-bottom: 16px;
     }
 
+    [hidden] { display: none !important; }
+
     .panel {
       min-width: 0;
       overflow: hidden;
@@ -503,6 +505,7 @@
     }
 
     @media (max-width: 700px) {
+      .gobelets-report .dish-metrics { grid-template-columns: 1fr !important; }
       body {
         overflow: auto;
       }
@@ -1159,6 +1162,38 @@
         </div>
       </section>
 
+      <section class="panel gobelets-report" id="gobeletsReportPanel" style="margin-bottom:16px" hidden>
+        <div class="panel-head">
+          <h2>🥤 Gobelets caisse — Démo</h2>
+          <span class="badge" id="gobeletsReportStatus">Chargement…</span>
+        </div>
+        <div class="panel-body">
+          <div class="dish-metrics" style="padding:0;grid-template-columns:repeat(3,minmax(0,1fr))">
+            <div class="dish-metric">
+              <div class="label">Achats</div>
+              <div class="value" id="gobeletsAchats">—</div>
+              <div class="sub" id="gobeletsAchatsMontant">—</div>
+            </div>
+            <div class="dish-metric return-dirty">
+              <div class="label">Retours</div>
+              <div class="value" id="gobeletsRetours">—</div>
+              <div class="sub" id="gobeletsRetoursMontant">—</div>
+            </div>
+            <div class="dish-metric return-clean">
+              <div class="label">Dons de consigne</div>
+              <div class="value" id="gobeletsDons">—</div>
+              <div class="sub" id="gobeletsDonsMontant">—</div>
+            </div>
+          </div>
+          <div class="payment-list" style="margin-top:12px">
+            <div class="payment-row"><span>Solde des mouvements d’espèces Gobelets</span><strong id="gobeletsEspeces">—</strong></div>
+            <div class="payment-row"><span>Mouvements d’espèces liés aux dons</span><strong id="gobeletsEspecesDons">—</strong></div>
+            <div class="payment-row"><span>Opérations historiques sans trace de stock</span><strong id="gobeletsTraces">—</strong></div>
+          </div>
+          <div class="sub" id="gobeletsNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
+        </div>
+      </section>
+
       <section class="panel print-dish-activity-page" style="margin-bottom:16px">
         <div class="panel-head">
           <h2>🍽 Activité vaisselle</h2>
@@ -1248,6 +1283,7 @@
       let role = "";
       let demo = false;
       let report = null;
+      let gobeletsReport = null;
       let availablePeriodInitialized = false;
 
       function esc(value) {
@@ -1496,6 +1532,41 @@
         }).join("");
       }
 
+      function renderGobelets() {
+        const panel = $("gobeletsReportPanel");
+        panel.hidden = !demo;
+        if (!demo) return;
+
+        const data = gobeletsReport;
+        if (!data || data.ok !== true) {
+          $("gobeletsReportStatus").textContent = "Indisponible";
+          $("gobeletsAchats").textContent = "—";
+          $("gobeletsRetours").textContent = "—";
+          $("gobeletsDons").textContent = "—";
+          $("gobeletsAchatsMontant").textContent = "—";
+          $("gobeletsRetoursMontant").textContent = "—";
+          $("gobeletsDonsMontant").textContent = "—";
+          $("gobeletsEspeces").textContent = "—";
+          $("gobeletsEspecesDons").textContent = "—";
+          $("gobeletsTraces").textContent = "—";
+          $("gobeletsNote").textContent = "Le récapitulatif Gobelets n’a pas pu être chargé. Les autres rapports restent disponibles.";
+          return;
+        }
+
+        $("gobeletsReportStatus").textContent = "Démo · période filtrée";
+        $("gobeletsAchats").textContent = Number(data.gobelets_achetes || 0).toLocaleString("fr-CH");
+        $("gobeletsRetours").textContent = Number(data.gobelets_retournes || 0).toLocaleString("fr-CH");
+        $("gobeletsDons").textContent = Number(data.gobelets_donnes || 0).toLocaleString("fr-CH");
+        $("gobeletsAchatsMontant").textContent = `${plural(data.nombre_achats, "opération", "opérations")} · ${money(data.montant_achats_chf)}`;
+        $("gobeletsRetoursMontant").textContent = `${plural(data.nombre_retours, "opération", "opérations")} · ${money(data.montant_retours_chf)}`;
+        $("gobeletsDonsMontant").textContent = `${plural(data.nombre_dons, "opération", "opérations")} · ${money(data.valeur_dons_consigne_chf)} de consignes abandonnées`;
+        $("gobeletsEspeces").textContent = money(data.solde_mouvements_especes_chf);
+        $("gobeletsEspecesDons").textContent = money(data.mouvements_especes_dons_chf);
+        const sansTrace = Number(data.achats_sans_trace_stock || 0) + Number(data.retours_dons_sans_trace_stock || 0);
+        $("gobeletsTraces").textContent = plural(sansTrace, "opération", "opérations");
+        $("gobeletsNote").textContent = String(data.note || "Les dons ne constituent pas une entrée d’espèces. Les mouvements historiques ne sont pas modifiés.");
+      }
+
       function renderPeriod() {
         const available = report?.periode_disponible || {};
         const availableStart = inputDate(available.premiere_activite);
@@ -1557,6 +1628,7 @@
         renderCash();
         renderArticles();
         renderDishActivity();
+        renderGobelets();
         renderStocks();
         renderPeriod();
 
@@ -1599,6 +1671,25 @@
                 p_date_debut: startIso(dateStart.value),
                 p_date_fin: endExclusiveIso(dateEnd.value)
               });
+            }
+          }
+
+          // Rapport complémentaire réservé au mode Démo.
+          // Son éventuel échec n’empêche pas le suivi principal de s’afficher.
+          gobeletsReport = null;
+          if (demo) {
+            try {
+              const editionId = report?.edition?.id;
+              if (!editionId) {
+                throw new Error("Identifiant de l’édition absent du rapport principal.");
+              }
+              gobeletsReport = await rpc("rapport_gobelets_caisse_demo", {
+                p_edition_id: editionId,
+                p_date_debut: startIso(dateStart.value),
+                p_date_fin: endExclusiveIso(dateEnd.value)
+              });
+            } catch (gobeletsError) {
+              console.error("Chargement du récapitulatif Gobelets Démo :", gobeletsError);
             }
           }
 
