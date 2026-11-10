@@ -1190,6 +1190,20 @@
             <div class="payment-row"><span>Mouvements d’espèces liés aux dons</span><strong id="gobeletsEspecesDons">—</strong></div>
             <div class="payment-row"><span id="gobeletsTracesLibelle">Opérations historiques sans trace de stock</span><strong id="gobeletsTraces">—</strong></div>
           </div>
+          <div id="gobeletsVentilationBloc" style="margin-top:18px" hidden>
+            <div style="font-weight:700;color:#850000;margin-bottom:10px">Répartition des paiements des achats</div>
+            <div class="payment-list">
+              <div class="payment-row"><span>Espèces encaissées</span><strong id="gobeletsVentEspeces">—</strong></div>
+              <div class="payment-row"><span>Carte bancaire</span><strong id="gobeletsVentCarte">—</strong></div>
+              <div class="payment-row"><span>TWINT</span><strong id="gobeletsVentTwint">—</strong></div>
+              <div class="payment-row"><span>Compensations par retour de Gobelets</span><strong id="gobeletsVentCompensation">—</strong></div>
+              <div class="payment-row"><span>Autres moyens de couverture</span><strong id="gobeletsVentAutres">—</strong></div>
+              <div class="payment-row"><span>Total des couvertures connues</span><strong id="gobeletsVentTotal">—</strong></div>
+              <div class="payment-row"><span>Écart avec le montant des achats</span><strong id="gobeletsVentEcart">—</strong></div>
+              <div class="payment-row"><span>Achats sans détail de paiement</span><strong id="gobeletsVentSansDetail">—</strong></div>
+            </div>
+            <div class="sub" id="gobeletsVentNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
+          </div>
           <div class="sub" id="gobeletsNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
         </div>
       </section>
@@ -1284,6 +1298,7 @@
       let demo = false;
       let report = null;
       let gobeletsReport = null;
+      let gobeletsVentilation = null;
       let availablePeriodInitialized = false;
 
       function esc(value) {
@@ -1538,6 +1553,25 @@
         $("gobeletsModeTitre").textContent = demo ? " — Démo" : "";
         $("gobeletsTracesLibelle").textContent = demo ? "Opérations historiques sans trace de stock" : "Achats sans trace de stock";
 
+        const ventilationBloc = $("gobeletsVentilationBloc");
+        const ventilation = gobeletsVentilation;
+        ventilationBloc.hidden = !ventilation || ventilation.ok !== true;
+        if (!ventilationBloc.hidden) {
+          $("gobeletsVentEspeces").textContent = money(ventilation.especes_chf);
+          $("gobeletsVentCarte").textContent = money(ventilation.carte_chf);
+          $("gobeletsVentTwint").textContent = money(ventilation.twint_chf);
+          $("gobeletsVentCompensation").textContent = money(ventilation.compensation_retour_gobelet_chf);
+          $("gobeletsVentAutres").textContent = money(ventilation.autres_couvertures_chf);
+          $("gobeletsVentTotal").textContent = money(ventilation.total_couvertures_connues_chf);
+          $("gobeletsVentEcart").textContent = money(ventilation.ecart_couverture_chf);
+          $("gobeletsVentSansDetail").textContent = plural(ventilation.achats_sans_ventilation, "achat", "achats");
+          const ecart = Math.abs(Number(ventilation.ecart_couverture_chf || 0));
+          const historiques = Number(ventilation.achats_sans_ventilation || 0);
+          $("gobeletsVentNote").textContent = ecart > 0.005 || historiques > 0
+            ? "Attention : certains achats ne sont pas entièrement ventilés. Les écarts peuvent provenir d’opérations historiques. Aucun paiement n’est créé ou corrigé."
+            : "Ventilation des achats uniquement. Les compensations ne sont pas des encaissements ; les retours et les dons sont exclus de ce détail.";
+        }
+
         const data = gobeletsReport;
         if (!data || data.ok !== true) {
           $("gobeletsReportStatus").textContent = "Indisponible";
@@ -1695,6 +1729,24 @@
             );
           } catch (gobeletsError) {
             console.error("Chargement du récapitulatif Gobelets :", gobeletsError);
+          }
+
+          // SQL192 : ventilation des achats, sans mélange entre modes.
+          // Un échec ne bloque pas le rapport principal ni le récapitulatif.
+          gobeletsVentilation = null;
+          try {
+            const editionId = report?.edition?.id;
+            if (!editionId) {
+              throw new Error("Identifiant de l’édition absent du rapport principal.");
+            }
+            gobeletsVentilation = await rpc("ventilation_paiements_gobelets", {
+              p_edition_id: editionId,
+              p_is_demo: demo,
+              p_date_debut: startIso(dateStart.value),
+              p_date_fin: endExclusiveIso(dateEnd.value)
+            });
+          } catch (ventilationError) {
+            console.error("Chargement de la ventilation Gobelets :", ventilationError);
           }
 
           render();
