@@ -814,12 +814,11 @@
 				<button id="ouvrirReferentielVaisselle" class="action-module" type="button">Ouvrir</button>
 			</article>
 
-			<article class="module">
-				<span class="etat-bientot">À venir</span>
+			<article class="module actif">
 				<div class="icone">💳</div>
 				<h3>Moyens de paiement</h3>
-				<p>Configurer les moyens de paiement disponibles et leur impact sur la caisse physique.</p>
-				<button class="action-module" type="button" disabled>Ouvrir</button>
+				<p>Consulter les moyens de paiement disponibles et leur impact sur la caisse physique.</p>
+				<button id="ouvrirMoyensPaiement" class="action-module" type="button">Ouvrir</button>
 			</article>
 
 			<article class="module">
@@ -857,6 +856,7 @@
 			const ouvrirArticles = document.getElementById("ouvrirArticles");
 			const ouvrirUtilisateurs = document.getElementById("ouvrirUtilisateurs");
 			const ouvrirReferentielVaisselle = document.getElementById("ouvrirReferentielVaisselle");
+			const ouvrirMoyensPaiement = document.getElementById("ouvrirMoyensPaiement");
 
 			let modeDemoActif = false;
 
@@ -889,6 +889,12 @@
 				window.location.href = modeDemoActif
 					? "administration-vaisselle.html?mode=demo"
 					: "administration-vaisselle.html";
+			});
+
+			ouvrirMoyensPaiement.addEventListener("click", function () {
+				window.location.href = modeDemoActif
+					? "administration-moyens-paiement.html?mode=demo"
+					: "administration-moyens-paiement.html";
 			});
 
 			boutonDeconnexion.addEventListener("click", async function () {
