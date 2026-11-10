@@ -683,6 +683,94 @@
       }
     }
 
+
+    /* Récapitulatif compact des paiements Gobelets : détail accessible au clic. */
+    .gobelets-ventilation-details {
+      border: 1px solid #e4e4e4;
+      border-radius: 12px;
+      background: #fafafa;
+      overflow: hidden;
+    }
+
+    .gobelets-ventilation-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      padding: 14px 16px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .gobelets-ventilation-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .gobelets-ventilation-summary:focus-visible {
+      outline: 2px solid #8b0000;
+      outline-offset: -3px;
+    }
+
+    .gobelets-ventilation-heading {
+      font-weight: 700;
+      color: #850000;
+    }
+
+    .gobelets-ventilation-overview {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      font-size: 13px;
+    }
+
+    .gobelets-ventilation-action {
+      color: #850000;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .gobelets-ventilation-action::after {
+      content: " ▾";
+    }
+
+    .gobelets-ventilation-details[open] .gobelets-ventilation-action::after {
+      content: " ▴";
+    }
+
+    .gobelets-ventilation-details[open] .gobelets-ventilation-action {
+      font-size: 0;
+    }
+
+    .gobelets-ventilation-details[open] .gobelets-ventilation-action::before {
+      content: "Masquer le détail";
+      font-size: 13px;
+    }
+
+    .gobelets-ventilation-content {
+      border-top: 1px solid #e4e4e4;
+      padding: 4px 16px 14px;
+      background: #fff;
+    }
+
+    @media (max-width: 700px) {
+      .gobelets-ventilation-summary {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media print {
+      .gobelets-ventilation-content {
+        display: block !important;
+      }
+
+      .gobelets-ventilation-action {
+        display: none !important;
+      }
+    }
+
     @media print {
       @page {
         size: A4 portrait;
@@ -1191,8 +1279,17 @@
             <div class="payment-row"><span id="gobeletsTracesLibelle">Opérations historiques sans trace de stock</span><strong id="gobeletsTraces">—</strong></div>
           </div>
           <div id="gobeletsVentilationBloc" style="margin-top:18px" hidden>
-            <div style="font-weight:700;color:#850000;margin-bottom:10px">Répartition des paiements des achats</div>
-            <div class="payment-list">
+            <details class="gobelets-ventilation-details" id="gobeletsVentilationDetails">
+              <summary class="gobelets-ventilation-summary">
+                <span class="gobelets-ventilation-heading">Répartition des paiements des achats</span>
+                <span class="gobelets-ventilation-overview">
+                  <span>Couvertures : <strong id="gobeletsVentResumeTotal">—</strong></span>
+                  <span>Écart : <strong id="gobeletsVentResumeEcart">—</strong></span>
+                  <span class="gobelets-ventilation-action">Voir le détail</span>
+                </span>
+              </summary>
+              <div class="gobelets-ventilation-content">
+                <div class="payment-list">
               <div class="payment-row"><span>Espèces encaissées</span><strong id="gobeletsVentEspeces">—</strong></div>
               <div class="payment-row"><span>Carte bancaire</span><strong id="gobeletsVentCarte">—</strong></div>
               <div class="payment-row"><span>TWINT</span><strong id="gobeletsVentTwint">—</strong></div>
@@ -1202,7 +1299,9 @@
               <div class="payment-row"><span>Écart avec le montant des achats</span><strong id="gobeletsVentEcart">—</strong></div>
               <div class="payment-row"><span>Achats sans détail de paiement</span><strong id="gobeletsVentSansDetail">—</strong></div>
             </div>
-            <div class="sub" id="gobeletsVentNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
+                <div class="sub" id="gobeletsVentNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
+              </div>
+            </details>
           </div>
           <div class="sub" id="gobeletsNote" style="margin-top:10px;color:#777;font-size:12px;line-height:1.5"></div>
         </div>
@@ -1547,6 +1646,19 @@
         }).join("");
       }
 
+      // L'impression A4 inclut le détail, sans changer durablement le choix de l'utilisateur.
+      let gobeletsVentilationOuvertAvantImpression = false;
+      window.addEventListener("beforeprint", () => {
+        const details = $("gobeletsVentilationDetails");
+        if (!details) return;
+        gobeletsVentilationOuvertAvantImpression = details.open;
+        details.open = true;
+      });
+      window.addEventListener("afterprint", () => {
+        const details = $("gobeletsVentilationDetails");
+        if (details) details.open = gobeletsVentilationOuvertAvantImpression;
+      });
+
       function renderGobelets() {
         const panel = $("gobeletsReportPanel");
         panel.hidden = false;
@@ -1564,6 +1676,8 @@
           $("gobeletsVentAutres").textContent = money(ventilation.autres_couvertures_chf);
           $("gobeletsVentTotal").textContent = money(ventilation.total_couvertures_connues_chf);
           $("gobeletsVentEcart").textContent = money(ventilation.ecart_couverture_chf);
+          $("gobeletsVentResumeTotal").textContent = money(ventilation.total_couvertures_connues_chf);
+          $("gobeletsVentResumeEcart").textContent = money(ventilation.ecart_couverture_chf);
           $("gobeletsVentSansDetail").textContent = plural(ventilation.achats_sans_ventilation, "achat", "achats");
           const ecart = Math.abs(Number(ventilation.ecart_couverture_chf || 0));
           const historiques = Number(ventilation.achats_sans_ventilation || 0);
