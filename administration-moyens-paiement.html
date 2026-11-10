@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <link rel="icon" type="image/png" href="logo-mdn.png">
+  <link rel="apple-touch-icon" href="logo-mdn.png">
+  <title>Moyens de paiement — MDN Sion</title>
+  <style>
+    * {
+        box-sizing: border-box;
+    }
+    html {
+        overscroll-behavior: none;
+    }
+    body {
+        margin: 0;
+        min-height: 100dvh;
+        background: #f3f3f3;
+        color: #222;
+        font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        overscroll-behavior: none;
+    }
+    button {
+        font: inherit;
+        cursor: pointer;
+    }
+    .top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #8b0000;
+        color: white;
+        padding: 14px 18px;
+    }
+    body.demo .top {
+        background: #806000;
+    }
+    .top-inner {
+        display: grid;
+        grid-template-columns: 180px 1fr 180px;
+        align-items: center;
+        gap: 10px;
+        max-width: 1400px;
+        margin: auto;
+    }
+    .top h1 {
+        font-size: clamp(18px, 2.5vw, 26px);
+        margin: 0;
+        text-align: center;
+    }
+    .top p {
+        margin: 3px 0 0;
+        font-size: 13px;
+        text-align: center;
+    }
+    .top button {
+        border: 1px solid #ffffff55;
+        border-radius: 12px;
+        background: #ffffff18;
+        color: white;
+        padding: 11px 12px;
+        font-weight: 700;
+    }
+    .top button:last-child {
+        justify-self: end;
+    }
+    .banner {
+        display: none;
+        padding: 12px;
+        text-align: center;
+        background: #ffe98b;
+        color: #593e00;
+        font-weight: 700;
+    }
+    body.demo .banner {
+        display: block;
+    }
+    main {
+        width: min(1100px, calc(100% - 32px));
+        margin: 24px auto;
+    }
+    .card {
+        background: white;
+        border: 1px solid #e2e2e2;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 5px 22px #00000009;
+    }
+    .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 22px;
+        border-bottom: 1px solid #e7e7e7;
+    }
+    h2 {
+        margin: 0;
+        font-size: 22px;
+        color: #8b0000;
+    }
+    .badge {
+        padding: 9px 12px;
+        border-radius: 25px;
+        background: #f5f5f5;
+        color: #555;
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .content {
+        padding: 22px;
+    }
+    .hint {
+        color: #666;
+        line-height: 1.5;
+        margin: 0 0 20px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .metric {
+        border: 1px solid #e2e2e2;
+        border-radius: 14px;
+        background: #fafafa;
+        padding: 16px;
+    }
+    .metric small {
+        display: block;
+        color: #666;
+        font-weight: 700;
+    }
+    .metric strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 26px;
+        color: #8b0000;
+    }
+    .table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e4e4e4;
+        border-radius: 14px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 640px;
+    }
+    th, td {
+        padding: 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    th {
+        background: #f7f7f7;
+        font-size: 13px;
+        color: #555;
+    }
+    tr:last-child td {
+        border-bottom: none;
+    }
+    .status {
+        display: inline-block;
+        border-radius: 16px;
+        padding: 5px 9px;
+        background: #f0f0f0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .status.yes {
+        color: #14622c;
+        background: #e8f7eb;
+    }
+    .status.no {
+        color: #8b0000;
+        background: #fff0f0;
+    }
+    .notice {
+        margin-top: 18px;
+        padding: 14px;
+        border-radius: 12px;
+        background: #f7f7f7;
+        color: #555;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .error {
+        color: #8b0000;
+    }
+    @media (max-width: 650px) {
+        .top-inner {
+            grid-template-columns: 1fr 1fr;
+        }
+        .top h1 {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+        .top button {
+            grid-row: 2;
+            font-size: 13px;
+        }
+        .grid {
+            grid-template-columns: 1fr;
+        }
+        .card-head, .content {
+            padding: 16px;
+        }
+        h2 {
+            font-size: 19px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <button type="button" id="back">← Administration</button>
+      <div>
+        <h1>💳 Moyens de paiement</h1>
+        <p id="identity">Chargement…</p>
+      </div>
+      <button type="button" id="logout">Déconnexion</button>
+    </div>
+  </header>
+  <div class="banner">🎓 MODE DÉMO / FORMATION — aucune donnée réelle n'est modifiée</div>
+  <main>
+    <section class="card">
+      <div class="card-head">
+        <h2>Référentiel des moyens de paiement</h2>
+        <span class="badge" id="mode">Chargement…</span>
+      </div>
+      <div class="content">
+        <p class="hint">Consultation des moyens de paiement configurés, de leur état et de leur impact sur la caisse physique.</p>
+        <div class="grid">
+          <div class="metric">
+            <small>Moyens configurés</small>
+            <strong id="count">—</strong>
+          </div>
+          <div class="metric">
+            <small>Moyens actifs</small>
+            <strong id="active">—</strong>
+          </div>
+          <div class="metric">
+            <small>Impactant la caisse physique</small>
+            <strong id="cash">—</strong>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ordre</th>
+                <th>Moyen de paiement</th>
+                <th>Code</th>
+                <th>État</th>
+                <th>Caisse physique</th>
+              </tr>
+            </thead>
+            <tbody id="rows">
+              <tr>
+                <td colspan="5">Chargement du référentiel…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="notice" id="notice">Cette première version est en lecture seule. Les réglages du référentiel sont partagés entre Démo et Réel : aucune modification n'est autorisée depuis cette page.</p>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    "use strict";
+
+    const byId = (id) => document.getElementById(id);
+
+    function badge(value, yesLabel, noLabel) {
+      const span = document.createElement("span");
+      span.className = "status " + (value ? "yes" : "no");
+      span.textContent = value ? yesLabel : noLabel;
+      return span;
+    }
+
+    function cell(row, value) {
+      const td = document.createElement("td");
+      td.textContent = value == null ? "—" : String(value);
+      row.appendChild(td);
+      return td;
+    }
+
+    function render(moyens) {
+      byId("count").textContent = String(moyens.length);
+      byId("active").textContent = String(moyens.filter((item) => item.actif === true).length);
+      byId("cash").textContent = String(moyens.filter((item) => item.impacte_caisse_physique === true).length);
+
+      const tbody = byId("rows");
+      tbody.replaceChildren();
+
+      if (moyens.length === 0) {
+        const row = document.createElement("tr");
+        cell(row, "Aucun moyen de paiement configuré.").colSpan = 5;
+        tbody.appendChild(row);
+        return;
+      }
+
+      for (const moyen of moyens) {
+        const row = document.createElement("tr");
+        cell(row, moyen.ordre_affichage);
+        cell(row, moyen.nom);
+        cell(row, moyen.code);
+        cell(row, "").replaceChildren(badge(moyen.actif === true, "Actif", "Inactif"));
+        cell(row, "").replaceChildren(badge(moyen.impacte_caisse_physique === true, "Oui", "Non"));
+        tbody.appendChild(row);
+      }
+    }
+
+    async function init() {
+      try {
+        if (!window.MDN_AUTH || !window.MDN_SUPABASE) {
+          throw new Error("Les modules de connexion MDN sont indisponibles.");
+        }
+
+        const auth = await window.MDN_AUTH.protegerPage();
+        if (!auth) {
+          return;
+        }
+
+        const client = window.MDN_SUPABASE;
+        const { data: access, error: accessError } = await client.rpc("etat_acces_administration");
+        if (accessError) {
+          throw accessError;
+        }
+        if (!access || access.acces_administration !== true) {
+          window.location.replace("accueil.html");
+          return;
+        }
+
+        const demo = access.mode_demo === true;
+        document.body.classList.toggle("demo", demo);
+        byId("mode").textContent = demo ? "Démo · consultation" : "Réel · consultation";
+        const identity = auth.profil?.prenom || auth.profil?.email || "Administration";
+        byId("identity").textContent = identity + " · " + (demo ? "Mode Démo" : auth.libelleRole || "Administrateur");
+
+        const { data, error } = await client.rpc("charger_administration_moyens_paiement");
+        if (error) {
+          throw error;
+        }
+        if (!data || !Array.isArray(data.moyens_paiement)) {
+          throw new Error("Réponse inattendue de la fonction SQL199.");
+        }
+        render(data.moyens_paiement);
+      } catch (error) {
+        console.error("[MDN Sion] Moyens de paiement :", error);
+        const row = document.createElement("tr");
+        const td = cell(row, "Chargement impossible : " + (error.message || String(error)));
+        td.colSpan = 5;
+        td.className = "error";
+        byId("rows").replaceChildren(row);
+        byId("notice").textContent = "Aucune modification n'a été effectuée. Vérifiez la fonction SQL199 et les droits de la session.";
+        byId("mode").textContent = "Indisponible";
+      }
+    }
+
+    byId("back").addEventListener("click", () => {
+      window.location.href = "administration.html";
+    });
+
+    byId("logout").addEventListener("click", async () => {
+      try {
+        await window.MDN_AUTH.deconnexion();
+      } catch (error) {
+        console.error("Déconnexion :", error);
+      }
+      window.location.replace("index.html");
+    });
+
+    init();
+  </script>
+</body>
+</html>
