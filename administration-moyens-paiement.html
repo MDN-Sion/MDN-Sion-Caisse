@@ -348,6 +348,7 @@
     }
 
     let modeDemo = false;
+    let modificationAutorisee = false;
     let enregistrementEnCours = false;
 
     let moyensAffiches = [];
@@ -384,7 +385,7 @@
     }
 
     async function deplacerMoyen(index, direction) {
-        if (!modeDemo || enregistrementEnCours) {
+        if (!modificationAutorisee || enregistrementEnCours) {
             return;
         }
 
@@ -406,7 +407,9 @@
             // Les valeurs enregistrées sont toujours comprises entre 1 et le nombre de moyens.
             for (const [position, moyen] of nouvelOrdre.entries()) {
                 const { error } = await window.MDN_SUPABASE.rpc(
-                    "enregistrer_configuration_moyen_paiement_demo",
+                    modeDemo
+                        ? "enregistrer_configuration_moyen_paiement_demo"
+                        : "enregistrer_configuration_moyen_paiement_reel",
                     {
                         p_code: moyen.code,
                         p_actif: moyen.actif === true,
@@ -420,7 +423,7 @@
             }
 
             await chargerConfiguration();
-            byId("notice").textContent = "Ordre enregistré en Démo.";
+            byId("notice").textContent = "Ordre enregistré en " + (modeDemo ? "Démo." : "Réel.");
         } catch (error) {
             console.error("[MDN Sion] Déplacement moyen de paiement :", error);
             byId("notice").textContent = "Déplacement interrompu : " + (error.message || String(error)) + ". Rechargez la page pour vérifier l'ordre enregistré.";
@@ -455,7 +458,7 @@
     }
 
     async function enregistrerMoyen(moyen, select, button) {
-        if (enregistrementEnCours || !modeDemo) {
+        if (enregistrementEnCours || !modificationAutorisee) {
             return;
         }
 
@@ -472,7 +475,9 @@
 
         try {
             const { error } = await window.MDN_SUPABASE.rpc(
-                "enregistrer_configuration_moyen_paiement_demo",
+                modeDemo
+                        ? "enregistrer_configuration_moyen_paiement_demo"
+                        : "enregistrer_configuration_moyen_paiement_reel",
                 {
                     p_code: moyen.code,
                     p_actif: select.value === "true",
@@ -484,7 +489,7 @@
                 throw error;
             }
 
-            byId("notice").textContent = "Configuration Démo enregistrée pour « " + moyen.nom + " ».";
+            byId("notice").textContent = "Configuration " + (modeDemo ? "Démo" : "Réelle") + " enregistrée pour « " + moyen.nom + " ».";
             await chargerConfiguration();
         } catch (error) {
             console.error("[MDN Sion] Enregistrement moyen de paiement :", error);
@@ -500,14 +505,14 @@
         byId("count").textContent = String(moyens.length);
         byId("active").textContent = String(moyens.filter((item) => item.actif === true).length);
         byId("cash").textContent = String(moyens.filter((item) => item.impacte_caisse_physique === true).length);
-        byId("actions-head").hidden = !modeDemo;
+        byId("actions-head").hidden = !modificationAutorisee;
 
         const tbody = byId("rows");
         tbody.replaceChildren();
 
         if (moyens.length === 0) {
             const row = document.createElement("tr");
-            cell(row, "Aucun moyen de paiement configuré.").colSpan = modeDemo ? 6 : 5;
+            cell(row, "Aucun moyen de paiement configuré.").colSpan = modificationAutorisee ? 6 : 5;
             tbody.appendChild(row);
             return;
         }
@@ -522,7 +527,7 @@
             const etatCell = cell(row, "");
             cell(row, "").replaceChildren(badge(moyen.impacte_caisse_physique === true, "Oui", "Non"));
 
-            if (modeDemo) {
+            if (modificationAutorisee) {
                 const controles = controlesOrdre(moyen, index);
                 const select = champEtat(moyen);
                 const button = document.createElement("button");
@@ -554,8 +559,9 @@
         }
 
         modeDemo = data.mode_demo === true;
+        modificationAutorisee = data.modification_autorisee === true;
         document.body.classList.toggle("demo", modeDemo);
-        byId("mode").textContent = modeDemo ? "Démo · modification" : "Réel · consultation";
+        byId("mode").textContent = modeDemo ? "Démo · modification" : (modificationAutorisee ? "Réel · modification" : "Réel · consultation");
         render(data.moyens_paiement);
     }
 
@@ -589,7 +595,9 @@
         await chargerConfiguration();
         byId("notice").textContent = modeDemo
           ? "Utilisez ▲ et ▼ pour changer l’ordre. Les modifications restent limitées à la Démo. Les écrans d’encaissement ne sont pas encore reliés à ces réglages."
-          : "Mode Réel en consultation. Aucune modification du référentiel ni des opérations de caisse n’est effectuée.";
+          : (modificationAutorisee
+              ? "Utilisez ▲ et ▼ pour changer l’ordre en Réel. Les modifications restent indépendantes de la Démo. Les écrans d’encaissement ne sont pas encore reliés à ces réglages."
+              : "Mode Réel en consultation. Les modifications sont réservées aux administrateurs.");
       } catch (error) {
         console.error("[MDN Sion] Moyens de paiement :", error);
         const row = document.createElement("tr");
