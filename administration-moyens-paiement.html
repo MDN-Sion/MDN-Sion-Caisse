@@ -188,6 +188,31 @@
         font-size: 14px;
         line-height: 1.5;
     }
+    .order-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .order-button {
+        width: 36px;
+        height: 36px;
+        border: 1px solid #ccc;
+        border-radius: 9px;
+        background: white;
+        color: #8b0000;
+        font-size: 18px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .order-button:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+    .order-position {
+        min-width: 24px;
+        text-align: center;
+        font-weight: 700;
+    }
     .edit-input {
         width: 90px;
         max-width: 100%;
@@ -325,16 +350,88 @@
     let modeDemo = false;
     let enregistrementEnCours = false;
 
-    function champOrdre(moyen) {
-        const input = document.createElement("input");
-        input.type = "number";
-        input.min = "0";
-        input.max = "9999";
-        input.step = "1";
-        input.value = String(moyen.ordre_affichage);
-        input.className = "edit-input";
-        input.setAttribute("aria-label", "Ordre de " + moyen.nom);
-        return input;
+    let moyensAffiches = [];
+
+    function controlesOrdre(moyen, index) {
+        const container = document.createElement("div");
+        container.className = "order-controls";
+
+        const monter = document.createElement("button");
+        monter.type = "button";
+        monter.className = "order-button";
+        monter.textContent = "▲";
+        monter.title = "Monter « " + moyen.nom + " »";
+        monter.setAttribute("aria-label", monter.title);
+        monter.disabled = index === 0;
+
+        const position = document.createElement("span");
+        position.className = "order-position";
+        position.textContent = String(index + 1);
+
+        const descendre = document.createElement("button");
+        descendre.type = "button";
+        descendre.className = "order-button";
+        descendre.textContent = "▼";
+        descendre.title = "Descendre « " + moyen.nom + " »";
+        descendre.setAttribute("aria-label", descendre.title);
+        descendre.disabled = index === moyensAffiches.length - 1;
+
+        monter.addEventListener("click", () => deplacerMoyen(index, -1));
+        descendre.addEventListener("click", () => deplacerMoyen(index, 1));
+
+        container.append(monter, position, descendre);
+        return container;
+    }
+
+    async function deplacerMoyen(index, direction) {
+        if (!modeDemo || enregistrementEnCours) {
+            return;
+        }
+
+        const autreIndex = index + direction;
+
+        if (autreIndex < 0 || autreIndex >= moyensAffiches.length) {
+            return;
+        }
+
+        const nouvelOrdre = [...moyensAffiches];
+        const [deplace] = nouvelOrdre.splice(index, 1);
+        nouvelOrdre.splice(autreIndex, 0, deplace);
+
+        enregistrementEnCours = true;
+        byId("notice").textContent = "Déplacement en cours…";
+
+        try {
+            // La renumérotation supprime les doublons d'ordre déjà présents.
+            // Les valeurs enregistrées sont toujours comprises entre 1 et le nombre de moyens.
+            for (const [position, moyen] of nouvelOrdre.entries()) {
+                const { error } = await window.MDN_SUPABASE.rpc(
+                    "enregistrer_configuration_moyen_paiement_demo",
+                    {
+                        p_code: moyen.code,
+                        p_actif: moyen.actif === true,
+                        p_ordre_affichage: position + 1
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+            }
+
+            await chargerConfiguration();
+            byId("notice").textContent = "Ordre enregistré en Démo.";
+        } catch (error) {
+            console.error("[MDN Sion] Déplacement moyen de paiement :", error);
+            byId("notice").textContent = "Déplacement interrompu : " + (error.message || String(error)) + ". Rechargez la page pour vérifier l'ordre enregistré.";
+            try {
+                await chargerConfiguration();
+            } catch (chargementErreur) {
+                console.error("[MDN Sion] Rechargement :", chargementErreur);
+            }
+        } finally {
+            enregistrementEnCours = false;
+        }
     }
 
     function champEtat(moyen) {
@@ -357,12 +454,12 @@
         return select;
     }
 
-    async function enregistrerMoyen(moyen, input, select, button) {
+    async function enregistrerMoyen(moyen, select, button) {
         if (enregistrementEnCours || !modeDemo) {
             return;
         }
 
-        const ordre = Number(input.value);
+        const ordre = Number(moyen.ordre_affichage);
 
         if (!Number.isInteger(ordre) || ordre < 0 || ordre > 9999) {
             byId("notice").textContent = "L'ordre doit être un entier compris entre 0 et 9999.";
@@ -415,7 +512,9 @@
             return;
         }
 
-        for (const moyen of moyens) {
+        moyensAffiches = [...moyens];
+
+        for (const [index, moyen] of moyensAffiches.entries()) {
             const row = document.createElement("tr");
             const ordreCell = cell(row, "");
             cell(row, moyen.nom);
@@ -424,14 +523,14 @@
             cell(row, "").replaceChildren(badge(moyen.impacte_caisse_physique === true, "Oui", "Non"));
 
             if (modeDemo) {
-                const input = champOrdre(moyen);
+                const controles = controlesOrdre(moyen, index);
                 const select = champEtat(moyen);
                 const button = document.createElement("button");
                 button.type = "button";
                 button.className = "save-button";
                 button.textContent = "Enregistrer";
-                button.addEventListener("click", () => enregistrerMoyen(moyen, input, select, button));
-                ordreCell.replaceChildren(input);
+                button.addEventListener("click", () => enregistrerMoyen(moyen, select, button));
+                ordreCell.replaceChildren(controles);
                 etatCell.replaceChildren(select);
                 cell(row, "").replaceChildren(button);
             } else {
@@ -489,7 +588,7 @@
 
         await chargerConfiguration();
         byId("notice").textContent = modeDemo
-          ? "Les modifications sont enregistrées uniquement en Démo. Elles ne modifient ni le référentiel Réel ni les opérations existantes. Les écrans d’encaissement ne sont pas encore reliés à ces réglages."
+          ? "Utilisez ▲ et ▼ pour changer l’ordre. Les modifications restent limitées à la Démo. Les écrans d’encaissement ne sont pas encore reliés à ces réglages."
           : "Mode Réel en consultation. Aucune modification du référentiel ni des opérations de caisse n’est effectuée.";
       } catch (error) {
         console.error("[MDN Sion] Moyens de paiement :", error);
