@@ -1307,6 +1307,27 @@
         </div>
       </section>
 
+      <!-- SQL194 : consultation indépendante de la caisse physique. -->
+      <section class="panel" id="caissePhysiqueRapport" style="margin-bottom:16px" hidden>
+        <div class="panel-head">
+          <h2>💵 Caisse physique<span id="caissePhysiqueMode"></span></h2>
+          <span class="badge" id="caissePhysiqueEtat">Chargement…</span>
+        </div>
+        <div class="panel-body">
+          <div class="dish-metrics" style="padding:0;grid-template-columns:repeat(3,minmax(0,1fr))">
+            <div class="dish-metric"><div class="label">Sessions</div><div class="value" id="caissePhysiqueSessions">—</div></div>
+            <div class="dish-metric"><div class="label">Entrées d’espèces</div><div class="value" id="caissePhysiqueEntrees">—</div></div>
+            <div class="dish-metric"><div class="label">Sorties d’espèces</div><div class="value" id="caissePhysiqueSorties">—</div></div>
+          </div>
+          <div class="payment-row" style="margin-top:12px"><span id="caissePhysiqueSoldeLabel">Solde des mouvements</span><strong id="caissePhysiqueSolde">—</strong></div>
+          <details style="margin-top:14px;border:1px solid #ddd;border-radius:14px;padding:14px">
+            <summary style="cursor:pointer;font-weight:700;color:#8b0000">Voir les sessions et comptages</summary>
+            <div id="caissePhysiqueDetail" style="padding-top:12px"></div>
+          </details>
+          <div class="sub" id="caissePhysiqueNote" style="margin-top:12px;color:#777;font-size:12px;line-height:1.5"></div>
+        </div>
+      </section>
+
       <section class="panel print-dish-activity-page" style="margin-bottom:16px">
         <div class="panel-head">
           <h2>🍽 Activité vaisselle</h2>
@@ -1398,6 +1419,7 @@
       let report = null;
       let gobeletsReport = null;
       let gobeletsVentilation = null;
+      let caissePhysiqueRapport = null;
       let availablePeriodInitialized = false;
 
       function esc(value) {
@@ -1717,6 +1739,50 @@
         $("gobeletsNote").textContent = String(data.note || "Les dons ne constituent pas une entrée d’espèces. Les mouvements historiques ne sont pas modifiés.");
       }
 
+      function renderCaissePhysique() {
+        const panel = $("caissePhysiqueRapport");
+        panel.hidden = false;
+        $("caissePhysiqueMode").textContent = demo ? " — Démo" : "";
+        const data = caissePhysiqueRapport;
+        if (!data) {
+          $("caissePhysiqueEtat").textContent = "Indisponible";
+          $("caissePhysiqueSessions").textContent = "—";
+          $("caissePhysiqueEntrees").textContent = "—";
+          $("caissePhysiqueSorties").textContent = "—";
+          $("caissePhysiqueSolde").textContent = "—";
+          $("caissePhysiqueDetail").textContent = "Le rapport de caisse physique n’a pas pu être chargé.";
+          $("caissePhysiqueNote").textContent = "Les autres rubriques restent accessibles. Vérifier les droits de la fonction SQL194.";
+          return;
+        }
+        const mouvements = data.mouvements || {};
+        const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        const comptages = Array.isArray(data.comptages) ? data.comptages : [];
+        $("caissePhysiqueEtat").textContent = demo ? "Démo · édition" : "Réel · édition";
+        $("caissePhysiqueSessions").textContent = Number(data.nombre_sessions || 0).toLocaleString("fr-CH");
+        $("caissePhysiqueEntrees").textContent = money(demo ? mouvements.entrees : mouvements.entrees_hors_fond);
+        $("caissePhysiqueSorties").textContent = money(mouvements.sorties);
+        $("caissePhysiqueSoldeLabel").textContent = demo ? "Solde net des mouvements de l’édition" : "Somme des mouvements de l’édition (fonds inclus s’ils sont enregistrés)";
+        $("caissePhysiqueSolde").textContent = money(demo ? mouvements.solde : mouvements.solde_tous_mouvements);
+        const lignes = sessions.map((session) => {
+          const infos = [esc(session.numero_session || "Session"), esc(session.statut || "")].filter(Boolean).join(" · ");
+          const complement = ["Fonds initial : " + money(session.fond_initial)];
+          if (session.montant_theorique_cloture !== null && session.montant_theorique_cloture !== undefined) complement.push("Clôture théorique : " + money(session.montant_theorique_cloture));
+          if (session.montant_compte !== null && session.montant_compte !== undefined) complement.push("Compté : " + money(session.montant_compte));
+          if (session.ecart !== null && session.ecart !== undefined) complement.push("Écart : " + money(session.ecart));
+          return `<div class="payment-row" style="display:block"><strong>${infos}</strong><div class="sub" style="margin-top:5px">${complement.join(" · ")}</div></div>`;
+        });
+        if (!demo && comptages.length) {
+          lignes.push(`<div style="font-weight:700;margin-top:12px">Comptages (${comptages.length})</div>`);
+          for (const comptage of comptages) {
+            lignes.push(`<div class="payment-row"><span>${esc(comptage.type_comptage || "Comptage")} · ${esc(dateTime(comptage.created_at))}</span><strong>Écart : ${money(comptage.ecart)}</strong></div>`);
+          }
+        }
+        $("caissePhysiqueDetail").innerHTML = lignes.join("") || "Aucune session enregistrée pour cette édition.";
+        $("caissePhysiqueNote").textContent = demo
+          ? "Les mouvements Démo sont regroupés par édition et ne sont pas attribués artificiellement à une session."
+          : "Les montants sont cumulés sur l’édition entière, sans additionner les fonds initiaux des sessions au solde des mouvements. Les comptages sont présentés séparément.";
+      }
+
       function renderPeriod() {
         const available = report?.periode_disponible || {};
         const availableStart = inputDate(available.premiere_activite);
@@ -1779,6 +1845,7 @@
         renderArticles();
         renderDishActivity();
         renderGobelets();
+        renderCaissePhysique();
         renderStocks();
         renderPeriod();
 
@@ -1861,6 +1928,22 @@
             });
           } catch (ventilationError) {
             console.error("Chargement de la ventilation Gobelets :", ventilationError);
+          }
+
+          // SQL194 : rapport caisse physique, indépendant du filtre de dates.
+          // Un refus d’accès ne bloque jamais les autres rapports.
+          caissePhysiqueRapport = null;
+          try {
+            const editionId = report?.edition?.id;
+            if (!editionId) {
+              throw new Error("Identifiant de l’édition absent du rapport principal.");
+            }
+            caissePhysiqueRapport = await rpc("rapport_caisse_physique_mdn", {
+              p_edition_id: editionId,
+              p_demo: demo
+            });
+          } catch (caisseError) {
+            console.error("Chargement du rapport de caisse physique :", caisseError);
           }
 
           render();
