@@ -570,6 +570,62 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .inventory-delete,
+        .inventory-cancel {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 7px 12px;
+            border-radius: 9px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .inventory-delete {
+            border: 1px solid #9a1b1b;
+            background: #9a1b1b;
+            color: #fff;
+            -webkit-text-fill-color: #fff;
+        }
+
+        .inventory-cancel {
+            border: 1px solid #bbb;
+            background: #fff;
+            color: #222;
+            -webkit-text-fill-color: #222;
+        }
+
+        .inventory-delete-confirm {
+            margin: 14px 0;
+            padding: 14px;
+            border: 1px solid #d7aaaa;
+            border-radius: 10px;
+            background: #fff8f8;
+        }
+
+        .inventory-delete-confirm[hidden] {
+            display: none;
+        }
+
+        .inventory-delete-confirm p {
+            margin: 0 0 12px;
+        }
+
+        .inventory-delete-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .inventory-delete:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
   </style>
  </head>
  <body>
@@ -746,17 +802,25 @@
           <th>Article / référence</th>
           <th>Quantité</th>
           <th>Commentaire</th>
+          <th>Actions</th>
          </tr>
         </thead>
         <tbody id="inventory-lines"></tbody>
        </table>
+      </div>
+      <div id="inventory-delete-confirm" class="inventory-delete-confirm" hidden>
+       <p id="inventory-delete-message"></p>
+       <div class="inventory-delete-actions">
+        <button id="inventory-delete-cancel" class="inventory-cancel" type="button">Annuler</button>
+        <button id="inventory-delete-apply" class="inventory-delete" type="button">Supprimer la ligne</button>
+       </div>
       </div>
       <form id="inventory-form" class="inventory-form">
        <label>Article ou référence
         <input id="inventory-article" maxlength="150" required placeholder="Nom exact de l'article"/>
        </label>
        <label>Quantité
-        <input id="inventory-quantity" type="number" min="0" step="1" required value="0"/>
+        <input id="inventory-quantity" type="number" min="0" step="1" required placeholder="0"/>
        </label>
        <label>Commentaire facultatif
         <input id="inventory-comment" maxlength="1000" placeholder="Observation"/>
@@ -812,6 +876,7 @@
         let preparationSelectionnee = null;
         let donneesInventaire = null;
         let inventaireOccupe = false;
+        let ligneASupprimer = null;
 
         function statutLisible(statut) {
             const libelles = {
@@ -835,6 +900,7 @@
             byId("inventory-editor").hidden = true;
             preparationSelectionnee = null;
             donneesInventaire = null;
+            annulerSuppression();
         }
 
         async function ouvrirDetail(preparation) {
@@ -1106,6 +1172,7 @@
                 return;
             }
 
+            annulerSuppression();
             const categorie = categorieInventaire();
             const lignes = donneesInventaire.lignes.filter((ligne) => ligne.categorie === categorie);
             const validation = donneesInventaire.validations[categorie];
@@ -1118,7 +1185,9 @@
             byId("inventory-quantity").max = categorie === "fondation" ? "0" : "";
 
             if (categorie === "fondation") {
-                byId("inventory-quantity").value = "0";
+                byId("inventory-quantity").placeholder = "0 (obligatoire)";
+            } else {
+                byId("inventory-quantity").placeholder = "0";
             }
 
             for (const ligne of lignes) {
@@ -1126,11 +1195,80 @@
                 cell(row, ligne.article);
                 cell(row, String(ligne.quantite));
                 cell(row, ligne.commentaire || "—");
+
+                const actions = document.createElement("td");
+                const corbeille = document.createElement("button");
+
+                corbeille.type = "button";
+                corbeille.className = "inventory-delete";
+                corbeille.title = "Supprimer " + ligne.article;
+                corbeille.setAttribute("aria-label", "Supprimer " + ligne.article);
+                corbeille.textContent = "🗑";
+                corbeille.addEventListener("click", () => demanderSuppression(ligne));
+
+                actions.appendChild(corbeille);
+                row.appendChild(actions);
                 tbody.appendChild(row);
             }
 
             if (lignes.length === 0) {
-                emptyRow(tbody, 3, "Aucune ligne enregistrée dans cette catégorie.");
+                emptyRow(tbody, 4, "Aucune ligne enregistrée dans cette catégorie.");
+            }
+        }
+
+        function annulerSuppression() {
+            ligneASupprimer = null;
+            byId("inventory-delete-confirm").hidden = true;
+            byId("inventory-delete-message").textContent = "";
+        }
+
+        function demanderSuppression(ligne) {
+            if (!modeDemo || inventaireOccupe) {
+                return;
+            }
+
+            ligneASupprimer = ligne;
+            byId("inventory-delete-message").textContent =
+                "Supprimer « " + ligne.article + " » (quantité : " + ligne.quantite + ") ? " +
+                "La validation de cette catégorie sera annulée.";
+            byId("inventory-delete-confirm").hidden = false;
+        }
+
+        async function confirmerSuppression() {
+            if (!modeDemo || !preparationSelectionnee || !ligneASupprimer || inventaireOccupe) {
+                return;
+            }
+
+            const ligne = ligneASupprimer;
+            inventaireOccupe = true;
+            byId("inventory-delete-apply").disabled = true;
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "supprimer_ligne_inventaire_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_ligne_id: ligne.id
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Suppression non confirmée.");
+                }
+
+                annulerSuppression();
+                await chargerInventaires();
+                setNotice("Ligne « " + ligne.article + " » supprimée en Démo. " +
+                    "La validation de la catégorie a été réinitialisée.");
+            } catch (error) {
+                setNotice("Suppression impossible : " + error.message, true);
+            } finally {
+                inventaireOccupe = false;
+                byId("inventory-delete-apply").disabled = false;
             }
         }
 
@@ -1204,6 +1342,7 @@
 
                 byId("inventory-article").value = "";
                 byId("inventory-comment").value = "";
+                byId("inventory-quantity").value = "";
                 await chargerInventaires();
                 setNotice("Ligne Démo enregistrée. La validation de cette catégorie a été réinitialisée.");
             } catch (error) {
@@ -1256,6 +1395,8 @@
             }
         }
 
+        byId("inventory-delete-cancel").addEventListener("click", annulerSuppression);
+        byId("inventory-delete-apply").addEventListener("click", confirmerSuppression);
         byId("inventory-category").addEventListener("change", afficherInventaires);
         byId("inventory-form").addEventListener("submit", enregistrerInventaire);
         byId("inventory-validate").addEventListener("click", validerInventaire);
