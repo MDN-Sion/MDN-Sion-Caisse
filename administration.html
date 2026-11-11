@@ -821,12 +821,11 @@
 				<button id="ouvrirMoyensPaiement" class="action-module" type="button">Ouvrir</button>
 			</article>
 
-			<article class="module">
-				<span class="etat-bientot">À venir</span>
+			<article class="module actif">
 				<div class="icone">🔧</div>
 				<h3>Paramètres</h3>
 				<p>Configurer les paramètres généraux propres à l’édition et à l’organisation.</p>
-				<button class="action-module" type="button" disabled>Ouvrir</button>
+				<button id="ouvrirParametres" class="action-module" type="button">Ouvrir</button>
 			</article>
 		</section>
 
@@ -857,6 +856,7 @@
 			const ouvrirUtilisateurs = document.getElementById("ouvrirUtilisateurs");
 			const ouvrirReferentielVaisselle = document.getElementById("ouvrirReferentielVaisselle");
 			const ouvrirMoyensPaiement = document.getElementById("ouvrirMoyensPaiement");
+			const ouvrirParametres = document.getElementById("ouvrirParametres");
 
 			let modeDemoActif = false;
 
@@ -895,6 +895,12 @@
 				window.location.href = modeDemoActif
 					? "administration-moyens-paiement.html?mode=demo"
 					: "administration-moyens-paiement.html";
+			});
+
+			ouvrirParametres.addEventListener("click", function () {
+				window.location.href = modeDemoActif
+					? "administration-parametres.html?mode=demo"
+					: "administration-parametres.html";
 			});
 
 			boutonDeconnexion.addEventListener("click", async function () {
