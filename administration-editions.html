@@ -499,6 +499,77 @@
                 padding-bottom: 10px;
             }
         }
+
+        .inventory-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .inventory-controls select,
+        .inventory-form input {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #c9c9c9;
+            border-radius: 9px;
+            background: #fff;
+            color: #222;
+            font: inherit;
+        }
+
+        .inventory-controls select {
+            width: auto;
+            min-width: 190px;
+        }
+
+        .inventory-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 2fr auto;
+            align-items: end;
+            gap: 10px;
+            margin: 14px 0;
+        }
+
+        .inventory-form label {
+            display: grid;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .inventory-table-wrap {
+            overflow-x: auto;
+        }
+
+        .inventory-state {
+            margin: 8px 0;
+            font-weight: 600;
+        }
+
+        #inventory-editor {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+        }
+
+        #inventory-validate {
+            margin-top: 8px;
+        }
+
+        @media (max-width: 800px) {
+            .inventory-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .inventory-form {
+                grid-template-columns: 1fr;
+            }
+        }
   </style>
  </head>
  <body>
@@ -655,6 +726,46 @@
      </h3>
      <div class="detail-grid" id="detail-grid">
      </div>
+     <div id="inventory-editor" hidden>
+      <h3>Inventaires de préparation — Démo</h3>
+      <p>Ces quantités sont saisies pour les essais. Elles ne reprennent pas automatiquement les stocks Réels.</p>
+      <div class="inventory-controls">
+       <label for="inventory-category">Catégorie</label>
+       <select id="inventory-category">
+        <option value="mdn">Articles MDN</option>
+        <option value="fondation">Articles Fondation</option>
+        <option value="vaisselle">Vaisselle</option>
+        <option value="contenants">Contenants</option>
+       </select>
+      </div>
+      <div id="inventory-state" class="inventory-state"></div>
+      <div class="inventory-table-wrap">
+       <table>
+        <thead>
+         <tr>
+          <th>Article / référence</th>
+          <th>Quantité</th>
+          <th>Commentaire</th>
+         </tr>
+        </thead>
+        <tbody id="inventory-lines"></tbody>
+       </table>
+      </div>
+      <form id="inventory-form" class="inventory-form">
+       <label>Article ou référence
+        <input id="inventory-article" maxlength="150" required placeholder="Nom exact de l'article"/>
+       </label>
+       <label>Quantité
+        <input id="inventory-quantity" type="number" min="0" step="1" required value="0"/>
+       </label>
+       <label>Commentaire facultatif
+        <input id="inventory-comment" maxlength="1000" placeholder="Observation"/>
+       </label>
+       <button type="submit" class="detail-button">Enregistrer la ligne</button>
+      </form>
+      <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
+      <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
+     </div>
      <button class="detail-button detail-close" id="close-detail" type="button">
       Fermer les d&eacute;tails
      </button>
@@ -698,6 +809,9 @@
         const byId = (id) => document.getElementById(id);
         let modeDemo = false;
         let anneeActive = null;
+        let preparationSelectionnee = null;
+        let donneesInventaire = null;
+        let inventaireOccupe = false;
 
         function statutLisible(statut) {
             const libelles = {
@@ -718,9 +832,12 @@
         function fermerDetail() {
             byId("preparation-detail").hidden = true;
             byId("detail-grid").replaceChildren();
+            byId("inventory-editor").hidden = true;
+            preparationSelectionnee = null;
+            donneesInventaire = null;
         }
 
-        function ouvrirDetail(preparation) {
+        async function ouvrirDetail(preparation) {
             const details = [
                 ["Passage", String(preparation.annee_source) + " → " + String(preparation.annee_cible)],
                 ["Statut", statutLisible(preparation.statut)],
@@ -747,6 +864,12 @@
             byId("detail-title").textContent = "Préparation " +
                 String(preparation.annee_source) + " → " + String(preparation.annee_cible);
             byId("preparation-detail").hidden = false;
+            preparationSelectionnee = preparation;
+
+            if (modeDemo) {
+                byId("inventory-editor").hidden = false;
+                await chargerInventaires();
+            }
         }
 
         function setNotice(message, isError = false) {
@@ -853,6 +976,7 @@
                 bouton.type = "button";
                 bouton.className = "detail-button";
                 bouton.textContent = "Consulter";
+                bouton.dataset.preparationId = preparation.id;
                 bouton.addEventListener("click", () => ouvrirDetail(preparation));
 
                 action.appendChild(bouton);
@@ -886,7 +1010,7 @@
                 infoPreparations.hidden = !modeDemo;
                 infoPreparations.textContent = modeDemo
                     ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
-                      "Les inventaires et l'activation seront disponibles dans une prochaine étape."
+                      "Les inventaires sont modifiables ici. La création et l'activation des éditions restent indisponibles."
                     : "";
                 byId("prepare-next").disabled = !modeDemo || !Number.isInteger(anneeActive);
                 byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
@@ -965,6 +1089,176 @@
             }
         }
 
+
+        const nomsCategories = {
+            mdn: "Articles MDN",
+            fondation: "Articles Fondation",
+            vaisselle: "Vaisselle",
+            contenants: "Contenants"
+        };
+
+        function categorieInventaire() {
+            return byId("inventory-category").value;
+        }
+
+        function afficherInventaires() {
+            if (!donneesInventaire) {
+                return;
+            }
+
+            const categorie = categorieInventaire();
+            const lignes = donneesInventaire.lignes.filter((ligne) => ligne.categorie === categorie);
+            const validation = donneesInventaire.validations[categorie];
+            const tbody = byId("inventory-lines");
+
+            tbody.replaceChildren();
+            byId("inventory-state").textContent = nomsCategories[categorie] + " : " +
+                (validation ? "Validé" : "À valider") + " — " + lignes.length + " ligne(s)";
+            byId("inventory-foundation-note").hidden = categorie !== "fondation";
+            byId("inventory-quantity").max = categorie === "fondation" ? "0" : "";
+
+            if (categorie === "fondation") {
+                byId("inventory-quantity").value = "0";
+            }
+
+            for (const ligne of lignes) {
+                const row = document.createElement("tr");
+                cell(row, ligne.article);
+                cell(row, String(ligne.quantite));
+                cell(row, ligne.commentaire || "—");
+                tbody.appendChild(row);
+            }
+
+            if (lignes.length === 0) {
+                emptyRow(tbody, 3, "Aucune ligne enregistrée dans cette catégorie.");
+            }
+        }
+
+        async function chargerInventaires() {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "charger_inventaires_preparation_demo",
+                    { p_preparation_id: preparationSelectionnee.id }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse d'inventaire Démo invalide.");
+                }
+
+                donneesInventaire = {
+                    lignes: Array.isArray(data.lignes) ? data.lignes : [],
+                    validations: data.validations || {}
+                };
+
+                afficherInventaires();
+            } catch (error) {
+                setNotice("Impossible de charger les inventaires Démo : " + error.message, true);
+            }
+        }
+
+        async function enregistrerInventaire(event) {
+            event.preventDefault();
+
+            if (!modeDemo || !preparationSelectionnee || inventaireOccupe) {
+                return;
+            }
+
+            const quantite = Number(byId("inventory-quantity").value);
+            const categorie = categorieInventaire();
+
+            if (!Number.isSafeInteger(quantite) || quantite < 0 ||
+                (categorie === "fondation" && quantite !== 0)) {
+                setNotice("La quantité doit être un entier positif ou nul. Fondation : zéro uniquement.", true);
+                return;
+            }
+
+            inventaireOccupe = true;
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "enregistrer_ligne_inventaire_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_categorie: categorie,
+                        p_article: byId("inventory-article").value.trim(),
+                        p_quantite: quantite,
+                        p_commentaire: byId("inventory-comment").value.trim()
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true) {
+                    throw new Error("Enregistrement non confirmé.");
+                }
+
+                byId("inventory-article").value = "";
+                byId("inventory-comment").value = "";
+                await chargerInventaires();
+                setNotice("Ligne Démo enregistrée. La validation de cette catégorie a été réinitialisée.");
+            } catch (error) {
+                setNotice("Enregistrement impossible : " + error.message, true);
+            } finally {
+                inventaireOccupe = false;
+            }
+        }
+
+        async function validerInventaire() {
+            if (!modeDemo || !preparationSelectionnee || inventaireOccupe) {
+                return;
+            }
+
+            inventaireOccupe = true;
+
+            try {
+                const categorie = categorieInventaire();
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "valider_inventaire_preparation_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_categorie: categorie
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.valide !== true) {
+                    throw new Error("Validation non confirmée.");
+                }
+
+                await chargerInventaires();
+                setNotice("Inventaire Démo validé : " + nomsCategories[categorie] + ".");
+                const selection = preparationSelectionnee.id;
+                await charger();
+
+                const ligne = Array.from(byId("preparations-body").querySelectorAll("button"))
+                    .find((bouton) => bouton.dataset.preparationId === selection);
+
+                if (ligne) {
+                    ligne.click();
+                }
+            } catch (error) {
+                setNotice("Validation impossible : " + error.message, true);
+            } finally {
+                inventaireOccupe = false;
+            }
+        }
+
+        byId("inventory-category").addEventListener("change", afficherInventaires);
+        byId("inventory-form").addEventListener("submit", enregistrerInventaire);
+        byId("inventory-validate").addEventListener("click", validerInventaire);
         byId("prepare-next").addEventListener("click", preparerEditionSuivante);
         byId("close-detail").addEventListener("click", fermerDetail);
         byId("refresh").addEventListener("click", charger);
