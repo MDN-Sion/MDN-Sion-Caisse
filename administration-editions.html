@@ -1430,17 +1430,6 @@
                 });
                 actions.appendChild(sauvegarder);
 
-                if (ligne) {
-                    const corbeille = document.createElement("button");
-                    corbeille.type = "button";
-                    corbeille.className = "inventory-delete";
-                    corbeille.title = "Supprimer la saisie de " + article.nom;
-                    corbeille.setAttribute("aria-label", corbeille.title);
-                    corbeille.textContent = "🗑";
-                    corbeille.addEventListener("click", () => demanderSuppression(ligne));
-                    actions.appendChild(corbeille);
-                }
-
                 row.append(nom, quantiteCellule, conserverCellule, actifCellule, actions);
                 tbody.appendChild(row);
             }
