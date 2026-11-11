@@ -627,7 +627,33 @@
             opacity: 0.5;
             cursor: wait;
         }
-  </style>
+  
+/* V10 — cases personnalisées, centrage et tableau responsive */
+.inventory-v10-table { width: 100%; border-collapse: collapse; }
+.inventory-v10-table th, .inventory-v10-table td { padding: 12px 10px; vertical-align: middle; }
+.inventory-v10-table td:nth-child(3), .inventory-v10-table td:nth-child(4) { text-align: center; }
+.inventory-v10-table td:last-child { white-space: nowrap; }
+.inventory-v10-quantity { width: 105px; max-width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #c9c9c9; border-radius: 9px; font: inherit; }
+.inventory-v10-save, .inventory-v10-row .inventory-delete { display: inline-flex !important; align-items: center !important; justify-content: center !important; vertical-align: middle; min-height: 42px; margin: 3px; }
+.case-v10 { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 44px; cursor: pointer; }
+.case-v10 input { position: absolute; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.case-v10-dessin { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; border: 2px solid #858585; border-radius: 8px; background: #fff; pointer-events: none; }
+.case-v10 input:checked + .case-v10-dessin { background: #806000; border-color: #806000; }
+.case-v10 input:checked + .case-v10-dessin::after { content: ""; width: 7px; height: 13px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.case-v10 input:focus-visible + .case-v10-dessin { outline: 3px solid #2685ff; outline-offset: 3px; }
+.case-v10 input:disabled + .case-v10-dessin { opacity: .35; }
+.inventory-help { color: #555; }
+@media (max-width: 760px) {
+ .inventory-v10-table thead { display: none; }
+ .inventory-v10-table, .inventory-v10-table tbody, .inventory-v10-table tr, .inventory-v10-table td { display: block; width: 100%; }
+ .inventory-v10-table tr { border: 1px solid #ddd; border-radius: 12px; margin: 12px 0; padding: 10px; background: #fff; }
+ .inventory-v10-table td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 5px; text-align: left !important; white-space: normal !important; }
+ .inventory-v10-table td::before { content: attr(data-label); font-size: 13px; font-weight: 600; color: #555; }
+ .inventory-v10-table td:first-child { font-weight: 700; }
+ .inventory-v10-table td:first-child::before { display: none; }
+ .inventory-v10-quantity { width: 110px; }
+}
+</style>
  </head>
  <body>
   <header class="top">
@@ -796,13 +822,15 @@
        </select>
       </div>
       <div id="inventory-state" class="inventory-state"></div>
+      <p class="inventory-help">Tous les articles du catalogue sont affichés. Les deux options sont cochées par défaut. Les modifications sont enregistrées uniquement en Démo.</p>
       <div class="inventory-table-wrap">
-       <table>
+       <table class="inventory-v10-table">
         <thead>
          <tr>
           <th>Article / référence</th>
-          <th>Quantité</th>
-          <th>Commentaire</th>
+          <th>Stock pour l’édition suivante</th>
+          <th>Conserver dans le catalogue</th>
+          <th>Actif pour l’édition suivante</th>
           <th>Actions</th>
          </tr>
         </thead>
@@ -816,20 +844,10 @@
         <button id="inventory-delete-apply" class="inventory-delete" type="button">Supprimer la ligne</button>
        </div>
       </div>
-      <form id="inventory-form" class="inventory-form">
-       <label>Article ou référence
-        <select id="inventory-article" required>
-         <option value="">Sélectionner un article</option>
-        </select>
-       </label>
-       <label>Quantité
-        <input id="inventory-quantity" type="number" min="0" step="1" required placeholder="0"/>
-       </label>
-       <label>Commentaire facultatif
-        <input id="inventory-comment" maxlength="1000" placeholder="Observation"/>
-       </label>
-       <button type="submit" class="detail-button">Enregistrer la ligne</button>
-      </form>
+      <form id="inventory-form" hidden></form>
+      <select id="inventory-article" hidden></select>
+      <input id="inventory-quantity" hidden>
+      <input id="inventory-comment" hidden>
       <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
       <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
      </div>
@@ -1218,53 +1236,217 @@
             afficherCatalogueInventaire();
         }
 
+        const PREFIXE_OPTIONS_V10 = "__MDN_V10__:";
+
+        function optionsInventaire(ligne) {
+            if (!ligne || typeof ligne.commentaire !== "string" ||
+                !ligne.commentaire.startsWith(PREFIXE_OPTIONS_V10)) {
+                return { conserver: true, actif: true };
+            }
+
+            try {
+                const options = JSON.parse(ligne.commentaire.slice(PREFIXE_OPTIONS_V10.length));
+                return {
+                    conserver: options.conserver !== false,
+                    actif: options.conserver !== false && options.actif !== false
+                };
+            } catch (error) {
+                return { conserver: true, actif: true };
+            }
+        }
+
+        async function enregistrerArticleV10(article, quantite, options) {
+            if (!modeDemo || !preparationSelectionnee || inventaireOccupe) {
+                return;
+            }
+
+            const categorie = categorieInventaire();
+
+            if (!Number.isSafeInteger(quantite) || quantite < 0 ||
+                (categorie === "fondation" && quantite !== 0)) {
+                setNotice("Quantité invalide. Le stock initial Fondation doit rester à zéro.", true);
+                return;
+            }
+
+            inventaireOccupe = true;
+
+            try {
+                const commentaire = PREFIXE_OPTIONS_V10 + JSON.stringify({
+                    conserver: options.conserver,
+                    actif: options.conserver && options.actif
+                });
+
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "enregistrer_ligne_inventaire_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_categorie: categorie,
+                        p_article: article,
+                        p_quantite: quantite,
+                        p_commentaire: commentaire
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true) {
+                    throw new Error("Enregistrement non confirmé.");
+                }
+
+                await chargerInventaires();
+                setNotice("Article « " + article + " » enregistré en Démo.");
+            } catch (error) {
+                setNotice("Enregistrement impossible : " + (error.message || String(error)), true);
+            } finally {
+                inventaireOccupe = false;
+            }
+        }
+
+        function creerCaseV10(texte, cochee, onChange, desactivee = false) {
+            const etiquette = document.createElement("label");
+            etiquette.className = "case-v10";
+
+            const caseNative = document.createElement("input");
+            caseNative.type = "checkbox";
+            caseNative.checked = cochee;
+            caseNative.disabled = desactivee;
+            caseNative.setAttribute("aria-label", texte);
+
+            const dessin = document.createElement("span");
+            dessin.className = "case-v10-dessin";
+            dessin.setAttribute("aria-hidden", "true");
+
+            caseNative.addEventListener("change", () => onChange(caseNative.checked));
+            etiquette.append(caseNative, dessin);
+            return etiquette;
+        }
+
         function afficherInventaires() {
             if (!donneesInventaire) {
                 return;
             }
 
             annulerSuppression();
+
             const categorie = categorieInventaire();
             const lignes = donneesInventaire.lignes.filter((ligne) => ligne.categorie === categorie);
             const validation = donneesInventaire.validations[categorie];
+            const articles = cataloguesInventaire.filter((article) => article.categorie === categorie);
             const tbody = byId("inventory-lines");
 
             tbody.replaceChildren();
             byId("inventory-state").textContent = nomsCategories[categorie] + " : " +
-                (validation ? "Validé" : "À valider") + " — " + lignes.length + " ligne(s)";
+                (validation ? "Validé" : "À valider") + " — " + articles.length + " article(s)";
             byId("inventory-foundation-note").hidden = categorie !== "fondation";
-            afficherCatalogueInventaire();
-            byId("inventory-quantity").max = categorie === "fondation" ? "0" : "";
 
-            if (categorie === "fondation") {
-                byId("inventory-quantity").placeholder = "0 (obligatoire)";
-            } else {
-                byId("inventory-quantity").placeholder = "0";
-            }
-
-            for (const ligne of lignes) {
+            for (const article of articles) {
+                const ligne = lignes.find((element) => element.article === article.nom);
+                const options = optionsInventaire(ligne);
                 const row = document.createElement("tr");
-                cell(row, ligne.article);
-                cell(row, String(ligne.quantite));
-                cell(row, ligne.commentaire || "—");
+
+                row.className = "inventory-v10-row";
+                row.dataset.article = article.nom;
+
+                const nom = document.createElement("td");
+                nom.dataset.label = "Article";
+                nom.textContent = article.nom;
+
+                const quantiteCellule = document.createElement("td");
+                quantiteCellule.dataset.label = "Stock";
+                const quantite = document.createElement("input");
+                quantite.className = "inventory-v10-quantity";
+                quantite.type = "number";
+                quantite.min = "0";
+                quantite.step = "1";
+                quantite.placeholder = "0";
+                quantite.inputMode = "numeric";
+                quantite.value = ligne ? String(ligne.quantite) : "";
+                quantite.disabled = categorie === "fondation";
+                if (categorie === "fondation") {
+                    quantite.value = "0";
+                    quantite.title = "Stock initial Fondation fixé à zéro";
+                }
+                quantite.setAttribute("aria-label", "Stock de " + article.nom);
+                quantiteCellule.appendChild(quantite);
+
+                const conserverCellule = document.createElement("td");
+                conserverCellule.dataset.label = "Conserver";
+                const actifCellule = document.createElement("td");
+                actifCellule.dataset.label = "Actif";
+
+                let conserver = options.conserver;
+                let actif = options.actif;
+
+                const caseActive = creerCaseV10(
+                    "Actif pour l'édition suivante : " + article.nom,
+                    actif,
+                    (valeur) => {
+                        actif = valeur;
+                        enregistrerArticleV10(
+                            article.nom,
+                            categorie === "fondation" ? 0 : Number(quantite.value || 0),
+                            { conserver, actif }
+                        );
+                    },
+                    !conserver
+                );
+
+                const caseConserver = creerCaseV10(
+                    "Conserver dans le catalogue : " + article.nom,
+                    conserver,
+                    (valeur) => {
+                        conserver = valeur;
+                        if (!conserver) {
+                            actif = false;
+                            caseActive.querySelector("input").checked = false;
+                        }
+                        caseActive.querySelector("input").disabled = !conserver;
+                        enregistrerArticleV10(
+                            article.nom,
+                            categorie === "fondation" ? 0 : Number(quantite.value || 0),
+                            { conserver, actif }
+                        );
+                    }
+                );
+
+                conserverCellule.appendChild(caseConserver);
+                actifCellule.appendChild(caseActive);
 
                 const actions = document.createElement("td");
-                const corbeille = document.createElement("button");
+                actions.dataset.label = "Actions";
 
-                corbeille.type = "button";
-                corbeille.className = "inventory-delete";
-                corbeille.title = "Supprimer " + ligne.article;
-                corbeille.setAttribute("aria-label", "Supprimer " + ligne.article);
-                corbeille.textContent = "🗑";
-                corbeille.addEventListener("click", () => demanderSuppression(ligne));
+                const sauvegarder = document.createElement("button");
+                sauvegarder.type = "button";
+                sauvegarder.className = "detail-button inventory-v10-save";
+                sauvegarder.textContent = "Enregistrer";
+                sauvegarder.addEventListener("click", () => {
+                    enregistrerArticleV10(
+                        article.nom,
+                        categorie === "fondation" ? 0 : Number(quantite.value),
+                        { conserver, actif }
+                    );
+                });
+                actions.appendChild(sauvegarder);
 
-                actions.appendChild(corbeille);
-                row.appendChild(actions);
+                if (ligne) {
+                    const corbeille = document.createElement("button");
+                    corbeille.type = "button";
+                    corbeille.className = "inventory-delete";
+                    corbeille.title = "Supprimer la saisie de " + article.nom;
+                    corbeille.setAttribute("aria-label", corbeille.title);
+                    corbeille.textContent = "🗑";
+                    corbeille.addEventListener("click", () => demanderSuppression(ligne));
+                    actions.appendChild(corbeille);
+                }
+
+                row.append(nom, quantiteCellule, conserverCellule, actifCellule, actions);
                 tbody.appendChild(row);
             }
 
-            if (lignes.length === 0) {
-                emptyRow(tbody, 4, "Aucune ligne enregistrée dans cette catégorie.");
+            if (articles.length === 0) {
+                emptyRow(tbody, 5, "Aucun article dans ce catalogue.");
             }
         }
 
