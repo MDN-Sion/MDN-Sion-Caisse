@@ -243,6 +243,63 @@
             background: #f5f5f5;
         }
 
+        .detail-button {
+            min-height: 36px;
+            padding: 7px 12px;
+            border: 1px solid #b9b9b9;
+            border-radius: 9px;
+            background: #f5f5f5;
+            color: #242424;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .detail-button:hover {
+            background: #eaeaea;
+        }
+
+        .detail-panel {
+            margin: 0 18px 18px;
+            padding: 16px;
+            border: 1px solid #dedede;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+
+        .detail-panel h3 {
+            margin: 0 0 12px;
+            font-size: 17px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .detail-grid > div {
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 9px;
+            background: #fff;
+        }
+
+        .detail-grid small {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .detail-close {
+            margin-top: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .empty {
             padding: 16px;
             color: #666;
@@ -436,16 +493,26 @@
         <th>
          Contenants
         </th>
+        <th>
+         Détails
+        </th>
        </tr>
       </thead>
       <tbody id="preparations-body">
        <tr>
-        <td class="empty" colspan="6">
+        <td class="empty" colspan="7">
          Chargement…
         </td>
        </tr>
       </tbody>
      </table>
+    </div>
+    <div class="detail-panel" id="preparation-detail" hidden>
+     <h3 id="detail-title">Détails de la préparation</h3>
+     <div class="detail-grid" id="detail-grid"></div>
+     <button class="detail-button detail-close" id="close-detail" type="button">
+      Fermer les détails
+     </button>
     </div>
    </section>
    <section class="card">
@@ -481,6 +548,56 @@
 
         const byId = (id) => document.getElementById(id);
         let modeDemo = false;
+
+        function statutLisible(statut) {
+            const libelles = {
+                preparation: "En préparation",
+                brouillon: "Brouillon",
+                active: "Active",
+                cloturee: "Clôturée",
+                terminee: "Terminée"
+            };
+
+            return libelles[statut] || statut || "—";
+        }
+
+        function validationLisible(validee) {
+            return validee === true ? "Validé" : "À valider";
+        }
+
+        function fermerDetail() {
+            byId("preparation-detail").hidden = true;
+            byId("detail-grid").replaceChildren();
+        }
+
+        function ouvrirDetail(preparation) {
+            const details = [
+                ["Passage", String(preparation.annee_source) + " → " + String(preparation.annee_cible)],
+                ["Statut", statutLisible(preparation.statut)],
+                ["Inventaire MDN", validationLisible(preparation.inventaire_mdn_valide)],
+                ["Inventaire Fondation", validationLisible(preparation.inventaire_fondation_valide)],
+                ["Inventaire vaisselle", validationLisible(preparation.inventaire_vaisselle_valide)],
+                ["Inventaire contenants", validationLisible(preparation.inventaire_contenants_valide)]
+            ];
+
+            const grille = byId("detail-grid");
+            grille.replaceChildren();
+
+            for (const [titre, valeur] of details) {
+                const bloc = document.createElement("div");
+                const etiquette = document.createElement("small");
+                const texte = document.createElement("strong");
+
+                etiquette.textContent = titre;
+                texte.textContent = valeur;
+                bloc.append(etiquette, texte);
+                grille.appendChild(bloc);
+            }
+
+            byId("detail-title").textContent = "Préparation " +
+                String(preparation.annee_source) + " → " + String(preparation.annee_cible);
+            byId("preparation-detail").hidden = false;
+        }
 
         function setNotice(message, isError = false) {
             const notice = byId("notice");
@@ -539,7 +656,7 @@
                 cell(row, edition.annee ?? "—");
                 cell(row, edition.nom || "—");
                 cell(row, periode(edition));
-                cell(row, edition.statut || "—");
+                cell(row, statutLisible(edition.statut));
                 const td = cell(row, edition.est_active ? "Active" : "Inactive");
                 if (edition.est_active) {
                     td.style.fontWeight = "700";
@@ -550,27 +667,39 @@
 
             const active = editions.find((edition) => edition.est_active === true);
             byId("active-name").textContent = active ? active.nom : "Aucune édition active";
-            byId("active-status").textContent = active ? active.statut : "—";
+            byId("active-status").textContent = active ? statutLisible(active.statut) : "—";
             byId("active-dates").textContent = active ? periode(active) : "—";
         }
 
         function renderPreparations(preparations) {
             const tbody = byId("preparations-body");
             tbody.replaceChildren();
+            fermerDetail();
 
             if (preparations.length === 0) {
-                emptyRow(tbody, 6, "Aucune préparation disponible.");
+                emptyRow(tbody, 7, "Aucune préparation disponible.");
                 return;
             }
 
             for (const preparation of preparations) {
                 const row = document.createElement("tr");
                 cell(row, String(preparation.annee_source) + " → " + String(preparation.annee_cible));
-                cell(row, preparation.statut || "—");
-                cell(row, preparation.inventaire_mdn_valide ? "Validé" : "À valider");
-                cell(row, preparation.inventaire_fondation_valide ? "Validé" : "À valider");
-                cell(row, preparation.inventaire_vaisselle_valide ? "Validé" : "À valider");
-                cell(row, preparation.inventaire_contenants_valide ? "Validé" : "À valider");
+                cell(row, statutLisible(preparation.statut));
+                cell(row, validationLisible(preparation.inventaire_mdn_valide));
+                cell(row, validationLisible(preparation.inventaire_fondation_valide));
+                cell(row, validationLisible(preparation.inventaire_vaisselle_valide));
+                cell(row, validationLisible(preparation.inventaire_contenants_valide));
+
+                const action = document.createElement("td");
+                const bouton = document.createElement("button");
+
+                bouton.type = "button";
+                bouton.className = "detail-button";
+                bouton.textContent = "Consulter";
+                bouton.addEventListener("click", () => ouvrirDetail(preparation));
+
+                action.appendChild(bouton);
+                row.appendChild(action);
                 tbody.appendChild(row);
             }
         }
@@ -635,6 +764,7 @@
             }
         }
 
+        byId("close-detail").addEventListener("click", fermerDetail);
         byId("refresh").addEventListener("click", charger);
         byId("back").addEventListener("click", () => {
             window.location.href = modeDemo ? "administration.html?mode=demo" : "administration.html";
