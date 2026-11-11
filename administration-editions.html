@@ -669,7 +669,7 @@
       La consultation est disponible. La cr&eacute;ation, l'activation et le transfert des stocks seront activ&eacute;s uniquement apr&egrave;s s&eacute;curisation et validation du processus en D&eacute;mo.
      </p>
      <div class="actions">
-      <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
+      <button disabled="" id="prepare-next" title="Disponible uniquement en Démo" type="button">
        Pr&eacute;parer l'&eacute;dition suivante
       </button>
       <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
@@ -695,6 +695,7 @@
 
         const byId = (id) => document.getElementById(id);
         let modeDemo = false;
+        let anneeActive = null;
 
         function statutLisible(statut) {
             const libelles = {
@@ -813,6 +814,7 @@
             }
 
             const active = editions.find((edition) => edition.est_active === true);
+            anneeActive = active ? Number(active.annee) : null;
             byId("active-name").textContent = active ? active.nom : "Aucune édition active";
             byId("active-status").textContent = active ? statutLisible(active.statut) : "—";
             byId("active-dates").textContent = active ? periode(active) : "—";
@@ -881,11 +883,11 @@
                 const infoPreparations = byId("preparations-info");
                 infoPreparations.hidden = !modeDemo;
                 infoPreparations.textContent = modeDemo
-                    ? "Les préparations Réelles ne sont pas affichées ici. " +
-                      "La préparation des éditions en Démo sera disponible après " +
-                      "la création de son espace de données indépendant."
+                    ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
+                      "Les inventaires et l'activation seront disponibles dans une prochaine étape."
                     : "";
-                byId("mode").textContent = modeDemo ? "Démo · lecture seule" : "Réel · lecture seule";
+                byId("prepare-next").disabled = !modeDemo || !Number.isInteger(anneeActive);
+                byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
                 setNotice("");
             } catch (error) {
                 console.error("[MDN Sion] Chargement éditions :", error);
@@ -925,6 +927,43 @@
             }
         }
 
+        async function preparerEditionSuivante() {
+            if (!modeDemo || !Number.isInteger(anneeActive)) {
+                return;
+            }
+
+            const bouton = byId("prepare-next");
+            bouton.disabled = true;
+
+            try {
+                setNotice("Préparation Démo en cours…");
+
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "creer_preparation_edition_demo",
+                    { p_annee_cible: anneeActive + 1 }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse de préparation Démo invalide.");
+                }
+
+                await charger();
+                setNotice("Préparation Démo " + data.annee_source + " → " +
+                    data.annee_cible + " disponible. Aucune donnée Réelle modifiée.");
+            } catch (error) {
+                console.error("[MDN Sion] Préparation Démo :", error);
+                setNotice("Impossible de préparer l'édition Démo : " +
+                    (error.message || String(error)), true);
+            } finally {
+                bouton.disabled = !modeDemo;
+            }
+        }
+
+        byId("prepare-next").addEventListener("click", preparerEditionSuivante);
         byId("close-detail").addEventListener("click", fermerDetail);
         byId("refresh").addEventListener("click", charger);
         byId("back").addEventListener("click", () => {
