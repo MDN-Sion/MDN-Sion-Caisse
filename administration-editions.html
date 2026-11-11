@@ -15,7 +15,7 @@
         }
 
         html, body {
-            overscroll-behavior: none;
+            overscroll-behavior-x: none;
         }
 
         body {
@@ -402,14 +402,16 @@
         /* Correctifs tablette : contraste, hauteur et défilement naturel. */
         html {
             height: 100%;
-            overflow-x: hidden;
-            overscroll-behavior: none;
+            overflow-x: clip;
+            overflow-y: auto;
+            overscroll-behavior-x: none;
         }
 
         body {
             min-height: 100%;
-            overflow-x: hidden;
-            overscroll-behavior: none;
+            overflow-x: clip;
+            overflow-y: visible;
+            overscroll-behavior-x: none;
         }
 
         main {
