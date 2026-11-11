@@ -6,7 +6,7 @@
 	<meta name="theme-color" content="#8B0000">
 	<link rel="icon" type="image/png" href="logo-mdn.png">
 	<link rel="apple-touch-icon" href="logo-mdn.png">
-	<title>Paramètres — MDN Sion</title>
+	<title>Paramètres · MDN Sion</title>
 	<style>
 		* {
 			box-sizing: border-box;
@@ -204,6 +204,75 @@
 			outline-offset: 2px;
 		}
 
+		.currency-combobox {
+			position: relative;
+		}
+
+		.currency-combobox input {
+			padding-right: 46px;
+		}
+
+		.currency-toggle {
+			position: absolute;
+			top: 0;
+			right: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 42px;
+			height: 40px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: #333;
+			font-size: 20px;
+			line-height: 1;
+			cursor: pointer;
+		}
+
+		.currency-options {
+			position: absolute;
+			z-index: 30;
+			top: calc(100% + 4px);
+			left: 0;
+			right: 0;
+			max-height: 240px;
+			overflow-y: auto;
+			border: 1px solid #ccc;
+			border-radius: 10px;
+			background: white;
+			box-shadow: 0 8px 20px #00000020;
+		}
+
+		.currency-options[hidden] {
+			display: none;
+		}
+
+		.currency-option {
+			display: flex;
+			align-items: center;
+			width: 100%;
+			min-height: 40px;
+			padding: 9px 12px;
+			border: 0;
+			border-bottom: 1px solid #eee;
+			background: white;
+			color: #222;
+			font: inherit;
+			text-align: left;
+			cursor: pointer;
+		}
+
+		.currency-option:hover,
+		.currency-option:focus-visible {
+			background: #fff0bf;
+		}
+
+		.currency-empty {
+			padding: 12px;
+			color: #666;
+		}
+
 		.field small {
 			color: #666;
 			line-height: 1.4;
@@ -317,7 +386,7 @@
 		</div>
 	</header>
 
-	<div class="banner">MODE DÉMO — Les paramètres Réels restent inchangés</div>
+	<div class="banner">MODE DÉMO · Les paramètres Réels restent inchangés</div>
 
 	<main>
 		<section class="card">
@@ -337,20 +406,11 @@
 					<div class="fields">
 						<div class="field">
 							<label for="devise">Devise *</label>
-							<input id="devise" name="devise" list="liste-devises" maxlength="80" autocomplete="off" placeholder="Rechercher un pays ou une devise…" required>
-							<datalist id="liste-devises">
-								<option value="Suisse — CHF (Fr.)"></option>
-								<option value="France — EUR (€)"></option>
-								<option value="Union européenne — EUR (€)"></option>
-								<option value="États-Unis — USD ($)"></option>
-								<option value="Royaume-Uni — GBP (£)"></option>
-								<option value="Canada — CAD ($)"></option>
-								<option value="Japon — JPY (¥)"></option>
-								<option value="Australie — AUD ($)"></option>
-								<option value="Danemark — DKK (kr)"></option>
-								<option value="Norvège — NOK (kr)"></option>
-								<option value="Suède — SEK (kr)"></option>
-							</datalist>
+							<div class="currency-combobox" id="currency-combobox">
+								<input id="devise" name="devise" maxlength="80" autocomplete="off" placeholder="Rechercher un pays ou une devise…" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="liste-devises" required>
+								<button id="currency-toggle" class="currency-toggle" type="button" aria-label="Afficher toutes les devises" aria-controls="liste-devises" aria-expanded="false">▾</button>
+								<div id="liste-devises" class="currency-options" role="listbox" hidden></div>
+							</div>
 						</div>
 
 						<div class="field">
@@ -401,18 +461,99 @@
 		let original = null;
 
 		const devises = {
-			"Suisse — CHF (Fr.)": "CHF",
-			"France — EUR (€)": "EUR",
-			"Union européenne — EUR (€)": "EUR",
-			"États-Unis — USD ($)": "USD",
-			"Royaume-Uni — GBP (£)": "GBP",
-			"Canada — CAD ($)": "CAD",
-			"Japon — JPY (¥)": "JPY",
-			"Australie — AUD ($)": "AUD",
-			"Danemark — DKK (kr)": "DKK",
-			"Norvège — NOK (kr)": "NOK",
-			"Suède — SEK (kr)": "SEK"
+			"Suisse · CHF (Fr.)": "CHF",
+			"France · EUR (€)": "EUR",
+			"Union européenne · EUR (€)": "EUR",
+			"États-Unis · USD ($)": "USD",
+			"Royaume-Uni · GBP (£)": "GBP",
+			"Canada · CAD ($)": "CAD",
+			"Japon · JPY (¥)": "JPY",
+			"Australie · AUD ($)": "AUD",
+			"Danemark · DKK (kr)": "DKK",
+			"Norvège · NOK (kr)": "NOK",
+			"Suède · SEK (kr)": "SEK"
 		};
+
+		function fermerDevises() {
+			byId("liste-devises").hidden = true;
+			byId("devise").setAttribute("aria-expanded", "false");
+			byId("currency-toggle").setAttribute("aria-expanded", "false");
+		}
+
+		function afficherDevises(filtre = "") {
+			const liste = byId("liste-devises");
+			const recherche = filtre.trim().toLocaleLowerCase("fr");
+			const correspondances = Object.keys(devises).filter((libelle) => {
+				return libelle.toLocaleLowerCase("fr").includes(recherche);
+			});
+
+			liste.replaceChildren();
+
+			if (correspondances.length === 0) {
+				const vide = document.createElement("div");
+				vide.className = "currency-empty";
+				vide.textContent = "Aucune devise trouvée";
+				liste.appendChild(vide);
+			}
+
+			for (const libelle of correspondances) {
+				const option = document.createElement("button");
+				option.type = "button";
+				option.className = "currency-option";
+				option.setAttribute("role", "option");
+				option.textContent = libelle;
+				option.addEventListener("click", () => {
+					byId("devise").value = libelle;
+					fermerDevises();
+					updateButtons();
+				});
+				liste.appendChild(option);
+			}
+
+			liste.hidden = false;
+			byId("devise").setAttribute("aria-expanded", "true");
+			byId("currency-toggle").setAttribute("aria-expanded", "true");
+		}
+
+		function initialiserDevises() {
+			const champ = byId("devise");
+			const conteneur = byId("currency-combobox");
+
+			champ.addEventListener("focus", () => {
+				afficherDevises();
+			});
+
+			champ.addEventListener("input", () => {
+				afficherDevises(champ.value);
+			});
+
+			champ.addEventListener("keydown", (event) => {
+				if (event.key === "Escape") {
+					fermerDevises();
+				} else if (event.key === "ArrowDown") {
+					event.preventDefault();
+					afficherDevises();
+					const premier = byId("liste-devises").querySelector(".currency-option");
+					if (premier) {
+						premier.focus();
+					}
+				}
+			});
+
+			byId("currency-toggle").addEventListener("click", () => {
+				if (byId("liste-devises").hidden) {
+					afficherDevises();
+				} else {
+					fermerDevises();
+				}
+			});
+
+			document.addEventListener("pointerdown", (event) => {
+				if (!conteneur.contains(event.target)) {
+					fermerDevises();
+				}
+			});
+		}
 
 		function codeDevise(valeur) {
 			const saisie = valeur.trim();
@@ -609,6 +750,7 @@
 			window.location.replace("index.html");
 		});
 
+		initialiserDevises();
 		init();
 	</script>
 </body>
