@@ -509,7 +509,8 @@
         }
 
         .inventory-controls select,
-        .inventory-form input {
+        .inventory-form input,
+        .inventory-form select {
             width: 100%;
             min-height: 40px;
             padding: 8px 10px;
@@ -817,7 +818,9 @@
       </div>
       <form id="inventory-form" class="inventory-form">
        <label>Article ou référence
-        <input id="inventory-article" maxlength="150" required placeholder="Nom exact de l'article"/>
+        <select id="inventory-article" required>
+         <option value="">Sélectionner un article</option>
+        </select>
        </label>
        <label>Quantité
         <input id="inventory-quantity" type="number" min="0" step="1" required placeholder="0"/>
@@ -877,6 +880,7 @@
         let donneesInventaire = null;
         let inventaireOccupe = false;
         let ligneASupprimer = null;
+        let cataloguesInventaire = [];
 
         function statutLisible(statut) {
             const libelles = {
@@ -1167,6 +1171,53 @@
             return byId("inventory-category").value;
         }
 
+        function afficherCatalogueInventaire() {
+            const select = byId("inventory-article");
+            const valeurPrecedente = select.value;
+            const categorie = categorieInventaire();
+            const options = cataloguesInventaire.filter((article) => article.categorie === categorie);
+
+            select.replaceChildren();
+            const invitation = document.createElement("option");
+            invitation.value = "";
+            invitation.textContent = options.length ? "Sélectionner un article" : "Aucun article disponible";
+            select.appendChild(invitation);
+
+            for (const article of options) {
+                const option = document.createElement("option");
+                option.value = article.nom;
+                option.textContent = article.nom;
+                select.appendChild(option);
+            }
+
+            select.disabled = options.length === 0;
+            if (options.some((article) => article.nom === valeurPrecedente)) {
+                select.value = valeurPrecedente;
+            }
+        }
+
+        async function chargerCatalogueInventaire() {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+                "charger_catalogues_inventaires_preparation_demo",
+                { p_preparation_id: preparationSelectionnee.id }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            if (!data || data.ok !== true || data.mode_demo !== true || data.lecture_seule !== true) {
+                throw new Error("Réponse du catalogue Démo invalide.");
+            }
+
+            cataloguesInventaire = Array.isArray(data.catalogues) ? data.catalogues : [];
+            afficherCatalogueInventaire();
+        }
+
         function afficherInventaires() {
             if (!donneesInventaire) {
                 return;
@@ -1182,6 +1233,7 @@
             byId("inventory-state").textContent = nomsCategories[categorie] + " : " +
                 (validation ? "Validé" : "À valider") + " — " + lignes.length + " ligne(s)";
             byId("inventory-foundation-note").hidden = categorie !== "fondation";
+            afficherCatalogueInventaire();
             byId("inventory-quantity").max = categorie === "fondation" ? "0" : "";
 
             if (categorie === "fondation") {
@@ -1296,6 +1348,7 @@
                     validations: data.validations || {}
                 };
 
+                await chargerCatalogueInventaire();
                 afficherInventaires();
             } catch (error) {
                 setNotice("Impossible de charger les inventaires Démo : " + error.message, true);
@@ -1309,12 +1362,20 @@
                 return;
             }
 
-            const quantite = Number(byId("inventory-quantity").value);
+            const quantiteSaisie = byId("inventory-quantity").value.trim();
+            const quantite = quantiteSaisie === "" ? NaN : Number(quantiteSaisie);
             const categorie = categorieInventaire();
 
             if (!Number.isSafeInteger(quantite) || quantite < 0 ||
                 (categorie === "fondation" && quantite !== 0)) {
                 setNotice("La quantité doit être un entier positif ou nul. Fondation : zéro uniquement.", true);
+                return;
+            }
+
+            const articleSelectionne = byId("inventory-article").value;
+            if (!cataloguesInventaire.some((article) =>
+                article.categorie === categorie && article.nom === articleSelectionne)) {
+                setNotice("Sélectionnez un article du référentiel.", true);
                 return;
             }
 
