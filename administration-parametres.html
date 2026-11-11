@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="theme-color" content="#8B0000">
+	<link rel="icon" type="image/png" href="logo-mdn.png">
+	<link rel="apple-touch-icon" href="logo-mdn.png">
+	<title>Paramètres — MDN Sion</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			overscroll-behavior: none;
+		}
+
+		body {
+			margin: 0;
+			min-height: 100dvh;
+			background: #f3f3f3;
+			color: #222;
+			font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+		}
+
+		button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			line-height: 1.25;
+			font: inherit;
+			cursor: pointer;
+		}
+
+		button:disabled {
+			opacity: 0.55;
+			cursor: not-allowed;
+		}
+
+		.top {
+			position: sticky;
+			top: 0;
+			z-index: 20;
+			padding: 14px 18px;
+			background: #8b0000;
+			color: #fff;
+		}
+
+		body.demo .top {
+			background: #806000;
+		}
+
+		.top-inner {
+			display: grid;
+			grid-template-columns: 180px minmax(0, 1fr) 180px;
+			align-items: center;
+			gap: 10px;
+			max-width: 1400px;
+			margin: auto;
+		}
+
+		.top h1 {
+			margin: 0;
+			font-size: clamp(18px, 2.5vw, 26px);
+			text-align: center;
+		}
+
+		.top p {
+			margin: 3px 0 0;
+			font-size: 13px;
+			text-align: center;
+		}
+
+		.top button {
+			min-height: 43px;
+			padding: 10px 12px;
+			border: 1px solid #ffffff55;
+			border-radius: 12px;
+			background: #ffffff18;
+			color: white;
+			font-weight: 700;
+		}
+
+		.top button:last-child {
+			justify-self: end;
+		}
+
+		.banner {
+			display: none;
+			padding: 12px 16px;
+			background: #ffe98b;
+			color: #593e00;
+			text-align: center;
+			font-weight: 700;
+		}
+
+		body.demo .banner {
+			display: block;
+		}
+
+		main {
+			width: min(1000px, calc(100% - 32px));
+			margin: 24px auto;
+		}
+
+		.card {
+			overflow: hidden;
+			border: 1px solid #e2e2e2;
+			border-radius: 20px;
+			background: #fff;
+			box-shadow: 0 5px 22px #00000009;
+		}
+
+		.card-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 12px;
+			padding: 22px;
+			border-bottom: 1px solid #e7e7e7;
+		}
+
+		h2 {
+			margin: 0;
+			color: #8b0000;
+			font-size: 22px;
+		}
+
+		.badge {
+			padding: 9px 12px;
+			border-radius: 25px;
+			background: #f5f5f5;
+			color: #555;
+			font-size: 12px;
+			font-weight: 800;
+		}
+
+		.content {
+			padding: 22px;
+		}
+
+		.hint {
+			margin: 0 0 18px;
+			color: #666;
+			line-height: 1.5;
+		}
+
+		.edition {
+			margin-bottom: 22px;
+			padding: 14px 16px;
+			border: 1px solid #e4e4e4;
+			border-radius: 12px;
+			background: #fafafa;
+		}
+
+		.edition strong {
+			display: block;
+			margin-bottom: 4px;
+		}
+
+		.edition small {
+			color: #666;
+		}
+
+		.fields {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 18px;
+		}
+
+		.field {
+			display: flex;
+			flex-direction: column;
+			gap: 7px;
+			min-width: 0;
+		}
+
+		.field.full {
+			grid-column: 1 / -1;
+		}
+
+		label {
+			font-weight: 700;
+		}
+
+		input {
+			width: 100%;
+			min-height: 46px;
+			padding: 11px 12px;
+			border: 1px solid #cfcfcf;
+			border-radius: 10px;
+			background: #fff;
+			color: #222;
+			font: inherit;
+		}
+
+		input:focus-visible,
+		button:focus-visible {
+			outline: 3px solid #cf9e29;
+			outline-offset: 2px;
+		}
+
+		.field small {
+			color: #666;
+			line-height: 1.4;
+		}
+
+		.actions {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 24px;
+		}
+
+		.actions button {
+			min-height: 44px;
+			padding: 10px 18px;
+			border-radius: 10px;
+			font-weight: 700;
+		}
+
+		.secondary {
+			border: 1px solid #ccc;
+			background: #fff;
+			color: #333;
+		}
+
+		.primary {
+			border: 1px solid #8b0000;
+			background: #8b0000;
+			color: #fff;
+		}
+
+		body.demo .primary {
+			border-color: #806000;
+			background: #806000;
+		}
+
+		.notice {
+			margin: 18px 0 0;
+			padding: 12px 14px;
+			border-radius: 10px;
+			background: #f6f6f6;
+			color: #444;
+			line-height: 1.5;
+		}
+
+		.notice.error {
+			background: #fff0f0;
+			color: #8b0000;
+		}
+
+		.notice.success {
+			background: #f0f8f0;
+			color: #236326;
+		}
+
+		@media (max-width: 650px) {
+			.top-inner {
+				grid-template-columns: 1fr 1fr;
+			}
+
+			.top h1 {
+				grid-column: 1 / -1;
+				grid-row: 1;
+			}
+
+			.top button {
+				grid-row: 2;
+				font-size: 13px;
+			}
+
+			.card-head,
+			.content {
+				padding: 16px;
+			}
+
+			.fields {
+				grid-template-columns: 1fr;
+			}
+
+			.field.full {
+				grid-column: auto;
+			}
+
+			h2 {
+				font-size: 19px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<header class="top">
+		<div class="top-inner">
+			<button type="button" id="back">← Administration</button>
+			<div>
+				<h1>🔧 Paramètres</h1>
+				<p id="identity">Chargement…</p>
+			</div>
+			<button type="button" id="logout">Déconnexion</button>
+		</div>
+	</header>
+
+	<div class="banner">MODE DÉMO — Les paramètres Réels restent inchangés</div>
+
+	<main>
+		<section class="card">
+			<div class="card-head">
+				<h2>Paramètres de l'édition</h2>
+				<span class="badge" id="mode">Chargement…</span>
+			</div>
+
+			<div class="content">
+				<p class="hint">Renseignez les informations de l'organisation et de l'édition active. Les deux modes disposent de configurations indépendantes.</p>
+
+				<div class="edition">
+					<strong>Édition active</strong>
+					<small id="edition">Chargement…</small>
+				</div>
+
+				<form id="form" autocomplete="off">
+					<div class="fields">
+						<div class="field">
+							<label for="devise">Devise *</label>
+							<input id="devise" name="devise" maxlength="10" required>
+							<small>Exemple : CHF.</small>
+						</div>
+
+						<div class="field">
+							<label for="partenaire">Partenaire de lavage *</label>
+							<input id="partenaire" name="partenaire" maxlength="200" required>
+						</div>
+
+						<div class="field full">
+							<label for="fondation">Nom de la Fondation *</label>
+							<input id="fondation" name="fondation" maxlength="200" required>
+						</div>
+
+						<div class="field full">
+							<label for="association">Nom de l'association MDN</label>
+							<input id="association" name="association" maxlength="200">
+						</div>
+
+						<div class="field full">
+							<label for="email">Adresse e-mail d'envoi</label>
+							<input id="email" name="email" type="email" maxlength="254" inputmode="email" placeholder="exemple@domaine.ch">
+							<small>Adresse utilisée pour les communications de l'édition, lorsqu'un module la prend en charge.</small>
+						</div>
+					</div>
+
+					<div class="actions">
+						<button class="secondary" id="reload" type="button">Annuler les modifications</button>
+						<button class="primary" id="save" type="submit" disabled>Enregistrer</button>
+					</div>
+				</form>
+
+				<p class="notice" id="notice" role="status" aria-live="polite">Chargement des paramètres…</p>
+			</div>
+		</section>
+	</main>
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase.js"></script>
+	<script src="js/auth.js"></script>
+	<script>
+		"use strict";
+
+		const byId = (id) => document.getElementById(id);
+
+		let modeDemo = false;
+		let busy = false;
+		let loaded = false;
+		let original = null;
+
+		function valeurs() {
+			return {
+				devise: byId("devise").value.trim(),
+				partenaire_lavage: byId("partenaire").value.trim(),
+				nom_fondation: byId("fondation").value.trim(),
+				nom_association_mdn: byId("association").value.trim(),
+				email_envoi: byId("email").value.trim()
+			};
+		}
+
+		function setNotice(message, type = "") {
+			const notice = byId("notice");
+			notice.textContent = message;
+			notice.className = "notice" + (type ? " " + type : "");
+		}
+
+		function updateButtons() {
+			const changed = loaded && JSON.stringify(valeurs()) !== JSON.stringify(original);
+			byId("save").disabled = busy || !changed;
+			byId("reload").disabled = busy || !changed;
+		}
+
+		function remplir(data) {
+			byId("devise").value = data.devise || "";
+			byId("partenaire").value = data.partenaire_lavage || "";
+			byId("fondation").value = data.nom_fondation || "";
+			byId("association").value = data.nom_association_mdn || "";
+			byId("email").value = data.email_envoi || "";
+			byId("edition").textContent = data.edition_id || "Aucune édition";
+			byId("mode").textContent = modeDemo ? "Démo · modification" : "Réel · modification";
+			original = valeurs();
+			loaded = true;
+			updateButtons();
+		}
+
+		async function charger() {
+			busy = true;
+			updateButtons();
+			setNotice("Chargement des paramètres…");
+
+			try {
+				const { data, error } = await window.MDN_SUPABASE.rpc(
+					"charger_administration_parametres",
+					{
+						p_is_demo: modeDemo
+					}
+				);
+
+				if (error) {
+					throw error;
+				}
+
+				if (!data || !data.edition_id) {
+					throw new Error("Aucune édition active n'a été trouvée.");
+				}
+
+				remplir(data);
+				setNotice(
+					modeDemo
+						? "Mode Démo : les modifications restent indépendantes du Réel."
+						: "Mode Réel : les modifications seront enregistrées uniquement après un clic sur Enregistrer."
+				);
+			} catch (error) {
+				console.error("[MDN Sion] Paramètres :", error);
+				setNotice("Chargement impossible : " + (error.message || String(error)), "error");
+			} finally {
+				busy = false;
+				updateButtons();
+			}
+		}
+
+		async function enregistrer(event) {
+			event.preventDefault();
+
+			if (busy || !loaded || !byId("form").reportValidity()) {
+				return;
+			}
+
+			const current = valeurs();
+
+			if (JSON.stringify(current) === JSON.stringify(original)) {
+				return;
+			}
+
+			busy = true;
+			updateButtons();
+			setNotice("Enregistrement en cours…");
+
+			try {
+				const { data, error } = await window.MDN_SUPABASE.rpc(
+					"enregistrer_administration_parametres",
+					{
+						p_is_demo: modeDemo,
+						p_devise: current.devise,
+						p_partenaire_lavage: current.partenaire_lavage,
+						p_nom_fondation: current.nom_fondation,
+						p_nom_association_mdn: current.nom_association_mdn,
+						p_email_envoi: current.email_envoi
+					}
+				);
+
+				if (error) {
+					throw error;
+				}
+
+				if (!data || data.succes !== true) {
+					throw new Error("L'enregistrement n'a pas été confirmé par Supabase.");
+				}
+
+				await charger();
+				setNotice("Paramètres enregistrés en " + (modeDemo ? "Démo." : "Réel."), "success");
+			} catch (error) {
+				console.error("[MDN Sion] Enregistrement paramètres :", error);
+				setNotice("Enregistrement impossible : " + (error.message || String(error)), "error");
+			} finally {
+				busy = false;
+				updateButtons();
+			}
+		}
+
+		async function init() {
+			try {
+				if (!window.MDN_AUTH || !window.MDN_SUPABASE) {
+					throw new Error("Modules d'authentification MDN indisponibles.");
+				}
+
+				const auth = await window.MDN_AUTH.protegerPage();
+
+				if (!auth) {
+					return;
+				}
+
+				const { data: access, error } = await window.MDN_SUPABASE.rpc("etat_acces_administration");
+
+				if (error) {
+					throw error;
+				}
+
+				if (!access || access.acces_administration !== true) {
+					window.location.replace("accueil.html");
+					return;
+				}
+
+				modeDemo = access.mode_demo === true;
+				document.body.classList.toggle("demo", modeDemo);
+
+				const identity = auth.profil?.prenom || auth.profil?.email || "Administration";
+				byId("identity").textContent = identity + " · " + (modeDemo ? "Mode Démo" : "Administrateur");
+
+				await charger();
+			} catch (error) {
+				console.error("[MDN Sion] Initialisation paramètres :", error);
+				setNotice("Accès impossible : " + (error.message || String(error)), "error");
+			}
+		}
+
+		byId("form").addEventListener("submit", enregistrer);
+		byId("form").addEventListener("input", updateButtons);
+
+		byId("reload").addEventListener("click", () => {
+			if (!busy && original) {
+				remplir(original);
+				setNotice("Modifications non enregistrées annulées.");
+			}
+		});
+
+		byId("back").addEventListener("click", () => {
+			window.location.href = modeDemo ? "administration.html?mode=demo" : "administration.html";
+		});
+
+		byId("logout").addEventListener("click", async () => {
+			try {
+				await window.MDN_AUTH.deconnexion();
+			} catch (error) {
+				console.error("[MDN Sion] Déconnexion :", error);
+			}
+
+			window.location.replace("index.html");
+		});
+
+		init();
+	</script>
+</body>
+</html>
