@@ -1,118 +1,477 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#8B0000">
-    <link rel="icon" type="image/png" href="logo-mdn.png">
-    <link rel="apple-touch-icon" href="logo-mdn.png">
-    <title>Éditions · MDN Sion</title>
-    <style>
-        * { box-sizing: border-box; }
-        html, body { overscroll-behavior: none; }
-        body { margin: 0; min-height: 100dvh; background: #f3f3f3; color: #222; font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
-        button { display: inline-flex; align-items: center; justify-content: center; text-align: center; font: inherit; cursor: pointer; }
-        button:disabled { opacity: .5; cursor: not-allowed; }
-        .top { position: sticky; top: 0; z-index: 20; padding: 9px 16px; background: #8b0000; color: #fff; }
-        body.demo .top { background: #806000; }
-        .top-inner { display: grid; grid-template-columns: 180px minmax(0, 1fr) 180px; align-items: center; gap: 10px; max-width: 1400px; margin: auto; }
-        .top h1 { margin: 0; font-size: clamp(18px, 2.5vw, 26px); text-align: center; }
-        .top p { margin: 3px 0 0; font-size: 13px; text-align: center; }
-        .top button { min-height: 40px; padding: 9px 12px; border: 1px solid #ffffff55; border-radius: 12px; background: #ffffff18; color: #fff; font-weight: 700; }
-        .top button:last-child { justify-self: end; }
-        .banner { display: none; padding: 8px 12px; background: #ffe98b; color: #593e00; text-align: center; font-weight: 700; }
-        body.demo .banner { display: block; }
-        main { width: min(1150px, calc(100% - 28px)); margin: 16px auto 32px; }
-        .card { margin-bottom: 14px; border: 1px solid #ddd; border-radius: 15px; overflow: hidden; background: #fff; }
-        .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: #fafafa; border-bottom: 1px solid #e7e7e7; }
-        .card-head h2 { margin: 0; font-size: 19px; }
-        .content { padding: 16px 18px; }
-        .muted { color: #626262; }
-        .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-        .summary > div { background: #f8f8f8; border: 1px solid #eee; border-radius: 12px; padding: 12px; }
-        .summary small { display: block; margin-bottom: 5px; color: #666; }
-        .summary strong { overflow-wrap: anywhere; }
-        .pill { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #e9ecef; color: #343a40; font-size: 12px; font-weight: 700; }
-        .pill.active { background: #e5f4e8; color: #206631; }
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 12px 14px; border-bottom: 1px solid #ececec; vertical-align: middle; }
-        th { background: #f7f7f7; font-size: 13px; }
-        tr:last-child td { border-bottom: 0; }
-        .notice { margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: #f4f4f4; }
-        .notice.error { background: #fff0f0; color: #8b0000; }
-        .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-        .actions button { min-height: 42px; padding: 10px 16px; border: 1px solid #bbb; border-radius: 10px; background: #f5f5f5; }
-        .empty { padding: 16px; color: #666; }
-        @media (max-width: 650px) {
-            .top { padding: 8px; }
-            .top-inner { grid-template-columns: 94px minmax(0, 1fr) 94px; gap: 5px; }
-            .top h1 { font-size: 17px; }
-            .top p { font-size: 11px; }
-            .top button { min-height: 36px; padding: 7px 5px; font-size: 11px; }
-            .summary { grid-template-columns: 1fr; }
-            .card-head, .content { padding: 12px; }
-            th, td { padding: 10px 9px; font-size: 13px; }
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+  <meta content="#8B0000" name="theme-color"/>
+  <link href="logo-mdn.png" rel="icon" type="image/png"/>
+  <link href="logo-mdn.png" rel="apple-touch-icon"/>
+  <title>
+   Éditions · MDN Sion
+  </title>
+  <style>
+   * {
+            box-sizing: border-box;
         }
-    </style>
-</head>
-<body>
-    <header class="top">
-        <div class="top-inner">
-            <button type="button" id="back">← Administration</button>
-            <div>
-                <h1>Éditions</h1>
-                <p id="identity">Chargement…</p>
-            </div>
-            <button type="button" id="logout">Déconnexion</button>
-        </div>
-    </header>
-    <div class="banner">MODE DÉMO · Consultation sans modification des éditions Réelles</div>
-    <main>
-        <p id="notice" class="notice" role="status" aria-live="polite">Chargement des éditions…</p>
-        <section class="card">
-            <div class="card-head">
-                <h2>Édition active</h2>
-                <span id="mode" class="pill">Chargement…</span>
-            </div>
-            <div class="content">
-                <div class="summary">
-                    <div><small>Édition</small><strong id="active-name">—</strong></div>
-                    <div><small>Statut</small><strong id="active-status">—</strong></div>
-                    <div><small>Période</small><strong id="active-dates">—</strong></div>
-                </div>
-            </div>
-        </section>
-        <section class="card">
-            <div class="card-head"><h2>Liste des éditions</h2><span id="count" class="pill">0</span></div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Année</th><th>Nom</th><th>Dates</th><th>Statut</th><th>Activation</th></tr></thead>
-                    <tbody id="editions-body"><tr><td colspan="5" class="empty">Chargement…</td></tr></tbody>
-                </table>
-            </div>
-        </section>
-        <section class="card" id="preparations-card">
-            <div class="card-head"><h2>Préparations des prochaines éditions</h2></div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Passage</th><th>Statut</th><th>MDN</th><th>Fondation</th><th>Vaisselle</th><th>Contenants</th></tr></thead>
-                    <tbody id="preparations-body"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
-                </table>
-            </div>
-        </section>
-        <section class="card">
-            <div class="card-head"><h2>Gestion des éditions</h2></div>
-            <div class="content">
-                <p class="muted">La consultation est disponible. La création, l'activation et le transfert des stocks seront activés uniquement après sécurisation et validation du processus en Démo.</p>
-                <div class="actions">
-                    <button type="button" disabled title="Non disponible à cette étape">Préparer l'édition suivante</button>
-                    <button type="button" disabled title="Non disponible à cette étape">Activer une édition</button>
-                    <button type="button" id="refresh">Actualiser</button>
-                </div>
-            </div>
-        </section>
-    </main>
+
+        html, body {
+            overscroll-behavior: none;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            background: #f3f3f3;
+            color: #222;
+            font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        }
+
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-border-radius: 0;
+            border-radius: 0;
+            box-shadow: none;
+            min-width: 0;
+            line-height: 1.25;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-text-fill-color: currentColor;
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .top {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: 9px 16px;
+            background: #8b0000;
+            color: #fff;
+        }
+
+        body.demo .top {
+            background: #806000;
+        }
+
+        .top-inner {
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr) 180px;
+            align-items: center;
+            gap: 10px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .top h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.5vw, 26px);
+            text-align: center;
+        }
+
+        .top p {
+            margin: 3px 0 0;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .top button {
+            min-height: 40px;
+            padding: 9px 12px;
+            border: 1px solid #ffffff55;
+            border-radius: 12px;
+            background: #ffffff18;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .top button:last-child {
+            justify-self: end;
+        }
+
+        .banner {
+            display: none;
+            padding: 8px 12px;
+            background: #ffe98b;
+            color: #593e00;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        body.demo .banner {
+            display: block;
+        }
+
+        main {
+            width: min(1150px, calc(100% - 28px));
+            margin: 16px auto 32px;
+        }
+
+        .card {
+            margin-bottom: 14px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #fafafa;
+            border-bottom: 1px solid #e7e7e7;
+        }
+
+        .card-head h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .content {
+            padding: 16px 18px;
+        }
+
+        .muted {
+            color: #626262;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .summary > div {
+            background: #f8f8f8;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .summary small {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .summary strong {
+            overflow-wrap: anywhere;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #e9ecef;
+            color: #343a40;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .pill.active {
+            background: #e5f4e8;
+            color: #206631;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #ececec;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f7f7f7;
+            font-size: 13px;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .notice {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #f4f4f4;
+        }
+
+        .notice.error {
+            background: #fff0f0;
+            color: #8b0000;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .actions button {
+            -webkit-appearance: none;
+            appearance: none;
+            color: #242424;
+            font-weight: 600;
+            line-height: 1.25;
+            white-space: normal;
+            min-height: 42px;
+            padding: 10px 16px;
+            border: 1px solid #bbb;
+            border-radius: 10px;
+            background: #f5f5f5;
+        }
+
+        .empty {
+            padding: 16px;
+            color: #666;
+        }
+
+        @media (max-width: 650px) {
+            .top {
+                padding: 8px;
+            }
+
+            .top-inner {
+                grid-template-columns: 94px minmax(0, 1fr) 94px;
+                gap: 5px;
+            }
+
+            .top h1 {
+                font-size: 17px;
+            }
+
+            .top p {
+                font-size: 11px;
+            }
+
+            .top button {
+                min-height: 36px;
+                padding: 7px 5px;
+                font-size: 11px;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            .card-head, .content {
+                padding: 12px;
+            }
+
+            th, td {
+                padding: 10px 9px;
+                font-size: 13px;
+            }
+
+        }
+
+        .actions button:disabled {
+            background: #ededed;
+            border-color: #d3d3d3;
+            color: #555;
+            opacity: 0.65;
+        }
+
+        .actions button:not(:disabled):hover {
+            background: #e7e7e7;
+        }
+
+        .actions button:focus-visible {
+            outline: 3px solid #b38a28;
+            outline-offset: 2px;
+        }
+  </style>
+ </head>
+ <body>
+  <header class="top">
+   <div class="top-inner">
+    <button id="back" type="button">
+     ← Administration
+    </button>
+    <div>
+     <h1>
+      Éditions
+     </h1>
+     <p id="identity">
+      Chargement…
+     </p>
+    </div>
+    <button id="logout" type="button">
+     Déconnexion
+    </button>
+   </div>
+  </header>
+  <div class="banner">
+   MODE DÉMO · Consultation des éditions, sans modification des données réelles
+  </div>
+  <main>
+   <p aria-live="polite" class="notice" id="notice" role="status">
+    Chargement des éditions…
+   </p>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      Édition active
+     </h2>
+     <span class="pill" id="mode">
+      Chargement…
+     </span>
+    </div>
+    <div class="content">
+     <div class="summary">
+      <div>
+       <small>
+        Édition
+       </small>
+       <strong id="active-name">
+        —
+       </strong>
+      </div>
+      <div>
+       <small>
+        Statut
+       </small>
+       <strong id="active-status">
+        —
+       </strong>
+      </div>
+      <div>
+       <small>
+        Période
+       </small>
+       <strong id="active-dates">
+        —
+       </strong>
+      </div>
+     </div>
+    </div>
+   </section>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      Liste des éditions
+     </h2>
+     <span class="pill" id="count">
+      0
+     </span>
+    </div>
+    <div class="table-wrap">
+     <table>
+      <thead>
+       <tr>
+        <th>
+         Année
+        </th>
+        <th>
+         Nom
+        </th>
+        <th>
+         Dates
+        </th>
+        <th>
+         Statut
+        </th>
+        <th>
+         Activation
+        </th>
+       </tr>
+      </thead>
+      <tbody id="editions-body">
+       <tr>
+        <td class="empty" colspan="5">
+         Chargement…
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <section class="card" id="preparations-card">
+    <div class="card-head">
+     <h2>
+      Préparations des prochaines éditions
+     </h2>
+    </div>
+    <div class="table-wrap">
+     <table>
+      <thead>
+       <tr>
+        <th>
+         Passage
+        </th>
+        <th>
+         Statut
+        </th>
+        <th>
+         MDN
+        </th>
+        <th>
+         Fondation
+        </th>
+        <th>
+         Vaisselle
+        </th>
+        <th>
+         Contenants
+        </th>
+       </tr>
+      </thead>
+      <tbody id="preparations-body">
+       <tr>
+        <td class="empty" colspan="6">
+         Chargement…
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      Gestion des éditions
+     </h2>
+    </div>
+    <div class="content">
+     <p class="muted">
+      La consultation est disponible. La création, l'activation et le transfert des stocks seront activés uniquement après sécurisation et validation du processus en Démo.
+     </p>
+     <div class="actions">
+      <button disabled="" title="Non disponible à cette étape" type="button">
+       Préparer l'édition suivante
+      </button>
+      <button disabled="" title="Non disponible à cette étape" type="button">
+       Activer une édition
+      </button>
+      <button id="refresh" type="button">
+       Actualiser
+      </button>
+     </div>
+    </div>
+   </section>
+  </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
@@ -268,7 +627,7 @@
                 modeDemo = access.mode_demo === true;
                 document.body.classList.toggle("demo", modeDemo);
                 const identity = auth.profil?.prenom || auth.profil?.email || "Administration";
-                byId("identity").textContent = identity + " · " + (modeDemo ? "Mode Démo" : "Administrateur");
+                byId("identity").textContent = (modeDemo ? "Mode Démo" : "Mode Réel");
                 await charger();
             } catch (error) {
                 console.error("[MDN Sion] Initialisation éditions :", error);
