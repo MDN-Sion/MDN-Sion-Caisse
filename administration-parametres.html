@@ -372,6 +372,7 @@
 				font-size: 19px;
 			}
 		}
+			.notice[hidden] { display: none !important; }
 	</style>
 </head>
 <body>
@@ -441,7 +442,7 @@
 					</div>
 				</form>
 
-				<p class="notice" id="notice" role="status" aria-live="polite">Chargement des paramètres…</p>
+				<p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
 			</div>
 		</section>
 	</main>
@@ -578,6 +579,7 @@
 			const notice = byId("notice");
 			notice.textContent = message;
 			notice.className = "notice" + (type ? " " + type : "");
+			notice.hidden = !message;
 		}
 
 		function updateButtons() {
@@ -592,7 +594,7 @@
 			byId("fondation").value = data.nom_fondation || "";
 			byId("association").value = data.nom_association_mdn || "";
 			byId("email").value = data.email_envoi || "";
-			byId("edition").textContent = data.edition_id || "Aucune édition";
+			byId("edition").textContent = data.edition_nom || (data.edition_annee ? "Édition " + data.edition_annee : "Édition non renseignée");
 			byId("mode").textContent = modeDemo ? "Démo · modification" : "Réel · modification";
 			original = valeurs();
 			loaded = true;
@@ -621,11 +623,7 @@
 				}
 
 				remplir(data);
-				setNotice(
-					modeDemo
-						? "Mode Démo : les modifications restent indépendantes du Réel."
-						: "Mode Réel : les modifications seront enregistrées uniquement après un clic sur Enregistrer."
-				);
+				setNotice("");
 			} catch (error) {
 				console.error("[MDN Sion] Paramètres :", error);
 				setNotice("Chargement impossible : " + (error.message || String(error)), "error");
@@ -731,8 +729,14 @@
 
 		byId("reload").addEventListener("click", () => {
 			if (!busy && original) {
-				remplir(original);
-				setNotice("Modifications non enregistrées annulées.");
+				byId("devise").value = libelleDevise(original.devise);
+				byId("partenaire").value = original.partenaire_lavage;
+				byId("fondation").value = original.nom_fondation;
+				byId("association").value = original.nom_association_mdn;
+				byId("email").value = original.email_envoi;
+				fermerDevises();
+				updateButtons();
+				setNotice("Modifications non enregistrées annulées.", "success");
 			}
 		});
 
