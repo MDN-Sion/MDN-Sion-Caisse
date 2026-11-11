@@ -7,7 +7,7 @@
   <link href="logo-mdn.png" rel="icon" type="image/png"/>
   <link href="logo-mdn.png" rel="apple-touch-icon"/>
   <title>
-   Éditions · MDN Sion
+   &Eacute;ditions &middot; MDN Sion
   </title>
   <style>
    * {
@@ -243,6 +243,53 @@
             background: #f5f5f5;
         }
 
+        .actions button,
+        .detail-button {
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .actions #refresh,
+        .detail-button {
+            background: #8b0000;
+            border-color: #8b0000;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        body.demo .actions #refresh,
+        body.demo .detail-button {
+            background: #806000;
+            border-color: #806000;
+            color: #ffffff;
+        }
+
+        .actions #refresh:hover,
+        .detail-button:hover {
+            background: #680000;
+            border-color: #680000;
+        }
+
+        body.demo .actions #refresh:hover,
+        body.demo .detail-button:hover {
+            background: #604800;
+            border-color: #604800;
+        }
+
+        .actions button:disabled {
+            background: #f0f0f0;
+            border-color: #d5d5d5;
+            color: #777777;
+            opacity: 1;
+        }
+
+        .preparations-info {
+            padding: 14px 18px;
+            color: #615024;
+            background: #fff8e7;
+            border-top: 1px solid #f1e2ba;
+            line-height: 1.5;
+        }
+
         .detail-button {
             min-height: 36px;
             padding: 7px 12px;
@@ -254,9 +301,6 @@
             font-weight: 600;
         }
 
-        .detail-button:hover {
-            background: #eaeaea;
-        }
 
         .detail-panel {
             margin: 0 18px 18px;
@@ -292,6 +336,11 @@
 
         .detail-close {
             margin-top: 12px;
+        }
+
+        .detail-panel[hidden],
+        .preparations-info[hidden] {
+            display: none;
         }
 
         @media (max-width: 650px) {
@@ -344,16 +393,6 @@
 
         }
 
-        .actions button:disabled {
-            background: #ededed;
-            border-color: #d3d3d3;
-            color: #555;
-            opacity: 0.65;
-        }
-
-        .actions button:not(:disabled):hover {
-            background: #e7e7e7;
-        }
 
         .actions button:focus-visible {
             outline: 3px solid #b38a28;
@@ -365,45 +404,45 @@
   <header class="top">
    <div class="top-inner">
     <button id="back" type="button">
-     ← Administration
+     &larr; Administration
     </button>
     <div>
      <h1>
-      Éditions
+      &Eacute;ditions
      </h1>
      <p id="identity">
-      Chargement…
+      Chargement&hellip;
      </p>
     </div>
     <button id="logout" type="button">
-     Déconnexion
+     D&eacute;connexion
     </button>
    </div>
   </header>
   <div class="banner">
-   MODE DÉMO · Consultation des éditions, sans modification des données réelles
+   MODE D&Eacute;MO &middot; Consultation des &eacute;ditions, sans modification des donn&eacute;es r&eacute;elles
   </div>
   <main>
    <p aria-live="polite" class="notice" id="notice" role="status">
-    Chargement des éditions…
+    Chargement des &eacute;ditions&hellip;
    </p>
    <section class="card">
     <div class="card-head">
      <h2>
-      Édition active
+      &Eacute;dition active
      </h2>
      <span class="pill" id="mode">
-      Chargement…
+      Chargement&hellip;
      </span>
     </div>
     <div class="content">
      <div class="summary">
       <div>
        <small>
-        Édition
+        &Eacute;dition
        </small>
        <strong id="active-name">
-        —
+        &mdash;
        </strong>
       </div>
       <div>
@@ -411,15 +450,15 @@
         Statut
        </small>
        <strong id="active-status">
-        —
+        &mdash;
        </strong>
       </div>
       <div>
        <small>
-        Période
+        P&eacute;riode
        </small>
        <strong id="active-dates">
-        —
+        &mdash;
        </strong>
       </div>
      </div>
@@ -428,7 +467,7 @@
    <section class="card">
     <div class="card-head">
      <h2>
-      Liste des éditions
+      Liste des &eacute;ditions
      </h2>
      <span class="pill" id="count">
       0
@@ -439,7 +478,7 @@
       <thead>
        <tr>
         <th>
-         Année
+         Ann&eacute;e
         </th>
         <th>
          Nom
@@ -458,7 +497,7 @@
       <tbody id="editions-body">
        <tr>
         <td class="empty" colspan="5">
-         Chargement…
+         Chargement&hellip;
         </td>
        </tr>
       </tbody>
@@ -468,7 +507,7 @@
    <section class="card" id="preparations-card">
     <div class="card-head">
      <h2>
-      Préparations des prochaines éditions
+      Pr&eacute;parations des prochaines &eacute;ditions
      </h2>
     </div>
     <div class="table-wrap">
@@ -494,43 +533,48 @@
          Contenants
         </th>
         <th>
-         Détails
+         D&eacute;tails
         </th>
        </tr>
       </thead>
       <tbody id="preparations-body">
        <tr>
         <td class="empty" colspan="7">
-         Chargement…
+         Chargement&hellip;
         </td>
        </tr>
       </tbody>
      </table>
     </div>
-    <div class="detail-panel" id="preparation-detail" hidden>
-     <h3 id="detail-title">Détails de la préparation</h3>
-     <div class="detail-grid" id="detail-grid"></div>
+    <div class="preparations-info" hidden="" id="preparations-info">
+    </div>
+    <div class="detail-panel" hidden="" id="preparation-detail">
+     <h3 id="detail-title">
+      D&eacute;tails de la pr&eacute;paration
+     </h3>
+     <div class="detail-grid" id="detail-grid">
+     </div>
      <button class="detail-button detail-close" id="close-detail" type="button">
-      Fermer les détails
+      Fermer les d&eacute;tails
      </button>
     </div>
    </section>
    <section class="card">
     <div class="card-head">
      <h2>
-      Gestion des éditions
+      Gestion des &eacute;ditions
      </h2>
     </div>
     <div class="content">
      <p class="muted">
-      La consultation est disponible. La création, l'activation et le transfert des stocks seront activés uniquement après sécurisation et validation du processus en Démo.
+      La consultation est disponible. La cr&eacute;ation, l'activation et le transfert des stocks seront activ&eacute;s uniquement apr&egrave;s s&eacute;curisation et validation du processus en D&eacute;mo.
      </p>
      <div class="actions">
-      <button disabled="" title="Non disponible à cette étape" type="button">
-       Préparer l'édition suivante
+      <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
+       Pr&eacute;parer l'&eacute;dition suivante
       </button>
-      <button disabled="" title="Non disponible à cette étape" type="button">
-       Activer une édition
+      <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
+       Activer une &eacute;dition
       </button>
       <button id="refresh" type="button">
        Actualiser
@@ -539,12 +583,16 @@
     </div>
    </section>
   </main>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
-    <script>
-        "use strict";
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+  </script>
+  <script src="js/config.js">
+  </script>
+  <script src="js/supabase.js">
+  </script>
+  <script src="js/auth.js">
+  </script>
+  <script>
+   "use strict";
 
         const byId = (id) => document.getElementById(id);
         let modeDemo = false;
@@ -677,7 +725,13 @@
             fermerDetail();
 
             if (preparations.length === 0) {
-                emptyRow(tbody, 7, "Aucune préparation disponible.");
+                emptyRow(
+                    tbody,
+                    7,
+                    modeDemo
+                        ? "Aucune préparation Démo disponible pour le moment."
+                        : "Aucune préparation disponible."
+                );
                 return;
             }
 
@@ -722,8 +776,16 @@
                 }
 
                 renderEditions(Array.isArray(data.editions) ? data.editions : []);
-                renderPreparations(Array.isArray(data.preparations) ? data.preparations : []);
-                byId("preparations-card").hidden = modeDemo;
+                const preparations = Array.isArray(data.preparations) ? data.preparations : [];
+                renderPreparations(preparations);
+
+                const infoPreparations = byId("preparations-info");
+                infoPreparations.hidden = !modeDemo;
+                infoPreparations.textContent = modeDemo
+                    ? "Les préparations Réelles ne sont pas affichées ici. " +
+                      "La préparation des éditions en Démo sera disponible après " +
+                      "la création de son espace de données indépendant."
+                    : "";
                 byId("mode").textContent = modeDemo ? "Démo · lecture seule" : "Réel · lecture seule";
                 setNotice("");
             } catch (error) {
@@ -780,6 +842,6 @@
         });
 
         init();
-    </script>
-</body>
+  </script>
+ </body>
 </html>
