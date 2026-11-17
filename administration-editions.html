@@ -586,6 +586,67 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
  .inventory-v10-table td:first-child::before { display: none; }
  .inventory-v10-quantity { width: 110px; }
 }
+
+        /* Section autonome : reprise des stands, distincte des inventaires. */
+        .reprise-stands-section {
+            margin-top: 32px;
+            padding: 22px;
+            border: 1px solid #dedede;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        .reprise-stands-heading {
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .reprise-stands-heading h3 {
+            margin: 0 0 5px;
+            font-size: 19px;
+        }
+
+        .reprise-stands-subtitle {
+            margin: 0;
+            color: #626262;
+            font-size: 14px;
+        }
+
+        #stands-reprise-state {
+            margin: 16px 0;
+            font-weight: 600;
+        }
+
+        #stands-reprise-validate {
+            margin-top: 16px;
+        }
+
+        #stands-reprise-lines .detail-button {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #stands-reprise-validate:disabled,
+        #stands-reprise-lines .detail-button:disabled,
+        body.demo #stands-reprise-validate:disabled,
+        body.demo #stands-reprise-lines .detail-button:disabled {
+            background: #e9ecef !important;
+            border-color: #d7dce0 !important;
+            color: #495057 !important;
+            -webkit-text-fill-color: #495057 !important;
+            opacity: 1;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 760px) {
+            .reprise-stands-section {
+                margin-top: 24px;
+                padding: 14px;
+            }
+        }
 </style>
  </head>
  <body>
@@ -773,8 +834,13 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
       <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
      </div>
-     <div id="stands-reprise-editor" hidden>
-      <h3>Reprise des stands — Démo</h3>
+     <section id="stands-reprise-editor" class="reprise-stands-section" hidden>
+      <div class="reprise-stands-heading">
+       <div>
+        <h3 id="stands-reprise-title">Reprise des stands — Démo</h3>
+        <p class="reprise-stands-subtitle">Préparation des participations pour l’édition suivante</p>
+       </div>
+      </div>
       <p>Les champs facultatifs restent facultatifs. Les numéros d’emplacement et les accès QR ne sont pas repris.</p>
       <p id="stands-reprise-state"></p>
       <div class="inventory-table-wrap">
@@ -784,7 +850,17 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
        </table>
       </div>
       <button class="detail-button" id="stands-reprise-validate" type="button">Valider la reprise des stands</button>
-     </div>
+     </section>
+     <section id="stands-reprise-reel" class="reprise-stands-section" hidden>
+      <div class="reprise-stands-heading">
+       <div>
+        <h3>Reprise des stands — Réel</h3>
+        <p class="reprise-stands-subtitle">Préparation de l’édition suivante</p>
+       </div>
+      </div>
+      <p>La reprise des stands en mode Réel sera disponible après validation du processus en Démo. Aucune donnée Réelle n’est modifiée depuis cet écran.</p>
+      <p>Les fiches existantes seront conservées avec leurs champs facultatifs, sans reprendre les emplacements, les opérations ou les accès aux relevés de l’édition précédente.</p>
+     </section>
      <button class="detail-button detail-close" id="close-detail" type="button">
       Fermer les d&eacute;tails
      </button>
@@ -854,6 +930,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             byId("detail-grid").replaceChildren();
             byId("inventory-editor").hidden = true;
             byId("stands-reprise-editor").hidden = true;
+            byId("stands-reprise-reel").hidden = true;
             preparationSelectionnee = null;
             donneesInventaire = null;
         }
@@ -891,6 +968,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 byId("inventory-editor").hidden = false;
                 await chargerInventaires();
                 await chargerRepriseStands();
+            } else {
+                byId("stands-reprise-reel").hidden = false;
             }
         }
 
@@ -1015,8 +1094,21 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                         }
                     });
 
-                    celluleConserver.appendChild(conserver);
-                    celluleActif.appendChild(actif);
+                    const etiquetteConserver = document.createElement("label");
+                    const dessinConserver = document.createElement("span");
+                    etiquetteConserver.className = "case-v10";
+                    dessinConserver.className = "case-v10-dessin";
+                    dessinConserver.setAttribute("aria-hidden", "true");
+                    etiquetteConserver.append(conserver, dessinConserver);
+                    celluleConserver.appendChild(etiquetteConserver);
+
+                    const etiquetteActif = document.createElement("label");
+                    const dessinActif = document.createElement("span");
+                    etiquetteActif.className = "case-v10";
+                    dessinActif.className = "case-v10-dessin";
+                    dessinActif.setAttribute("aria-hidden", "true");
+                    etiquetteActif.append(actif, dessinActif);
+                    celluleActif.appendChild(etiquetteActif);
                     celluleAction.appendChild(bouton);
                     ligne.append(nom, numero, celluleConserver, celluleActif, celluleAction);
                     corps.appendChild(ligne);
