@@ -1805,7 +1805,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 infoPreparations.hidden = !modeDemo;
                 infoPreparations.textContent = modeDemo
                     ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
-                      "Les inventaires sont modifiables ici. La création et l'activation des éditions restent indisponibles."
+                      "Les inventaires et la création du dossier annuel Démo sont disponibles. L’activation de l’édition reste bloquée tant que le moteur de caisse 2027 n’est pas raccordé."
                     : "";
                 byId("prepare-next").disabled = !modeDemo || !Number.isInteger(anneeActive);
                 byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
