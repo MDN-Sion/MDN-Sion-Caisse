@@ -1008,14 +1008,14 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
      </h2>
     </div>
     <div class="content">
-     <p class="muted">
-      La consultation est disponible. La cr&eacute;ation, l'activation et le transfert des stocks seront activ&eacute;s uniquement apr&egrave;s s&eacute;curisation et validation du processus en D&eacute;mo.
+     <p class="muted" id="edition-management-status" aria-live="polite">
+      Chargement de l’état de préparation des éditions…
      </p>
      <div class="actions">
       <button disabled="" id="prepare-next" title="Disponible uniquement en Démo" type="button">
        Pr&eacute;parer l'&eacute;dition suivante
       </button>
-      <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
+      <button disabled="" id="activate-edition" title="Activation indisponible tant que le moteur opérationnel n’est pas raccordé" type="button">
        Activer une &eacute;dition
       </button>
       <button id="refresh" type="button">
@@ -1045,6 +1045,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         let inventaireOccupe = false;
         let cataloguesInventaire = [];
         let editionDemoCreeeId = null;
+        let preparationDisponible = null;
+
 
         function statutLisible(statut) {
             const libelles = {
@@ -1780,6 +1782,41 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             }
         }
 
+        function afficherEtatGestionEditions(preparations) {
+            const etat = byId("edition-management-status");
+            const preparer = byId("prepare-next");
+            const activer = byId("activate-edition");
+
+            activer.disabled = true;
+            activer.title = "Activation bloquée : raccordement des opérations de caisse, de vaisselle et de stock encore nécessaire.";
+
+            if (!modeDemo) {
+                preparationDisponible = null;
+                etat.textContent = "Mode Réel : consultation uniquement. Aucun changement sur les éditions Réelles depuis cet écran.";
+                preparer.disabled = true;
+                preparer.textContent = "Préparer l’édition suivante";
+                return;
+            }
+
+            const cible = Number.isInteger(anneeActive) ? anneeActive + 1 : null;
+            preparationDisponible = preparations.find((preparation) =>
+                cible !== null && Number(preparation.annee_cible) === cible
+            ) || null;
+
+            if (preparationDisponible) {
+                const annee = String(preparationDisponible.annee_cible);
+                etat.textContent = "Édition Démo " + annee + " — en préparation. Le dossier existant est conservé : retrouvez les inventaires, les stands, les emplacements et les accès dans ses détails. Activation bloquée jusqu’au raccordement du moteur opérationnel " + annee + ".";
+                preparer.textContent = "Voir la préparation " + annee;
+                preparer.disabled = false;
+                preparer.title = "Ouvrir la préparation existante sans en créer une autre";
+            } else {
+                etat.textContent = "Aucune préparation Démo trouvée pour l’édition suivante. Vous pouvez préparer le dossier annuel sans modifier le Réel.";
+                preparer.textContent = "Préparer l’édition suivante";
+                preparer.disabled = !Number.isInteger(anneeActive);
+                preparer.title = "Créer ou retrouver la préparation Démo suivante";
+            }
+        }
+
         async function charger() {
             try {
                 setNotice("Chargement des éditions…");
@@ -1800,6 +1837,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 renderEditions(Array.isArray(data.editions) ? data.editions : []);
                 const preparations = Array.isArray(data.preparations) ? data.preparations : [];
                 renderPreparations(preparations);
+                afficherEtatGestionEditions(preparations);
 
                 const infoPreparations = byId("preparations-info");
                 infoPreparations.hidden = !modeDemo;
@@ -1807,7 +1845,6 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
                       "Les inventaires et la création du dossier annuel Démo sont disponibles. L’activation de l’édition reste bloquée tant que le moteur de caisse 2027 n’est pas raccordé."
                     : "";
-                byId("prepare-next").disabled = !modeDemo || !Number.isInteger(anneeActive);
                 byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
                 setNotice("");
             } catch (error) {
@@ -1853,6 +1890,12 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 return;
             }
 
+            if (preparationDisponible) {
+                await ouvrirDetail(preparationDisponible);
+                byId("preparation-detail").scrollIntoView({ behavior: "smooth", block: "start" });
+                return;
+            }
+
             const bouton = byId("prepare-next");
             bouton.disabled = true;
 
@@ -1880,7 +1923,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 setNotice("Impossible de préparer l'édition Démo : " +
                     (error.message || String(error)), true);
             } finally {
-                bouton.disabled = !modeDemo;
+                bouton.disabled = !modeDemo || !Number.isInteger(anneeActive);
             }
         }
 
