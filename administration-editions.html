@@ -773,6 +773,18 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
       <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
      </div>
+     <div id="stands-reprise-editor" hidden>
+      <h3>Reprise des stands — Démo</h3>
+      <p>Les champs facultatifs restent facultatifs. Les numéros d’emplacement et les accès QR ne sont pas repris.</p>
+      <p id="stands-reprise-state"></p>
+      <div class="inventory-table-wrap">
+       <table class="inventory-v10-table">
+        <thead><tr><th>Stand</th><th>Emplacement actuel</th><th>Conserver</th><th>Actif l’année suivante</th><th>Action</th></tr></thead>
+        <tbody id="stands-reprise-lines"></tbody>
+       </table>
+      </div>
+      <button class="detail-button" id="stands-reprise-validate" type="button">Valider la reprise des stands</button>
+     </div>
      <button class="detail-button detail-close" id="close-detail" type="button">
       Fermer les d&eacute;tails
      </button>
@@ -841,6 +853,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             byId("preparation-detail").hidden = true;
             byId("detail-grid").replaceChildren();
             byId("inventory-editor").hidden = true;
+            byId("stands-reprise-editor").hidden = true;
             preparationSelectionnee = null;
             donneesInventaire = null;
         }
@@ -877,8 +890,174 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             if (modeDemo) {
                 byId("inventory-editor").hidden = false;
                 await chargerInventaires();
+                await chargerRepriseStands();
             }
         }
+
+        let repriseStandsOccupee = false;
+
+        async function chargerRepriseStands() {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            const id = preparationSelectionnee.id;
+            const zone = byId("stands-reprise-editor");
+            zone.hidden = false;
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "charger_reprise_stands_preparation_demo",
+                    { p_preparation_id: id }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse invalide.");
+                }
+
+                if (!preparationSelectionnee || preparationSelectionnee.id !== id) {
+                    return;
+                }
+
+                const stands = Array.isArray(data.stands) ? data.stands : [];
+                const enregistres = stands.filter((stand) => stand.enregistre).length;
+                const corps = byId("stands-reprise-lines");
+                const validation = byId("stands-reprise-validate");
+                corps.replaceChildren();
+
+                byId("stands-reprise-state").textContent = data.valide
+                    ? "Reprise validée"
+                    : enregistres + " / " + stands.length + " stands enregistrés — À valider";
+                validation.textContent = data.valide
+                    ? "Reprise validée"
+                    : "Valider la reprise des stands";
+                validation.disabled = data.valide || enregistres !== stands.length || repriseStandsOccupee;
+
+                for (const stand of stands) {
+                    const ligne = document.createElement("tr");
+                    const nom = document.createElement("td");
+                    const numero = document.createElement("td");
+                    const celluleConserver = document.createElement("td");
+                    const celluleActif = document.createElement("td");
+                    const celluleAction = document.createElement("td");
+                    const conserver = document.createElement("input");
+                    const actif = document.createElement("input");
+                    const bouton = document.createElement("button");
+                    const ancienConserver = stand.conserver === true;
+                    const ancienActif = stand.actif_edition_suivante === true;
+
+                    nom.textContent = stand.nom || "Sans nom";
+                    numero.textContent = stand.numero_source || "—";
+                    conserver.type = "checkbox";
+                    conserver.checked = ancienConserver;
+                    conserver.setAttribute("aria-label", "Conserver " + nom.textContent);
+                    actif.type = "checkbox";
+                    actif.checked = ancienActif;
+                    actif.setAttribute("aria-label", "Actif " + nom.textContent);
+                    bouton.type = "button";
+                    bouton.className = "detail-button";
+
+                    const actualiser = () => {
+                        const modifie = conserver.checked !== ancienConserver || actif.checked !== ancienActif;
+                        bouton.textContent = modifie || !stand.enregistre ? "Enregistrer" : "Enregistré";
+                        bouton.disabled = repriseStandsOccupee || (!modifie && stand.enregistre);
+                    };
+
+                    conserver.addEventListener("change", () => {
+                        if (!conserver.checked) {
+                            actif.checked = false;
+                        }
+                        actualiser();
+                    });
+
+                    actif.addEventListener("change", () => {
+                        if (actif.checked) {
+                            conserver.checked = true;
+                        }
+                        actualiser();
+                    });
+
+                    bouton.addEventListener("click", async () => {
+                        if (repriseStandsOccupee) {
+                            return;
+                        }
+
+                        repriseStandsOccupee = true;
+                        bouton.disabled = true;
+
+                        try {
+                            const { data: resultat, error: erreur } = await window.MDN_SUPABASE.rpc(
+                                "enregistrer_reprise_stand_preparation_demo",
+                                {
+                                    p_preparation_id: id,
+                                    p_stand_source_id: stand.stand_id,
+                                    p_conserver: conserver.checked,
+                                    p_actif_edition_suivante: actif.checked
+                                }
+                            );
+
+                            if (erreur) {
+                                throw erreur;
+                            }
+
+                            if (!resultat || resultat.ok !== true || resultat.mode_demo !== true) {
+                                throw new Error("Réponse invalide.");
+                            }
+                        } catch (erreur) {
+                            setNotice("Enregistrement du stand impossible : " + erreur.message, true);
+                        } finally {
+                            repriseStandsOccupee = false;
+                            await chargerRepriseStands();
+                        }
+                    });
+
+                    celluleConserver.appendChild(conserver);
+                    celluleActif.appendChild(actif);
+                    celluleAction.appendChild(bouton);
+                    ligne.append(nom, numero, celluleConserver, celluleActif, celluleAction);
+                    corps.appendChild(ligne);
+                    actualiser();
+                }
+            } catch (erreur) {
+                byId("stands-reprise-state").textContent = "Impossible de charger les stands : " + erreur.message;
+                byId("stands-reprise-validate").disabled = true;
+            }
+        }
+
+        byId("stands-reprise-validate").addEventListener("click", async () => {
+            if (!modeDemo || !preparationSelectionnee || repriseStandsOccupee) {
+                return;
+            }
+
+            const id = preparationSelectionnee.id;
+            repriseStandsOccupee = true;
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "valider_reprise_stands_preparation_demo",
+                    { p_preparation_id: id }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse invalide.");
+                }
+
+                setNotice("Reprise des stands validée en Démo.");
+            } catch (erreur) {
+                setNotice("Validation impossible : " + erreur.message, true);
+            } finally {
+                repriseStandsOccupee = false;
+                await chargerRepriseStands();
+            }
+        });
 
         function setNotice(message, isError = false) {
             const notice = byId("notice");
