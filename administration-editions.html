@@ -45,8 +45,11 @@
         button:disabled {
             -webkit-appearance: none;
             appearance: none;
-            -webkit-text-fill-color: currentColor;
-            opacity: .5;
+            -webkit-text-fill-color: #495057;
+            background: #e9ecef;
+            border-color: #d7dce0;
+            color: #495057;
+            opacity: 1;
             cursor: not-allowed;
         }
 
@@ -544,11 +547,14 @@
         }
 
         #inventory-validate:disabled,
-        .inventory-v10-save:disabled {
+        .inventory-v10-save:disabled,
+        body.demo #inventory-validate:disabled,
+        body.demo .inventory-v10-save:disabled {
             background: #e9ecef !important;
             border-color: #d7dce0 !important;
             color: #495057 !important;
-            cursor: default;
+            -webkit-text-fill-color: #495057 !important;
+            cursor: not-allowed;
             opacity: 1;
         }
 
@@ -1127,20 +1133,32 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         const PREFIXE_OPTIONS_V10 = "__MDN_V10__:";
 
         function optionsInventaire(ligne) {
-            if (!ligne || typeof ligne.commentaire !== "string" ||
-                !ligne.commentaire.startsWith(PREFIXE_OPTIONS_V10)) {
+            if (!ligne) {
                 return { conserver: true, actif: true };
             }
 
-            try {
-                const options = JSON.parse(ligne.commentaire.slice(PREFIXE_OPTIONS_V10.length));
+            if (typeof ligne.conserver_catalogue === "boolean" &&
+                typeof ligne.actif_edition_suivante === "boolean") {
                 return {
-                    conserver: options.conserver !== false,
-                    actif: options.conserver !== false && options.actif !== false
+                    conserver: ligne.conserver_catalogue,
+                    actif: ligne.conserver_catalogue && ligne.actif_edition_suivante
                 };
-            } catch (error) {
-                return { conserver: true, actif: true };
             }
+
+            if (typeof ligne.commentaire === "string" &&
+                ligne.commentaire.startsWith(PREFIXE_OPTIONS_V10)) {
+                try {
+                    const options = JSON.parse(ligne.commentaire.slice(PREFIXE_OPTIONS_V10.length));
+                    return {
+                        conserver: options.conserver !== false,
+                        actif: options.conserver !== false && options.actif !== false
+                    };
+                } catch (error) {
+                    return { conserver: true, actif: true };
+                }
+            }
+
+            return { conserver: true, actif: true };
         }
 
         async function enregistrerArticleV10(article, quantite, options) {
@@ -1160,19 +1178,17 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
              byId("inventory-category").disabled = true;
 
             try {
-                const commentaire = PREFIXE_OPTIONS_V10 + JSON.stringify({
-                    conserver: options.conserver,
-                    actif: options.conserver && options.actif
-                });
-
+                const preparationId = preparationSelectionnee.id;
+                const categorieAvantEnregistrement = categorie;
                 const { data, error } = await window.MDN_SUPABASE.rpc(
-                    "enregistrer_ligne_inventaire_demo",
+                    "enregistrer_ligne_inventaire_options_demo",
                     {
-                        p_preparation_id: preparationSelectionnee.id,
+                        p_preparation_id: preparationId,
                         p_categorie: categorie,
                         p_article: article,
                         p_quantite: quantite,
-                        p_commentaire: commentaire
+                        p_conserver_catalogue: options.conserver,
+                        p_actif_edition_suivante: options.conserver && options.actif
                     }
                 );
 
@@ -1184,8 +1200,22 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     throw new Error("Enregistrement non confirmé.");
                 }
 
-                await chargerInventaires();
-                setNotice("Article « " + article + " » enregistré en Démo.");
+                if (data.validation_reinitialisee !== true) {
+                    throw new Error("La réinitialisation de la validation n'a pas été confirmée.");
+                }
+
+                await charger();
+                const boutonPreparation = Array.from(
+                    byId("preparations-body").querySelectorAll("button[data-preparation-id]")
+                ).find((bouton) => bouton.dataset.preparationId === preparationId);
+
+                if (boutonPreparation) {
+                    boutonPreparation.click();
+                    byId("inventory-category").value = categorieAvantEnregistrement;
+                    await chargerInventaires();
+                }
+
+                setNotice("Article « " + article + " » enregistré en Démo. Inventaire à valider de nouveau.");
             } catch (error) {
                 setNotice("Enregistrement impossible : " + (error.message || String(error)), true);
             } finally {
