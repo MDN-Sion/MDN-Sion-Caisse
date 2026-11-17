@@ -851,6 +851,17 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       </div>
       <button class="detail-button" id="stands-reprise-validate" type="button">Valider la reprise des stands</button>
      </section>
+     <section id="creation-edition-demo" class="reprise-stands-section" hidden>
+      <div class="reprise-stands-heading">
+       <div>
+        <h3>Création de l’édition suivante — Démo</h3>
+        <p class="reprise-stands-subtitle">Création d’un dossier annuel isolé, sans activation</p>
+       </div>
+      </div>
+      <p>Les quatre inventaires et la reprise des stands doivent être validés. Les emplacements restent à attribuer. Les accès QR et les codes à six chiffres seront activés lors d’une étape ultérieure.</p>
+      <p id="creation-edition-demo-state"></p>
+      <button id="creation-edition-demo-button" class="detail-button" type="button">Créer l’édition Démo</button>
+     </section>
      <section id="stands-reprise-reel" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -931,6 +942,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             byId("inventory-editor").hidden = true;
             byId("stands-reprise-editor").hidden = true;
             byId("stands-reprise-reel").hidden = true;
+            byId("creation-edition-demo").hidden = true;
             preparationSelectionnee = null;
             donneesInventaire = null;
         }
@@ -968,10 +980,46 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 byId("inventory-editor").hidden = false;
                 await chargerInventaires();
                 await chargerRepriseStands();
+                byId("creation-edition-demo").hidden = false;
+                byId("creation-edition-demo-button").textContent = "Créer l’édition Démo " + preparation.annee_cible;
             } else {
                 byId("stands-reprise-reel").hidden = false;
             }
         }
+
+        byId("creation-edition-demo-button").addEventListener("click", async () => {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            const bouton = byId("creation-edition-demo-button");
+            const etat = byId("creation-edition-demo-state");
+            bouton.disabled = true;
+            etat.textContent = "Création de l’édition Démo en cours…";
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "creer_edition_preparation_demo",
+                    { p_preparation_id: preparationSelectionnee.id }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse de création invalide.");
+                }
+
+                etat.textContent = data.message + " " +
+                    String(data.stands_crees ?? 0) + " stands et " +
+                    String(data.stocks_crees ?? 0) + " lignes de stock copiés.";
+                bouton.textContent = "Édition Démo créée";
+            } catch (erreur) {
+                etat.textContent = "Création impossible : " + (erreur.message || String(erreur));
+                bouton.disabled = false;
+            }
+        });
 
         let repriseStandsOccupee = false;
 
