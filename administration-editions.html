@@ -641,6 +641,24 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             cursor: not-allowed;
         }
 
+        #emplacements-stands-lines .detail-button {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #emplacements-stands-lines .detail-button:disabled,
+        body.demo #emplacements-stands-lines .detail-button:disabled,
+        #creation-edition-demo-button:disabled,
+        body.demo #creation-edition-demo-button:disabled {
+            background: #e9ecef !important;
+            border-color: #d7dce0 !important;
+            color: #495057 !important;
+            -webkit-text-fill-color: #495057 !important;
+            opacity: 1;
+        }
+
         @media (max-width: 760px) {
             .reprise-stands-section {
                 margin-top: 24px;
@@ -862,6 +880,24 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       <p id="creation-edition-demo-state"></p>
       <button id="creation-edition-demo-button" class="detail-button" type="button">Créer l’édition Démo</button>
      </section>
+     <section id="emplacements-stands-demo" class="reprise-stands-section" hidden>
+      <div class="reprise-stands-heading">
+       <div>
+        <h3>Emplacements des stands — Démo</h3>
+        <p class="reprise-stands-subtitle">Attribution des numéros pour la nouvelle édition</p>
+       </div>
+      </div>
+      <p>Les numéros de l’édition précédente ne sont pas repris. Tu peux laisser un emplacement vide et le renseigner plus tard.</p>
+      <p id="emplacements-stands-state" role="status"></p>
+      <div class="inventory-table-wrap">
+       <table class="inventory-v10-table">
+        <thead>
+         <tr><th>Stand</th><th>Numéro d’emplacement</th><th>Action</th></tr>
+        </thead>
+        <tbody id="emplacements-stands-lines"></tbody>
+       </table>
+      </div>
+     </section>
      <section id="stands-reprise-reel" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -919,6 +955,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         let donneesInventaire = null;
         let inventaireOccupe = false;
         let cataloguesInventaire = [];
+        let editionDemoCreeeId = null;
 
         function statutLisible(statut) {
             const libelles = {
@@ -943,6 +980,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             byId("stands-reprise-editor").hidden = true;
             byId("stands-reprise-reel").hidden = true;
             byId("creation-edition-demo").hidden = true;
+            byId("emplacements-stands-demo").hidden = true;
+            editionDemoCreeeId = null;
             preparationSelectionnee = null;
             donneesInventaire = null;
         }
@@ -982,6 +1021,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 await chargerRepriseStands();
                 byId("creation-edition-demo").hidden = false;
                 byId("creation-edition-demo-button").textContent = "Créer l’édition Démo " + preparation.annee_cible;
+                await chargerEditionCreeeEtEmplacements();
             } else {
                 byId("stands-reprise-reel").hidden = false;
             }
@@ -1015,11 +1055,139 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     String(data.stands_crees ?? 0) + " stands et " +
                     String(data.stocks_crees ?? 0) + " lignes de stock copiés.";
                 bouton.textContent = "Édition Démo créée";
+                await chargerEditionCreeeEtEmplacements();
             } catch (erreur) {
                 etat.textContent = "Création impossible : " + (erreur.message || String(erreur));
                 bouton.disabled = false;
             }
         });
+
+        async function chargerEditionCreeeEtEmplacements() {
+            const section = byId("emplacements-stands-demo");
+            section.hidden = true;
+            editionDemoCreeeId = null;
+
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+                "consulter_edition_creee_preparation_demo",
+                { p_preparation_id: preparationSelectionnee.id }
+            );
+
+            if (error) {
+                byId("creation-edition-demo-state").textContent =
+                    "Consultation de l’édition créée impossible : " + error.message;
+                return;
+            }
+
+            if (!data || data.ok !== true || data.mode_demo !== true || data.cree !== true) {
+                return;
+            }
+
+            editionDemoCreeeId = data.edition_demo_id;
+            const creationButton = byId("creation-edition-demo-button");
+            creationButton.disabled = true;
+            creationButton.textContent = "Édition Démo " + data.annee + " créée";
+            byId("creation-edition-demo-state").textContent =
+                "Dossier annuel créé — statut : " + (data.statut || "préparation") + ".";
+            section.hidden = false;
+            await chargerEmplacementsStandsDemo();
+        }
+
+        async function chargerEmplacementsStandsDemo() {
+            if (!modeDemo || !editionDemoCreeeId) {
+                return;
+            }
+
+            const etat = byId("emplacements-stands-state");
+            const corps = byId("emplacements-stands-lines");
+            etat.textContent = "Chargement des emplacements…";
+            corps.replaceChildren();
+
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+                "lister_emplacements_stands_edition_demo",
+                { p_edition_demo_id: editionDemoCreeeId }
+            );
+
+            if (error || !data || data.ok !== true || data.mode_demo !== true) {
+                etat.textContent = "Chargement impossible : " + (error?.message || "Réponse invalide.");
+                return;
+            }
+
+            const stands = Array.isArray(data.stands) ? data.stands : [];
+            etat.textContent = stands.length + " stand(s) — emplacements modifiables pendant la préparation.";
+
+            for (const stand of stands) {
+                const ligne = document.createElement("tr");
+                const nom = document.createElement("td");
+                const celluleNumero = document.createElement("td");
+                const celluleAction = document.createElement("td");
+                const champ = document.createElement("input");
+                const bouton = document.createElement("button");
+                const message = document.createElement("small");
+                let valeurEnregistree = stand.numero_stand || "";
+
+                nom.dataset.label = "Stand";
+                celluleNumero.dataset.label = "Emplacement";
+                celluleAction.dataset.label = "Action";
+                nom.textContent = stand.nom || "Stand";
+                champ.type = "text";
+                champ.maxLength = 50;
+                champ.className = "inventory-v10-quantity";
+                champ.value = valeurEnregistree;
+                champ.placeholder = "À attribuer";
+                champ.setAttribute("aria-label", "Emplacement de " + (stand.nom || "stand"));
+                bouton.type = "button";
+                bouton.className = "detail-button";
+                bouton.disabled = true;
+                bouton.textContent = "Enregistré";
+                message.style.display = "block";
+                message.setAttribute("role", "status");
+
+                champ.addEventListener("input", () => {
+                    const modifie = champ.value.trim() !== valeurEnregistree;
+                    bouton.disabled = !modifie;
+                    bouton.textContent = modifie ? "Enregistrer" : "Enregistré";
+                    message.textContent = "";
+                });
+
+                bouton.addEventListener("click", async () => {
+                    if (bouton.disabled) {
+                        return;
+                    }
+
+                    bouton.disabled = true;
+                    bouton.textContent = "Enregistrement…";
+
+                    const { data: resultat, error: erreur } = await window.MDN_SUPABASE.rpc(
+                        "enregistrer_emplacement_stand_edition_demo",
+                        {
+                            p_stand_edition_demo_id: stand.id,
+                            p_numero_stand: champ.value.trim() || null
+                        }
+                    );
+
+                    if (erreur || !resultat || resultat.ok !== true) {
+                        message.textContent = "Erreur : " + (erreur?.message || "Enregistrement refusé.");
+                        bouton.disabled = false;
+                        bouton.textContent = "Enregistrer";
+                        return;
+                    }
+
+                    valeurEnregistree = resultat.numero_stand || "";
+                    champ.value = valeurEnregistree;
+                    bouton.textContent = "Enregistré";
+                    message.textContent = "Emplacement sauvegardé.";
+                });
+
+                celluleNumero.appendChild(champ);
+                celluleAction.append(bouton, message);
+                ligne.append(nom, celluleNumero, celluleAction);
+                corps.appendChild(ligne);
+            }
+        }
 
         let repriseStandsOccupee = false;
 
