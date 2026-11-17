@@ -1242,6 +1242,54 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             zone.hidden = true;
         }
 
+        function demanderConfirmationRegenerationAcces(nomStand) {
+            return new Promise((resolve) => {
+                const overlay = document.createElement("div");
+                overlay.setAttribute("role", "dialog");
+                overlay.setAttribute("aria-modal", "true");
+                overlay.setAttribute("aria-label", "Confirmer la régénération des accès");
+                overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;";
+
+                const panneau = document.createElement("div");
+                panneau.style.cssText = "background:#fff;color:#222;border-radius:12px;padding:24px;max-width:500px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,.25);";
+
+                const titre = document.createElement("h3");
+                titre.textContent = "Régénérer les accès ?";
+                const description = document.createElement("p");
+                description.textContent = "Stand : " + nomStand + ". Les anciens secrets QR et code à six chiffres seront invalidés définitivement. Les nouveaux resteront désactivés et ne seront affichés qu'une fois.";
+
+                const actions = document.createElement("div");
+                actions.style.cssText = "display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:20px;";
+                const annuler = document.createElement("button");
+                annuler.type = "button";
+                annuler.className = "detail-button";
+                annuler.textContent = "Annuler";
+                const confirmer = document.createElement("button");
+                confirmer.type = "button";
+                confirmer.className = "detail-button";
+                confirmer.textContent = "Régénérer";
+                actions.append(annuler, confirmer);
+                panneau.append(titre, description, actions);
+                overlay.appendChild(panneau);
+                document.body.appendChild(overlay);
+
+                const terminer = (valeur) => {
+                    document.removeEventListener("keydown", echap);
+                    overlay.remove();
+                    resolve(valeur);
+                };
+                const echap = (event) => {
+                    if (event.key === "Escape") {
+                        terminer(false);
+                    }
+                };
+                document.addEventListener("keydown", echap);
+                annuler.addEventListener("click", () => terminer(false));
+                confirmer.addEventListener("click", () => terminer(true));
+                annuler.focus();
+            });
+        }
+
         async function chargerAccesAnnuelsStandsDemo() {
             const section = byId("acces-annuels-stands-demo");
             section.hidden = true;
@@ -1267,7 +1315,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             }
 
             const stands = Array.isArray(data.stands) ? data.stands : [];
-            etat.textContent = stands.length + " stand(s) — accès non opérationnels.";
+            etat.textContent = stands.length + " stand(s) — accès non opérationnels. Les accès déjà générés peuvent être régénérés si nécessaire.";
 
             for (const stand of stands) {
                 const ligne = document.createElement("tr");
@@ -1287,8 +1335,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     : "Non générés";
                 bouton.type = "button";
                 bouton.className = "detail-button";
-                bouton.textContent = dejaGenere ? "Déjà générés" : "Générer les accès";
-                bouton.disabled = dejaGenere;
+                bouton.textContent = dejaGenere ? "Régénérer les accès" : "Générer les accès";
+                bouton.disabled = false;
                 message.style.display = "block";
                 message.setAttribute("role", "status");
 
@@ -1297,19 +1345,26 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                         return;
                     }
 
+                    if (dejaGenere) {
+                        const accord = await demanderConfirmationRegenerationAcces(stand.nom || "ce stand");
+                        if (!accord) {
+                            return;
+                        }
+                    }
+
                     bouton.disabled = true;
-                    bouton.textContent = "Génération…";
+                    bouton.textContent = dejaGenere ? "Régénération…" : "Génération…";
                     message.textContent = "";
 
                     const { data: resultat, error: erreur } = await window.MDN_SUPABASE.rpc(
-                        "generer_acces_annuel_stand_demo",
+                        dejaGenere ? "regenerer_acces_annuel_stand_demo" : "generer_acces_annuel_stand_demo",
                         { p_stand_edition_demo_id: stand.stand_edition_demo_id }
                     );
 
                     if (erreur || !resultat || resultat.ok !== true || resultat.mode_demo !== true) {
                         message.textContent = "Génération refusée : " + (erreur?.message || "Réponse invalide.");
                         bouton.disabled = false;
-                        bouton.textContent = "Générer les accès";
+                        bouton.textContent = dejaGenere ? "Régénérer les accès" : "Générer les accès";
                         return;
                     }
 
@@ -1320,7 +1375,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     }
 
                     statut.textContent = "Générés — désactivés";
-                    bouton.textContent = "Déjà générés";
+                    bouton.textContent = "Régénérer les accès";
+                    bouton.disabled = false;
                     byId("acces-annuels-secret-name").textContent = "Stand : " + (resultat.nom || stand.nom || "Stand");
                     byId("acces-annuels-qr-value").value = resultat.qr_secret;
                     const qrImage = byId("acces-annuels-qr-image");
