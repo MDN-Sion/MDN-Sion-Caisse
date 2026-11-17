@@ -898,6 +898,35 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
        </table>
       </div>
      </section>
+     <section id="acces-annuels-stands-demo" class="reprise-stands-section" hidden>
+      <div class="reprise-stands-heading">
+       <div>
+        <h3>Accès annuels des stands — Démo</h3>
+        <p class="reprise-stands-subtitle">Génération des accès 2027, sans activation</p>
+       </div>
+      </div>
+      <p>Les QR et les codes à six chiffres sont générés uniquement sur demande. Ils restent désactivés et ne donnent pas encore accès aux relevés.</p>
+      <p id="acces-annuels-state" role="status"></p>
+      <div class="inventory-table-wrap">
+       <table class="inventory-v10-table">
+        <thead><tr><th>Stand</th><th>État des accès</th><th>Action</th></tr></thead>
+        <tbody id="acces-annuels-lines"></tbody>
+       </table>
+      </div>
+      <div id="acces-annuels-secret" class="reprise-stands-section" hidden>
+       <h3>Accès générés — affichage unique</h3>
+       <p id="acces-annuels-secret-name"></p>
+       <p>Copie ces informations dans un support sécurisé avant de fermer. Elles ne pourront pas être récupérées depuis cette page.</p>
+       <label for="acces-annuels-qr-value">Secret QR (non opérationnel)</label>
+       <textarea id="acces-annuels-qr-value" rows="2" readonly style="display:block;width:100%;max-width:100%;box-sizing:border-box;"></textarea>
+       <button id="acces-annuels-copy-qr" type="button" class="detail-button">Copier le secret QR</button>
+       <label for="acces-annuels-code-value" style="display:block;margin-top:12px;">Code à six chiffres (non opérationnel)</label>
+       <input id="acces-annuels-code-value" type="text" readonly style="display:block;max-width:180px;" />
+       <button id="acces-annuels-copy-code" type="button" class="detail-button">Copier le code</button>
+       <p id="acces-annuels-copy-state" role="status"></p>
+       <button id="acces-annuels-close-secret" type="button" class="detail-button">J’ai conservé les codes — Fermer</button>
+      </div>
+     </section>
      <section id="stands-reprise-reel" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -981,6 +1010,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             byId("stands-reprise-reel").hidden = true;
             byId("creation-edition-demo").hidden = true;
             byId("emplacements-stands-demo").hidden = true;
+            effacerSecretsAnnuels();
+            byId("acces-annuels-stands-demo").hidden = true;
             editionDemoCreeeId = null;
             preparationSelectionnee = null;
             donneesInventaire = null;
@@ -1065,6 +1096,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         async function chargerEditionCreeeEtEmplacements() {
             const section = byId("emplacements-stands-demo");
             section.hidden = true;
+            byId("acces-annuels-stands-demo").hidden = true;
+            effacerSecretsAnnuels();
             editionDemoCreeeId = null;
 
             if (!modeDemo || !preparationSelectionnee) {
@@ -1094,6 +1127,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 "Dossier annuel créé — statut : " + (data.statut || "préparation") + ".";
             section.hidden = false;
             await chargerEmplacementsStandsDemo();
+            await chargerAccesAnnuelsStandsDemo();
         }
 
         async function chargerEmplacementsStandsDemo() {
@@ -1188,6 +1222,134 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 corps.appendChild(ligne);
             }
         }
+
+        function effacerSecretsAnnuels() {
+            const zone = byId("acces-annuels-secret");
+            if (!zone) {
+                return;
+            }
+            byId("acces-annuels-qr-value").value = "";
+            byId("acces-annuels-code-value").value = "";
+            byId("acces-annuels-secret-name").textContent = "";
+            byId("acces-annuels-copy-state").textContent = "";
+            zone.hidden = true;
+        }
+
+        async function chargerAccesAnnuelsStandsDemo() {
+            const section = byId("acces-annuels-stands-demo");
+            section.hidden = true;
+
+            if (!modeDemo || !editionDemoCreeeId) {
+                return;
+            }
+
+            const etat = byId("acces-annuels-state");
+            const corps = byId("acces-annuels-lines");
+            etat.textContent = "Chargement des accès annuels…";
+            corps.replaceChildren();
+            section.hidden = false;
+
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+                "lister_etat_acces_annuels_stands_demo",
+                { p_edition_demo_id: editionDemoCreeeId }
+            );
+
+            if (error || !data || data.ok !== true || data.mode_demo !== true) {
+                etat.textContent = "Consultation impossible : " + (error?.message || "Réponse invalide.");
+                return;
+            }
+
+            const stands = Array.isArray(data.stands) ? data.stands : [];
+            etat.textContent = stands.length + " stand(s) — accès non opérationnels.";
+
+            for (const stand of stands) {
+                const ligne = document.createElement("tr");
+                const nom = document.createElement("td");
+                const statut = document.createElement("td");
+                const action = document.createElement("td");
+                const bouton = document.createElement("button");
+                const message = document.createElement("small");
+                const dejaGenere = stand.qr_genere === true || stand.code_genere === true;
+
+                nom.dataset.label = "Stand";
+                statut.dataset.label = "État des accès";
+                action.dataset.label = "Action";
+                nom.textContent = stand.nom || "Stand";
+                statut.textContent = dejaGenere
+                    ? "Générés — désactivés"
+                    : "Non générés";
+                bouton.type = "button";
+                bouton.className = "detail-button";
+                bouton.textContent = dejaGenere ? "Déjà générés" : "Générer les accès";
+                bouton.disabled = dejaGenere;
+                message.style.display = "block";
+                message.setAttribute("role", "status");
+
+                bouton.addEventListener("click", async () => {
+                    if (bouton.disabled || !byId("acces-annuels-secret").hidden) {
+                        return;
+                    }
+
+                    bouton.disabled = true;
+                    bouton.textContent = "Génération…";
+                    message.textContent = "";
+
+                    const { data: resultat, error: erreur } = await window.MDN_SUPABASE.rpc(
+                        "generer_acces_annuel_stand_demo",
+                        { p_stand_edition_demo_id: stand.stand_edition_demo_id }
+                    );
+
+                    if (erreur || !resultat || resultat.ok !== true || resultat.mode_demo !== true) {
+                        message.textContent = "Génération refusée : " + (erreur?.message || "Réponse invalide.");
+                        bouton.disabled = false;
+                        bouton.textContent = "Générer les accès";
+                        return;
+                    }
+
+                    if (typeof resultat.qr_secret !== "string" || !/^\d{6}$/.test(resultat.code_acces || "")) {
+                        message.textContent = "Réponse incomplète : vérifie les accès côté serveur.";
+                        bouton.textContent = "État à vérifier";
+                        return;
+                    }
+
+                    statut.textContent = "Générés — désactivés";
+                    bouton.textContent = "Déjà générés";
+                    byId("acces-annuels-secret-name").textContent = "Stand : " + (resultat.nom || stand.nom || "Stand");
+                    byId("acces-annuels-qr-value").value = resultat.qr_secret;
+                    byId("acces-annuels-code-value").value = resultat.code_acces;
+                    byId("acces-annuels-secret").hidden = false;
+                    byId("acces-annuels-secret").scrollIntoView({ behavior: "smooth", block: "nearest" });
+                });
+
+                action.append(bouton, message);
+                ligne.append(nom, statut, action);
+                corps.appendChild(ligne);
+            }
+        }
+
+        byId("acces-annuels-close-secret").addEventListener("click", () => {
+            effacerSecretsAnnuels();
+        });
+
+        byId("acces-annuels-copy-qr").addEventListener("click", async () => {
+            const valeur = byId("acces-annuels-qr-value").value;
+            try {
+                await navigator.clipboard.writeText(valeur);
+                byId("acces-annuels-copy-state").textContent = "Secret QR copié.";
+            } catch (erreur) {
+                byId("acces-annuels-copy-state").textContent = "Copie impossible : sélectionne et copie le texte manuellement.";
+            }
+        });
+
+        byId("acces-annuels-copy-code").addEventListener("click", async () => {
+            const valeur = byId("acces-annuels-code-value").value;
+            try {
+                await navigator.clipboard.writeText(valeur);
+                byId("acces-annuels-copy-state").textContent = "Code copié.";
+            } catch (erreur) {
+                byId("acces-annuels-copy-state").textContent = "Copie impossible : sélectionne et copie le code manuellement.";
+            }
+        });
 
         let repriseStandsOccupee = false;
 
