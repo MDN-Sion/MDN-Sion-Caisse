@@ -665,6 +665,46 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 padding: 14px;
             }
         }
+
+        /* Présentation compacte des étapes, sans modifier les fonctions existantes. */
+        .etape-compacte {
+            margin: 12px 0;
+            border: 1px solid #dedede;
+            border-radius: 12px;
+            background: #fff;
+            overflow: visible;
+        }
+        .etape-compacte > summary {
+            cursor: pointer;
+            padding: 15px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-weight: 700;
+            list-style-position: inside;
+            border-radius: 12px;
+        }
+        .etape-compacte > summary small {
+            font-weight: 400;
+            color: #666;
+            margin-left: 20px;
+        }
+        .etape-compacte[open] > summary {
+            border-bottom: 1px solid #e5e5e5;
+            border-radius: 12px 12px 0 0;
+        }
+        .etape-compacte > :not(summary) {
+            margin-left: 14px;
+            margin-right: 14px;
+        }
+        .etape-compacte > .reprise-stands-section {
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 760px) {
+            .etape-compacte > summary { padding: 12px; }
+            .etape-compacte > :not(summary) { margin-left: 6px; margin-right: 6px; }
+        }
 </style>
  </head>
  <body>
@@ -821,6 +861,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
      </h3>
      <div class="detail-grid" id="detail-grid">
      </div>
+     <details class="etape-compacte" data-etape="inventory-editor">
+      <summary><span>1. Inventaires</span><small>Stocks et validations des quatre catégories</small></summary>
      <div id="inventory-editor" hidden>
       <h3>Inventaires de préparation — Démo</h3>
       <p>Ces quantités sont saisies pour les essais. Elles ne reprennent pas automatiquement les stocks Réels.</p>
@@ -852,6 +894,9 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
       <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
      </div>
+     </details>
+     <details class="etape-compacte" data-etape="stands-reprise-editor">
+      <summary><span>2. Reprise des stands</span><small>Sélection des stands pour l’année suivante</small></summary>
      <section id="stands-reprise-editor" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -869,6 +914,9 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       </div>
       <button class="detail-button" id="stands-reprise-validate" type="button">Valider la reprise des stands</button>
      </section>
+     </details>
+     <details class="etape-compacte" data-etape="creation-edition-demo">
+      <summary><span>3. Création du dossier annuel</span><small>État de la création de l’édition Démo</small></summary>
      <section id="creation-edition-demo" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -880,6 +928,9 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
       <p id="creation-edition-demo-state"></p>
       <button id="creation-edition-demo-button" class="detail-button" type="button">Créer l’édition Démo</button>
      </section>
+     </details>
+     <details class="etape-compacte" data-etape="emplacements-stands-demo">
+      <summary><span>4. Emplacements</span><small>Numéros annuels des stands</small></summary>
      <section id="emplacements-stands-demo" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -898,6 +949,9 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
        </table>
       </div>
      </section>
+     </details>
+     <details class="etape-compacte" data-etape="acces-annuels-stands-demo">
+      <summary><span>5. Accès QR et codes</span><small>Génération et régénération des accès annuels</small></summary>
      <section id="acces-annuels-stands-demo" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
@@ -931,6 +985,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
        <button id="acces-annuels-close-secret" type="button" class="detail-button">J’ai conservé les codes — Fermer</button>
       </div>
      </section>
+     </details>
      <section id="stands-reprise-reel" class="reprise-stands-section" hidden>
       <div class="reprise-stands-heading">
        <div>
