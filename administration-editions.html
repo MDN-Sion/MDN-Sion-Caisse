@@ -1,310 +1,1460 @@
--- DÉFINITIF — à conserver.
--- Ne touche ni aux éditions ni aux stocks opérationnels Réels.
-BEGIN;
+<!DOCTYPE html>
+<html lang="fr">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+  <meta content="#8B0000" name="theme-color"/>
+  <link href="logo-mdn.png" rel="icon" type="image/png"/>
+  <link href="logo-mdn.png" rel="apple-touch-icon"/>
+  <title>
+   &Eacute;ditions &middot; MDN Sion
+  </title>
+  <style>
+   * {
+            box-sizing: border-box;
+        }
 
-ALTER TABLE public.lignes_inventaires_editions_demo
-    ADD COLUMN IF NOT EXISTS conserver_catalogue boolean NOT NULL DEFAULT true,
-    ADD COLUMN IF NOT EXISTS actif_edition_suivante boolean NOT NULL DEFAULT true;
+        html, body {
+            overscroll-behavior-x: none;
+        }
 
-CREATE OR REPLACE FUNCTION public.enregistrer_ligne_inventaire_options_demo(
-    p_preparation_id uuid,
-    p_categorie text,
-    p_article text,
-    p_quantite integer,
-    p_conserver_catalogue boolean,
-    p_actif_edition_suivante boolean
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO ''
-AS $fonction$
-DECLARE
-    v_acces jsonb;
-    v_article text;
-    v_existe boolean;
-BEGIN
-    v_acces := public.etat_acces_administration();
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            background: #f3f3f3;
+            color: #222;
+            font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        }
 
-    IF COALESCE((v_acces ->> 'acces_administration')::boolean, false) IS DISTINCT FROM true
-        OR COALESCE((v_acces ->> 'mode_demo')::boolean, false) IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'ACCES_DEMO_REQUIS';
-    END IF;
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-border-radius: 0;
+            border-radius: 0;
+            box-shadow: none;
+            min-width: 0;
+            line-height: 1.25;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font: inherit;
+            cursor: pointer;
+        }
 
-    IF p_preparation_id IS NULL
-        OR NOT EXISTS (
-            SELECT 1
-            FROM public.preparations_editions_demo AS p
-            WHERE p.id = p_preparation_id
-              AND p.statut = 'brouillon'
-        ) THEN
-        RAISE EXCEPTION 'PREPARATION_DEMO_INTROUVABLE_OU_NON_MODIFIABLE';
-    END IF;
+        button:disabled {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-text-fill-color: currentColor;
+            opacity: .5;
+            cursor: not-allowed;
+        }
 
-    v_article := btrim(COALESCE(p_article, ''));
+        .top {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: 9px 16px;
+            background: #8b0000;
+            color: #fff;
+        }
 
-    IF p_categorie IS NULL
-        OR p_categorie NOT IN ('mdn', 'fondation', 'vaisselle', 'contenants')
-        OR length(v_article) NOT BETWEEN 1 AND 150
-        OR p_quantite IS NULL
-        OR p_quantite < 0
-        OR (p_categorie = 'fondation' AND p_quantite <> 0)
-        OR p_conserver_catalogue IS NULL
-        OR p_actif_edition_suivante IS NULL
-        OR (NOT p_conserver_catalogue AND p_actif_edition_suivante) THEN
-        RAISE EXCEPTION 'INVENTAIRE_DEMO_INVALIDE';
-    END IF;
+        body.demo .top {
+            background: #806000;
+        }
 
-    SELECT EXISTS (
-        SELECT 1
-        FROM (
-            SELECT
-                CASE
-                    WHEN lower(btrim(a.beneficiaire)) = 'fondation' THEN 'fondation'
-                    ELSE 'mdn'
-                END AS categorie,
-                a.nom
-            FROM public.referentiel_articles AS a
-            WHERE a.actif IS TRUE
-              AND lower(btrim(COALESCE(a.beneficiaire, ''))) IN (
-                  'fondation', 'mdn', 'marché', 'marche'
-              )
+        .top-inner {
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr) 180px;
+            align-items: center;
+            gap: 10px;
+            max-width: 1400px;
+            margin: auto;
+        }
 
-            UNION ALL
+        .top h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.5vw, 26px);
+            text-align: center;
+        }
 
-            SELECT 'vaisselle', v.nom
-            FROM public.referentiel_vaisselle_mdn AS v
-            WHERE v.actif IS TRUE
+        .top p {
+            margin: 3px 0 0;
+            font-size: 13px;
+            text-align: center;
+        }
 
-            UNION ALL
+        .top button {
+            min-height: 40px;
+            padding: 9px 12px;
+            border: 1px solid #ffffff55;
+            border-radius: 12px;
+            background: #ffffff18;
+            color: #fff;
+            font-weight: 700;
+        }
 
-            SELECT 'contenants', c.nom
-            FROM public.types_contenants AS c
-            WHERE c.actif IS TRUE
-        ) AS catalogue
-        WHERE catalogue.categorie = p_categorie
-          AND catalogue.nom = v_article
-    ) INTO v_existe;
+        .top button:last-child {
+            justify-self: end;
+        }
 
-    IF NOT v_existe THEN
-        RAISE EXCEPTION 'ARTICLE_ABSENT_DU_CATALOGUE';
-    END IF;
+        .banner {
+            display: none;
+            padding: 8px 12px;
+            background: #ffe98b;
+            color: #593e00;
+            text-align: center;
+            font-weight: 700;
+        }
 
-    INSERT INTO public.lignes_inventaires_editions_demo (
-        preparation_id,
-        categorie,
-        article,
-        quantite,
-        commentaire,
-        conserver_catalogue,
-        actif_edition_suivante
-    )
-    VALUES (
-        p_preparation_id,
-        p_categorie,
-        v_article,
-        p_quantite,
-        '',
-        p_conserver_catalogue,
-        p_actif_edition_suivante
-    )
-    ON CONFLICT (preparation_id, categorie, article)
-    DO UPDATE SET
-        quantite = EXCLUDED.quantite,
-        conserver_catalogue = EXCLUDED.conserver_catalogue,
-        actif_edition_suivante = EXCLUDED.actif_edition_suivante,
-        updated_at = now();
+        body.demo .banner {
+            display: block;
+        }
 
-    DELETE FROM public.validations_inventaires_editions_demo AS v
-    WHERE v.preparation_id = p_preparation_id
-      AND v.categorie = p_categorie;
+        main {
+            width: min(1150px, calc(100% - 28px));
+            margin: 16px auto 32px;
+        }
 
-    RETURN jsonb_build_object(
-        'ok', true,
-        'mode_demo', true,
-        'categorie', p_categorie,
-        'article', v_article,
-        'validation_reinitialisee', true,
-        'stocks_reels_modifies', false
-    );
-END;
-$fonction$;
+        .card {
+            margin-bottom: 14px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #fff;
+        }
 
-CREATE OR REPLACE FUNCTION public.charger_inventaires_preparation_demo(p_preparation_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO ''
-AS $fonction$
-DECLARE
-    v_acces jsonb;
-    v_lignes jsonb;
-    v_validations jsonb;
-BEGIN
-    v_acces := public.etat_acces_administration();
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #fafafa;
+            border-bottom: 1px solid #e7e7e7;
+        }
 
-    IF COALESCE((v_acces ->> 'acces_administration')::boolean, false) IS DISTINCT FROM true
-        OR COALESCE((v_acces ->> 'mode_demo')::boolean, false) IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'ACCES_DEMO_REQUIS';
-    END IF;
+        .card-head h2 {
+            margin: 0;
+            font-size: 19px;
+        }
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM public.preparations_editions_demo
-        WHERE id = p_preparation_id
-    ) THEN
-        RAISE EXCEPTION 'PREPARATION_DEMO_INTROUVABLE';
-    END IF;
+        .content {
+            padding: 16px 18px;
+        }
 
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'id', l.id,
-                'categorie', l.categorie,
-                'article', l.article,
-                'quantite', l.quantite,
-                'commentaire', l.commentaire,
-                'conserver_catalogue', l.conserver_catalogue,
-                'actif_edition_suivante', l.actif_edition_suivante
-            )
-            ORDER BY l.categorie, l.article
-        ),
-        '[]'::jsonb
-    )
-    INTO v_lignes
-    FROM public.lignes_inventaires_editions_demo AS l
-    WHERE l.preparation_id = p_preparation_id;
+        .muted {
+            color: #626262;
+        }
 
-    SELECT COALESCE(
-        jsonb_object_agg(v.categorie, v.valide_at),
-        '{}'::jsonb
-    )
-    INTO v_validations
-    FROM public.validations_inventaires_editions_demo AS v
-    WHERE v.preparation_id = p_preparation_id;
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
 
-    RETURN jsonb_build_object(
-        'ok', true,
-        'mode_demo', true,
-        'preparation_id', p_preparation_id,
-        'lignes', v_lignes,
-        'validations', v_validations
-    );
-END;
-$fonction$;
+        .summary > div {
+            background: #f8f8f8;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 12px;
+        }
 
-CREATE OR REPLACE FUNCTION public.valider_inventaire_preparation_demo(
-    p_preparation_id uuid,
-    p_categorie text
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO ''
-AS $fonction$
-DECLARE
-    v_acces jsonb;
-    v_attendus integer;
-    v_enregistres integer;
-BEGIN
-    v_acces := public.etat_acces_administration();
+        .summary small {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
 
-    IF COALESCE((v_acces ->> 'acces_administration')::boolean, false) IS DISTINCT FROM true
-        OR COALESCE((v_acces ->> 'mode_demo')::boolean, false) IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'ACCES_DEMO_REQUIS';
-    END IF;
+        .summary strong {
+            overflow-wrap: anywhere;
+        }
 
-    IF p_categorie IS NULL
-        OR p_categorie NOT IN ('mdn', 'fondation', 'vaisselle', 'contenants') THEN
-        RAISE EXCEPTION 'CATEGORIE_INVALIDE';
-    END IF;
+        .pill {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #e9ecef;
+            color: #343a40;
+            font-size: 12px;
+            font-weight: 700;
+        }
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM public.preparations_editions_demo AS p
-        WHERE p.id = p_preparation_id
-          AND p.statut = 'brouillon'
-    ) THEN
-        RAISE EXCEPTION 'PREPARATION_DEMO_INTROUVABLE_OU_NON_MODIFIABLE';
-    END IF;
+        .pill.active {
+            background: #e5f4e8;
+            color: #206631;
+        }
 
-    SELECT count(*)
-    INTO v_attendus
-    FROM (
-        SELECT
-            CASE
-                WHEN lower(btrim(a.beneficiaire)) = 'fondation' THEN 'fondation'
-                ELSE 'mdn'
-            END AS categorie,
-            a.nom
-        FROM public.referentiel_articles AS a
-        WHERE a.actif IS TRUE
-          AND lower(btrim(COALESCE(a.beneficiaire, ''))) IN (
-              'fondation', 'mdn', 'marché', 'marche'
-          )
+        .table-wrap {
+            overflow-x: auto;
+        }
 
-        UNION ALL
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
 
-        SELECT 'vaisselle', v.nom
-        FROM public.referentiel_vaisselle_mdn AS v
-        WHERE v.actif IS TRUE
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #ececec;
+            vertical-align: middle;
+        }
 
-        UNION ALL
+        th {
+            background: #f7f7f7;
+            font-size: 13px;
+        }
 
-        SELECT 'contenants', c.nom
-        FROM public.types_contenants AS c
-        WHERE c.actif IS TRUE
-    ) AS catalogue
-    WHERE catalogue.categorie = p_categorie;
+        tr:last-child td {
+            border-bottom: 0;
+        }
 
-    SELECT count(*)
-    INTO v_enregistres
-    FROM public.lignes_inventaires_editions_demo AS l
-    WHERE l.preparation_id = p_preparation_id
-      AND l.categorie = p_categorie;
+        .notice {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #f4f4f4;
+        }
 
-    IF v_attendus = 0 OR v_enregistres <> v_attendus THEN
-        RAISE EXCEPTION 'INVENTAIRE_INCOMPLET_%_SUR_%', v_enregistres, v_attendus;
-    END IF;
+        .notice.error {
+            background: #fff0f0;
+            color: #8b0000;
+        }
 
-    IF EXISTS (
-        SELECT 1
-        FROM public.lignes_inventaires_editions_demo AS l
-        WHERE l.preparation_id = p_preparation_id
-          AND l.categorie = p_categorie
-          AND (
-              (NOT l.conserver_catalogue AND l.actif_edition_suivante)
-              OR (p_categorie = 'fondation' AND l.quantite <> 0)
-          )
-    ) THEN
-        RAISE EXCEPTION 'INVENTAIRE_OPTIONS_INCOHERENTES';
-    END IF;
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
 
-    INSERT INTO public.validations_inventaires_editions_demo (
-        preparation_id,
-        categorie,
-        valide_par
-    )
-    VALUES (
-        p_preparation_id,
-        p_categorie,
-        auth.uid()
-    )
-    ON CONFLICT (preparation_id, categorie)
-    DO UPDATE SET
-        valide_at = now(),
-        valide_par = EXCLUDED.valide_par;
+        .actions button {
+            -webkit-appearance: none;
+            appearance: none;
+            color: #242424;
+            font-weight: 600;
+            line-height: 1.25;
+            white-space: normal;
+            min-height: 42px;
+            padding: 10px 16px;
+            border: 1px solid #bbb;
+            border-radius: 10px;
+            background: #f5f5f5;
+        }
 
-    RETURN jsonb_build_object(
-        'ok', true,
-        'mode_demo', true,
-        'categorie', p_categorie,
-        'valide', true,
-        'articles_valides', v_enregistres,
-        'articles_attendus', v_attendus,
-        'stocks_reels_modifies', false
-    );
-END;
-$fonction$;
+        .actions button,
+        .detail-button {
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
 
-COMMIT;
+        .actions #refresh,
+        .detail-button {
+            background: #8b0000;
+            border-color: #8b0000;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        body.demo .actions #refresh,
+        body.demo .detail-button {
+            background: #806000;
+            border-color: #806000;
+            color: #ffffff;
+        }
+
+        .actions #refresh:hover,
+        .detail-button:hover {
+            background: #680000;
+            border-color: #680000;
+        }
+
+        body.demo .actions #refresh:hover,
+        body.demo .detail-button:hover {
+            background: #604800;
+            border-color: #604800;
+        }
+
+        .actions button:disabled {
+            background: #f0f0f0;
+            border-color: #d5d5d5;
+            color: #777777;
+            opacity: 1;
+        }
+
+        .preparations-info {
+            padding: 14px 18px;
+            color: #615024;
+            background: #fff8e7;
+            border-top: 1px solid #f1e2ba;
+            line-height: 1.5;
+        }
+
+        .detail-button {
+            min-height: 36px;
+            padding: 7px 12px;
+            border: 1px solid #b9b9b9;
+            border-radius: 9px;
+            background: #f5f5f5;
+            color: #242424;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .detail-panel {
+            margin: 0 18px 18px;
+            padding: 16px;
+            border: 1px solid #dedede;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+
+        .detail-panel h3 {
+            margin: 0 0 12px;
+            font-size: 17px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .detail-grid > div {
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 9px;
+            background: #fff;
+        }
+
+        .detail-grid small {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .detail-close {
+            margin-top: 12px;
+        }
+
+        .detail-panel[hidden],
+        .preparations-info[hidden] {
+            display: none;
+        }
+
+        @media (max-width: 650px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty {
+            padding: 16px;
+            color: #666;
+        }
+
+        @media (max-width: 650px) {
+            .top {
+                padding: 8px;
+            }
+
+            .top-inner {
+                grid-template-columns: 94px minmax(0, 1fr) 94px;
+                gap: 5px;
+            }
+
+            .top h1 {
+                font-size: 17px;
+            }
+
+            .top p {
+                font-size: 11px;
+            }
+
+            .top button {
+                min-height: 36px;
+                padding: 7px 5px;
+                font-size: 11px;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            .card-head, .content {
+                padding: 12px;
+            }
+
+            th, td {
+                padding: 10px 9px;
+                font-size: 13px;
+            }
+
+        }
+
+
+        .actions button:focus-visible {
+            outline: 3px solid #b38a28;
+            outline-offset: 2px;
+        }
+
+        /* Correctifs tablette : contraste, hauteur et défilement naturel. */
+        html {
+            height: 100%;
+            overflow-x: clip;
+            overflow-y: auto;
+            overscroll-behavior-x: none;
+        }
+
+        body {
+            min-height: 100%;
+            overflow-x: clip;
+            overflow-y: visible;
+            overscroll-behavior-x: none;
+        }
+
+        main {
+            margin-top: 14px;
+            margin-bottom: 0;
+            padding-bottom: 10px;
+        }
+
+        .card {
+            margin-bottom: 12px;
+        }
+
+        .card-head {
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+
+        .content {
+            padding-top: 13px;
+            padding-bottom: 13px;
+        }
+
+        .detail-button,
+        .detail-button:focus,
+        .detail-button:active,
+        .detail-button:hover {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-text-fill-color: #ffffff;
+            color: #ffffff;
+            background-color: #8b0000;
+            border-color: #8b0000;
+        }
+
+        body.demo .detail-button,
+        body.demo .detail-button:focus,
+        body.demo .detail-button:active,
+        body.demo .detail-button:hover {
+            -webkit-text-fill-color: #ffffff;
+            color: #ffffff;
+            background-color: #806000;
+            border-color: #806000;
+        }
+
+        .detail-button:focus-visible,
+        .actions button:focus-visible {
+            outline: 3px solid #d2a944;
+            outline-offset: 2px;
+        }
+
+        .detail-button:active {
+            filter: brightness(0.88);
+        }
+
+        .detail-panel {
+            margin-bottom: 12px;
+        }
+
+        @media (min-width: 651px) and (max-height: 950px) {
+            main {
+                margin-top: 12px;
+            }
+
+            .card-head {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .card {
+                margin-bottom: 10px;
+            }
+
+            .summary > div {
+                padding: 10px;
+            }
+
+            th,
+            td {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .preparations-info {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+        }
+
+        .inventory-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .inventory-controls select {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #c9c9c9;
+            border-radius: 9px;
+            background: #fff;
+            color: #222;
+            font: inherit;
+        }
+
+        .inventory-controls select {
+            width: auto;
+            min-width: 190px;
+        }
+
+        .inventory-table-wrap {
+            overflow-x: auto;
+        }
+
+        .inventory-state {
+            margin: 8px 0;
+            font-weight: 600;
+        }
+
+        #inventory-editor {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+        }
+
+        #inventory-validate {
+            margin-top: 8px;
+        }
+
+        #inventory-validate:disabled,
+        .inventory-v10-save:disabled {
+            background: #e9ecef !important;
+            border-color: #d7dce0 !important;
+            color: #495057 !important;
+            cursor: default;
+            opacity: 1;
+        }
+
+/* V10 — cases personnalisées, centrage et tableau responsive */
+.inventory-v10-table { width: 100%; border-collapse: collapse; }
+.inventory-v10-table th, .inventory-v10-table td { padding: 12px 10px; vertical-align: middle; }
+.inventory-v10-table td:nth-child(3), .inventory-v10-table td:nth-child(4) { text-align: center; }
+.inventory-v10-table td:last-child { white-space: nowrap; }
+.inventory-v10-quantity { width: 105px; max-width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #c9c9c9; border-radius: 9px; font: inherit; }
+.inventory-v10-save { display: inline-flex; align-items: center; justify-content: center; text-align: center; vertical-align: middle; min-height: 42px; margin: 3px; }
+.case-v10 { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 44px; cursor: pointer; }
+.case-v10 input { position: absolute; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.case-v10-dessin { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; border: 2px solid #858585; border-radius: 8px; background: #fff; pointer-events: none; }
+.case-v10 input:checked + .case-v10-dessin { background: #8b0000; border-color: #8b0000; }
+body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; border-color: #806000; }
+.inventory-v10-saved td:first-child { font-weight: 600; }
+.inventory-v10-table td:last-child { text-align: center; }
+.case-v10 input:checked + .case-v10-dessin::after { content: ""; width: 7px; height: 13px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.case-v10 input:focus-visible + .case-v10-dessin { outline: 3px solid #2685ff; outline-offset: 3px; }
+.case-v10 input:disabled + .case-v10-dessin { opacity: .35; }
+.inventory-help { color: #555; }
+@media (max-width: 760px) {
+ .inventory-v10-table thead { display: none; }
+ .inventory-v10-table, .inventory-v10-table tbody, .inventory-v10-table tr, .inventory-v10-table td { display: block; width: 100%; }
+ .inventory-v10-table tr { border: 1px solid #ddd; border-radius: 12px; margin: 12px 0; padding: 10px; background: #fff; }
+ .inventory-v10-table td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 5px; text-align: left !important; white-space: normal !important; }
+ .inventory-v10-table td::before { content: attr(data-label); font-size: 13px; font-weight: 600; color: #555; }
+ .inventory-v10-table td:first-child { font-weight: 700; }
+ .inventory-v10-table td:first-child::before { display: none; }
+ .inventory-v10-quantity { width: 110px; }
+}
+</style>
+ </head>
+ <body>
+  <header class="top">
+   <div class="top-inner">
+    <button id="back" type="button">
+     &larr; Administration
+    </button>
+    <div>
+     <h1>
+      &Eacute;ditions
+     </h1>
+     <p id="identity">
+      Chargement&hellip;
+     </p>
+    </div>
+    <button id="logout" type="button">
+     D&eacute;connexion
+    </button>
+   </div>
+  </header>
+  <div class="banner">
+   MODE D&Eacute;MO &middot; Consultation des &eacute;ditions, sans modification des donn&eacute;es r&eacute;elles
+  </div>
+  <main>
+   <p aria-live="polite" class="notice" id="notice" role="status">
+    Chargement des &eacute;ditions&hellip;
+   </p>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      &Eacute;dition active
+     </h2>
+     <span class="pill" id="mode">
+      Chargement&hellip;
+     </span>
+    </div>
+    <div class="content">
+     <div class="summary">
+      <div>
+       <small>
+        &Eacute;dition
+       </small>
+       <strong id="active-name">
+        &mdash;
+       </strong>
+      </div>
+      <div>
+       <small>
+        Statut
+       </small>
+       <strong id="active-status">
+        &mdash;
+       </strong>
+      </div>
+      <div>
+       <small>
+        P&eacute;riode
+       </small>
+       <strong id="active-dates">
+        &mdash;
+       </strong>
+      </div>
+     </div>
+    </div>
+   </section>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      Liste des &eacute;ditions
+     </h2>
+     <span class="pill" id="count">
+      0
+     </span>
+    </div>
+    <div class="table-wrap">
+     <table>
+      <thead>
+       <tr>
+        <th>
+         Ann&eacute;e
+        </th>
+        <th>
+         Nom
+        </th>
+        <th>
+         Dates
+        </th>
+        <th>
+         Statut
+        </th>
+        <th>
+         Activation
+        </th>
+       </tr>
+      </thead>
+      <tbody id="editions-body">
+       <tr>
+        <td class="empty" colspan="5">
+         Chargement&hellip;
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <section class="card" id="preparations-card">
+    <div class="card-head">
+     <h2>
+      Pr&eacute;parations des prochaines &eacute;ditions
+     </h2>
+    </div>
+    <div class="table-wrap">
+     <table>
+      <thead>
+       <tr>
+        <th>
+         Passage
+        </th>
+        <th>
+         Statut
+        </th>
+        <th>
+         MDN
+        </th>
+        <th>
+         Fondation
+        </th>
+        <th>
+         Vaisselle
+        </th>
+        <th>
+         Contenants
+        </th>
+        <th>
+         D&eacute;tails
+        </th>
+       </tr>
+      </thead>
+      <tbody id="preparations-body">
+       <tr>
+        <td class="empty" colspan="7">
+         Chargement&hellip;
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+    <div class="preparations-info" hidden="" id="preparations-info">
+    </div>
+    <div class="detail-panel" hidden="" id="preparation-detail">
+     <h3 id="detail-title">
+      D&eacute;tails de la pr&eacute;paration
+     </h3>
+     <div class="detail-grid" id="detail-grid">
+     </div>
+     <div id="inventory-editor" hidden>
+      <h3>Inventaires de préparation — Démo</h3>
+      <p>Ces quantités sont saisies pour les essais. Elles ne reprennent pas automatiquement les stocks Réels.</p>
+      <div class="inventory-controls">
+       <label for="inventory-category">Catégorie</label>
+       <select id="inventory-category">
+        <option value="mdn">Articles MDN</option>
+        <option value="fondation">Articles Fondation</option>
+        <option value="vaisselle">Vaisselle</option>
+        <option value="contenants">Contenants</option>
+       </select>
+      </div>
+      <div id="inventory-state" class="inventory-state"></div>
+      <p class="inventory-help">Tous les articles sont affichés. Les deux options sont cochées par défaut. Enregistrez chaque article, même avec un stock nul, avant de valider l’inventaire. Les modifications concernent uniquement la Démo.</p>
+      <div class="inventory-table-wrap">
+       <table class="inventory-v10-table">
+        <thead>
+         <tr>
+          <th>Article / référence</th>
+          <th>Stock pour l’édition suivante</th>
+          <th>Conserver dans le catalogue</th>
+          <th>Actif pour l’édition suivante</th>
+          <th>Enregistrement</th>
+         </tr>
+        </thead>
+        <tbody id="inventory-lines"></tbody>
+       </table>
+      </div>
+      <p id="inventory-foundation-note" hidden>Pour la Fondation, le stock initial est obligatoirement de zéro. Le catalogue sera repris séparément lors de la création de l'édition.</p>
+      <button id="inventory-validate" class="detail-button" type="button">Valider cet inventaire</button>
+     </div>
+     <button class="detail-button detail-close" id="close-detail" type="button">
+      Fermer les d&eacute;tails
+     </button>
+    </div>
+   </section>
+   <section class="card">
+    <div class="card-head">
+     <h2>
+      Gestion des &eacute;ditions
+     </h2>
+    </div>
+    <div class="content">
+     <p class="muted">
+      La consultation est disponible. La cr&eacute;ation, l'activation et le transfert des stocks seront activ&eacute;s uniquement apr&egrave;s s&eacute;curisation et validation du processus en D&eacute;mo.
+     </p>
+     <div class="actions">
+      <button disabled="" id="prepare-next" title="Disponible uniquement en Démo" type="button">
+       Pr&eacute;parer l'&eacute;dition suivante
+      </button>
+      <button disabled="" title="Non disponible &agrave; cette &eacute;tape" type="button">
+       Activer une &eacute;dition
+      </button>
+      <button id="refresh" type="button">
+       Actualiser
+      </button>
+     </div>
+    </div>
+   </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+  </script>
+  <script src="js/config.js">
+  </script>
+  <script src="js/supabase.js">
+  </script>
+  <script src="js/auth.js">
+  </script>
+  <script>
+   "use strict";
+
+        const byId = (id) => document.getElementById(id);
+        let modeDemo = false;
+        let anneeActive = null;
+        let preparationSelectionnee = null;
+        let donneesInventaire = null;
+        let inventaireOccupe = false;
+        let cataloguesInventaire = [];
+
+        function statutLisible(statut) {
+            const libelles = {
+                preparation: "En préparation",
+                brouillon: "Brouillon",
+                active: "Active",
+                cloturee: "Clôturée",
+                terminee: "Terminée"
+            };
+
+            return libelles[statut] || statut || "—";
+        }
+
+        function validationLisible(validee) {
+            return validee === true ? "Validé" : "À valider";
+        }
+
+        function fermerDetail() {
+            byId("preparation-detail").hidden = true;
+            byId("detail-grid").replaceChildren();
+            byId("inventory-editor").hidden = true;
+            preparationSelectionnee = null;
+            donneesInventaire = null;
+        }
+
+        async function ouvrirDetail(preparation) {
+            const details = [
+                ["Passage", String(preparation.annee_source) + " → " + String(preparation.annee_cible)],
+                ["Statut", statutLisible(preparation.statut)],
+                ["Inventaire MDN", validationLisible(preparation.inventaire_mdn_valide)],
+                ["Inventaire Fondation", validationLisible(preparation.inventaire_fondation_valide)],
+                ["Inventaire vaisselle", validationLisible(preparation.inventaire_vaisselle_valide)],
+                ["Inventaire contenants", validationLisible(preparation.inventaire_contenants_valide)]
+            ];
+
+            const grille = byId("detail-grid");
+            grille.replaceChildren();
+
+            for (const [titre, valeur] of details) {
+                const bloc = document.createElement("div");
+                const etiquette = document.createElement("small");
+                const texte = document.createElement("strong");
+
+                etiquette.textContent = titre;
+                texte.textContent = valeur;
+                bloc.append(etiquette, texte);
+                grille.appendChild(bloc);
+            }
+
+            byId("detail-title").textContent = "Préparation " +
+                String(preparation.annee_source) + " → " + String(preparation.annee_cible);
+            byId("preparation-detail").hidden = false;
+            preparationSelectionnee = preparation;
+
+            if (modeDemo) {
+                byId("inventory-editor").hidden = false;
+                await chargerInventaires();
+            }
+        }
+
+        function setNotice(message, isError = false) {
+            const notice = byId("notice");
+            notice.textContent = message;
+            notice.classList.toggle("error", isError);
+            notice.hidden = !message;
+        }
+
+        function formatDate(date) {
+            if (!date) {
+                return "Non renseignée";
+            }
+
+            const parts = String(date).split("-");
+            if (parts.length !== 3) {
+                return String(date);
+            }
+
+            return parts[2] + "/" + parts[1] + "/" + parts[0];
+        }
+
+        function periode(edition) {
+            if (!edition.date_debut && !edition.date_fin) {
+                return "Non renseignée";
+            }
+
+            return formatDate(edition.date_debut) + " – " + formatDate(edition.date_fin);
+        }
+
+        function cell(row, value) {
+            const td = document.createElement("td");
+            td.textContent = value;
+            row.appendChild(td);
+            return td;
+        }
+
+        function emptyRow(tbody, columns, message) {
+            const row = document.createElement("tr");
+            const td = cell(row, message);
+            td.colSpan = columns;
+            td.className = "empty";
+            tbody.appendChild(row);
+        }
+
+        function renderEditions(editions) {
+            const tbody = byId("editions-body");
+            tbody.replaceChildren();
+            byId("count").textContent = String(editions.length);
+
+            if (editions.length === 0) {
+                emptyRow(tbody, 5, "Aucune édition disponible.");
+            }
+
+            for (const edition of editions) {
+                const row = document.createElement("tr");
+                cell(row, edition.annee ?? "—");
+                cell(row, edition.nom || "—");
+                cell(row, periode(edition));
+                cell(row, statutLisible(edition.statut));
+                const td = cell(row, edition.est_active ? "Active" : "Inactive");
+                if (edition.est_active) {
+                    td.style.fontWeight = "700";
+                    td.style.color = "#206631";
+                }
+                tbody.appendChild(row);
+            }
+
+            const active = editions.find((edition) => edition.est_active === true);
+            anneeActive = active ? Number(active.annee) : null;
+            byId("active-name").textContent = active ? active.nom : "Aucune édition active";
+            byId("active-status").textContent = active ? statutLisible(active.statut) : "—";
+            byId("active-dates").textContent = active ? periode(active) : "—";
+        }
+
+        function renderPreparations(preparations) {
+            const tbody = byId("preparations-body");
+            tbody.replaceChildren();
+            fermerDetail();
+
+            if (preparations.length === 0) {
+                emptyRow(
+                    tbody,
+                    7,
+                    modeDemo
+                        ? "Aucune préparation Démo disponible pour le moment."
+                        : "Aucune préparation disponible."
+                );
+                return;
+            }
+
+            for (const preparation of preparations) {
+                const row = document.createElement("tr");
+                cell(row, String(preparation.annee_source) + " → " + String(preparation.annee_cible));
+                cell(row, statutLisible(preparation.statut));
+                cell(row, validationLisible(preparation.inventaire_mdn_valide));
+                cell(row, validationLisible(preparation.inventaire_fondation_valide));
+                cell(row, validationLisible(preparation.inventaire_vaisselle_valide));
+                cell(row, validationLisible(preparation.inventaire_contenants_valide));
+
+                const action = document.createElement("td");
+                const bouton = document.createElement("button");
+
+                bouton.type = "button";
+                bouton.className = "detail-button";
+                bouton.textContent = "Consulter";
+                bouton.dataset.preparationId = preparation.id;
+                bouton.addEventListener("click", () => ouvrirDetail(preparation));
+
+                action.appendChild(bouton);
+                row.appendChild(action);
+                tbody.appendChild(row);
+            }
+        }
+
+        async function charger() {
+            try {
+                setNotice("Chargement des éditions…");
+                const { data, error } = await window.MDN_SUPABASE.rpc("charger_tableau_editions_administration");
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.lecture_seule !== true) {
+                    throw new Error("Réponse du tableau des éditions invalide.");
+                }
+
+                if (data.mode_demo !== modeDemo) {
+                    throw new Error("Incohérence du mode Démo / Réel.");
+                }
+
+                renderEditions(Array.isArray(data.editions) ? data.editions : []);
+                const preparations = Array.isArray(data.preparations) ? data.preparations : [];
+                renderPreparations(preparations);
+
+                const infoPreparations = byId("preparations-info");
+                infoPreparations.hidden = !modeDemo;
+                infoPreparations.textContent = modeDemo
+                    ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
+                      "Les inventaires sont modifiables ici. La création et l'activation des éditions restent indisponibles."
+                    : "";
+                byId("prepare-next").disabled = !modeDemo || !Number.isInteger(anneeActive);
+                byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
+                setNotice("");
+            } catch (error) {
+                console.error("[MDN Sion] Chargement éditions :", error);
+                setNotice("Impossible de charger les éditions : " + (error.message || String(error)), true);
+            }
+        }
+
+        async function init() {
+            try {
+                if (!window.MDN_AUTH || !window.MDN_SUPABASE) {
+                    throw new Error("Modules d'authentification MDN indisponibles.");
+                }
+
+                const auth = await window.MDN_AUTH.protegerPage();
+                if (!auth) {
+                    return;
+                }
+
+                const { data: access, error } = await window.MDN_SUPABASE.rpc("etat_acces_administration");
+                if (error) {
+                    throw error;
+                }
+
+                if (!access || access.acces_administration !== true) {
+                    window.location.replace("accueil.html");
+                    return;
+                }
+
+                modeDemo = access.mode_demo === true;
+                document.body.classList.toggle("demo", modeDemo);
+                const identity = auth.profil?.prenom || auth.profil?.email || "Administration";
+                byId("identity").textContent = (modeDemo ? "Mode Démo" : "Mode Réel");
+                await charger();
+            } catch (error) {
+                console.error("[MDN Sion] Initialisation éditions :", error);
+                setNotice("Accès impossible : " + (error.message || String(error)), true);
+            }
+        }
+
+        async function preparerEditionSuivante() {
+            if (!modeDemo || !Number.isInteger(anneeActive)) {
+                return;
+            }
+
+            const bouton = byId("prepare-next");
+            bouton.disabled = true;
+
+            try {
+                setNotice("Préparation Démo en cours…");
+
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "creer_preparation_edition_demo",
+                    { p_annee_cible: anneeActive + 1 }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse de préparation Démo invalide.");
+                }
+
+                await charger();
+                setNotice("Préparation Démo " + data.annee_source + " → " +
+                    data.annee_cible + " disponible. Aucune donnée Réelle modifiée.");
+            } catch (error) {
+                console.error("[MDN Sion] Préparation Démo :", error);
+                setNotice("Impossible de préparer l'édition Démo : " +
+                    (error.message || String(error)), true);
+            } finally {
+                bouton.disabled = !modeDemo;
+            }
+        }
+
+
+        const nomsCategories = {
+            mdn: "Articles MDN",
+            fondation: "Articles Fondation",
+            vaisselle: "Vaisselle",
+            contenants: "Contenants"
+        };
+
+        function categorieInventaire() {
+            return byId("inventory-category").value;
+        }
+
+        async function chargerCatalogueInventaire() {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            const { data, error } = await window.MDN_SUPABASE.rpc(
+                "charger_catalogues_inventaires_preparation_demo",
+                { p_preparation_id: preparationSelectionnee.id }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            if (!data || data.ok !== true || data.mode_demo !== true || data.lecture_seule !== true) {
+                throw new Error("Réponse du catalogue Démo invalide.");
+            }
+
+            cataloguesInventaire = Array.isArray(data.catalogues) ? data.catalogues : [];
+        }
+
+        const PREFIXE_OPTIONS_V10 = "__MDN_V10__:";
+
+        function optionsInventaire(ligne) {
+            if (!ligne || typeof ligne.commentaire !== "string" ||
+                !ligne.commentaire.startsWith(PREFIXE_OPTIONS_V10)) {
+                return { conserver: true, actif: true };
+            }
+
+            try {
+                const options = JSON.parse(ligne.commentaire.slice(PREFIXE_OPTIONS_V10.length));
+                return {
+                    conserver: options.conserver !== false,
+                    actif: options.conserver !== false && options.actif !== false
+                };
+            } catch (error) {
+                return { conserver: true, actif: true };
+            }
+        }
+
+        async function enregistrerArticleV10(article, quantite, options) {
+            if (!modeDemo || !preparationSelectionnee || inventaireOccupe) {
+                return;
+            }
+
+            const categorie = categorieInventaire();
+
+            if (!Number.isSafeInteger(quantite) || quantite < 0 ||
+                (categorie === "fondation" && quantite !== 0)) {
+                setNotice("Quantité invalide. Le stock initial Fondation doit rester à zéro.", true);
+                return;
+            }
+
+            inventaireOccupe = true;
+             byId("inventory-category").disabled = true;
+
+            try {
+                const commentaire = PREFIXE_OPTIONS_V10 + JSON.stringify({
+                    conserver: options.conserver,
+                    actif: options.conserver && options.actif
+                });
+
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "enregistrer_ligne_inventaire_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_categorie: categorie,
+                        p_article: article,
+                        p_quantite: quantite,
+                        p_commentaire: commentaire
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true) {
+                    throw new Error("Enregistrement non confirmé.");
+                }
+
+                await chargerInventaires();
+                setNotice("Article « " + article + " » enregistré en Démo.");
+            } catch (error) {
+                setNotice("Enregistrement impossible : " + (error.message || String(error)), true);
+            } finally {
+                inventaireOccupe = false;
+                byId("inventory-category").disabled = false;
+            }
+        }
+
+        function creerCaseV10(texte, cochee, onChange, desactivee = false) {
+            const etiquette = document.createElement("label");
+            etiquette.className = "case-v10";
+
+            const caseNative = document.createElement("input");
+            caseNative.type = "checkbox";
+            caseNative.checked = cochee;
+            caseNative.disabled = desactivee;
+            caseNative.setAttribute("aria-label", texte);
+
+            const dessin = document.createElement("span");
+            dessin.className = "case-v10-dessin";
+            dessin.setAttribute("aria-hidden", "true");
+
+            caseNative.addEventListener("change", () => onChange(caseNative.checked));
+            etiquette.append(caseNative, dessin);
+            return etiquette;
+        }
+
+        function afficherInventaires() {
+            if (!donneesInventaire) {
+                return;
+            }
+
+
+            const categorie = categorieInventaire();
+            const lignes = donneesInventaire.lignes.filter((ligne) => ligne.categorie === categorie);
+            const validation = donneesInventaire.validations[categorie];
+            const articles = cataloguesInventaire.filter((article) => article.categorie === categorie);
+            const tbody = byId("inventory-lines");
+
+            tbody.replaceChildren();
+            const enregistres = articles.filter((article) => lignes.some((ligne) => ligne.article === article.nom)).length;
+            byId("inventory-state").textContent = nomsCategories[categorie] + " : " +
+                (validation ? "Validé" : "À valider") + " — " + enregistres + " / " + articles.length + " enregistrés";
+            const boutonValidation = byId("inventory-validate");
+            boutonValidation.textContent = validation ? "Inventaire validé" : "Valider cet inventaire";
+            boutonValidation.disabled = Boolean(validation) || inventaireOccupe || articles.length === 0 || enregistres !== articles.length;
+            byId("inventory-foundation-note").hidden = categorie !== "fondation";
+
+            for (const article of articles) {
+                const ligne = lignes.find((element) => element.article === article.nom);
+                const options = optionsInventaire(ligne);
+                const row = document.createElement("tr");
+
+                row.className = "inventory-v10-row";
+                 if (ligne) {
+                     row.classList.add("inventory-v10-saved");
+                 }
+                row.dataset.article = article.nom;
+
+                const nom = document.createElement("td");
+                nom.dataset.label = "Article";
+                nom.textContent = article.nom;
+
+                const quantiteCellule = document.createElement("td");
+                quantiteCellule.dataset.label = "Stock";
+                const quantite = document.createElement("input");
+                quantite.className = "inventory-v10-quantity";
+                quantite.type = "number";
+                quantite.min = "0";
+                quantite.step = "1";
+                quantite.placeholder = "0";
+                quantite.inputMode = "numeric";
+                quantite.value = ligne ? String(ligne.quantite) : "";
+                quantite.disabled = categorie === "fondation";
+                if (categorie === "fondation") {
+                    quantite.value = "0";
+                    quantite.title = "Stock initial Fondation fixé à zéro";
+                }
+                quantite.setAttribute("aria-label", "Stock de " + article.nom);
+                quantiteCellule.appendChild(quantite);
+
+                const conserverCellule = document.createElement("td");
+                conserverCellule.dataset.label = "Conserver";
+                const actifCellule = document.createElement("td");
+                actifCellule.dataset.label = "Actif";
+
+                let conserver = options.conserver;
+                let actif = options.actif;
+
+               const caseActive = creerCaseV10(
+                     "Actif pour l'édition suivante : " + article.nom,
+                     actif,
+                     (valeur) => {
+                         actif = valeur;
+                     },
+                     !conserver
+                 );
+
+                 const caseConserver = creerCaseV10(
+                     "Conserver dans le catalogue : " + article.nom,
+                     conserver,
+                     (valeur) => {
+                         conserver = valeur;
+                         if (!conserver) {
+                             actif = false;
+                             caseActive.querySelector("input").checked = false;
+                         } else {
+                             actif = true;
+                             caseActive.querySelector("input").checked = true;
+                         }
+                         caseActive.querySelector("input").disabled = !conserver;
+                     }
+                 );
+
+                conserverCellule.appendChild(caseConserver);
+                actifCellule.appendChild(caseActive);
+
+                const actions = document.createElement("td");
+                actions.dataset.label = "Enregistrement";
+
+                const sauvegarder = document.createElement("button");
+                sauvegarder.type = "button";
+                sauvegarder.className = "detail-button inventory-v10-save";
+                const quantiteInitiale = categorie === "fondation" ? 0 : (ligne ? Number(ligne.quantite) : 0);
+                const optionsInitiales = optionsInventaire(ligne);
+
+                function actualiserBoutonEnregistrement() {
+                    const quantiteCourante = categorie === "fondation"
+                        ? 0
+                        : Number(quantite.value.trim() === "" ? 0 : quantite.value);
+                    const modifie = !ligne ||
+                        quantiteCourante !== quantiteInitiale ||
+                        conserver !== optionsInitiales.conserver ||
+                        actif !== optionsInitiales.actif;
+
+                    sauvegarder.textContent = modifie ? "Enregistrer" : "Enregistré";
+                    sauvegarder.disabled = !modifie || inventaireOccupe;
+                }
+
+                quantite.addEventListener("input", actualiserBoutonEnregistrement);
+                caseConserver.querySelector("input").addEventListener("change", actualiserBoutonEnregistrement);
+                caseActive.querySelector("input").addEventListener("change", actualiserBoutonEnregistrement);
+                actualiserBoutonEnregistrement();
+
+                sauvegarder.addEventListener("click", () => {
+                    enregistrerArticleV10(
+                        article.nom,
+                        categorie === "fondation" ? 0 : Number(quantite.value.trim() === "" ? 0 : quantite.value),
+                        { conserver, actif }
+                    );
+                });
+                actions.appendChild(sauvegarder);
+
+                row.append(nom, quantiteCellule, conserverCellule, actifCellule, actions);
+                tbody.appendChild(row);
+            }
+
+            if (articles.length === 0) {
+                emptyRow(tbody, 5, "Aucun article dans ce catalogue.");
+            }
+        }
+
+        async function chargerInventaires() {
+            if (!modeDemo || !preparationSelectionnee) {
+                return;
+            }
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "charger_inventaires_preparation_demo",
+                    { p_preparation_id: preparationSelectionnee.id }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.mode_demo !== true) {
+                    throw new Error("Réponse d'inventaire Démo invalide.");
+                }
+
+                donneesInventaire = {
+                    lignes: Array.isArray(data.lignes) ? data.lignes : [],
+                    validations: data.validations || {}
+                };
+
+                await chargerCatalogueInventaire();
+                afficherInventaires();
+            } catch (error) {
+                setNotice("Impossible de charger les inventaires Démo : " + error.message, true);
+            }
+        }
+
+        async function validerInventaire() {
+            if (!modeDemo || !preparationSelectionnee || inventaireOccupe) {
+                return;
+            }
+
+            const categorie = categorieInventaire();
+             const articles = cataloguesInventaire.filter((article) => article.categorie === categorie);
+             const lignes = donneesInventaire?.lignes.filter((ligne) => ligne.categorie === categorie) || [];
+             const manquants = articles.filter((article) => !lignes.some((ligne) => ligne.article === article.nom));
+
+             if (articles.length === 0) {
+                 setNotice("Aucun article disponible dans cette catégorie.", true);
+                 return;
+             }
+
+             if (manquants.length > 0) {
+                 setNotice("Enregistrez d'abord tous les articles : " + manquants.length + " restant(s).", true);
+                 return;
+             }
+
+             inventaireOccupe = true;
+
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "valider_inventaire_preparation_demo",
+                    {
+                        p_preparation_id: preparationSelectionnee.id,
+                        p_categorie: categorie
+                    }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.ok !== true || data.valide !== true) {
+                    throw new Error("Validation non confirmée.");
+                }
+
+                await chargerInventaires();
+                setNotice("Inventaire Démo validé : " + nomsCategories[categorie] + ".");
+                const selection = preparationSelectionnee.id;
+                await charger();
+
+                const ligne = Array.from(byId("preparations-body").querySelectorAll("button"))
+                    .find((bouton) => bouton.dataset.preparationId === selection);
+
+                if (ligne) {
+                    ligne.click();
+                }
+            } catch (error) {
+                setNotice("Validation impossible : " + error.message, true);
+            } finally {
+                inventaireOccupe = false;
+            }
+        }
+
+        byId("inventory-category").addEventListener("change", afficherInventaires);
+        byId("inventory-validate").addEventListener("click", validerInventaire);
+        byId("prepare-next").addEventListener("click", preparerEditionSuivante);
+        byId("close-detail").addEventListener("click", fermerDetail);
+        byId("refresh").addEventListener("click", charger);
+        byId("back").addEventListener("click", () => {
+            window.location.href = modeDemo ? "administration.html?mode=demo" : "administration.html";
+        });
+        byId("logout").addEventListener("click", async () => {
+            try {
+                await window.MDN_AUTH.deconnexion();
+            } catch (error) {
+                console.error("[MDN Sion] Déconnexion :", error);
+            }
+
+            window.location.replace("index.html");
+        });
+
+        init();
+  </script>
+ </body>
+</html>
