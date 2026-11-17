@@ -917,6 +917,10 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
        <h3>Accès générés — affichage unique</h3>
        <p id="acces-annuels-secret-name"></p>
        <p>Copie ces informations dans un support sécurisé avant de fermer. Elles ne pourront pas être récupérées depuis cette page.</p>
+       <p><strong>QR code du stand (non opérationnel)</strong></p>
+       <div id="acces-annuels-qr-image" aria-label="QR code du stand" style="display:flex;align-items:center;justify-content:center;min-height:220px;width:fit-content;max-width:100%;padding:12px;background:#fff;border:1px solid #d6d6d6;border-radius:10px;"></div>
+       <p id="acces-annuels-qr-image-state" role="status" style="font-size:0.9rem;"></p>
+       <p>Ce QR code contient uniquement le secret annuel. Il ne donne pas encore accès aux relevés. Ne le diffuse pas avant l'activation sécurisée.</p>
        <label for="acces-annuels-qr-value">Secret QR (non opérationnel)</label>
        <textarea id="acces-annuels-qr-value" rows="2" readonly style="display:block;width:100%;max-width:100%;box-sizing:border-box;"></textarea>
        <button id="acces-annuels-copy-qr" type="button" class="detail-button">Copier le secret QR</button>
@@ -968,6 +972,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
   <script src="js/config.js">
   </script>
   <script src="js/supabase.js">
@@ -1229,6 +1234,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 return;
             }
             byId("acces-annuels-qr-value").value = "";
+            byId("acces-annuels-qr-image").replaceChildren();
+            byId("acces-annuels-qr-image-state").textContent = "";
             byId("acces-annuels-code-value").value = "";
             byId("acces-annuels-secret-name").textContent = "";
             byId("acces-annuels-copy-state").textContent = "";
@@ -1316,6 +1323,26 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     bouton.textContent = "Déjà générés";
                     byId("acces-annuels-secret-name").textContent = "Stand : " + (resultat.nom || stand.nom || "Stand");
                     byId("acces-annuels-qr-value").value = resultat.qr_secret;
+                    const qrImage = byId("acces-annuels-qr-image");
+                    const qrMessage = byId("acces-annuels-qr-image-state");
+                    qrImage.replaceChildren();
+                    qrMessage.textContent = "";
+                    if (typeof window.QRCode === "function") {
+                        try {
+                            new window.QRCode(qrImage, {
+                                text: resultat.qr_secret,
+                                width: 200,
+                                height: 200,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: window.QRCode.CorrectLevel.M
+                            });
+                        } catch (erreurQR) {
+                            qrMessage.textContent = "Impossible de dessiner le QR code. Conserve le secret texte affiché ci-dessous.";
+                        }
+                    } else {
+                        qrMessage.textContent = "Bibliothèque QR indisponible. Conserve le secret texte affiché ci-dessous.";
+                    }
                     byId("acces-annuels-code-value").value = resultat.code_acces;
                     byId("acces-annuels-secret").hidden = false;
                     byId("acces-annuels-secret").scrollIntoView({ behavior: "smooth", block: "nearest" });
