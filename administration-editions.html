@@ -1712,12 +1712,12 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             tbody.appendChild(row);
         }
 
-        function renderEditions(editions) {
+        function renderEditions(editions, editionsDemoCreees = []) {
             const tbody = byId("editions-body");
             tbody.replaceChildren();
-            byId("count").textContent = String(editions.length);
+            byId("count").textContent = String(editions.length + editionsDemoCreees.length);
 
-            if (editions.length === 0) {
+            if (editions.length === 0 && editionsDemoCreees.length === 0) {
                 emptyRow(tbody, 5, "Aucune édition disponible.");
             }
 
@@ -1732,6 +1732,19 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     td.style.fontWeight = "700";
                     td.style.color = "#206631";
                 }
+                tbody.appendChild(row);
+            }
+
+            // Les dossiers annuels Démo sont stockés séparément des éditions historiques.
+            // Ne jamais les confondre avec une édition Réelle ou une édition activée.
+            for (const editionDemo of editionsDemoCreees) {
+                const row = document.createElement("tr");
+                cell(row, editionDemo.annee ?? "—");
+                cell(row, (editionDemo.nom || "Édition " + editionDemo.annee) + " · Démo");
+                cell(row, "Non renseignées");
+                cell(row, "En préparation · Démo");
+                const activation = cell(row, "Non active");
+                activation.style.color = "#805f00";
                 tbody.appendChild(row);
             }
 
@@ -1834,8 +1847,34 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     throw new Error("Incohérence du mode Démo / Réel.");
                 }
 
-                renderEditions(Array.isArray(data.editions) ? data.editions : []);
                 const preparations = Array.isArray(data.preparations) ? data.preparations : [];
+                const editionsDemoCreees = [];
+
+                if (modeDemo) {
+                    // Vérification auprès de la fonction de consultation existante :
+                    // une préparation seule ne signifie pas que le dossier annuel est créé.
+                    for (const preparation of preparations) {
+                        const resultat = await window.MDN_SUPABASE.rpc(
+                            "consulter_edition_creee_preparation_demo",
+                            { p_preparation_id: preparation.id }
+                        );
+
+                        if (resultat.error) {
+                            throw resultat.error;
+                        }
+
+                        const dossier = resultat.data;
+                        if (dossier && dossier.ok === true && dossier.mode_demo === true && dossier.cree === true) {
+                            editionsDemoCreees.push({
+                                id: dossier.edition_demo_id,
+                                annee: dossier.annee,
+                                nom: dossier.nom || "Marché de Noël de Sion " + dossier.annee
+                            });
+                        }
+                    }
+                }
+
+                renderEditions(Array.isArray(data.editions) ? data.editions : [], editionsDemoCreees);
                 renderPreparations(preparations);
                 afficherEtatGestionEditions(preparations);
 
