@@ -1877,9 +1877,16 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     }
                 }
 
-                editionDemoCreeeId = editionsDemoCreees.find((edition) => Number(edition.annee) === 2027)?.id || null;
                 renderEditions(Array.isArray(data.editions) ? data.editions : [], editionsDemoCreees);
                 renderPreparations(preparations);
+
+                // renderPreparations() ferme le panneau de détail et réinitialise
+                // editionDemoCreeeId. Restaurer l'identifiant APRÈS cet appel,
+                // sinon le bouton d'activation reste désactivé malgré le dossier 2027.
+                editionDemoCreeeId = editionsDemoCreees.find(
+                    (edition) => Number(edition.annee) === 2027
+                )?.id || null;
+
                 afficherEtatGestionEditions(preparations);
 
                 const infoPreparations = byId("preparations-info");
