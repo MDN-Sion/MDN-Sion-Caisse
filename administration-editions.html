@@ -1742,8 +1742,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 cell(row, editionDemo.annee ?? "—");
                 cell(row, (editionDemo.nom || "Édition " + editionDemo.annee) + " · Démo");
                 cell(row, "Non renseignées");
-                cell(row, "En préparation · Démo");
-                const activation = cell(row, "Non active");
+                cell(row, editionDemo.est_active ? "Active · Démo" : "En préparation · Démo");
+                const activation = cell(row, editionDemo.est_active ? "Active" : "Non active");
                 activation.style.color = "#805f00";
                 tbody.appendChild(row);
             }
@@ -1801,7 +1801,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             const activer = byId("activate-edition");
 
             activer.disabled = true;
-            activer.title = "Activation bloquée : les encaissements des ventes et les opérations de vaisselle et de stock de la nouvelle édition doivent être raccordés et validés.";
+            activer.title = "Activation disponible uniquement pour le dossier Démo 2027 créé.";
 
             if (!modeDemo) {
                 preparationDisponible = null;
@@ -1819,6 +1819,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             if (preparationDisponible) {
                 const annee = String(preparationDisponible.annee_cible);
                 etat.textContent = "Édition Démo " + annee + " — en préparation. Le dossier existant est conservé : retrouvez les inventaires, les stands, les emplacements et les accès dans ses détails. Activation bloquée tant que les encaissements, la vaisselle et les stocks ne sont pas entièrement raccordés pour " + annee + ".";
+                activer.disabled = !(annee === "2027" && editionDemoCreeeId);
+                activer.title = "Activer uniquement le dossier annuel Démo 2027 ; les ventes historiques restent séparées.";
                 preparer.textContent = "Voir la préparation " + annee;
                 preparer.disabled = false;
                 preparer.title = "Ouvrir la préparation existante sans en créer une autre";
@@ -1868,12 +1870,14 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                             editionsDemoCreees.push({
                                 id: dossier.edition_demo_id,
                                 annee: dossier.annee,
-                                nom: dossier.nom || "Marché de Noël de Sion " + dossier.annee
+                                nom: dossier.nom || "Marché de Noël de Sion " + dossier.annee,
+                                est_active: dossier.est_active === true || dossier.statut === "active"
                             });
                         }
                     }
                 }
 
+                editionDemoCreeeId = editionsDemoCreees.find((edition) => Number(edition.annee) === 2027)?.id || null;
                 renderEditions(Array.isArray(data.editions) ? data.editions : [], editionsDemoCreees);
                 renderPreparations(preparations);
                 afficherEtatGestionEditions(preparations);
@@ -1889,6 +1893,37 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             } catch (error) {
                 console.error("[MDN Sion] Chargement éditions :", error);
                 setNotice("Impossible de charger les éditions : " + (error.message || String(error)), true);
+            }
+        }
+
+        async function activerEditionDemo2027() {
+            if (!modeDemo || !editionDemoCreeeId) {
+                setNotice("Aucun dossier Démo 2027 disponible pour activation.", true);
+                return;
+            }
+
+            const bouton = byId("activate-edition");
+            bouton.disabled = true;
+            try {
+                const { data, error } = await window.MDN_SUPABASE.rpc(
+                    "activer_edition_creee_demo",
+                    { p_edition_demo_id: editionDemoCreeeId }
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.succes !== true || data.mode_demo !== true) {
+                    throw new Error("Activation non confirmée par le serveur.");
+                }
+
+                await charger();
+                setNotice("Édition Démo 2027 activée. Les ventes historiques ne doivent pas être utilisées pour cette édition tant que leur raccordement n'est pas terminé.");
+            } catch (erreur) {
+                setNotice("Activation impossible : " + (erreur.message || String(erreur)), true);
+            } finally {
+                bouton.disabled = false;
             }
         }
 
@@ -2339,6 +2374,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         byId("inventory-validate").addEventListener("click", validerInventaire);
         byId("prepare-next").addEventListener("click", preparerEditionSuivante);
         byId("close-detail").addEventListener("click", fermerDetail);
+        byId("activate-edition").addEventListener("click", activerEditionDemo2027);
         byId("refresh").addEventListener("click", charger);
         byId("back").addEventListener("click", () => {
             window.location.href = modeDemo ? "administration.html?mode=demo" : "administration.html";
