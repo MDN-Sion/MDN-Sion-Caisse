@@ -1462,29 +1462,15 @@
     async function loadEdition(){
       if(demo){
         // Les nouvelles éditions Démo sont isolées de la caisse historique.
-        const {data:editionsNouvelles,error:erreurEditions}=await client
-          .from("editions_creees_demo")
-          .select("id,annee,nom,est_active,statut")
-          .eq("est_active",true)
-          .eq("statut","active")
-          .limit(2);
+        const resultatEdition = await rpc("consulter_edition_active_caisse_demo");
 
-        if(erreurEditions){
-          throw new Error("Impossible de vérifier l'édition Démo active : "+erreurEditions.message);
+        if (resultatEdition?.succes !== true) {
+          throw new Error("Impossible de vérifier l'édition Démo active.");
         }
 
-        if((editionsNouvelles||[]).length>1){
-          throw new Error("Plusieurs nouvelles éditions Démo sont actives.");
-        }
-
-        if(editionsNouvelles?.length===1){
-          const active=editionsNouvelles[0];
-          await rpc("controler_edition_operation_mdn",{
-            p_edition_id:active.id,
-            p_mode_demo:true
-          });
-          edition=active;
-          nouvelleEditionDemo=true;
+        if (resultatEdition.edition?.id) {
+          edition = resultatEdition.edition;
+          nouvelleEditionDemo = true;
           return;
         }
 
@@ -1623,19 +1609,19 @@
         if(!session?.session_caisse_id){
           return;
         }
-        const {data,error}=await client
-          .from("mouvements_caisse_editions_creees_demo")
-          .select("id,type_mouvement,montant_signe,motif,created_at")
-          .eq("edition_demo_id",edition.id)
-          .eq("session_caisse_id",session.session_caisse_id)
-          .order("created_at",{ascending:true});
-        if(error){
-          throw error;
+        const resultatMouvements = await rpc("consulter_mouvements_caisse_edition_demo", {
+          p_edition_demo_id: edition.id,
+          p_session_caisse_id: session.session_caisse_id
+        });
+
+        if (resultatMouvements?.succes !== true) {
+          throw new Error("Impossible de consulter les mouvements de la caisse Démo.");
         }
-        movements=(data||[]).map(m=>({
-          ...m,
-          montant:Number(m.montant_signe),
-          numero_mouvement:""
+
+        movements = (resultatMouvements.mouvements || []).map(mouvement => ({
+          ...mouvement,
+          montant: Number(mouvement.montant_signe),
+          numero_mouvement: ""
         }));
         return;
       }
