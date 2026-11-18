@@ -4373,13 +4373,62 @@
                 "DÉMO · MDN Sion " + editionActive.annee + " · Ventes verrouillées";
             }
 
+            // Affichage en lecture seule du catalogue de la nouvelle édition.
+            // Aucun encaissement n'est activé avant raccordement des écritures
+            // vente + paiements + stocks à la même édition.
+            const { data: catalogueNouvelleEdition, error: erreurNouveauCatalogue } =
+              await client.rpc("charger_catalogue_caisse_edition_demo", {
+                p_edition_demo_id: editionActive.id
+              });
+
+            if (erreurNouveauCatalogue) {
+              articlesCaisse = [];
+              afficherEtatArticles(
+                "🔒",
+                "Édition Démo " + editionActive.annee + " sécurisée",
+                "Catalogue multiéditions indisponible : " +
+                (erreurNouveauCatalogue.message || "vérifier le raccordement SQL")
+              );
+              return;
+            }
+
+            const lignesCatalogue = Array.isArray(catalogueNouvelleEdition?.articles)
+              ? catalogueNouvelleEdition.articles
+              : Array.isArray(catalogueNouvelleEdition?.catalogue)
+                ? catalogueNouvelleEdition.catalogue
+                : [];
+
+            // Pas de panier actif : les articles sont présentés à titre
+            // de consultation uniquement, sans permettre une vente erronée.
             articlesCaisse = [];
-            afficherEtatArticles(
-              "🔒",
-              "Édition Démo " + editionActive.annee + " active",
-              "Le moteur historique 2026 est désactivé pour cette édition. " +
-              "Les ventes 2027 doivent être enregistrées par le moteur multiéditions."
-            );
+            if (lignesCatalogue.length === 0) {
+              afficherEtatArticles(
+                "🔒",
+                "Édition Démo " + editionActive.annee + " sécurisée",
+                "Aucun article disponible dans le catalogue de cette édition. " +
+                "L'encaissement reste verrouillé."
+              );
+              return;
+            }
+
+            zoneArticles.innerHTML = `
+              <div class="conteneur-catalogue">
+                <p style="padding: 14px 18px; color: #8b0000; font-weight: 700;">
+                  Catalogue Démo ${echapperHTML(String(editionActive.annee))} — consultation uniquement.
+                  Encaissement désactivé jusqu'au raccordement multiéditions.
+                </p>
+                <div class="grille-articles">
+                  ${lignesCatalogue.map(function (article) {
+                    const nom = echapperHTML(String(article.nom || article.article || "Article"));
+                    const prix = Number(article.prix || article.prix_vente || 0);
+                    return `<div class="carte-article" style="cursor: default; pointer-events: none;" aria-disabled="true">
+                      <div class="nom-article">${nom}</div>
+                      <div>${echapperHTML(formaterCHF(prix))}</div>
+                    </div>`;
+                  }).join("")}
+                </div>
+              </div>
+            `;
             return;
           }
 
