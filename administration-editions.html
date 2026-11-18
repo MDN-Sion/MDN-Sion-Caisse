@@ -1801,7 +1801,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             const activer = byId("activate-edition");
 
             activer.disabled = true;
-            activer.title = "Activation bloquée : raccordement des opérations de caisse, de vaisselle et de stock encore nécessaire.";
+            activer.title = "Activation bloquée : les encaissements des ventes et les opérations de vaisselle et de stock de la nouvelle édition doivent être raccordés et validés.";
 
             if (!modeDemo) {
                 preparationDisponible = null;
@@ -1818,7 +1818,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
 
             if (preparationDisponible) {
                 const annee = String(preparationDisponible.annee_cible);
-                etat.textContent = "Édition Démo " + annee + " — en préparation. Le dossier existant est conservé : retrouvez les inventaires, les stands, les emplacements et les accès dans ses détails. Activation bloquée jusqu’au raccordement du moteur opérationnel " + annee + ".";
+                etat.textContent = "Édition Démo " + annee + " — en préparation. Le dossier existant est conservé : retrouvez les inventaires, les stands, les emplacements et les accès dans ses détails. Activation bloquée tant que les encaissements, la vaisselle et les stocks ne sont pas entièrement raccordés pour " + annee + ".";
                 preparer.textContent = "Voir la préparation " + annee;
                 preparer.disabled = false;
                 preparer.title = "Ouvrir la préparation existante sans en créer une autre";
@@ -1882,7 +1882,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                 infoPreparations.hidden = !modeDemo;
                 infoPreparations.textContent = modeDemo
                     ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
-                      "Les inventaires et la création du dossier annuel Démo sont disponibles. L’activation de l’édition reste bloquée tant que le moteur de caisse 2027 n’est pas raccordé."
+                      "Les inventaires et la création du dossier annuel Démo sont disponibles. La caisse physique multiéditions est partiellement raccordée. Les encaissements des ventes, la vaisselle et les stocks doivent encore être validés avant activation."
                     : "";
                 byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
                 setNotice("");
