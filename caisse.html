@@ -3208,6 +3208,25 @@
       }
 
 
+      // Séparation stricte des moteurs Démo : aucune vente 2027 ne peut
+      // être transmise par erreur aux fonctions historiques de 2026.
+      async function verifierMoteurVenteDemo() {
+        if (!modeDemo) return;
+
+        const { data, error } = await clientSupabaseCaisse.rpc(
+          "consulter_edition_active_caisse_demo"
+        );
+
+        if (error) throw error;
+
+        if (data?.edition?.id) {
+          throw new Error(
+            "Édition Démo " + (data.edition.annee || "nouvelle") +
+            " active : l'encaissement historique 2026 est bloqué pour éviter toute écriture dans la mauvaise édition."
+          );
+        }
+      }
+
       async function validerPaiementSupabase() {
         if (validationPaiementEnCours || panierCaisse.length === 0) return;
 
@@ -3221,6 +3240,7 @@
 
         let repartitionServeur;
         try {
+          await verifierMoteurVenteDemo();
           repartitionServeur = construireRepartitionServeur();
         } catch (erreur) {
           afficherMessage(erreur?.message || "La répartition du paiement est invalide.");
@@ -3450,6 +3470,8 @@
         const lignesValidees = [];
 
         try {
+          await verifierMoteurVenteDemo();
+
           for (const ligne of lignesGobelets) {
             const parametres = {
               p_type_operation: ligne.typeOperationGobelet,
@@ -4336,6 +4358,30 @@
          * strictement réservée à la session Démo.
          */
         if (modeDemo) {
+
+          const { data: editionCreee, error: erreurEditionCreee } =
+            await client.rpc("consulter_edition_active_caisse_demo");
+
+          if (erreurEditionCreee) {
+            throw erreurEditionCreee;
+          }
+
+          if (editionCreee?.edition?.id) {
+            const editionActive = editionCreee.edition;
+            if (informationEdition) {
+              informationEdition.textContent =
+                "DÉMO · MDN Sion " + editionActive.annee + " · Ventes verrouillées";
+            }
+
+            articlesCaisse = [];
+            afficherEtatArticles(
+              "🔒",
+              "Édition Démo " + editionActive.annee + " active",
+              "Le moteur historique 2026 est désactivé pour cette édition. " +
+              "Les ventes 2027 doivent être enregistrées par le moteur multiéditions."
+            );
+            return;
+          }
 
           const {
             data: catalogueDemo,
