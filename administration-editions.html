@@ -1752,7 +1752,7 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             anneeActive = active ? Number(active.annee) : null;
             byId("active-name").textContent = active ? active.nom : "Aucune édition active";
             byId("active-status").textContent = active
-                ? (active.est_active ? "Active — " : "Inactive — ") + statutLisible(active.statut)
+                ? statutLisible(active.statut) + " · Caisse " + (active.est_active ? "active" : "inactive")
                 : "—";
             byId("active-dates").textContent = active ? periode(active) : "—";
         }
