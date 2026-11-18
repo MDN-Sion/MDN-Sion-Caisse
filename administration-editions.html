@@ -1751,7 +1751,9 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             const active = editions.find((edition) => edition.est_active === true);
             anneeActive = active ? Number(active.annee) : null;
             byId("active-name").textContent = active ? active.nom : "Aucune édition active";
-            byId("active-status").textContent = active ? statutLisible(active.statut) : "—";
+            byId("active-status").textContent = active
+                ? (active.est_active ? "Active — " : "Inactive — ") + statutLisible(active.statut)
+                : "—";
             byId("active-dates").textContent = active ? periode(active) : "—";
         }
 
@@ -1819,8 +1821,8 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
             if (preparationDisponible) {
                 const annee = String(preparationDisponible.annee_cible);
                 etat.textContent = "Édition Démo " + annee + " — en préparation. Le dossier existant est conservé : retrouvez les inventaires, les stands, les emplacements et les accès dans ses détails. Activation bloquée tant que les encaissements, la vaisselle et les stocks ne sont pas entièrement raccordés pour " + annee + ".";
-                activer.disabled = !(annee === "2027" && editionDemoCreeeId);
-                activer.title = "Activer uniquement le dossier annuel Démo 2027 ; les ventes historiques restent séparées.";
+                activer.disabled = true;
+                activer.title = "Activation suspendue : Démo 2026 doit rester utilisable jusqu’à la validation complète de la transition annuelle.";
                 preparer.textContent = "Voir la préparation " + annee;
                 preparer.disabled = false;
                 preparer.title = "Ouvrir la préparation existante sans en créer une autre";
@@ -1895,7 +1897,12 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
                     ? "Espace Démo indépendant : les préparations et les stocks Réels ne sont jamais modifiés. " +
                       "Les inventaires et la création du dossier annuel Démo sont disponibles. La caisse physique multiéditions est partiellement raccordée. Les encaissements des ventes, la vaisselle et les stocks doivent encore être validés avant activation."
                     : "";
-                byId("mode").textContent = modeDemo ? "Démo · préparation" : "Réel · lecture seule";
+                const historiqueActif = (Array.isArray(data.editions) ? data.editions : []).find(
+                    (edition) => edition.est_active === true
+                );
+                byId("mode").textContent = modeDemo
+                    ? (historiqueActif ? "Démo · édition " + historiqueActif.annee + " active" : "Démo · aucune édition historique active")
+                    : "Réel · lecture seule";
                 setNotice("");
             } catch (error) {
                 console.error("[MDN Sion] Chargement éditions :", error);
@@ -1904,34 +1911,12 @@ body.demo .case-v10 input:checked + .case-v10-dessin { background: #806000; bord
         }
 
         async function activerEditionDemo2027() {
-            if (!modeDemo || !editionDemoCreeeId) {
-                setNotice("Aucun dossier Démo 2027 disponible pour activation.", true);
-                return;
-            }
-
-            const bouton = byId("activate-edition");
-            bouton.disabled = true;
-            try {
-                const { data, error } = await window.MDN_SUPABASE.rpc(
-                    "activer_edition_creee_demo",
-                    { p_edition_demo_id: editionDemoCreeeId }
-                );
-
-                if (error) {
-                    throw error;
-                }
-
-                if (!data || data.succes !== true || data.mode_demo !== true) {
-                    throw new Error("Activation non confirmée par le serveur.");
-                }
-
-                await charger();
-                setNotice("Édition Démo 2027 activée. Les ventes historiques ne doivent pas être utilisées pour cette édition tant que leur raccordement n'est pas terminé.");
-            } catch (erreur) {
-                setNotice("Activation impossible : " + (erreur.message || String(erreur)), true);
-            } finally {
-                bouton.disabled = false;
-            }
+            // Activation suspendue jusqu'à la validation complète du passage annuel.
+            // Aucune écriture dans Supabase : préserver la Démo 2026.
+            setNotice(
+                "Activation de Démo 2027 suspendue : terminer la clôture 2026 et valider les raccordements avant toute bascule.",
+                true
+            );
         }
 
         async function init() {
