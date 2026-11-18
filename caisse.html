@@ -2470,6 +2470,7 @@
       let cleIdempotenceEncaissement = null;
 
       let modeDemo = false;
+      let editionCreeeDemoActive = null;
 
       const boutonRembourserVente = document.getElementById("boutonRembourserVente");
       const modalRemboursementVente = document.getElementById("modalRemboursementVente");
@@ -3208,23 +3209,27 @@
       }
 
 
-      // Séparation stricte des moteurs Démo : aucune vente 2027 ne peut
-      // être transmise par erreur aux fonctions historiques de 2026.
+      // Vérification du contexte à chaque encaissement : jamais de bascule
+      // silencieuse vers le moteur historique d'une autre édition.
       async function verifierMoteurVenteDemo() {
-        if (!modeDemo) return;
+        if (!modeDemo) return null;
 
         const { data, error } = await clientSupabaseCaisse.rpc(
           "consulter_edition_active_caisse_demo"
         );
-
         if (error) throw error;
 
-        if (data?.edition?.id) {
-          throw new Error(
-            "Édition Démo " + (data.edition.annee || "nouvelle") +
-            " active : l'encaissement historique 2026 est bloqué pour éviter toute écriture dans la mauvaise édition."
-          );
+        const editionServeur = data?.edition || null;
+        if (editionCreeeDemoActive) {
+          if (!editionServeur || editionServeur.id !== editionCreeeDemoActive.id) {
+            throw new Error("L'édition Démo active a changé. Recharge la page avant d'encaisser.");
+          }
+          return editionServeur;
         }
+        if (editionServeur?.id) {
+          throw new Error("Une nouvelle édition Démo est active. Recharge la page avant d'encaisser.");
+        }
+        return null;
       }
 
       async function validerPaiementSupabase() {
@@ -3242,6 +3247,14 @@
         try {
           await verifierMoteurVenteDemo();
           repartitionServeur = construireRepartitionServeur();
+          if (editionCreeeDemoActive) {
+            if (panierContientGobelets()) {
+              throw new Error("Les opérations Gobelets de cette édition ne sont pas encore raccordées.");
+            }
+            if (repartitionServeur.dons.length > 1) {
+              throw new Error("Cette vente comporte plusieurs dons. Leur enregistrement multiéditions doit être finalisé.");
+            }
+          }
         } catch (erreur) {
           afficherMessage(erreur?.message || "La répartition du paiement est invalide.");
           return;
@@ -3279,23 +3292,29 @@
           let numeroVente = "";
 
           if (lignes.length > 0) {
-            const { data, error } = await clientSupabaseCaisse.rpc(
-              modeDemo ? "valider_vente_demo" : "valider_vente",
-              {
-                p_idempotency_key: cleIdempotenceEncaissement,
-                p_lignes: lignes,
-                p_paiements: repartitionServeur.paiementsVente,
-                p_don: repartitionServeur.dons.length > 0 ? repartitionServeur.dons : null,
-                p_commentaire: null
-              }
-            );
-
+            const nouvelleEdition = modeDemo && editionCreeeDemoActive;
+            const nomRpc = nouvelleEdition
+              ? "valider_vente_edition_mdn"
+              : (modeDemo ? "valider_vente_demo" : "valider_vente");
+            const argumentsRpc = {
+              p_idempotency_key: cleIdempotenceEncaissement,
+              p_lignes: lignes,
+              p_paiements: repartitionServeur.paiementsVente,
+              p_don: nouvelleEdition
+                ? (repartitionServeur.dons[0] || null)
+                : (repartitionServeur.dons.length > 0 ? repartitionServeur.dons : null),
+              p_commentaire: null
+            };
+            if (nouvelleEdition) {
+              argumentsRpc.p_edition_id = nouvelleEdition.id;
+              argumentsRpc.p_mode_demo = true;
+            }
+            const { data, error } = await clientSupabaseCaisse.rpc(nomRpc, argumentsRpc);
             if (error) throw error;
-            if (!data || !data.vente_id) {
+            if (!data || !(data.operation_id || data.vente_id)) {
               throw new Error("Le serveur n'a pas retourné l'identifiant de la vente.");
             }
-
-            numeroVente = data.numero_vente || data.numero || "";
+            numeroVente = data.numero_vente || data.numero || data.operation_id || "";
 
             panierCaisse = panierCaisse.filter(function (ligne) {
               return estLigneGobelet(ligne);
@@ -3425,6 +3444,10 @@
       }
 
       function ajouterGobeletAuPanier(typeOperation) {
+        if (editionCreeeDemoActive) {
+          afficherMessage("Les opérations Gobelets de Démo " + editionCreeeDemoActive.annee + " ne sont pas encore raccordées.");
+          return;
+        }
         if (operationGobeletEnCours || !clientSupabaseCaisse) return;
 
         const config = CONFIG_GOBELETS_PANIER[typeOperation];
@@ -3801,6 +3824,14 @@
         if (evenement.target === modalRemboursementVente) fermerModalRemboursementVente();
       });
 
+
+      boutonRembourserVente.addEventListener("click", function (evenement) {
+        if (editionCreeeDemoActive) {
+          evenement.stopImmediatePropagation();
+          evenement.preventDefault();
+          afficherMessage("Le remboursement multiéditions doit être effectué depuis la caisse physique de cette édition.");
+        }
+      }, true);
 
       boutonVenteGobelet.addEventListener("click", function () {
         ajouterGobeletAuPanier("vente");
@@ -4398,40 +4429,32 @@
                 ? catalogueNouvelleEdition.catalogue
                 : [];
 
-            // Pas de panier actif : les articles sont présentés à titre
-            // de consultation uniquement, sans permettre une vente erronée.
-            articlesCaisse = [];
-            if (lignesCatalogue.length === 0) {
-              afficherEtatArticles(
-                "🔒",
-                "Édition Démo " + editionActive.annee + " sécurisée",
-                "Aucun article disponible dans le catalogue de cette édition. " +
-                "L'encaissement reste verrouillé."
-              );
-              return;
-            }
-
-            zoneArticles.innerHTML = `
-              <div class="conteneur-catalogue">
-                <p style="padding: 14px 18px; color: #8b0000; font-weight: 700;">
-                  Catalogue Démo ${echapperHTML(String(editionActive.annee))} — consultation uniquement.
-                  Encaissement désactivé jusqu'au raccordement multiéditions.
-                </p>
-                <div class="grille-articles">
-                  ${lignesCatalogue.map(function (article) {
-                    const nom = echapperHTML(String(article.nom || article.article || "Article"));
-                    const prix = Number(article.prix || article.prix_vente || 0);
-                    return `<div class="carte-article" style="cursor: default; pointer-events: none;" aria-disabled="true">
-                      <div class="nom-article">${nom}</div>
-                      <div>${echapperHTML(formaterCHF(prix))}</div>
-                    </div>`;
-                  }).join("")}
-                </div>
-              </div>
-            `;
+            editionCreeeDemoActive = editionActive;
+            articlesCaisse = lignesCatalogue
+              .filter(function (article) {
+                return article.article_id && Number.isFinite(Number(article.prix)) && Number(article.prix) >= 0;
+              })
+              .map(function (article) {
+                return {
+                  editionArticleId: article.edition_article_id,
+                  articleId: article.article_id,
+                  nom: article.nom,
+                  description: article.description,
+                  photoPath: article.photo_path || null,
+                  beneficiaire: article.beneficiaire,
+                  categorie: article.categorie || null,
+                  prix: Number(article.prix),
+                  gestionStock: article.gestion_stock === true,
+                  seuilStock: Number(article.seuil_stock || 0),
+                  ordreAffichage: Number(article.ordre_affichage || 0),
+                  stockDisponible: article.stock_disponible
+                };
+              });
+            afficherArticles();
             return;
           }
 
+          editionCreeeDemoActive = null;
           const {
             data: catalogueDemo,
             error: erreurCatalogueDemo
